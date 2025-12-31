@@ -1,0 +1,15 @@
+# Google Drive API
+google-api-python-client==2.108.0
+google-auth==2.25.2
+google-auth-oauthlib==1.2.0
+google-auth-httplib2==0.2.0
+
+# PDF Processing
+PyPDF2==3.0.1
+
+# HTTP Requests
+requests==2.31.0
+urllib3==2.1.0
+
+# Optional: Progress bars
+tqdm==4.66.1
