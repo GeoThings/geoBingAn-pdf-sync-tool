@@ -105,15 +105,45 @@ curl -X POST http://localhost:8000/api/reports/upload-file/ \
 
 ### 使用 Cron（推薦）
 
+工具已設定為每週一早上 9:00 自動執行：
+
+```bash
+# 查看當前 cron 設定
+crontab -l
+
+# 當前排程：每週一早上 9:00
+0 9 * * 1 /Users/geothingsmacbookair/Documents/GitHub/geoBingAn-pdf-sync-tool/run_weekly_sync.sh
+```
+
+**執行流程**：
+1. `sync_permits.py` - 從台北市政府網站同步最新建案 PDF 到 Google Drive
+2. `upload_pdfs.py` - 上傳最近 7 天更新的 PDF 到 geoBingAn Backend
+
+**日誌管理**：
+- 執行日誌位於 `logs/` 目錄
+- 日誌檔案格式：`weekly_sync_YYYYMMDD_HHMMSS.log`
+- 自動清理超過 30 天的舊日誌
+
+**手動執行**：
+```bash
+# 測試執行完整流程
+./run_weekly_sync.sh
+
+# 查看最新日誌
+tail -f logs/weekly_sync_*.log
+```
+
+**修改排程時間**：
 ```bash
 # 編輯 crontab
 crontab -e
 
-# 每週日凌晨 2:00 執行
-0 2 * * 0 cd /path/to/geoBingAn-pdf-sync-tool && python3 upload_pdfs.py >> /tmp/pdf_sync.log 2>&1
+# Cron 格式：分 時 日 月 星期
+# 範例：每週三下午 3:00
+0 15 * * 3 /path/to/run_weekly_sync.sh
 ```
 
-### 使用 Systemd Timer
+### 使用 Systemd Timer（進階）
 
 建立 `/etc/systemd/system/pdf-sync.service`:
 ```ini
