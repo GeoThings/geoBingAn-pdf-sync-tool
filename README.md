@@ -2,6 +2,24 @@
 
 自動從台北市政府建管處同步建案 PDF，並上傳到 geoBingAn Backend API 建立監測報告。
 
+## 📊 最新測試結果（2026-01-02）
+
+**完整流程測試：** ✅ 通過
+
+| 測試項目 | 狀態 | 成功率 | 耗時 |
+|---------|------|--------|------|
+| sync_permits.py | ✅ 成功 | 100% (4/4 新 PDF) | ~15 分鐘 |
+| upload_pdfs.py | ✅ 成功 | 70% (7/10 Reports) | ~20 分鐘 |
+| 驗證結果 | ✅ 完成 | Report 建立成功 | - |
+
+**測試亮點：**
+- ✅ 成功同步 4 個新 PDF 到 Google Drive
+- ✅ 成功上傳 10 個 PDF 並建立 7 個 Reports
+- ✅ 自動建立 ConstructionProject 和 ProjectMonitoringReport
+- ⚠️ 3 個簡化週報因格式問題分析失敗（後端 AI prompt 需優化）
+
+詳見 [完整測試報告](logs/test_report_20260102.md)
+
 ---
 
 ## 🎯 工具定位
