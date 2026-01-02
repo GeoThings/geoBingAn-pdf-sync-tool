@@ -6,6 +6,7 @@
 1. 掃描 Google Drive Shared Drive 中的建案 PDF
 2. 只上傳最新的 5 個 PDF 檔案
 3. 記錄已上傳的 PDF，避免重複處理
+4. 使用 JWT 認證（jerryjo0802@gmail.com）
 """
 import json
 import os
@@ -21,14 +22,28 @@ from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaIoBaseDownload
 from typing import Dict, List, Optional
 
+# 匯入配置檔案
+try:
+    from config import (
+        JWT_TOKEN,
+        USER_EMAIL,
+        GROUP_ID,
+        GEOBINGAN_API_URL
+    )
+    print(f"✅ 已載入認證配置（用戶: {USER_EMAIL}）")
+except ImportError:
+    print("❌ 找不到 config.py，請先建立配置檔案")
+    print("   請參考 config.py.example 建立 config.py")
+    sys.exit(1)
+
 # ================== 設定區域 ==================
 # Google Drive 認證
 SERVICE_ACCOUNT_FILE = '/Users/geothingsmacbookair/Downloads/credentials.json'
 SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
 SHARED_DRIVE_ID = '0AIvp1h-6BZ1oUk9PVA'
 
-# geoBingAn API 設定
-GEOBINGAN_API_URL = 'http://localhost:8000/api/reports/upload-file/'
+# geoBingAn API 設定（從 config.py 匯入）
+# GEOBINGAN_API_URL - 已從 config.py 匯入
 GEOBINGAN_SCENARIO_ID = 'construction_safety_pdf'
 GEOBINGAN_LANGUAGE = 'zh-TW'
 
@@ -39,7 +54,7 @@ STATE_FILE = './state/uploaded_to_geobingan_7days.json'
 DAYS_AGO = 7  # 只上傳最近 7 天更新的 PDF
 
 # 批次上傳設定
-MAX_UPLOADS = 100  # 最多上傳 100 筆 PDF（避免一次上傳太多）
+MAX_UPLOADS = 10  # 最多上傳 10 筆 PDF（測試）
 
 # 速率控制：每次上傳之間的延遲（秒）
 DELAY_BETWEEN_UPLOADS = 20  # 增加到 20 秒以減少 rate limit
@@ -188,7 +203,11 @@ def download_pdf(service, file_id: str, file_name: str, max_retries: int = 3) ->
 
 
 def upload_to_geobingan(pdf_content: bytes, file_name: str, project_code: str) -> Optional[dict]:
-    """上傳 PDF 到 geoBingAn API 進行分析"""
+    """
+    上傳 PDF 到 geoBingAn API 進行分析
+
+    使用 JWT Bearer Token 認證
+    """
     try:
         files = {
             'file': (file_name, pdf_content, 'application/pdf')
@@ -198,13 +217,20 @@ def upload_to_geobingan(pdf_content: bytes, file_name: str, project_code: str) -
             'scenario_id': GEOBINGAN_SCENARIO_ID,
             'language': GEOBINGAN_LANGUAGE,
             'save_to_report': True,
+            'group_id': GROUP_ID,  # 必填：群組 ID
             'additional_context': f'建案代碼: {project_code}'
+        }
+
+        # 設定 JWT 認證標頭
+        headers = {
+            'Authorization': f'Bearer {JWT_TOKEN}'
         }
 
         response = requests.post(
             GEOBINGAN_API_URL,
             files=files,
             data=data,
+            headers=headers,  # 加入認證標頭
             timeout=300
         )
 
