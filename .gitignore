@@ -16,7 +16,11 @@ build/
 
 # Logs
 *.log
-logs/
+logs/*.log
+logs/weekly_sync_*
+
+# But keep upload history
+!logs/upload_history.md
 
 # IDE
 .vscode/
@@ -34,3 +38,6 @@ Thumbs.db
 venv/
 env/
 ENV/
+
+# geoBingAn 認證配置（敏感資訊）
+config.py

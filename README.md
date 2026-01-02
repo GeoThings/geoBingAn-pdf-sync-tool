@@ -7,10 +7,22 @@
 這是一個**獨立的外部工具**，透過 HTTP API 與 geoBingAn Backend 互動：
 
 1. **sync_permits.py** - 從台北市政府同步建案 PDF 到 Google Drive
-2. **upload_pdfs.py** - 上傳 PDF 到 geoBingAn Backend API
-3. **retry_failed.py** - 重試失敗的上傳
+2. **upload_pdfs.py** - 從 Google Drive 上傳最近 7 天的 PDF 到 geoBingAn Backend API
+3. **upload_attachments.py** - 為已建立的 Reports 補充 PDF 附件並上傳到 S3
+4. **check_upload_status.py** - 檢查上傳狀態和資料庫記錄
+5. **retry_failed.py** - 重試失敗的上傳（保留，未使用）
 
-> **注意**：所有 AI 分析由 Backend 處理（使用 Gemini 3.0），此工具只負責檔案同步和上傳。
+> **注意**：所有 AI 分析由 Backend 處理（使用 Gemini 2.5/3.0 Pro），此工具只負責檔案同步和上傳。
+
+### 🎯 最新測試結果（2026-01-02）
+
+**累計上傳統計：**
+- ✅ 成功建立 Reports：**13 個**
+- ✅ 成功建立建案：**9 個**
+- ⚠️ 驗證失敗：3 個簡化週報（已記錄）
+- 📊 成功率：**81.25%**
+
+詳見 [logs/upload_history.md](logs/upload_history.md)
 
 ---
 
@@ -49,15 +61,24 @@ export DELAY_BETWEEN_UPLOADS=20      # 上傳間隔（秒）
 ### 4. 執行
 
 ```bash
-# 步驟 1: 同步建案 PDF from 台北市政府
+# 步驟 1: 同步建案 PDF from 台北市政府（可選）
 python3 sync_permits.py
 
-# 步驟 2: 上傳到 geoBingAn Backend API
+# 步驟 2: 從 Google Drive 上傳最近 7 天的 PDF
 python3 upload_pdfs.py
 
-# 如有失敗，重試
-python3 retry_failed.py
+# 步驟 3: 為已建立的 Reports 補充 PDF 附件（可選）
+python3 upload_attachments.py
+
+# 步驟 4: 檢查上傳狀態
+python3 check_upload_status.py
 ```
+
+**注意事項：**
+- `upload_pdfs.py` 會自動過濾最近 7 天更新的 PDF
+- 預設上傳數量限制為 10 個（可在腳本中修改 `MAX_UPLOADS`）
+- 每次上傳間隔 20 秒以避免 API 速率限制
+- 上傳狀態會記錄在 `state/uploaded_to_geobingan_7days.json`
 
 ---
 
@@ -183,17 +204,24 @@ sudo systemctl start pdf-sync.timer
 
 ```
 geoBingAn-pdf-sync-tool/
-├── README.md                    # 本文件
-├── requirements.txt             # Python 依賴
-├── sync_permits.py              # PDF 同步腳本
-├── upload_pdfs.py               # 上傳到 Backend API
-├── retry_failed.py              # 失敗重試
-├── credentials.json.example     # Service Account 範例
-├── config.py                    # 設定檔（可選）
-├── state/                       # 狀態追蹤
-│   └── .gitkeep
-└── docs/                        # 詳細文檔
-    └── API.md                   # API 說明文檔
+├── README.md                               # 本文件
+├── requirements.txt                        # Python 依賴
+├── credentials.json                        # Service Account 金鑰（需自行建立）
+├── .env                                    # 環境變數（需自行建立）
+│
+├── sync_permits.py                         # PDF 同步腳本（從台北市政府）
+├── upload_pdfs.py                          # 上傳 PDF 到 Backend API
+├── upload_attachments.py                   # 補充 PDF 附件到已建立的 Reports
+├── check_upload_status.py                  # 檢查上傳狀態
+├── retry_failed.py                         # 失敗重試（保留）
+│
+├── state/                                  # 狀態追蹤
+│   ├── uploaded_to_geobingan_7days.json   # 7天上傳記錄
+│   ├── uploaded_to_geobingan_7days.json.backup  # 備份
+│   └── sync_permits_progress.json         # 同步進度
+│
+└── logs/                                   # 日誌記錄
+    └── upload_history.md                   # 上傳歷史記錄
 ```
 
 ---
@@ -202,8 +230,21 @@ geoBingAn-pdf-sync-tool/
 
 工具使用 JSON 檔案追蹤處理狀態：
 
+### `state/uploaded_to_geobingan_7days.json`
+記錄最近 7 天上傳的 PDF：
+```json
+{
+  "uploaded_files": [
+    "112建字第0087號/北士科服務中心監測日報20251229.pdf",
+    "111建字第0252號/1141222 25觀測報告.pdf",
+    ...
+  ],
+  "errors": []
+}
+```
+
 ### `state/sync_permits_progress.json`
-記錄已同步的建案：
+記錄已同步的建案（從台北市政府）：
 ```json
 {
   "processed": ["112建字第0001號", ...],
@@ -212,24 +253,19 @@ geoBingAn-pdf-sync-tool/
 }
 ```
 
-### `state/uploaded_pdfs.json`
-記錄已上傳的 PDF：
-```json
-{
-  "uploaded_files": ["建案資料夾/檔案名稱.pdf", ...],
-  "errors": [
-    {
-      "folder": "建案資料夾",
-      "file": "檔案名稱.pdf",
-      "file_id": "Google Drive ID"
-    }
-  ]
-}
-```
+### `logs/upload_history.md`
+完整的上傳歷史記錄，包括：
+- 每次上傳的時間和結果
+- 成功建立的 Reports 列表
+- 失敗原因分析
+- 統計資訊
 
 **重置狀態**：
 ```bash
-# 清除所有狀態（重新處理所有檔案）
+# 清除 7 天上傳記錄（重新處理最近 7 天的檔案）
+rm state/uploaded_to_geobingan_7days.json
+
+# 清除所有狀態
 rm state/*.json
 ```
 
@@ -354,6 +390,16 @@ Service Account 只需要以下權限：
 
 ## 📝 版本歷史
 
+### v1.1.0 (2026-01-02)
+- ✅ 新增 `upload_attachments.py` - 補充 PDF 附件功能
+- ✅ 新增 `check_upload_status.py` - 上傳狀態檢查工具
+- ✅ 完成自動上傳測試：13 個 Reports 成功建立
+- ✅ 新增完整的上傳歷史記錄（`logs/upload_history.md`）
+- ✅ 改進狀態追蹤：使用 `uploaded_to_geobingan_7days.json`
+- ✅ 支援自動建立 ConstructionProject 和 ProjectMonitoringReport
+- ✅ 新增備份機制和錯誤處理
+- 📊 測試結果：81.25% 成功率（13/16）
+
 ### v1.0.0 (2025-12-31)
 - ✅ 初始版本
 - ✅ 支援從台北市政府同步建案 PDF
@@ -370,4 +416,4 @@ MIT License
 ---
 
 **維護者**: geoBingAn Team
-**最後更新**: 2025-12-31
+**最後更新**: 2026-01-02
