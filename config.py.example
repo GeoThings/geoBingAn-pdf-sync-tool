@@ -1,0 +1,21 @@
+"""
+配置檔案範例 - 請複製為 config.py 並填入實際值
+
+⚠️ 請勿直接使用此檔案！
+請執行：cp config.py.example config.py
+然後編輯 config.py 填入您的認證資訊
+"""
+
+# JWT Token（從後端生成，1年有效期）
+JWT_TOKEN = 'your-jwt-token-here'
+
+# 用戶資訊
+USER_EMAIL = 'your-email@example.com'
+USER_ID = 'your-user-id-here'
+
+# 群組資訊
+GROUP_ID = 'your-group-id-here'
+GROUP_NAME = 'your-group-name-here'
+
+# API 設定
+GEOBINGAN_API_URL = 'http://localhost:8000/api/reports/upload-file/'
