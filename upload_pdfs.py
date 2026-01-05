@@ -54,7 +54,7 @@ STATE_FILE = './state/uploaded_to_geobingan_7days.json'
 DAYS_AGO = 7  # 只上傳最近 7 天更新的 PDF
 
 # 批次上傳設定
-MAX_UPLOADS = 10  # 最多上傳 10 筆 PDF（測試）
+MAX_UPLOADS = 500  # 最多上傳 500 筆 PDF（支援完整 7 天上傳）
 
 # 速率控制：每次上傳之間的延遲（秒）
 DELAY_BETWEEN_UPLOADS = 20  # 增加到 20 秒以減少 rate limit
