@@ -75,11 +75,27 @@ state_lock = threading.Lock()
 
 
 def load_state() -> dict:
-    """載入已上傳的 PDF 記錄"""
+    """載入已上傳的 PDF 記錄（包含快取）"""
     if os.path.exists(STATE_FILE):
         with open(STATE_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    return {'uploaded_files': [], 'errors': []}
+            state = json.load(f)
+            # 確保有快取結構
+            if 'cache' not in state:
+                state['cache'] = {
+                    'folders': [],
+                    'pdfs': [],
+                    'last_scan': None
+                }
+            return state
+    return {
+        'uploaded_files': [],
+        'errors': [],
+        'cache': {
+            'folders': [],
+            'pdfs': [],
+            'last_scan': None
+        }
+    }
 
 
 def save_state(state: dict):
@@ -106,10 +122,38 @@ def get_drive_service():
     return service
 
 
-def list_project_folders(service) -> List[Dict]:
-    """列出所有建案資料夾"""
+def list_project_folders(service, use_cache: bool = True, state: dict = None, days_ago: int = 7) -> List[Dict]:
+    """
+    列出建案資料夾（支援快取和智慧掃描）
+
+    Args:
+        service: Google Drive API service
+        use_cache: 是否使用快取
+        state: 狀態檔案（包含快取）
+        days_ago: 只掃描最近 N 天修改的資料夾（智慧掃描）
+    """
+    # 檢查是否可以使用快取
+    if use_cache and state and state.get('cache', {}).get('last_scan'):
+        last_scan = state['cache']['last_scan']
+        last_scan_time = datetime.fromisoformat(last_scan.replace('Z', '+00:00'))
+        now = datetime.now(last_scan_time.tzinfo)
+
+        # 如果上次掃描在 24 小時內，使用快取
+        if (now - last_scan_time).total_seconds() < 86400:  # 24 hours
+            cached_folders = state['cache'].get('folders', [])
+            if cached_folders:
+                print(f"✅ 使用快取的資料夾列表（{len(cached_folders)} 個，上次掃描: {last_scan}）")
+                return cached_folders
+
     try:
+        # 智慧掃描：只掃描最近 N 天修改的資料夾
+        cutoff_date = datetime.now() - timedelta(days=days_ago)
+        cutoff_date_str = cutoff_date.isoformat() + 'Z'
+
+        print(f"🔍 智慧掃描: 只列出最近 {days_ago} 天修改的資料夾...")
+
         query = (
+            f"modifiedTime >= '{cutoff_date_str}' and "
             "mimeType = 'application/vnd.google-apps.folder' and "
             "trashed = false"
         )
@@ -121,28 +165,53 @@ def list_project_folders(service) -> List[Dict]:
             includeItemsFromAllDrives=True,
             supportsAllDrives=True,
             pageSize=1000,
-            fields='files(id, name)'
+            fields='files(id, name, modifiedTime)'
         ).execute()
 
-        return results.get('files', [])
+        folders = results.get('files', [])
+
+        # 更新快取
+        if state is not None:
+            state['cache']['folders'] = folders
+            state['cache']['last_scan'] = datetime.now().isoformat() + 'Z'
+
+        print(f"✅ 找到 {len(folders)} 個最近 {days_ago} 天修改的資料夾")
+        return folders
 
     except HttpError as e:
         print(f"❌ 列出資料夾失敗: {e}")
         return []
 
 
-def list_all_pdfs_with_folder_info(service, folders: List[Dict]) -> List[Dict]:
+def list_all_pdfs_with_folder_info(service, folders: List[Dict], use_cache: bool = True, state: dict = None) -> List[Dict]:
     """
-    列出所有資料夾中的 PDF，並附加資料夾資訊
+    列出所有資料夾中的 PDF，並附加資料夾資訊（支援快取）
 
     Returns:
         List of dict with keys: id, name, size, modifiedTime, folder_id, folder_name
     """
+    # 檢查是否可以使用快取
+    if use_cache and state and state.get('cache', {}).get('last_scan'):
+        last_scan = state['cache']['last_scan']
+        last_scan_time = datetime.fromisoformat(last_scan.replace('Z', '+00:00'))
+        now = datetime.now(last_scan_time.tzinfo)
+
+        # 如果上次掃描在 24 小時內，使用快取
+        if (now - last_scan_time).total_seconds() < 86400:  # 24 hours
+            cached_pdfs = state['cache'].get('pdfs', [])
+            if cached_pdfs:
+                print(f"✅ 使用快取的 PDF 列表（{len(cached_pdfs)} 個）")
+                return cached_pdfs
+
+    print(f"🔍 掃描 {len(folders)} 個資料夾中的 PDF...")
     all_pdfs = []
 
-    for folder in folders:
+    for idx, folder in enumerate(folders, 1):
         folder_id = folder['id']
         folder_name = folder['name']
+
+        if idx % 10 == 0:
+            print(f"  進度: {idx}/{len(folders)} 個資料夾...")
 
         try:
             query = (
@@ -170,6 +239,10 @@ def list_all_pdfs_with_folder_info(service, folders: List[Dict]) -> List[Dict]:
         except HttpError as e:
             print(f"  ❌ 列出 {folder_name} 的 PDF 失敗: {e}")
             continue
+
+    # 更新快取
+    if state is not None:
+        state['cache']['pdfs'] = all_pdfs
 
     return all_pdfs
 
@@ -326,23 +399,40 @@ def main():
     print(f"  已上傳: {len(state['uploaded_files'])} 個檔案")
     print(f"  錯誤記錄: {len(state['errors'])} 筆")
 
-    # 列出所有建案資料夾
-    print(f"\n📁 列出建案資料夾...")
-    project_folders = list_project_folders(service)
+    # 列出建案資料夾（使用智慧掃描和快取）
+    print(f"\n📁 列出建案資料夾（智慧掃描模式）...")
+    project_folders = list_project_folders(service, use_cache=True, state=state, days_ago=DAYS_AGO)
 
     if not project_folders:
-        print("❌ 未找到任何資料夾")
-        sys.exit(0)
+        print("⚠️  未找到最近修改的資料夾，嘗試完整掃描...")
+        # 回退：完整掃描（不使用時間過濾）
+        try:
+            query = "mimeType = 'application/vnd.google-apps.folder' and trashed = false"
+            results = service.files().list(
+                q=query,
+                corpora='drive',
+                driveId=SHARED_DRIVE_ID,
+                includeItemsFromAllDrives=True,
+                supportsAllDrives=True,
+                pageSize=1000,
+                fields='files(id, name, modifiedTime)'
+            ).execute()
+            project_folders = results.get('files', [])
+            print(f"✅ 完整掃描找到 {len(project_folders)} 個資料夾")
+        except Exception as e:
+            print(f"❌ 完整掃描失敗: {e}")
+            sys.exit(0)
 
-    print(f"✅ 找到 {len(project_folders)} 個資料夾")
-
-    # 收集所有 PDF
-    print(f"\n📄 收集所有 PDF 檔案...")
-    all_pdfs = list_all_pdfs_with_folder_info(service, project_folders)
+    # 收集 PDF（使用快取）
+    print(f"\n📄 收集 PDF 檔案...")
+    all_pdfs = list_all_pdfs_with_folder_info(service, project_folders, use_cache=True, state=state)
 
     if not all_pdfs:
         print("❌ 未找到任何 PDF 檔案")
         sys.exit(0)
+
+    # 儲存快取（在開始過濾之前）
+    save_state(state)
 
     print(f"✅ 找到 {len(all_pdfs)} 個 PDF 檔案")
 
