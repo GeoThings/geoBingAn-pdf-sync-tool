@@ -304,7 +304,7 @@ class PermitSync:
                 elif result_id:
                     print(f"    🆕 發現新檔並複製: {display_path}")
                     copied += 1
-                time.sleep(0.5)
+                time.sleep(0.1)  # 優化：從 0.5 秒減少到 0.1 秒
             
             if copied > 0:
                 print(f"  📊 更新完成: 新增 {copied} 個")
@@ -320,21 +320,34 @@ class PermitSync:
     
     def run(self):
         print("="*70)
-        print(f"🚀 建築執照監測資料同步工具 v5.0 (智慧分塊版)")
-        print("   特性: 自動修復漏抓建案、容錯率高、隨機跳查")
+        print(f"🚀 建築執照監測資料同步工具 v5.1 (效能優化版)")
+        print("   特性: 增量同步、跳過已處理建案、快速模式")
         print("="*70)
-        
+
         pdf_path = self.download_pdf_list()
         self.permit_mapping = self.parse_pdf_list(pdf_path)
         self.target_folders = self.scan_shared_drive()
-        
+
         permit_list = list(self.permit_mapping.items())
         # 隨機打亂，確保每次執行檢查不同建案
         random.shuffle(permit_list)
 
-        print(f"\n📋 監測目標: {len(permit_list)} 個建案")
-
+        # 優化：過濾掉已處理且無錯誤的建案（增量同步）
+        unprocessed_permits = []
         for permit_no, source_url in permit_list:
+            # 如果建案已成功處理過，跳過
+            if permit_no in self.state['processed']:
+                # 檢查是否有錯誤記錄，如有則重新處理
+                has_error = any(e.get('permit') == permit_no for e in self.state.get('errors', []))
+                if not has_error:
+                    continue
+            unprocessed_permits.append((permit_no, source_url))
+
+        print(f"\n📋 監測目標: {len(permit_list)} 個建案")
+        print(f"✅ 已處理: {len(permit_list) - len(unprocessed_permits)} 個")
+        print(f"🔄 待處理: {len(unprocessed_permits)} 個")
+
+        for permit_no, source_url in unprocessed_permits:
             if permit_no in self.target_folders:
                 target_id = self.target_folders[permit_no]
             else:

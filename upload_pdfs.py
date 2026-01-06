@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """
-上傳最新 5 筆 PDF 到 geoBingAn 分析工具（測試版本）
+上傳最新 5 筆 PDF 到 geoBingAn 分析工具（效能優化版本）
 
 功能：
 1. 掃描 Google Drive Shared Drive 中的建案 PDF
 2. 只上傳最新的 5 個 PDF 檔案
 3. 記錄已上傳的 PDF，避免重複處理
 4. 使用 JWT 認證（jerryjo0802@gmail.com）
+5. 【新增】並行上傳支援（可選）
 """
 import json
 import os
@@ -21,6 +22,8 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaIoBaseDownload
 from typing import Dict, List, Optional
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import threading
 
 # 匯入配置檔案
 try:
@@ -57,11 +60,18 @@ DAYS_AGO = 7  # 只上傳最近 7 天更新的 PDF
 MAX_UPLOADS = 500  # 最多上傳 500 筆 PDF（支援完整 7 天上傳）
 
 # 速率控制：每次上傳之間的延遲（秒）
-DELAY_BETWEEN_UPLOADS = 20  # 增加到 20 秒以減少 rate limit
+DELAY_BETWEEN_UPLOADS = 5  # 優化：從 20 秒減少到 5 秒
+
+# 並行上傳設定
+ENABLE_PARALLEL_UPLOAD = False  # 設為 True 啟用並行上傳（實驗性功能）
+MAX_WORKERS = 3  # 並行上傳的最大執行緒數
 
 # 自動確認（測試模式）
 AUTO_CONFIRM = True  # 啟用自動確認進行批次上傳
 # ============================================
+
+# 全域鎖，用於並行上傳時保護狀態檔案
+state_lock = threading.Lock()
 
 
 def load_state() -> dict:
@@ -73,10 +83,11 @@ def load_state() -> dict:
 
 
 def save_state(state: dict):
-    """儲存已上傳的 PDF 記錄"""
-    os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
-    with open(STATE_FILE, 'w', encoding='utf-8') as f:
-        json.dump(state, indent=2, ensure_ascii=False, fp=f)
+    """儲存已上傳的 PDF 記錄（執行緒安全版本）"""
+    with state_lock:
+        os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
+        with open(STATE_FILE, 'w', encoding='utf-8') as f:
+            json.dump(state, indent=2, ensure_ascii=False, fp=f)
 
 
 def get_drive_service():
@@ -265,10 +276,46 @@ def upload_to_geobingan(pdf_content: bytes, file_name: str, project_code: str) -
         return None
 
 
+def process_single_pdf(service, pdf: Dict, state: dict, idx: int, total: int) -> Dict:
+    """
+    處理單個 PDF 的下載和上傳（可用於並行處理）
+
+    Returns:
+        Dict with keys: success (bool), pdf (Dict), result (Optional[dict])
+    """
+    print(f"\n[{idx}/{total}] 處理: {pdf['folder_name']}/{pdf['name']}")
+
+    # 下載
+    pdf_content = download_pdf(service, pdf['id'], pdf['name'])
+    if not pdf_content:
+        return {'success': False, 'pdf': pdf, 'result': None, 'error': 'download_failed'}
+
+    # 上傳
+    result = upload_to_geobingan(pdf_content, pdf['name'], pdf['folder_name'])
+
+    if result:
+        unique_id = f"{pdf['folder_name']}/{pdf['name']}"
+        with state_lock:
+            state['uploaded_files'].append(unique_id)
+            save_state(state)
+        return {'success': True, 'pdf': pdf, 'result': result}
+    else:
+        with state_lock:
+            state['errors'].append({
+                'folder': pdf['folder_name'],
+                'file': pdf['name'],
+                'file_id': pdf['id']
+            })
+            save_state(state)
+        return {'success': False, 'pdf': pdf, 'result': None, 'error': 'upload_failed'}
+
+
 def main():
     """主程式"""
     print("\n" + "=" * 60)
-    print("🚀 上傳最新 5 筆 PDF 到 geoBingAn（測試版）")
+    print("🚀 上傳最新 5 筆 PDF 到 geoBingAn（效能優化版）")
+    if ENABLE_PARALLEL_UPLOAD:
+        print(f"   ⚡ 並行上傳模式（{MAX_WORKERS} 執行緒）")
     print("=" * 60)
 
     # 初始化
@@ -354,36 +401,42 @@ def main():
     success_count = 0
     error_count = 0
 
-    for idx, pdf in enumerate(pdfs_to_upload, 1):
-        print(f"\n[{idx}/{len(pdfs_to_upload)}] 處理: {pdf['folder_name']}/{pdf['name']}")
+    if ENABLE_PARALLEL_UPLOAD:
+        # 並行上傳模式
+        print(f"⚡ 使用並行上傳（{MAX_WORKERS} 執行緒）")
 
-        # 下載
-        pdf_content = download_pdf(service, pdf['id'], pdf['name'])
-        if not pdf_content:
-            error_count += 1
-            continue
+        with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+            # 提交所有任務
+            future_to_pdf = {
+                executor.submit(process_single_pdf, service, pdf, state, idx, len(pdfs_to_upload)): pdf
+                for idx, pdf in enumerate(pdfs_to_upload, 1)
+            }
 
-        # 上傳
-        result = upload_to_geobingan(pdf_content, pdf['name'], pdf['folder_name'])
+            # 處理完成的任務
+            for future in as_completed(future_to_pdf):
+                result = future.result()
+                if result['success']:
+                    success_count += 1
+                else:
+                    error_count += 1
 
-        if result:
-            success_count += 1
-            unique_id = f"{pdf['folder_name']}/{pdf['name']}"
-            state['uploaded_files'].append(unique_id)
-            save_state(state)
-        else:
-            error_count += 1
-            state['errors'].append({
-                'folder': pdf['folder_name'],
-                'file': pdf['name'],
-                'file_id': pdf['id']
-            })
-            save_state(state)
+                # 速率控制：每個任務完成後稍作延遲
+                time.sleep(DELAY_BETWEEN_UPLOADS / MAX_WORKERS)
 
-        # 速率控制：等待避免觸發 API 限制（除了最後一個）
-        if idx < len(pdfs_to_upload):
-            print(f"  ⏳ 等待 {DELAY_BETWEEN_UPLOADS} 秒（避免 API 速率限制）...")
-            time.sleep(DELAY_BETWEEN_UPLOADS)
+    else:
+        # 序列上傳模式（原有邏輯）
+        for idx, pdf in enumerate(pdfs_to_upload, 1):
+            result = process_single_pdf(service, pdf, state, idx, len(pdfs_to_upload))
+
+            if result['success']:
+                success_count += 1
+            else:
+                error_count += 1
+
+            # 速率控制：等待避免觸發 API 限制（除了最後一個）
+            if idx < len(pdfs_to_upload):
+                print(f"  ⏳ 等待 {DELAY_BETWEEN_UPLOADS} 秒（避免 API 速率限制）...")
+                time.sleep(DELAY_BETWEEN_UPLOADS)
 
     # 最終統計
     print("\n" + "=" * 60)
