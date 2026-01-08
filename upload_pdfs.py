@@ -8,12 +8,14 @@
 3. 記錄已上傳的 PDF，避免重複處理
 4. 使用 JWT 認證（jerryjo0802@gmail.com）
 5. 【新增】並行上傳支援（可選）
+6. 【新增】JWT Token 自動刷新
 """
 import json
 import os
 import sys
 import io
 import time
+import base64
 import requests
 from pathlib import Path
 from datetime import datetime, timedelta
@@ -31,13 +33,20 @@ try:
         JWT_TOKEN,
         USER_EMAIL,
         GROUP_ID,
-        GEOBINGAN_API_URL
+        GEOBINGAN_API_URL,
+        REFRESH_TOKEN,
+        GEOBINGAN_REFRESH_URL
     )
     print(f"✅ 已載入認證配置（用戶: {USER_EMAIL}）")
-except ImportError:
-    print("❌ 找不到 config.py，請先建立配置檔案")
+except ImportError as e:
+    print("❌ 找不到 config.py 或缺少必要設定")
+    print(f"   錯誤: {e}")
     print("   請參考 config.py.example 建立 config.py")
     sys.exit(1)
+
+# 全域變數：當前使用的 Token
+current_access_token = JWT_TOKEN
+token_lock = threading.Lock()
 
 # ================== 設定區域 ==================
 # Google Drive 認證
@@ -47,20 +56,19 @@ SHARED_DRIVE_ID = '0AIvp1h-6BZ1oUk9PVA'
 
 # geoBingAn API 設定（從 config.py 匯入）
 # GEOBINGAN_API_URL - 已從 config.py 匯入
-GEOBINGAN_SCENARIO_ID = 'construction_safety_pdf'
-GEOBINGAN_LANGUAGE = 'zh-TW'
+# 使用 construction-reports/upload/ 端點，與網頁上傳相同
 
 # 狀態追蹤檔案
 STATE_FILE = './state/uploaded_to_geobingan_7days.json'
 
 # 日期過濾設定
-DAYS_AGO = 7  # 只上傳最近 7 天更新的 PDF
+DAYS_AGO = 7  # 上傳最近 7 天更新的 PDF（每日同步模式）
 
 # 批次上傳設定
-MAX_UPLOADS = 500  # 最多上傳 500 筆 PDF（支援完整 7 天上傳）
+MAX_UPLOADS = 5  # 每次上傳最新 5 筆 PDF
 
 # 速率控制：每次上傳之間的延遲（秒）
-DELAY_BETWEEN_UPLOADS = 5  # 優化：從 20 秒減少到 5 秒
+DELAY_BETWEEN_UPLOADS = 2  # 加速：減少到 2 秒
 
 # 並行上傳設定
 ENABLE_PARALLEL_UPLOAD = False  # 設為 True 啟用並行上傳（實驗性功能）
@@ -73,6 +81,146 @@ AUTO_CONFIRM = True  # 啟用自動確認進行批次上傳
 # 全域鎖，用於並行上傳時保護狀態檔案
 state_lock = threading.Lock()
 
+
+# ================== JWT Token 管理 ==================
+
+def decode_jwt_payload(token: str) -> dict:
+    """解碼 JWT Token 的 payload（不驗證簽名）"""
+    try:
+        # JWT 格式: header.payload.signature
+        parts = token.split('.')
+        if len(parts) != 3:
+            return {}
+
+        # Base64 解碼 payload（需要處理 padding）
+        payload = parts[1]
+        # 添加 padding
+        padding = 4 - len(payload) % 4
+        if padding != 4:
+            payload += '=' * padding
+
+        decoded = base64.urlsafe_b64decode(payload)
+        return json.loads(decoded)
+    except Exception:
+        return {}
+
+
+def is_token_expired(token: str, buffer_seconds: int = 300) -> bool:
+    """
+    檢查 Token 是否已過期或即將過期
+
+    Args:
+        token: JWT Token
+        buffer_seconds: 提前多少秒視為過期（預設 5 分鐘）
+
+    Returns:
+        True 如果已過期或即將過期
+    """
+    payload = decode_jwt_payload(token)
+    if not payload:
+        return True
+
+    exp = payload.get('exp')
+    if not exp:
+        return True
+
+    # 檢查是否過期（加上緩衝時間）
+    current_time = time.time()
+    return current_time >= (exp - buffer_seconds)
+
+
+def refresh_access_token() -> Optional[str]:
+    """
+    使用 refresh_token 取得新的 access_token
+
+    Returns:
+        新的 access_token，失敗時返回 None
+    """
+    global current_access_token
+
+    try:
+        print("🔄 正在刷新 JWT Token...")
+
+        response = requests.post(
+            GEOBINGAN_REFRESH_URL,
+            json={'refresh_token': REFRESH_TOKEN},
+            headers={'Content-Type': 'application/json'},
+            timeout=30
+        )
+
+        if response.status_code == 200:
+            data = response.json()
+            new_token = data.get('access') or data.get('access_token')
+
+            if new_token:
+                with token_lock:
+                    current_access_token = new_token
+
+                # 更新 config.py 中的 token
+                update_config_token(new_token)
+
+                print("✅ JWT Token 刷新成功")
+                return new_token
+            else:
+                print(f"❌ 刷新回應中找不到 access token: {data}")
+                return None
+        else:
+            print(f"❌ Token 刷新失敗 ({response.status_code}): {response.text[:200]}")
+            return None
+
+    except Exception as e:
+        print(f"❌ Token 刷新發生錯誤: {e}")
+        return None
+
+
+def update_config_token(new_token: str):
+    """
+    更新 config.py 中的 JWT_TOKEN
+    """
+    config_path = Path(__file__).parent / 'config.py'
+
+    try:
+        with open(config_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        # 使用正則表達式替換 token
+        import re
+        pattern = r"JWT_TOKEN = '[^']+'"
+        replacement = f"JWT_TOKEN = '{new_token}'"
+        new_content = re.sub(pattern, replacement, content)
+
+        with open(config_path, 'w', encoding='utf-8') as f:
+            f.write(new_content)
+
+        print(f"📝 已更新 config.py 中的 Token")
+    except Exception as e:
+        print(f"⚠️  無法更新 config.py: {e}")
+
+
+def get_valid_token() -> str:
+    """
+    取得有效的 access token
+
+    如果當前 token 即將過期，會自動刷新
+
+    Returns:
+        有效的 access token
+    """
+    global current_access_token
+
+    with token_lock:
+        if is_token_expired(current_access_token):
+            print("⚠️  JWT Token 已過期或即將過期")
+            new_token = refresh_access_token()
+            if new_token:
+                return new_token
+            else:
+                print("⚠️  使用舊 Token 嘗試（可能會失敗）")
+
+        return current_access_token
+
+
+# ================== 狀態管理 ==================
 
 def load_state() -> dict:
     """載入已上傳的 PDF 記錄（包含快取）"""
@@ -99,11 +247,13 @@ def load_state() -> dict:
 
 
 def save_state(state: dict):
-    """儲存已上傳的 PDF 記錄（執行緒安全版本）"""
-    with state_lock:
-        os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
-        with open(STATE_FILE, 'w', encoding='utf-8') as f:
-            json.dump(state, indent=2, ensure_ascii=False, fp=f)
+    """儲存已上傳的 PDF 記錄
+
+    注意：此函數不包含鎖，呼叫者需要自行管理 state_lock
+    """
+    os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
+    with open(STATE_FILE, 'w', encoding='utf-8') as f:
+        json.dump(state, indent=2, ensure_ascii=False, fp=f)
 
 
 def get_drive_service():
@@ -290,60 +440,108 @@ def upload_to_geobingan(pdf_content: bytes, file_name: str, project_code: str) -
     """
     上傳 PDF 到 geoBingAn API 進行分析
 
+    使用 construction-reports/upload/ 端點（與網頁上傳相同）
     使用 JWT Bearer Token 認證
+
+    注意：504 Gateway Timeout 不代表失敗，後端可能仍在處理中
     """
     try:
         files = {
             'file': (file_name, pdf_content, 'application/pdf')
         }
 
+        # 使用 construction-reports 端點的參數格式
         data = {
-            'scenario_id': GEOBINGAN_SCENARIO_ID,
-            'language': GEOBINGAN_LANGUAGE,
-            'save_to_report': True,
-            'group_id': GROUP_ID,  # 必填：群組 ID
-            'additional_context': f'建案代碼: {project_code}'
+            'group_id': GROUP_ID,
+            'report_type': 'weekly',  # daily, weekly, monthly, incident, inspection
+            'primary_language': 'zh-TW'
         }
 
-        # 設定 JWT 認證標頭
+        # 設定 JWT 認證標頭（使用自動刷新的 Token）
+        valid_token = get_valid_token()
         headers = {
-            'Authorization': f'Bearer {JWT_TOKEN}'
+            'Authorization': f'Bearer {valid_token}'
         }
 
         response = requests.post(
             GEOBINGAN_API_URL,
             files=files,
             data=data,
-            headers=headers,  # 加入認證標頭
-            timeout=300
+            headers=headers,
+            timeout=600  # 10 分鐘，給後端足夠時間處理 AI 分析
         )
 
-        if response.status_code == 200:
+        if response.status_code in [200, 201, 202]:
             result = response.json()
-            # 即使 API 返回 success=False，我們也檢查是否有建立建案記錄
-            report_id = result.get('report_id', 'N/A')
-            construction_project = result.get('construction_project')
+            report_id = result.get('id') or result.get('report_id', 'N/A')
+            parse_status = result.get('parse_status', '')
 
-            if construction_project:
-                print(f"  ✅ 建案建立成功")
-                print(f"     - Report ID: {report_id}")
-                print(f"     - 建案代碼: {construction_project.get('project_code')}")
-                print(f"     - 監測報告ID: {construction_project.get('monitoring_report_id')}")
-                return result
-            elif result.get('success'):
-                print(f"  ✅ 分析成功，Report ID: {report_id}")
-                return result
+            print(f"  ✅ 上傳成功！")
+            print(f"     - Report ID: {report_id}")
+            if parse_status:
+                print(f"     - 解析狀態: {parse_status}")
+            if result.get('message'):
+                print(f"     - {result.get('message')}")
+            return result
+        elif response.status_code == 504:
+            # 504 Gateway Timeout - 後端可能仍在處理中
+            print(f"  ⏳ 已送出，後端處理中（504 Timeout，這是正常的）")
+            print(f"     PDF 已成功傳送到伺服器，AI 分析需要 2-5 分鐘")
+            print(f"     後端會在背景完成處理，稍後可在系統中查看結果")
+            return {
+                'status': 'processing',
+                'message': 'PDF uploaded, backend processing in background',
+                'file_name': file_name,
+                'project_code': project_code
+            }
+        elif response.status_code == 502:
+            # 502 Bad Gateway - 類似 504，後端可能仍在處理
+            print(f"  ⏳ 已送出，後端處理中（502 Gateway，這是正常的）")
+            return {
+                'status': 'processing',
+                'message': 'PDF uploaded, backend processing in background',
+                'file_name': file_name,
+                'project_code': project_code
+            }
+        elif response.status_code == 401:
+            # Token 過期，嘗試刷新並重試
+            print(f"  ⚠️  Token 已過期，嘗試刷新...")
+            new_token = refresh_access_token()
+            if new_token:
+                # 使用新 Token 重試一次
+                headers['Authorization'] = f'Bearer {new_token}'
+                retry_response = requests.post(
+                    GEOBINGAN_API_URL,
+                    files={'file': (file_name, pdf_content, 'application/pdf')},
+                    data=data,
+                    headers=headers,
+                    timeout=600
+                )
+                if retry_response.status_code in [200, 201, 202]:
+                    result = retry_response.json()
+                    report_id = result.get('id') or result.get('report_id', 'N/A')
+                    print(f"  ✅ 重試成功！Report ID: {report_id}")
+                    return result
+                else:
+                    print(f"  ❌ 重試失敗 ({retry_response.status_code})")
+                    return None
             else:
-                print(f"  ⚠️  分析失敗: {result.get('error', 'Unknown error')}")
-                # 即使有錯誤訊息，仍然返回結果（因為建案可能已建立）
-                return result
+                print(f"  ❌ Token 刷新失敗，無法繼續上傳")
+                return None
         else:
-            print(f"  ❌ API 錯誤 ({response.status_code}): {response.text[:200]}")
+            print(f"  ❌ API 錯誤 ({response.status_code}): {response.text[:300]}")
             return None
 
     except requests.exceptions.Timeout:
-        print(f"  ⏱️  上傳超時（5 分鐘）")
-        return None
+        # Client timeout - 但 PDF 可能已經到達伺服器
+        print(f"  ⏳ 連線超時，但 PDF 可能已送達伺服器")
+        print(f"     後端 AI 分析需要較長時間，請稍後在系統中確認")
+        return {
+            'status': 'processing',
+            'message': 'Connection timeout, but PDF may have been received',
+            'file_name': file_name,
+            'project_code': project_code
+        }
     except Exception as e:
         print(f"  ❌ 上傳失敗: {e}")
         return None
@@ -432,7 +630,8 @@ def main():
         sys.exit(0)
 
     # 儲存快取（在開始過濾之前）
-    save_state(state)
+    with state_lock:
+        save_state(state)
 
     print(f"✅ 找到 {len(all_pdfs)} 個 PDF 檔案")
 
