@@ -2,33 +2,25 @@
 
 自動從台北市政府建管處同步建案 PDF，並上傳到 geoBingAn Backend API 建立監測報告。
 
-## 📊 最新測試結果（2026-01-05）
+## 📊 最新測試結果（2026-01-09）
 
-**完整流程測試 #2：** ✅ 通過
+**上傳測試：** ✅ 通過
 
-| 測試項目 | 狀態 | 成功率 | 耗時 |
-|---------|------|--------|------|
-| sync_permits.py | ✅ 成功 | 100% (6/6 新 PDF) | ~6 小時 |
-| upload_pdfs.py | ✅ 成功 | 40% (4/10 Reports) | ~18 分鐘 |
-| 驗證結果 | ✅ 完成 | Report 建立成功 | - |
+| 測試項目 | 狀態 | 成功率 |
+|---------|------|--------|
+| upload_pdfs.py | ✅ 成功 | 100% (16/16 PDF) |
+| JWT 自動刷新 | ✅ 正常 | Token 過期自動更新 |
+| 後端 AI 解析 | ✅ 完成 | Gemini 2.5 Pro |
 
-**測試發現：**
-- ✅ 成功同步 6 個新 PDF 到 Google Drive
-- ✅ 成功上傳 10 個 PDF 並建立 4 個 Reports
-- ✅ 長時間執行穩定（6 小時無錯誤）
-- ✅ 斷點續傳功能正常
-- ⚠️ sync_permits.py 需要較長執行時間（預期行為）
-- ⚠️ 6 個簡化週報因格式問題分析失敗（後端 AI prompt 需優化）
+**功能特色：**
+- ✅ JWT Token 自動刷新（過期前 5 分鐘自動更新）
+- ✅ 死鎖問題已修復（threading.Lock 優化）
+- ✅ 智慧快取機制（99.5% 效能提升）
+- ✅ 支援每日 cron job 自動執行
 
-**兩次測試總結：**
-- 同步成功率: 100% (10/10 新 PDF)
-- 上傳成功率: 55% (11/20 Reports)
-- 工具穩定性: ⭐⭐⭐⭐⭐ (5/5)
-- 生產就緒度: ✅ 可投入使用
-
-詳見測試報告：
-- [第二次測試報告 (2026-01-05)](logs/test_report_20260105.md) 📊 最新
-- [第一次測試報告 (2026-01-02)](logs/test_report_20260102.md)
+詳見文件：
+- [問題排解指南](docs/troubleshooting.md) 🔧 常見問題解決方案
+- [效能優化報告](docs/cache_optimization_report.md)
 
 ---
 
@@ -72,7 +64,17 @@ pip install -r requirements.txt
 複製範例並填入你的認證資訊：
 ```bash
 cp config.py.example config.py
-# 編輯 config.py 填入 JWT_TOKEN, USER_EMAIL, GROUP_ID
+# 編輯 config.py 填入以下資訊
+```
+
+**config.py 必要設定：**
+```python
+JWT_TOKEN = 'your_access_token'           # Access Token（會自動刷新）
+REFRESH_TOKEN = 'your_refresh_token'      # Refresh Token（有效期 7 天）
+USER_EMAIL = 'your_email@example.com'
+GROUP_ID = 'your-group-id'
+GEOBINGAN_API_URL = 'https://riskmap.today/api/reports/construction-reports/upload/'
+GEOBINGAN_REFRESH_URL = 'https://riskmap.today/api/auth/auth/refresh_token/'
 ```
 
 ### 4. 執行
@@ -125,16 +127,18 @@ state/sync_permits_progress.json
 **功能：**
 - 掃描 Google Drive 中的建案 PDF
 - 過濾最近 7 天更新的檔案
-- 呼叫 Backend API `/api/reports/upload-file/` 上傳 PDF
-- 自動建立 Report 和 ConstructionProject（由後端處理）
+- 呼叫 Backend API `/api/reports/construction-reports/upload/` 上傳 PDF
+- 自動建立 Report（由後端 Gemini 2.5 Pro 處理）
+- JWT Token 自動刷新（過期前 5 分鐘）
+- 智慧快取機制避免重複掃描
 - 避免重複上傳
 
 **設定：**
 ```python
 DAYS_AGO = 7                    # 只上傳最近 7 天的 PDF
-MAX_UPLOADS = 10                # 單次最多上傳 10 個
-DELAY_BETWEEN_UPLOADS = 20      # 上傳間隔 20 秒
-AUTO_CONFIRM = True             # 自動確認（測試模式）
+MAX_UPLOADS = 5                 # 單次最多上傳 5 個
+DELAY_BETWEEN_UPLOADS = 2       # 上傳間隔 2 秒
+AUTO_CONFIRM = True             # 自動確認模式
 ```
 
 **狀態追蹤：**
@@ -144,12 +148,11 @@ state/uploaded_to_geobingan_7days.json
 
 **API 呼叫：**
 ```bash
-POST /api/reports/upload-file/
+POST /api/reports/construction-reports/upload/
+Headers:
+  - Authorization: Bearer <JWT_TOKEN>
+Body (multipart/form-data):
   - file: PDF 檔案
-  - scenario_id: "construction_safety_pdf"
-  - language: "zh-TW"
-  - save_to_report: true
-  - additional_context: "建案代碼: XXX"
   - group_id: "user-group-id"
 ```
 
@@ -275,6 +278,17 @@ rm state/*.json
 
 ## 🔧 故障排除
 
+詳細問題排解請參考：**[docs/troubleshooting.md](docs/troubleshooting.md)**
+
+### 常見問題快速解答
+
+| 問題 | 解決方案 |
+|------|----------|
+| 腳本卡住不動 | 死鎖問題，已在 v2.1.0 修復 |
+| 401 Unauthorized | JWT Token 過期，會自動刷新 |
+| 500 Server Error | 檢查 API 端點是否正確 |
+| 504 Timeout | 大型 PDF，增加 timeout 設定 |
+
 ### 1. Google Drive 認證失敗
 
 ```
@@ -290,27 +304,23 @@ ls -la credentials.json
 python3 -m json.tool credentials.json
 ```
 
-### 2. Backend API 連線失敗
+### 2. JWT Token 過期
 
 ```
-❌ API 錯誤 (Connection refused)
+❌ 401 Unauthorized - Token has expired
 ```
 
 **解決：**
-```bash
-# 確認 Backend 運行中
-curl https://riskmap.tw/api/health/
-
-# 檢查 config.py 中的 API URL
-cat config.py
-```
+- v2.1.0 已內建自動刷新機制
+- 確認 `config.py` 中有設定 `REFRESH_TOKEN`
+- Refresh Token 有效期 7 天，過期需重新登入取得
 
 ### 3. PDF 上傳失敗
 
 可能原因：
 - API 速率限制 → 增加 `DELAY_BETWEEN_UPLOADS`
 - PDF 格式不支援 → 檢查 Backend 日誌
-- 認證過期 → 更新 `JWT_TOKEN`
+- 認證過期 → Token 會自動刷新
 
 ---
 
@@ -372,6 +382,13 @@ Service Account 只需要：
 
 ## 📝 版本歷史
 
+### v2.1.0 (2026-01-09)
+- ✅ 新增 JWT Token 自動刷新機制
+- ✅ 修復死鎖問題（threading.Lock 優化）
+- ✅ 改用正確的 API 端點 `/api/reports/construction-reports/upload/`
+- ✅ 新增問題排解指南 `docs/troubleshooting.md`
+- ⚡ 上傳間隔優化：20秒 → 2秒
+
 ### v2.0.0 (2026-01-02)
 - ♻️ 簡化工具定位：只負責同步和上傳
 - ♻️ 移除附件補充功能（由後端處理）
@@ -416,4 +433,4 @@ MIT License
 ---
 
 **維護者**: geoBingAn Team
-**最後更新**: 2026-01-02
+**最後更新**: 2026-01-09
