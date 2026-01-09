@@ -62,7 +62,7 @@ SHARED_DRIVE_ID = '0AIvp1h-6BZ1oUk9PVA'
 STATE_FILE = './state/uploaded_to_geobingan_7days.json'
 
 # 日期過濾設定
-DAYS_AGO = 7  # 上傳最近 7 天更新的 PDF（每日同步模式）
+DAYS_AGO = 7  # 上傳最近 7 天更新的 PDF
 
 # 批次上傳設定
 MAX_UPLOADS = 5  # 每次上傳最新 5 筆 PDF
@@ -446,6 +446,11 @@ def upload_to_geobingan(pdf_content: bytes, file_name: str, project_code: str) -
     注意：504 Gateway Timeout 不代表失敗，後端可能仍在處理中
     """
     try:
+        # 確保檔名有 .pdf 副檔名（某些 Google Drive 檔案沒有副檔名）
+        if not file_name.lower().endswith('.pdf'):
+            file_name = file_name + '.pdf'
+            print(f"  ℹ️  自動加上 .pdf 副檔名: {file_name}")
+
         files = {
             'file': (file_name, pdf_content, 'application/pdf')
         }
