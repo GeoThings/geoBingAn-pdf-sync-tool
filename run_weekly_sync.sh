@@ -6,6 +6,7 @@
 # 執行順序：
 # 1. sync_permits.py - 從台北市政府網站同步最新建案 PDF 到 Google Drive
 # 2. upload_pdfs.py - 上傳最近 7 天更新的 PDF 到 geoBingAn Backend
+# 3. generate_permit_tracking_report.py - 生成建照監測追蹤報告
 #
 
 set -e  # 遇到錯誤立即退出
@@ -30,15 +31,21 @@ source "$SCRIPT_DIR/venv/bin/activate"
 
 # 步驟 1: 同步 PDF 從台北市政府到 Google Drive
 echo "" | tee -a "$LOG_FILE"
-echo "📥 步驟 1/2: 同步 PDF 從台北市政府網站..." | tee -a "$LOG_FILE"
+echo "📥 步驟 1/3: 同步 PDF 從台北市政府網站..." | tee -a "$LOG_FILE"
 echo "----------------------------------------" | tee -a "$LOG_FILE"
 python3 "$SCRIPT_DIR/sync_permits.py" 2>&1 | tee -a "$LOG_FILE"
 
 # 步驟 2: 上傳最近 7 天的 PDF 到 geoBingAn Backend
 echo "" | tee -a "$LOG_FILE"
-echo "📤 步驟 2/2: 上傳最近 7 天的 PDF 到 Backend..." | tee -a "$LOG_FILE"
+echo "📤 步驟 2/3: 上傳最近 7 天的 PDF 到 Backend..." | tee -a "$LOG_FILE"
 echo "----------------------------------------" | tee -a "$LOG_FILE"
 python3 "$SCRIPT_DIR/upload_pdfs.py" 2>&1 | tee -a "$LOG_FILE"
+
+# 步驟 3: 生成建照監測追蹤報告
+echo "" | tee -a "$LOG_FILE"
+echo "📊 步驟 3/3: 生成建照監測追蹤報告..." | tee -a "$LOG_FILE"
+echo "----------------------------------------" | tee -a "$LOG_FILE"
+python3 "$SCRIPT_DIR/generate_permit_tracking_report.py" 2>&1 | tee -a "$LOG_FILE"
 
 # 完成
 echo "" | tee -a "$LOG_FILE"
