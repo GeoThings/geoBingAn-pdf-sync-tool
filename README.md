@@ -79,8 +79,23 @@ GEOBINGAN_REFRESH_URL = 'https://riskmap.today/api/auth/auth/refresh_token/'
 
 ### 4. 執行
 
-#### 手動執行：
+#### 快速執行指令（一行版本）：
 ```bash
+# 完整流程（同步 + 上傳）
+/Users/geothingsmacbookair/Documents/GitHub/geoBingAn-pdf-sync-tool/run_weekly_sync.sh
+
+# 只上傳 PDF（跳過同步）
+cd /Users/geothingsmacbookair/Documents/GitHub/geoBingAn-pdf-sync-tool && source venv/bin/activate && python3 upload_pdfs.py
+
+# 只同步 PDF（從台北市政府）
+cd /Users/geothingsmacbookair/Documents/GitHub/geoBingAn-pdf-sync-tool && source venv/bin/activate && python3 sync_permits.py
+```
+
+#### 手動執行（分步驟）：
+```bash
+cd /Users/geothingsmacbookair/Documents/GitHub/geoBingAn-pdf-sync-tool
+source venv/bin/activate
+
 # 步驟 1: 同步建案 PDF from 台北市政府
 python3 sync_permits.py
 
@@ -91,7 +106,17 @@ python3 upload_pdfs.py
 #### 自動執行（已設定 cron job）：
 ```bash
 # 每週一早上 9:00 自動執行
-./run_weekly_sync.sh
+# 查看排程: crontab -l
+0 9 * * 1 /Users/geothingsmacbookair/Documents/GitHub/geoBingAn-pdf-sync-tool/run_weekly_sync.sh
+```
+
+#### 查看執行日誌：
+```bash
+# 最新日誌
+tail -100 /Users/geothingsmacbookair/Documents/GitHub/geoBingAn-pdf-sync-tool/logs/weekly_sync_*.log
+
+# 即時監控
+tail -f /Users/geothingsmacbookair/Documents/GitHub/geoBingAn-pdf-sync-tool/logs/weekly_sync_*.log
 ```
 
 ---
