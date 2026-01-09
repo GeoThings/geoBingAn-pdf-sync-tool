@@ -9,6 +9,7 @@
 3. [API 端點錯誤](#3-api-端點錯誤)
 4. [HTTP 狀態碼處理](#4-http-狀態碼處理)
 5. [504 Gateway Timeout](#5-504-gateway-timeout)
+6. [PDF 檔案缺少副檔名](#6-pdf-檔案缺少副檔名)
 
 ---
 
@@ -201,6 +202,54 @@ proxy_send_timeout 300;
 
 ---
 
+## 6. PDF 檔案缺少副檔名
+
+### 症狀
+- 上傳回傳 400 Bad Request 錯誤
+- 錯誤訊息：`{"file":["只接受 PDF 或 JSON 檔案"]}`
+- 檔案確實是 PDF（MIME type 正確）但上傳失敗
+
+### 原因
+某些 Google Drive 上的 PDF 檔案沒有 `.pdf` 副檔名。後端 API 根據檔名副檔名判斷檔案類型，因此拒絕上傳。
+
+```
+# 問題檔案範例
+中華電信濱江資料中心監測報告-(1141226)    ← 沒有 .pdf 副檔名
+MIME Type: application/pdf                   ← 實際上是 PDF 檔案
+```
+
+### 解決方案
+腳本已自動處理：上傳時檢查檔名，如果沒有 `.pdf` 副檔名會自動補上。
+
+```python
+# upload_to_geobingan() 函數中
+if not file_name.lower().endswith('.pdf'):
+    file_name = file_name + '.pdf'
+    print(f"  ℹ️  自動加上 .pdf 副檔名: {file_name}")
+```
+
+### 如何檢查 Google Drive 檔案
+```python
+python3 -c "
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+
+# ... 初始化 service ...
+
+file = service.files().get(
+    fileId='FILE_ID',
+    supportsAllDrives=True,
+    fields='name, mimeType, fileExtension'
+).execute()
+
+print(f'檔名: {file.get(\"name\")}')
+print(f'MIME: {file.get(\"mimeType\")}')
+print(f'副檔名: {file.get(\"fileExtension\", \"無\")}')
+"
+```
+
+---
+
 ## 除錯技巧
 
 ### 1. 啟用詳細輸出
@@ -251,6 +300,7 @@ print(response.json())
 
 | 日期 | 問題 | 解決方案 |
 |------|------|----------|
+| 2026-01-09 | PDF 缺少副檔名 | 自動補上 .pdf 副檔名 |
 | 2026-01-09 | 死鎖問題 | 移除 save_state() 內部鎖 |
 | 2026-01-09 | JWT 過期 | 實作自動刷新機制 |
 | 2026-01-08 | API 端點錯誤 | 改用 construction-reports/upload/ |
