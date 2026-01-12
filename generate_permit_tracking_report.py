@@ -195,9 +195,42 @@ def scan_google_drive(service) -> Dict[str, dict]:
     return permit_folders
 
 
+def load_filename_to_permit_mapping() -> Dict[str, str]:
+    """從上傳記錄建立檔名到建照的對應"""
+    mapping = {}
+    upload_state_file = './state/uploaded_to_geobingan_7days.json'
+
+    try:
+        with open(upload_state_file, 'r', encoding='utf-8') as f:
+            state = json.load(f)
+
+        uploaded_files = state.get('uploaded_files', [])
+        permit_pattern = r'(\d{2,3}建字第\d{3,5}號)'
+
+        for filepath in uploaded_files:
+            match = re.search(permit_pattern, filepath)
+            if match:
+                permit = match.group(1)
+                # 取得檔名（可能在子資料夾中）
+                filename = filepath.split('/')[-1] if '/' in filepath else filepath
+                mapping[filename] = permit
+
+                # 也處理加了 .pdf 的情況
+                if not filename.lower().endswith('.pdf'):
+                    mapping[filename + '.pdf'] = permit
+    except Exception as e:
+        print(f"  載入上傳記錄時發生錯誤: {e}")
+
+    return mapping
+
+
 def fetch_api_reports() -> Dict[str, List[dict]]:
     """從 geoBingAn API 取得所有報告"""
     print("\n📡 從 geoBingAn API 取得報告資料...")
+
+    # 先載入檔名對應
+    filename_to_permit = load_filename_to_permit_mapping()
+    print(f"  已載入 {len(filename_to_permit)} 個檔名對應")
 
     token = get_valid_token()
     headers = {'Authorization': f'Bearer {token}'}
@@ -245,19 +278,36 @@ def fetch_api_reports() -> Dict[str, List[dict]]:
 
     # 按建照號碼分組
     permit_reports = {}
+    matched = 0
+    unmatched = 0
+
     for report in all_reports:
-        filename = report.get('original_filename', '')
+        # 嘗試多個欄位
+        filename = report.get('file_name', '') or report.get('original_filename', '')
+
+        # 方法 1: 直接從檔名找建照號
         permit_match = re.search(r'(\d{2,3}建字第\d{3,5}號)', filename)
+        permit = None
+
         if permit_match:
             permit = permit_match.group(1)
+        else:
+            # 方法 2: 從上傳記錄對應
+            permit = filename_to_permit.get(filename)
+
+        if permit:
+            matched += 1
             if permit not in permit_reports:
                 permit_reports[permit] = []
             permit_reports[permit].append({
                 'filename': filename,
                 'created_at': report.get('created_at', ''),
-                'status': report.get('status', '')
+                'status': report.get('parse_status', report.get('status', ''))
             })
+        else:
+            unmatched += 1
 
+    print(f"  對應成功: {matched}, 未對應: {unmatched}")
     return permit_reports
 
 
