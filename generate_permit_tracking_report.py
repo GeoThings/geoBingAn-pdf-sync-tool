@@ -198,28 +198,47 @@ def scan_google_drive(service) -> Dict[str, dict]:
 def load_filename_to_permit_mapping() -> Dict[str, str]:
     """從上傳記錄建立檔名到建照的對應"""
     mapping = {}
-    upload_state_file = './state/uploaded_to_geobingan_7days.json'
+    permit_pattern = r'(\d{2,3}建字第\d{3,5}號)'
 
-    try:
-        with open(upload_state_file, 'r', encoding='utf-8') as f:
-            state = json.load(f)
+    # 優先使用永久歷史記錄
+    history_file = './state/upload_history_all.json'
+    state_file = './state/uploaded_to_geobingan_7days.json'
 
-        uploaded_files = state.get('uploaded_files', [])
-        permit_pattern = r'(\d{2,3}建字第\d{3,5}號)'
+    all_files = []
 
-        for filepath in uploaded_files:
-            match = re.search(permit_pattern, filepath)
-            if match:
-                permit = match.group(1)
-                # 取得檔名（可能在子資料夾中）
-                filename = filepath.split('/')[-1] if '/' in filepath else filepath
-                mapping[filename] = permit
+    # 載入永久歷史記錄
+    if os.path.exists(history_file):
+        try:
+            with open(history_file, 'r', encoding='utf-8') as f:
+                history = json.load(f)
+            all_files.extend(history.get('uploaded_files', []))
+        except Exception as e:
+            print(f"  載入永久歷史記錄時發生錯誤: {e}")
 
-                # 也處理加了 .pdf 的情況
-                if not filename.lower().endswith('.pdf'):
-                    mapping[filename + '.pdf'] = permit
-    except Exception as e:
-        print(f"  載入上傳記錄時發生錯誤: {e}")
+    # 也載入 7 天記錄（補充）
+    if os.path.exists(state_file):
+        try:
+            with open(state_file, 'r', encoding='utf-8') as f:
+                state = json.load(f)
+            for f in state.get('uploaded_files', []):
+                if f not in all_files:
+                    all_files.append(f)
+        except Exception:
+            pass
+
+    print(f"  載入 {len(all_files)} 個上傳記錄")
+
+    for filepath in all_files:
+        match = re.search(permit_pattern, filepath)
+        if match:
+            permit = match.group(1)
+            # 取得檔名（可能在子資料夾中）
+            filename = filepath.split('/')[-1] if '/' in filepath else filepath
+            mapping[filename] = permit
+
+            # 也處理加了 .pdf 的情況
+            if not filename.lower().endswith('.pdf'):
+                mapping[filename + '.pdf'] = permit
 
     return mapping
 

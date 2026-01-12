@@ -60,12 +60,13 @@ SHARED_DRIVE_ID = '0AIvp1h-6BZ1oUk9PVA'
 
 # 狀態追蹤檔案
 STATE_FILE = './state/uploaded_to_geobingan_7days.json'
+HISTORY_FILE = './state/upload_history_all.json'  # 永久歷史記錄
 
 # 日期過濾設定
 DAYS_AGO = 7  # 上傳最近 7 天更新的 PDF
 
 # 批次上傳設定
-MAX_UPLOADS = 5  # 每次上傳最新 5 筆 PDF
+MAX_UPLOADS = 100  # 每次上傳最新 100 筆 PDF
 
 # 速率控制：每次上傳之間的延遲（秒）
 DELAY_BETWEEN_UPLOADS = 2  # 加速：減少到 2 秒
@@ -221,6 +222,41 @@ def get_valid_token() -> str:
 
 
 # ================== 狀態管理 ==================
+
+def load_history() -> dict:
+    """載入永久上傳歷史記錄"""
+    if os.path.exists(HISTORY_FILE):
+        with open(HISTORY_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    return {
+        'uploaded_files': [],
+        'total_count': 0,
+        'first_upload': None,
+        'last_upload': None
+    }
+
+
+def save_history(history: dict):
+    """儲存永久上傳歷史記錄"""
+    os.makedirs(os.path.dirname(HISTORY_FILE), exist_ok=True)
+    with open(HISTORY_FILE, 'w', encoding='utf-8') as f:
+        json.dump(history, indent=2, ensure_ascii=False, fp=f)
+
+
+def add_to_history(filepath: str):
+    """新增檔案到永久歷史記錄"""
+    history = load_history()
+
+    if filepath not in history['uploaded_files']:
+        history['uploaded_files'].append(filepath)
+        history['total_count'] = len(history['uploaded_files'])
+        history['last_upload'] = datetime.now().isoformat()
+
+        if not history['first_upload']:
+            history['first_upload'] = history['last_upload']
+
+        save_history(history)
+
 
 def load_state() -> dict:
     """載入已上傳的 PDF 記錄（包含快取）"""
@@ -574,6 +610,8 @@ def process_single_pdf(service, pdf: Dict, state: dict, idx: int, total: int) ->
         with state_lock:
             state['uploaded_files'].append(unique_id)
             save_state(state)
+        # 同時儲存到永久歷史記錄
+        add_to_history(unique_id)
         return {'success': True, 'pdf': pdf, 'result': result}
     else:
         with state_lock:
