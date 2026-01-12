@@ -35,6 +35,24 @@ echo "📥 步驟 1/3: 同步 PDF 從台北市政府網站..." | tee -a "$LOG_FI
 echo "----------------------------------------" | tee -a "$LOG_FILE"
 python3 "$SCRIPT_DIR/sync_permits.py" 2>&1 | tee -a "$LOG_FILE"
 
+# 清除 PDF 快取（確保偵測到新同步的檔案）
+echo "" | tee -a "$LOG_FILE"
+echo "🗑️  清除 PDF 快取..." | tee -a "$LOG_FILE"
+python3 -c "
+import json
+state_file = './state/uploaded_to_geobingan_7days.json'
+try:
+    with open(state_file, 'r') as f:
+        state = json.load(f)
+    if 'cache' in state:
+        state['cache'] = {'folders': [], 'pdfs': [], 'last_scan': None}
+        with open(state_file, 'w') as f:
+            json.dump(state, f, indent=2, ensure_ascii=False)
+        print('✅ 快取已清除')
+except Exception as e:
+    print(f'⚠️ 清除快取時發生錯誤: {e}')
+" 2>&1 | tee -a "$LOG_FILE"
+
 # 步驟 2: 上傳最近 7 天的 PDF 到 geoBingAn Backend
 echo "" | tee -a "$LOG_FILE"
 echo "📤 步驟 2/3: 上傳最近 7 天的 PDF 到 Backend..." | tee -a "$LOG_FILE"
