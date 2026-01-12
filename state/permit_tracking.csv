@@ -1,458 +1,462 @@
-﻿序號,建照字號,雲端服務,Drive PDF,系統 PDF,已解析,覆蓋率,最新報告,距今天數,狀態,Google Drive
-1,112建字第0087號,Google Drive,319,309,306,96%,2025-12-31,9,in-progress,https://drive.google.com/drive/folders/1wNiB_rJP92xdjKDJQcyDUqfVKioQeg6y
-2,111建字第0188號,Google Drive,256,255,255,99%,2025-12-05,35,in-progress,https://drive.google.com/drive/folders/1AafyQtOTh7z-KSGFzF13c-CPfw94md4d
-3,110建字第0360號,Google Drive,213,212,212,99%,2025-12-29,11,in-progress,https://drive.google.com/drive/folders/1iJKrn8t13nJMQz_2nYW0d6u1EVadXaSy
-4,111建字第0140號,Google Drive,201,201,201,100%,2026-01-05,4,completed,https://drive.google.com/drive/folders/1NRTOQ4xtP0wI5-0E38udGpPrBX4zno0N
-5,110建字第0243號,Google Drive,191,191,191,100%,2025-12-22,18,completed,https://drive.google.com/drive/folders/1NjhrpKa9dE_JxVXiCOMmlNlCweHYCeZq
-6,110建字第0167號,Google Drive,147,142,142,96%,2026-01-05,4,in-progress,https://drive.google.com/drive/folders/1MfeSGz7euR-O9B1t25XMaFh0Lkbjmhq8
-7,110建字第0196號,MEGA,134,134,134,100%,2025-12-31,9,completed,https://drive.google.com/drive/folders/1GG0QJrHWhyEYQ6o6Zheww90DMqS4SHmB
-8,109建字第0262號,Google Drive,174,132,132,75%,2026-01-05,4,in-progress,https://drive.google.com/drive/folders/1TbH3itlHo_9VXgQMP6Y1IhYTxNYWuZXX
-9,110建字第0230號,Google Drive,121,121,121,100%,2025-12-22,18,completed,https://drive.google.com/drive/folders/1N9ot6SQpOzNTAMfpac_GPmS6z61i41gx
-10,109建字第0246號,Google Drive,120,115,115,95%,2026-01-05,4,in-progress,https://drive.google.com/drive/folders/1skf80KfARzBC2rEQm9sCrROAfg40pmI6
-11,110建字第0016號,其他: s05.calm9.com,100,100,100,100%,2025-12-09,31,completed,https://drive.google.com/drive/folders/1z7FwlrREj4bYQP4YhxnbUng-cIaykL-T
-12,111建字第0316號,Google Drive,164,100,100,60%,2025-10-01,100,in-progress,https://drive.google.com/drive/folders/1_p7y8EvoQHfmPX_aA6PweVoUdPvNe_4t
-13,111建字第0129號,Google Drive,99,99,99,100%,2025-12-09,31,completed,https://drive.google.com/drive/folders/15DfWm7cipaXXw3RazysbcZqY7X-7Rxva
-14,111建字第1688號,Google Drive,94,94,81,100%,2025-12-31,9,in-progress,https://drive.google.com/drive/folders/1eDHRWan38_-I4XfBL_6DmjtncumotY77
-15,112建字第0138號,Google Drive,88,88,88,100%,2025-12-16,24,completed,https://drive.google.com/drive/folders/1xdOjfsAOa2Cy2xNmzTt9tb_AEgjGPAdi
-16,111建字第0252號,Google Drive,79,78,65,98%,2025-12-31,9,in-progress,https://drive.google.com/drive/folders/14sEIGmXcF1UzyAQsFWJE-qrTJG-pbCsp
-17,111建字第0111號,Google Drive,70,70,70,100%,2025-12-22,18,completed,https://drive.google.com/drive/folders/1M85VY9uIi78ZW4p8-Bsc2sJpHoJBrM35
-18,111建字第0091號,OneDrive,63,63,60,100%,2025-12-16,24,in-progress,https://drive.google.com/drive/folders/1HmZ20N4Y1y5nDzZO_zzYxGR6X-w9KZqL
-19,111建字第0136號,Google Drive,104,63,63,60%,2025-12-29,11,in-progress,https://drive.google.com/drive/folders/1aKMp8uj-hKTNjuCaSwjJ7OQtzvonyNHC
-20,112建字第0078號,Google Drive,56,56,56,100%,2025-12-08,32,completed,https://drive.google.com/drive/folders/1jmM1dVJutb8yMOC6kbsq4KlR8pzCsEfg
-21,107建字第0091號,Google Drive,55,55,55,100%,2025-12-22,18,completed,https://drive.google.com/drive/folders/1PeR3B89hvC98W2j0M84OUkOmOU2qAC-2
-22,112建字第0062號,SharePoint,53,53,53,100%,2025-12-09,31,completed,https://drive.google.com/drive/folders/1HXY7eBPusE2aczbVdNTYuhEuLZJasTzD
-23,111建字第0249號,Google Drive,52,52,52,100%,2026-01-05,4,completed,https://drive.google.com/drive/folders/1yJZIA5qIjubbtBXrNpkZqI-nUxG7E2jh
-24,112建字第0208號,Google Drive,53,48,48,90%,2026-01-05,4,in-progress,https://drive.google.com/drive/folders/1OPxB3kAmNu6N6TL407niMzn6yvB25K5V
-25,113建字第0008號,Google Drive,49,47,47,95%,2025-12-29,11,in-progress,https://drive.google.com/drive/folders/1LfaLmHMhcvVIyJCfqOWfVNiLnc44O1F1
-26,110建字第0150號,GoFile,48,46,46,95%,2026-01-05,4,in-progress,https://drive.google.com/drive/folders/1NX1-gp-d7pLbSAS6dTP2088qkv7u8CSX
-27,112建字第0238號,Google Drive,50,46,46,92%,2026-01-05,4,in-progress,https://drive.google.com/drive/folders/1pOH670P7feZTY2v3FBykarMV-E0xDCCT
-28,113建字第0026號,Google Drive,46,46,46,100%,2026-01-05,4,completed,https://drive.google.com/drive/folders/1cCrMxw2t_xtcLFsqT637VmW3fBt6Py4g
-29,112建字第0100號,Google Drive,44,43,43,97%,2025-12-22,18,in-progress,https://drive.google.com/drive/folders/1F5K3iLisvL9iokA6DiCz_TH6ciVC87hX
-30,112建字第0218號,Google Drive,69,42,42,60%,2026-01-05,4,in-progress,https://drive.google.com/drive/folders/1NQfeHwZO75qaDFtk6z_wASUygZMOAk_o
-31,113建字第0140號,Google Drive,50,39,39,78%,2026-01-05,4,in-progress,https://drive.google.com/drive/folders/1ZMCEPCGOrFP82-tXilKLmpOQ_6mk8L3f
-32,114建字第0032號,Google Drive,39,39,39,100%,2025-11-04,66,completed,https://drive.google.com/drive/folders/1YD_kF8Anb7XAeaQ9Ummo5oSFUPXkenfA
-33,111建字第0348號,GoFile,36,36,35,100%,2026-01-05,4,in-progress,https://drive.google.com/drive/folders/1aTFkbUS0bi-IzIxdyhXMPZjqdVIsEQTV
-34,110建字第0295號,Google Drive,35,35,35,100%,2026-01-05,4,completed,https://drive.google.com/drive/folders/1Ub6uK2JeQEUkKYjFSTPN0RUSBXnoRkKT
-35,113建字第0218號,Google Drive,33,32,32,96%,2025-12-29,11,in-progress,https://drive.google.com/drive/folders/1m4_3DAUJxBiVTcGYhB7MS7x3v5a7eSTn
-36,113建字第5688號,Google Drive,26,26,26,100%,2026-01-05,4,completed,https://drive.google.com/drive/folders/1dB1YcymqxN0X6pX6C4TQnp3TZ_ij_L4F
-37,110建字第0256號,MEGA,25,25,24,100%,2025-12-22,18,in-progress,https://drive.google.com/drive/folders/1Jq2Lvp7l0biZFfbrMtFXfiR5HKgOysqJ
-38,112建字第0191號,Google Drive,31,25,25,80%,2026-01-05,4,in-progress,https://drive.google.com/drive/folders/1ekfnDCwgzZo3-VA_WMgEUlDJiNWsOsSp
-39,113建字第0038號,Google Drive,48,25,25,52%,2025-11-14,56,in-progress,https://drive.google.com/drive/folders/1xNBTuyMT5dAypjgL6XbAv1Tet5cDxsox
-40,110建字第0377號,Google Drive,48,24,24,50%,2025-12-09,31,in-progress,https://drive.google.com/drive/folders/1gvH1eQgLnBYGbszfco9LxMzxgplC4Eq4
-41,112建字第0040號,Google Drive,44,24,24,54%,2026-01-05,4,in-progress,https://drive.google.com/drive/folders/17v4Lxty_dGk8pYXREZM8DO0rlgQPokmq
-42,113建字第0098號,Google Drive,97,23,23,23%,2025-12-22,18,in-progress,https://drive.google.com/drive/folders/1iAfcsl306xUfzBz7W7y6P8TgGKOTpCu5
-43,112建字第0006號,SharePoint,21,21,21,100%,2026-01-05,4,completed,https://drive.google.com/drive/folders/1fH4uV2xAMxmmUWk6Wv6vAn2U-jCIW6Ml
-44,113建字第8899號,Google Drive,21,20,20,95%,2026-01-05,4,in-progress,https://drive.google.com/drive/folders/1trlWmJsctF2R1ut0EiDillw2pDp6P1H1
-45,113建字第0041號,Google Drive,69,19,19,27%,2025-12-29,11,in-progress,https://drive.google.com/drive/folders/1hPv71jmXlVvOkBwfwMZ67WysarzVtWg5
-46,112建字第0083號,Google Drive,75,14,14,18%,2025-12-22,18,in-progress,https://drive.google.com/drive/folders/1RcwvmJQoBmHyd20dPexYowJhOHdy3Xp_
-47,111建字第0167號,Google Drive,108,13,13,12%,2025-10-27,74,in-progress,https://drive.google.com/drive/folders/1_qLQ_wZ27dlqU_T-Zz5vhH5HWW48MHy0
-48,111建字第0245號,Google Drive,85,13,13,15%,2025-12-22,18,in-progress,https://drive.google.com/drive/folders/1xSwwkRHNVuV6Baw3OWTB7oz5r6UP0LoL
-49,112建字第0116號,Google Drive,43,13,13,30%,2025-10-20,81,in-progress,https://drive.google.com/drive/folders/1tKQscgsFQK8WhQRclrKoqpuonRaMfrWj
-50,113建字第0030號,Google Drive,13,13,13,100%,2026-01-05,4,completed,https://drive.google.com/drive/folders/1STaccfjKJzp3FWMIjjOH45eda3xO-H1C
-51,113建字第8888號,Google Drive,12,12,2,100%,2026-01-05,4,in-progress,https://drive.google.com/drive/folders/1_eGF1eF0yA7RsaRGsSIL1xbpUQkTPwVT
-52,111建字第0083號,Google Drive,18,11,11,61%,2026-01-05,4,in-progress,https://drive.google.com/drive/folders/1DorXtdrsk32PfX3AEgbhl80BjvGHDzBj
-53,111建字第0227號,Google Drive,61,11,11,18%,2025-12-29,11,in-progress,https://drive.google.com/drive/folders/1pk7jI0_KgJvgI4_woxbiwD2bTMNniv1x
-54,112建字第0178號,Google Drive,38,11,11,28%,2025-12-29,11,in-progress,https://drive.google.com/drive/folders/1L0VKcqFKLeqOfB7GYelLxA1TKrYBWA2h
-55,109建字第0272號,Google Drive,80,10,10,12%,2025-10-01,100,in-progress,https://drive.google.com/drive/folders/1Sdc2gVjZcP-qpa5D9h_U7rfXDqujyJTE
-56,109建字第0300號,Google Drive,37,10,10,27%,2025-11-14,56,in-progress,https://drive.google.com/drive/folders/1aQK7hjB_7sDf8pusJjFwi7ffvmk8ctHu
-57,110建字第0117號,Google Drive,77,10,10,12%,2025-12-15,25,in-progress,https://drive.google.com/drive/folders/12lZTM4XrTsy-FnqcRA9n3eJTJ_7GG2T-
-58,110建字第0125號,Google Drive,33,10,10,30%,2025-10-01,100,in-progress,https://drive.google.com/drive/folders/1xR5kPl4ju_tYB5u2YJ3WoZ2jC28seOJG
-59,110建字第0247號,Google Drive,15,10,10,66%,2025-10-01,100,in-progress,https://drive.google.com/drive/folders/1Se1MXvxLG8yiWCyhKOwcZ6mfw89JvfRS
-60,110建字第0250號,Google Drive,47,10,10,21%,2025-10-01,100,in-progress,https://drive.google.com/drive/folders/1u6by5u3tI6bs1w8sN3G37oNulWjsKA3-
-61,110建字第0273號,Google Drive,82,10,10,12%,2025-10-01,100,in-progress,https://drive.google.com/drive/folders/1Lp6I2p8LSC4Ab0waR4Yy-bddVfdCLW_t
-62,111建字第0181號,Google Drive,99,10,10,10%,2025-10-01,100,in-progress,https://drive.google.com/drive/folders/1_gWmqz2kcOJT01swAARwjsvjdtQ_Sqqf
-63,111建字第0272號,Google Drive,214,10,10,4%,2025-12-15,25,in-progress,https://drive.google.com/drive/folders/16EPUk5fdCQuD-5fMrKbhnm49zgtJLrrd
-64,110建字第0266號,Google Drive,9,8,8,88%,2025-10-01,100,in-progress,https://drive.google.com/drive/folders/1kvnTJQRTSEk6WrJvgS4_sDWtISUgk1rP
-65,112建字第0156號,Google Drive,61,8,8,13%,2025-12-15,25,in-progress,https://drive.google.com/drive/folders/1vdgkPvliEl_RiEnWdjKT_6z-cpxh9Xs3
-66,113建字第0248號,Google Drive,131,8,8,6%,2026-01-05,4,in-progress,https://drive.google.com/drive/folders/1iTsXA9YFQatmspt_k08-jk9KMdQjMTJB
-67,111建字第0242號,Google Drive,138,7,7,5%,2025-10-01,100,in-progress,https://drive.google.com/drive/folders/12FPkNMdt2NiENfAuqa-3FWQr7zABq2Ds
-68,112建字第1688號,Google Drive,71,7,7,9%,2026-01-05,4,in-progress,https://drive.google.com/drive/folders/1wAI0PbFQt6UPPMeMsQ1B_Pol6wettvEb
-69,109建字第0139號,Google Drive,71,6,6,8%,2025-10-01,100,in-progress,https://drive.google.com/drive/folders/1HDf032wVstteuyGBsgfUBhiQnAxijsZr
-70,113建字第0061號,Google Drive,10,6,6,60%,2025-12-29,11,in-progress,https://drive.google.com/drive/folders/1tTJerLLwGgXV3F50OkvpVxF6r-lsyR6f
-71,113建字第0182號,Google Drive,21,6,6,28%,2025-12-31,9,in-progress,https://drive.google.com/drive/folders/1nj7CIlQGT7lXBc9D6i09LMkMQdhTxnvt
-72,108建字第0111號,Google Drive,11,5,5,45%,2025-10-01,100,in-progress,https://drive.google.com/drive/folders/1GxIg_KlGyru8E5-6VvAQCxJGOEmaRWY_
-73,110建字第0212號,Google Drive,58,5,5,8%,2025-10-01,100,in-progress,https://drive.google.com/drive/folders/1G6Qt1mP6HF7zZChaIhNPEzjTj4Gv0Jye
-74,110建字第0279號,其他: ssp.mailcloud.com.tw,25,5,4,20%,2026-01-05,4,in-progress,https://drive.google.com/drive/folders/1R8qBmPOGe3G8_S2n4Y5Jx7n20993_PDo
-75,111建字第0142號,Google Drive,80,5,5,6%,2026-01-05,4,in-progress,https://drive.google.com/drive/folders/1dLDglKLZFbbqMd5iEhYK9-c-Fl5ZpPmB
-76,111建字第0276號,Google Drive,69,5,5,7%,2026-01-05,4,in-progress,https://drive.google.com/drive/folders/1zxLfxbevxkpw3rXwJkDvwyVGH855dNtH
-77,112建字第0177號,Google Drive,15,5,5,33%,2025-12-29,11,in-progress,https://drive.google.com/drive/folders/14hVTYuEOq91-skwM7m3sdiLQESG_j6Jh
-78,112建字第0227號,Google Drive,87,5,5,5%,2025-12-31,9,in-progress,https://drive.google.com/drive/folders/11wDWhHvMg-JOzOACivodWNDDa9Kr4plt
-79,113建字第0143號,Google Drive,21,4,4,19%,2025-12-29,11,in-progress,https://drive.google.com/drive/folders/1jzAX8Dl7y4_4WeS0qZuJajvIACHGESA2
-80,112建字第0056號,Google Drive,350,3,3,0%,2025-12-29,11,in-progress,https://drive.google.com/drive/folders/1kktZcR3OAns4ebEVHWdLbnqz8Xw_6TiB
-81,112建字第0268號,Google Drive,50,3,3,6%,2026-01-05,4,in-progress,https://drive.google.com/drive/folders/14ggT1RF4yC7L1d-e4tYN0L0aAepCEoBN
-82,113建字第0091號,Google Drive,14,3,3,21%,2026-01-05,4,in-progress,https://drive.google.com/drive/folders/1TyEH29d3a4OSu6S2fEPwVxBi4eS5ao1N
-83,113建字第0099號,Google Drive,21,3,3,14%,2026-01-05,4,in-progress,https://drive.google.com/drive/folders/1K52nyv_-DP8Yg-OvnTnzbUWmllGq7U7w
-84,110建字第0341號,Google Drive,151,2,2,1%,2025-10-02,99,in-progress,https://drive.google.com/drive/folders/1TeeXges9OsgKf6St6jSuw5BFaA2x61C0
-85,111建字第0027號,Google Drive,4,2,2,50%,2025-10-01,100,in-progress,https://drive.google.com/drive/folders/1iH9WTsQzimHzt_YQLVcvQc5G1WR5-soT
-86,111建字第0062號,Google Drive,68,2,2,2%,2025-11-24,46,in-progress,https://drive.google.com/drive/folders/1WwEQy_vDfz8TdR04Gd2sk3Y_LCPuW7L0
-87,111建字第0096號,Google Drive,29,2,2,6%,2025-10-01,100,in-progress,https://drive.google.com/drive/folders/12p2gzVDrqVTVM2uo8FBIsSB85Hvcc3bz
-88,112建字第0051號,Google Drive,30,2,2,6%,2026-01-05,4,in-progress,https://drive.google.com/drive/folders/1AGgsplRcXR6yBOKFjGA7Tw9XXEsWXjkc
-89,112建字第0179號,Google Drive,2,2,2,100%,2025-10-01,100,completed,https://drive.google.com/drive/folders/1UzFOq2oG9qhzomoXsIq9LG_fdoCtJp3u
-90,112建字第0232號,Google Drive,2,2,2,100%,2025-10-01,100,completed,https://drive.google.com/drive/folders/1cT1tg0uCpFDV44zb-o4F9xQ_deYkhoXR
-91,112建字第0262號,Google Drive,96,2,2,2%,2026-01-05,4,in-progress,https://drive.google.com/drive/folders/13aMAj-sgHAAKcqXg7a8Ht5ui8LfZKJKo
-92,112建字第0269號,Google Drive,37,2,2,5%,2026-01-05,4,in-progress,https://drive.google.com/drive/folders/16fF8evGJQuAypRzgMCRI0oVOfuNhB5VN
-93,112建字第0289號,Google Drive,49,2,2,4%,2026-01-05,4,in-progress,https://drive.google.com/drive/folders/1nLjkoB8g536o5XTpYbMWZjz7J153gddA
-94,113建字第0031號,Google Drive,15,2,2,13%,2025-12-29,11,in-progress,https://drive.google.com/drive/folders/1bOiV1GdxDzsMJ9mzuS1W8-6kixjcEIpg
-95,113建字第0208號,Google Drive,16,2,2,12%,2026-01-05,4,in-progress,https://drive.google.com/drive/folders/1lHfSdhHDksaRohcnbcRk8TVF89VFaIsu
-96,111建字第0298號,Dropbox,5,1,1,20%,2026-01-05,4,in-progress,https://drive.google.com/drive/folders/1f9HtYugwjwdnIaVHMccsQCM1eInYqTjI
-97,111建字第0321號,Google Drive,56,1,1,1%,2025-12-29,11,in-progress,https://drive.google.com/drive/folders/16WdPHzXTxkQVEcRPE-OeDFvxFXVv7Ydz
-98,112建字第0018號,短網址,82,1,1,1%,2025-10-27,74,in-progress,https://drive.google.com/drive/folders/1DTZUgLaHC6owthDnDaiHkbsHmZ17Dm0h
-99,112建字第0059號,SharePoint,10,1,1,10%,2025-12-22,18,in-progress,https://drive.google.com/drive/folders/1XiQvbQ0NkHddwB6MuLgbypZkzpPTCwzU
-100,112建字第0096號,Google Drive,52,1,1,1%,2026-01-05,4,in-progress,https://drive.google.com/drive/folders/1zVrG9-o1bgHbk7Pr27YHJokfs6B2IKOV
-101,112建字第0119號,短網址,68,1,1,1%,2026-01-05,4,in-progress,https://drive.google.com/drive/folders/1XIaqhoXLOq19Sid6aBLSQSr_fOJ97X7S
-102,112建字第0167號,Google Drive,2,1,1,50%,2025-10-01,100,in-progress,https://drive.google.com/drive/folders/1Rx1zjbByhhdgPsJ2QHvKCNw_YJCqzZ6F
-103,112建字第0189號,Google Drive,27,1,1,3%,2025-10-01,100,in-progress,https://drive.google.com/drive/folders/1VK-rquytLIfYB92k0M4NkiSnJMSDBujT
-104,112建字第0278號,Google Drive,10,1,1,10%,2025-12-22,18,in-progress,https://drive.google.com/drive/folders/1Fx7SQwBh5W240BwXLiJuxac7mOAyQVyG
-105,113建字第0120號,Google Drive,1,1,1,100%,2026-01-05,4,completed,https://drive.google.com/drive/folders/1Bw8wK8A6VxcdBqKSy5PuLXzj_RW0HSWL
-106,113建字第0121號,Google Drive,26,1,1,3%,2026-01-05,4,in-progress,https://drive.google.com/drive/folders/1F9wdO38PutCFeesp5zDYoP-ksG2HUOLo
-107,113建字第0259號,Google Drive,8,1,1,12%,2026-01-05,4,in-progress,https://drive.google.com/drive/folders/1sqJXuCzISC6FjkWsECTqmT5kw29dadvU
-108,114建字第0052號,pCloud,1,1,0,100%,2025-12-09,31,in-progress,https://drive.google.com/drive/folders/1VqpV7IpcSk5xGFKkh_Eez6rbGs5rb-xe
-109,102建字第0325號,Google Drive,53,0,0,0%,2025-11-24,46,not-uploaded,https://drive.google.com/drive/folders/1t6TVcBUZ9k9_GEYaFJ3wIDL2keJWr0-B
-110,104建字第0225號,Google Drive,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/1vBaBr5BuBMSX0lVo-bW5iPjrhiEH2UGv
-111,105建字第0172號,Google Drive,7,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1iJkv9SlBxzNtODZx-jxm7_AWKyyrFjJU
-112,106建字第0042號,Google Drive,1,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/13zN8xuavOe07AYkrFJm0G0lmZ4k-bANV
-113,106建字第0111號,Google Drive,99,0,0,0%,2025-12-29,11,not-uploaded,https://drive.google.com/drive/folders/1tUEbIpwJHUmjXUMx-PVDIYRS6AY44BqC
-114,106建字第0213號,Google Drive,29,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1sdC3kLi95WYdGRV6mTWZrl0UV0a-bOmm
-115,107建字第0092號,Google Drive,8,0,0,0%,2025-11-24,46,not-uploaded,https://drive.google.com/drive/folders/1Xg7Jhnya7BDdb6LxQC4BnUhR8HiJqOxG
-116,107建字第0167號,Google Drive,8,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1j8d7cslQNlNBUDNTxiRB4aDaCQb9reco
-117,107建字第0200號,短網址,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1RQrbnlQ9QRLv-oGbCgVnuga1HZGME38J
-118,108建字第0009號,短網址,13,0,0,0%,2025-12-09,31,not-uploaded,https://drive.google.com/drive/folders/1-IIljJg484Z_SKVq5RzOef3vdZhyrvjK
-119,108建字第0015號,短網址,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1vriZPWH11eXjax5oZDbrUxMn_xPBagcd
-120,108建字第0106號,Google Drive,292,0,0,0%,2025-12-05,35,not-uploaded,https://drive.google.com/drive/folders/1oH6nNJVL1FwVP529zGhBIg6t7nyHHOA9
-121,108建字第0131號,Google Drive,42,0,0,0%,2025-10-02,99,not-uploaded,https://drive.google.com/drive/folders/1uHwwLW3Zhdk6j9q8EA7aJWVFJbffIBiN
-122,108建字第0185號,Google Drive,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/1JHQS4DRDtq4HO6Hn0zqHzR5FAZKf4un_
-123,108建字第0192號,Google Drive,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/1Q8taMY54nTRAbZCG8fsIgPS9lRBuuvag
-124,108建字第0201號,Google Drive,40,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1eyVAuoKYuSCzKIkyJ-6vOskndns7v_MZ
-125,108建字第0207號,Google Drive,121,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1V7haPHHgTfljhjGOTGbIVufj5aB-lsJC
-126,108建字第0211號,Google Drive,46,0,0,0%,2025-12-09,31,not-uploaded,https://drive.google.com/drive/folders/1yEnBZ_eK2waTylQ65_9wh1LJNkSNr87B
-127,108建字第0212號,Google Drive,12,0,0,0%,2025-11-24,46,not-uploaded,https://drive.google.com/drive/folders/1NiMwunwLgf5pfwcU3ujXhlJH5ml7ni8c
-128,108建字第0252號,Google Drive,43,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1OKTMGpZ-UZXZ7YERs8HvLhUj5cgwTyM_
-129,109建字第0015號,Google Drive,42,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1lkrMVtnKUI9L1r8EZqi066GTvZjzBogb
-130,109建字第0016號,Google Drive,54,0,0,0%,2025-11-24,46,not-uploaded,https://drive.google.com/drive/folders/1iPVKwdyG6AJa3LTYAizQTBdje9VlVICV
-131,109建字第0021號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/17GNj_qjL-1_nyuDZO_JDNlxPomAa1znT
-132,109建字第0027號,Google Drive,10,0,0,0%,2025-12-29,11,not-uploaded,https://drive.google.com/drive/folders/1o7oOS56v_N7rUPOSVD-yjW22Ov4zJ_zk
-133,109建字第0035號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/18WEnPDc3FEX-TNBx1O6qtqQUWRQkTH8t
-134,109建字第0069號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1Wzfjne-7fTndxi9GqYfdsZwH_UuC-ZFu
-135,109建字第0075號,Google Drive,37,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1z8A2NofpLaFZZEafZBszDDpM06guGXih
-136,109建字第0089號,Google Drive,113,0,0,0%,2025-12-09,31,not-uploaded,https://drive.google.com/drive/folders/1epWQ71PnbcEXKbaO0NjMqfFzhw2wGhq5
-137,109建字第0122號,Google Drive,156,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1fJuUSxVtB5EYOJuUdRCivtCirmnJh6vp
-138,109建字第0143號,Google Drive,32,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1yRMPeA2R49m7kd3JpF2BXnK6RvS-MAWJ
-139,109建字第0150號,Google Drive,74,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1_1KQLqdCWQkZ34CXTL4y7-IjFHc2L-Ly
-140,109建字第0159號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/18lIFW9IFzHRaskLbrahgjgA0b8oZGulI
-141,109建字第0170號,Google Drive,18,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1IUstjEo_8oRu4GcIzYuk7Ap6PhoHNb6L
-142,109建字第0173號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1GgVxct_D1BGuC32N36qSxZGG8LdOpxIZ
-143,109建字第0185號,Google Drive,71,0,0,0%,2025-11-24,46,not-uploaded,https://drive.google.com/drive/folders/1SL7EFpVdUpasfvgKC3dKpTHyfmHpOscM
-144,109建字第0192號,其他: obayashitw-,3,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/19SK-HR8kewo0TdnsAlHSN7ti1MtypewG
-145,109建字第0201號,其他: obayashitw-,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/1oMsTv-iUxj2L-Mzzds8BBaFzJFRy3PyV
-146,109建字第0209號,其他: obayashitw-,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/16UsaZv2yJk9RSQc75IanewJuqCx6XPEr
-147,109建字第0226號,Google Drive,3,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1USPe8amYo4PA2WT2q8n3uD3q5Q-4gIJp
-148,109建字第0245號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1YWsoR6ffY7oMHn_DIBe2MhUrDqkFaFoq
-149,109建字第0250號,Google Drive,21,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1qbDbjfh8g3NP7ImNvubhAvTEJafLzd7Q
-150,109建字第0252號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1TCmeweCfgYa6Q6UYPZhXTlAaVkJTyGt0
-151,109建字第0255號,Google Drive,6,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/15Oxl44jElySv2KDloieI4FceuLyvBP-7
-152,109建字第0256號,Google Drive,5,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1WUz8jeToHfFffzjO4DUCeQeLNnHQp_0i
-153,109建字第0267號,Google Drive,1,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/17LYbgaWXT_uj62x20fja3MOtm0P_MhFy
-154,109建字第0269號,Google Drive,36,0,0,0%,2025-11-24,46,not-uploaded,https://drive.google.com/drive/folders/1c5gZPuMnTU3zVsCmXNx4e2bq1eNH3wgp
-155,109建字第0281號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1Thhx97Iaksz2atPI1VPCrdCjASSekPTU
-156,109建字第0285號,Google Drive,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/10iSdW7bi-cbvDVCPb5UuQwgNz9baaCun
-157,109建字第0287號,Google Drive,76,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1K6QVGZ9Cl_aX-E3Z4oc6e8v_wxeGjJq5
-158,109建字第0292號,Google Drive,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/1LUyOQy2cW73MSEodL72NCm6V3AbZDjam
-159,110建字第0006號,Google Drive,1,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1tv5bohL_4P5xVgU--gigAGthY92wttH_
-160,110建字第0011號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1TMdO1iiW69Hd7gyqjYqQDGaM-_paGt5J
-161,110建字第0012號,Google Drive,43,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/11QhtFZXWOb8nrKKUeQ0GAAmj3QVxZ_NY
-162,110建字第0017號,其他: s05.calm9.com,10,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1Hhqoeom0QwhkuVTqdejUgYq8y3KVnZhh
-163,110建字第0023號,其他: s05.calm9.com,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1As96kpYTglm2-Dg4TFR_3H60xrriLQR7
-164,110建字第0033號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1B0YhEVVxj65ptPnzc3RzZMU600IU1YEF
-165,110建字第0035號,Google Drive,3,0,0,0%,2025-11-24,46,not-uploaded,https://drive.google.com/drive/folders/1U8ngtU8K3PPxjcciQvnMDUeMevqmE-Zq
-166,110建字第0038號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1yOj73yaqXAxcO4mj_Kc6sIATYURtf2tN
-167,110建字第0041號,Google Drive,16,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1K99T7yDC0IW2CO6ZOwcEkAYGmZo2YaEg
-168,110建字第0051號,Google Drive,32,0,0,0%,2025-12-09,31,not-uploaded,https://drive.google.com/drive/folders/1vxTUNpY4ldZEWndXKJnCDFmMWxlvMbnw
-169,110建字第0052號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/17AspJdzk8WjtxrhR2aOJW9LSr4WVX2yc
-170,110建字第0053號,Google Drive,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/1iZqowkLjVyKfyhDrMeHtumDmIIAzG9zi
-171,110建字第0055號,Google Drive,76,0,0,0%,2025-11-24,46,not-uploaded,https://drive.google.com/drive/folders/1khGTHvvSxIKkBDhWBO_LN25lbh4gyA8v
-172,110建字第0056號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1SlmOU84DbKeVY9JG80rnvWkSzXRN0Qbb
-173,110建字第0059號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1ucdyeSmY3tiBRgVi-B5E0_Gdi2AWAr4l
-174,110建字第0061號,Google Drive,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/1n-KEjRRIJ7YWwN-PxwzR1H10gF0uF-T1
-175,110建字第0062號,Google Drive,55,0,0,0%,2025-12-09,31,not-uploaded,https://drive.google.com/drive/folders/1bPdCpU6EUwFtF_aJlO8gHIKYWFlVcDKe
-176,110建字第0072號,Google Drive,38,0,0,0%,2025-12-01,39,not-uploaded,https://drive.google.com/drive/folders/1szUMGcO6i6bCa2344CSGEVMmwJgUsZue
-177,110建字第0075號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1N0yjcnR-Ll3OIYVioqqLK5WMQcAMN8X1
-178,110建字第0076號,Google Drive,42,0,0,0%,2025-11-24,46,not-uploaded,https://drive.google.com/drive/folders/17ROwfWSlKPcOqmjhQ3us3FbApOtimWKM
-179,110建字第0086號,Dropbox,137,0,0,0%,2025-12-09,31,not-uploaded,https://drive.google.com/drive/folders/1k1kQNf182kdYLwn20l-WRVBzOwmQUTrs
-180,110建字第0093號,Dropbox,4,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1p1YP_ZNZgvphHf1UB8CH20PxS85J4VLU
-181,110建字第0096號,Dropbox,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1Wd6kNFLthXCwUtZBJHf0tNxrbKfKhdPw
-182,110建字第0099號,GoFile,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/1BITiUdNO2VEnG7zJEB5jjte6IWfGjgEE
-183,110建字第0101號,GoFile,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1YF-oVfvPdVGY07a9JPnCJypGVv-sQ8Fd
-184,110建字第0102號,GoFile,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1t-F2GtErHdC85qq7APHMHeTUbH7DiZir
-185,110建字第0103號,Google Drive,31,0,0,0%,2025-12-09,31,not-uploaded,https://drive.google.com/drive/folders/1rFQuiItdbUvdrO0opZgRGC8vgoF8kEsU
-186,110建字第0108號,Google Drive,40,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1DX9Q-DhTGZpv5OxE5DAgkFAeY5RFW_c-
-187,110建字第0110號,Google Drive,32,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1jnubUygX5noBgXgZUOS6SFYz2mQZENmz
-188,110建字第0116號,Google Drive,40,0,0,0%,2025-11-24,46,not-uploaded,https://drive.google.com/drive/folders/1CT2eksvTxD5xZZnQ46kklnvQ3PsajxYw
-189,110建字第0118號,Google Drive,59,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1d5oHgDFJo4OPFKQU5DjtStDMdOrxxERd
-190,110建字第0139號,Google Drive,158,0,0,0%,2025-10-06,95,not-uploaded,https://drive.google.com/drive/folders/1z7cfB_mYb_LiEXyHlKH5Yht42wVH67h5
-191,110建字第0143號,Google Drive,109,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1rN4M-IwaiB14V2db7ZQkh8cFRGjfcHcg
-192,110建字第0147號,GoFile,57,0,0,0%,2025-12-09,31,not-uploaded,https://drive.google.com/drive/folders/1wTL1iDE3WpaPsAaQyTdk3xhHo4d0BIDB
-193,110建字第0152號,GoFile,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1am1NuR0Q1oTmExRih3SrdJwY_beLx3Ez
-194,110建字第0156號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/14xkPUNtqLkm18tvwjhK2j3Iyqs5OUB89
-195,110建字第0163號,Google Drive,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/133Jsg1i-ToMcdEt53XY3WIFVUDlIAs3i
-196,110建字第0171號,Google Drive,78,0,0,0%,2025-12-15,25,not-uploaded,https://drive.google.com/drive/folders/1cxn3MBQV4P_rynG1Ht-Yw61eu3wpzUkx
-197,110建字第0172號,Google Drive,46,0,0,0%,2025-12-09,31,not-uploaded,https://drive.google.com/drive/folders/1QgWLBFVUYKOdni_ono866xPaodyglNvX
-198,110建字第0173號,Google Drive,4,0,0,0%,2025-11-24,46,not-uploaded,https://drive.google.com/drive/folders/1ZpRXvnMaC3ybmh6Hk5s1pNsGbynM1Qi6
-199,110建字第0175號,Google Drive,4,0,0,0%,2025-12-09,31,not-uploaded,https://drive.google.com/drive/folders/1LvKJbfQqHGIOjtfDFUBJlWE7mhqC-JlE
-200,110建字第0176號,Google Drive,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/1w3jmbdUszuyVnuD639wbYTPMsLqo0zaV
-201,110建字第0177號,Google Drive,21,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1UIRDqQiip5OENl_VjWm-VWKlo-_OAlOb
-202,110建字第0187號,Google Drive,41,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1BLXReEBcxOitXWRmZgym2v7zSnTi5dKi
-203,110建字第0188號,Google Drive,0,0,0,0%,,,error,https://drive.google.com/drive/folders/1slLmezP08YQS_bNxSMTH9l3ncV6pCzl2
-204,110建字第0190號,Google Drive,11,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1Nd_59bP_9rB3YtEru-8eD5pqeP49aOVP
-205,110建字第0195號,MEGA,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/1se2vbqEXSmfSWRSoi_P_Y_SJlTlOh8Pk
-206,110建字第0197號,MEGA,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1QAGBcd4JCP0DMl_iW5TOV0kiseI0PyTG
-207,110建字第0210號,Google Drive,8,0,0,0%,2025-12-15,25,not-uploaded,https://drive.google.com/drive/folders/1r97lnOob2xe9c0jVJXq128wdUThpvnMR
-208,110建字第0215號,Google Drive,8,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1-5p2GNhsQFJmK5aICPwEjRhVieNBVw5u
-209,110建字第0219號,Google Drive,72,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1Dm4R1mZ43FcsJ3BUKJP5rzKWBeyTU0Ae
-210,110建字第0221號,Google Drive,131,0,0,0%,2025-12-29,11,not-uploaded,https://drive.google.com/drive/folders/1-br2SSkntbO9SAEDdcJeQR27hAPfwupY
-211,110建字第0222號,Google Drive,39,0,0,0%,2025-12-09,31,not-uploaded,https://drive.google.com/drive/folders/1MzC27Koyxz9bBiEO3-APCsTEV64Xbqqg
-212,110建字第0225號,SharePoint,75,0,0,0%,2025-11-24,46,not-uploaded,https://drive.google.com/drive/folders/1xkw8ztg7D22qK3c1OgQRZH4pwlPS9p4J
-213,110建字第0226號,SharePoint,2,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1cxTgQ9OArUSdU4EXnMGwOVmWcA4N0vF8
-214,110建字第0227號,SharePoint,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1GEFXshPt0FL7IOinpTH3w7tEkTYDvDDN
-215,110建字第0228號,SharePoint,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1jQ2QETJ7TH9CJwvv2Pia2IgRC_zUPxtO
-216,110建字第0238號,Google Drive,136,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1Cpz2eyYdgaDIdQdq7_rQWUL4KoRVZViD
-217,110建字第0245號,Google Drive,0,0,0,0%,,,error,https://drive.google.com/drive/folders/14Eu4fPhZsG_n4alLodffd2LB4tg2l9hp
-218,110建字第0252號,Google Drive,62,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/19TL5sjhdykf-REMfSfTOZ7alceI6tMcj
-219,110建字第0257號,MEGA,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1TrFEzliSvitqpvI-jBNEBW8TswYlCXxk
-220,110建字第0262號,MEGA,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/17Pef_cNoDA9WG1JAJTxogNNe5dH7tpyc
-221,110建字第0263號,短網址,53,0,0,0%,2025-11-14,56,not-uploaded,https://drive.google.com/drive/folders/1SAARiFj-ivoPmT1lOlgcr5tp3gM8BVC3
-222,110建字第0265號,短網址,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1UrnZ1QszndS-W9QIgd9mrmQX_UBqTEZM
-223,110建字第0269號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1kk5TC1c7Rgl-LQj_2cxo_cb6U_baw4VJ
-224,110建字第0272號,Google Drive,4,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1-wRLyOCgtPD7x2Xu2jomygbBT-eD-zdq
-225,110建字第0282號,其他: ssp.mailcloud.com.tw,98,0,0,0%,2025-11-24,46,not-uploaded,https://drive.google.com/drive/folders/1ysYKPQHssi5sQ3wYXbF4hpe0VA71o9WH
-226,110建字第0283號,其他: ssp.mailcloud.com.tw,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1pM_T0rETTXB2DcDbVWeV1Wc3J6o3qGc6
-227,110建字第0285號,Google Drive,45,0,0,0%,2025-12-15,25,not-uploaded,https://drive.google.com/drive/folders/1LsvSlRL9-gCKzjUTc_heiCYxv30DArK5
-228,110建字第0287號,Google Drive,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/193rdGbPq-agQvGs4N6HmXqJK4Nw0c8x4
-229,110建字第0291號,Google Drive,2,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1qxYrW49C0mYNkQS7y2dOT8XHRcEkowuP
-230,110建字第0303號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/19J-sYg_3xQndiSzsaU3rR7jH_fGM3bnF
-231,110建字第0306號,Google Drive,66,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1475g1YHo1ByWXVyI5nAB_-2qRTVNee7d
-232,110建字第0307號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1zQ_QMuJT2pswxd6T1M1e31sjb2XnMyWB
-233,110建字第0315號,Google Drive,70,0,0,0%,2025-12-05,35,not-uploaded,https://drive.google.com/drive/folders/1bEJYW8WDly6JPs5GXonWn1QrKzDw8xKU
-234,110建字第0319號,MEGA,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1-RjSsmMpXrhPCJb1Ou8pXRMUlXNpIOCT
-235,110建字第0329號,MEGA,46,0,0,0%,2025-12-09,31,not-uploaded,https://drive.google.com/drive/folders/1ssL6J-EckoxG_nrJL_NzXs7h1IrCuxPt
-236,110建字第0337號,MEGA,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1aMmAaAjeROGdB0SFnDKIqnPjFknJ6O7T
-237,110建字第0338號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1ebWQVDWf89rr8I6sZ8q7NzMuXSM1aBcB
-238,110建字第0355號,Google Drive,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/1k5_CZLpqKTbEBZewfSDVgaBLUw1ccmuk
-239,110建字第0357號,Google Drive,21,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/17ozArqX5cdgjwgQZaPZu5fHw2sGmaeQa
-240,110建字第0358號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1BocDG6gZiJ7t1mnN3opyk1cagyHHdzGy
-241,110建字第0359號,Google Drive,27,0,0,0%,2025-12-09,31,not-uploaded,https://drive.google.com/drive/folders/1Lkh9X6ZM9gR3m-ajRA5mD3QOvl1jG65-
-242,110建字第0362號,Google Drive,23,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1DHQ041MH2RX_dhKMEgbzsBsjjph_BGZl
-243,110建字第0367號,Google Drive,28,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1-R88R46juuEaTAlDIDSHPxfVgfGcZFKz
-244,110建字第0370號,Google Drive,4,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1NM4Tx_rWe6q70UukpZt2c1u9SU94BAxl
-245,110建字第0371號,Google Drive,4,0,0,0%,2025-10-02,99,not-uploaded,https://drive.google.com/drive/folders/1ISHMvdFwpt1Z5J-TyfhEA_foilEr8eod
-246,110建字第0372號,Google Drive,37,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1vACiYeisfNlHSJql-HpJZcY-hlJjHozj
-247,110建字第0375號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1PkylOuv3YUtOXwzJPr7r5Su7wRiHB8BK
-248,110建字第0376號,Google Drive,30,0,0,0%,2025-10-05,96,not-uploaded,https://drive.google.com/drive/folders/1X4nluEgaPD1qfNZao5IL-IF4y_2_LW1E
-249,111建字第0005號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1g9XbesTQxgoJ4d-6VDVHlJy0Vxthx10n
-250,111建字第0013號,SharePoint,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1qbr_UjzcbsTbQ5UXP-xy6shFwyKyGKTX
-251,111建字第0016號,SharePoint,1,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1j42kKLE_lfDvUuyh3xkoKSOebwpmw2ae
-252,111建字第0017號,SharePoint,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1i-jWFRJn8hF6TH1oYrNefeEDpWHYBIrr
-253,111建字第0021號,Google Drive,114,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1IuT6UnpqYQ5u9jFVKaJGh63CKeIb0S42
-254,111建字第0026號,Google Drive,75,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1gnA8LbamacgUIT_7MTYnI_hXSWg-Mbtn
-255,111建字第0033號,Google Drive,86,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/14YcmCF6L-nWJvHpz_ZR5-8WNH2mUAGwQ
-256,111建字第0036號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1vGpGg2d9iYY-RUDSkq2Zt7I6LP4WTMdb
-257,111建字第0039號,Google Drive,25,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1kzK940Uo7T-R8nf0grBx59UCL5mz3r1T
-258,111建字第0047號,Google Drive,53,0,0,0%,2025-11-14,56,not-uploaded,https://drive.google.com/drive/folders/1cdmv4rd8T9H0X8KaC_9UnSjIgSAZxkPI
-259,111建字第0051號,Google Drive,27,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1AcfeBm7zpZLYdOlqLdbhuvXKKFhLmbh1
-260,111建字第0052號,Google Drive,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/1PEwzYUemqfzRQPysnyDtXmHNwEvMWOG-
-261,111建字第0053號,Google Drive,74,0,0,0%,2025-12-22,18,not-uploaded,https://drive.google.com/drive/folders/1_detHXKo_ddiIefxrIbF6Nf5FZUREHTu
-262,111建字第0056號,Google Drive,63,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1iP_l2TiksL18utkz533iwv9vC7f0SZG4
-263,111建字第0057號,Google Drive,3,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1YlnpinL-U08xIKa-c0X2gkmQ5dbAzGA7
-264,111建字第0058號,Google Drive,120,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1cMruK8-4ItvtT2ZgbyBEz6j-icvsn5ok
-265,111建字第0059號,Google Drive,6,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/133lCP6wxLqS5hcEytIkxtmdH_DohMb8v
-266,111建字第0060號,Google Drive,23,0,0,0%,2025-12-09,31,not-uploaded,https://drive.google.com/drive/folders/1o02Zd02U6bkEhE1_dt4K0O0sPI_lu_Gp
-267,111建字第0061號,Google Drive,41,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1h-s1Rwm1xIj8j7c6HyQ6bJrIIV1Wd95W
-268,111建字第0068號,Google Drive,73,0,0,0%,2025-12-22,18,not-uploaded,https://drive.google.com/drive/folders/13Ea6hFkOz0kgcIV7PaAnv5q7YEGt2geo
-269,111建字第0069號,Google Drive,113,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1tU2JuJBjKGHmd4gUJ8r4yo3Mwv23G3T_
-270,111建字第0075號,Google Drive,35,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1WXvtUne5cSM5wkX6QhGyOZGL5ezqdSwE
-271,111建字第0080號,Google Drive,394,0,0,0%,2025-12-09,31,not-uploaded,https://drive.google.com/drive/folders/1_KMp49zOrXEYzEDWPQs_x4HS1lR2tynY
-272,111建字第0082號,Google Drive,108,0,0,0%,2025-10-20,81,not-uploaded,https://drive.google.com/drive/folders/1zHuLWnhpNKzutoW-KcGNy3jI35ZTpg_q
-273,111建字第0086號,Google Drive,3,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1CgvaXso3PQjX2o9rJa7ijk81r_wms3-V
-274,111建字第0089號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/10JolPIxQXQMXBHkNwSremNi62BBTE9a9
-275,111建字第0092號,OneDrive,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/1NHxmTXUd58_ST8xILHU643IrfbVHPqWO
-276,111建字第0093號,OneDrive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1HMWftuo60ipDnrb0g0HMKQtQPTpzbeaT
-277,111建字第0095號,Google Drive,88,0,0,0%,2025-12-22,18,not-uploaded,https://drive.google.com/drive/folders/1GA9cNS8fJ9YNDe7HDNGX64iqE_e_0arK
-278,111建字第0097號,Google Drive,82,0,0,0%,2025-11-14,56,not-uploaded,https://drive.google.com/drive/folders/1sZj1Ag177mv421QpkJkuOHxyNINJr_2Y
-279,111建字第0098號,Google Drive,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/1ySxjbP3UdxvBOBKScwROQiToWH5xleDh
-280,111建字第0103號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1I-IDVqTgYdC_y4ZELVygpunwyi05rvrU
-281,111建字第0107號,Google Drive,40,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1VT5TCBL_ADgOh_qnp7J0Jr9Z9hM1MEB1
-282,111建字第0112號,Google Drive,16,0,0,0%,2025-12-09,31,not-uploaded,https://drive.google.com/drive/folders/1xTD9gIGb_mfJuokG-V1HmLCPJm3Ddkom
-283,111建字第0116號,Google Drive,7,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1gLK9WdHuSuUh5Ouo9roPPf9wpnUG7ILu
-284,111建字第0117號,Google Drive,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/10qwjyU0oUSNspBHydgi6LXEYkwJ_onXc
-285,111建字第0118號,Google Drive,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/1uG6_n3HTuS1ZOy4WwCVXPzw2p4LPDqwi
-286,111建字第0119號,Google Drive,37,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1M95wydFYs_zh2e6v6y_g-Nm00_ggGqsq
-287,111建字第0120號,Google Drive,39,0,0,0%,2025-12-09,31,not-uploaded,https://drive.google.com/drive/folders/1aRsSZzresNoJ87yGFhsAdPKvOCCONpEr
-288,111建字第0121號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1t-BqMX2aezi0XfzMOeQr2qYLpHn7tUd_
-289,111建字第0122號,Google Drive,292,0,0,0%,2025-12-08,32,not-uploaded,https://drive.google.com/drive/folders/1LYGelNJozYNbwDyUuVFNbjVUUW7ZcQkN
-290,111建字第0123號,Google Drive,60,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1LSQI0gEOSoXjCoNTVH1KMLn2GK4Y4VCR
-291,111建字第0125號,Google Drive,6,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1hwIAZGZLmaJmiLeWILK3Zx9n3UPEjD1e
-292,111建字第0127號,Google Drive,34,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1_SK8VSDDy2C3v8drHqwbIWA86ZPG1B-_
-293,111建字第0130號,Google Drive,24,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1gVoiPPPpIh8aWXIdAjmoQvZVVQrpsYen
-294,111建字第0131號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1oT2368zmUf75B_9391GkgcHuCopAbvBa
-295,111建字第0132號,Google Drive,1,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1dzxOZRM08h6LHFJERrCzZUe-v-inmlgO
-296,111建字第0133號,Google Drive,1,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/144pPb0i6KUofCEO62qeBLthT16cCfVVL
-297,111建字第0137號,Google Drive,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/1uO0MpPxDfsf2hH7EZ03WRqvNsYZIqMZ1
-298,111建字第0146號,Google Drive,80,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/17QyPFMGGsZT67u3TAFTSE9WRyBnu0QYJ
-299,111建字第0147號,其他: 1.34.155.181:5000,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1L-Q60QSYm2q_NlAt2y4ORNmrxAQHeL2G
-300,111建字第0149號,其他: 1.34.155.181:5000,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1CPjx1JPNaDVA_2D11XQss7QUwbgS9UWf
-301,111建字第0150號,其他: 1.34.155.181:5000,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1to7VGLQV0-7d_aZKZBWQ_DxzfkXws5i_
-302,111建字第0152號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1cncrYzj914fEM1p1_Si4tfTi11226OHF
-303,111建字第0153號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1ohCImfdjryOlhnzFGd0mXOECE6cnFmp-
-304,111建字第0156號,Google Drive,138,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1C3gHSSYX9FPjZWMgfKga-BD6rHMWVC_J
-305,111建字第0158號,Google Drive,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/1Y3PvCyeH9UB48TdGwdCpKa-mTJ4ZDOoe
-306,111建字第0162號,Google Drive,46,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1OxEPOWyDpm59t3xGjAS_BqXVPCSy4jiS
-307,111建字第0166號,Google Drive,31,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/16EnYujOaCR9QuB4dU1GuiN0sfMSw6Hxs
-308,111建字第0175號,Google Drive,87,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1QfZqUxGFyq4Z3hsst8h1vbB-p3eyQ8o9
-309,111建字第0183號,Google Drive,2,0,0,0%,2025-11-24,46,not-uploaded,https://drive.google.com/drive/folders/1je_7IFnw1Z1H4L51UvLbbnRCU-ZsOl1G
-310,111建字第0185號,Google Drive,72,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1PH8JDtxmq10A4wkeX0_nTA5frBeZvSRX
-311,111建字第0186號,Google Drive,38,0,0,0%,2025-12-09,31,not-uploaded,https://drive.google.com/drive/folders/1SFbJOcap0dzoipfZ7Mm5rgmIPbv-fXqn
-312,111建字第0190號,Google Drive,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/1qNtX99oYcpI8pSEacNsobs3dJZVG11pO
-313,111建字第0191號,Dropbox,78,0,0,0%,2025-12-16,24,not-uploaded,https://drive.google.com/drive/folders/1GdDJlQMcfHMMK_sL3IS91P6Z23yVE_4d
-314,111建字第0192號,Dropbox,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1HvuFcadbNTBsstg7Ko_cEH4XmNOIJh8Q
-315,111建字第0199號,Dropbox,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1WNK-K-_NcnaypUvNQzaH99WEszCtNzRk
-316,111建字第0201號,GoFile,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/14JfO6En0XydIwphyjZvRcyVJHrOYpKMC
-317,111建字第0207號,Google Drive,106,0,0,0%,2025-12-15,25,not-uploaded,https://drive.google.com/drive/folders/1s5M9hSi7zOpEmHfm-mZ6aiysVAloI6Es
-318,111建字第0208號,Google Drive,157,0,0,0%,2025-12-09,31,not-uploaded,https://drive.google.com/drive/folders/1sxyyWAdqODUfTggcX-iE217yMmphpO1K
-319,111建字第0212號,Google Drive,55,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1IFNgN0ljbsg0sKf-GLVHFy2Rg8w6pJxR
-320,111建字第0220號,Google Drive,6,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1Ce56XpY9ysQ90YZTmwd44h_mZF6D1I9u
-321,111建字第0228號,Google Drive,3,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1F_ro89KodsvcPO6373PuiuS3FJ74BZh4
-322,111建字第0232號,Google Drive,12,0,0,0%,2025-12-09,31,not-uploaded,https://drive.google.com/drive/folders/1DhrSYkcByHvxAKiL3qwkeDb_EIYT94bC
-323,111建字第0237號,Google Drive,23,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1iq4MJ25eYJ_DMPxABodDa0Gsv4Eq4eyw
-324,111建字第0243號,Google Drive,20,0,0,0%,2025-11-24,46,not-uploaded,https://drive.google.com/drive/folders/1WfLbWD-HqCsVf48xP66fBDFGfSLYOMxn
-325,111建字第0246號,Google Drive,1,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1jWMH_9SSjK3AfvVYt9TzSPj9AgxPhNeW
-326,111建字第0251號,Google Drive,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/1Y4os426eGz_o4WKiCeaE1yJjl2YsY5BA
-327,111建字第0253號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1WDq1Yzn7QYVfWf6x9fh0W6hBTVQvwOcN
-328,111建字第0256號,Google Drive,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/1g0RNEGarPwlLVthNgCLzCaYvfJ-uv1wk
-329,111建字第0257號,Google Drive,36,0,0,0%,2025-12-01,39,not-uploaded,https://drive.google.com/drive/folders/1eTaK2SDREjt1wqqxiIX-GsVFR0v80GIC
-330,111建字第0258號,Google Drive,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/1ceAgl3mC7FdKTJo_MeYyu1jdW-VJ7_ZD
-331,111建字第0262號,Google Drive,19,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1WWP2FtWK8lICy6BdZpcOdeKF7QjpqPv4
-332,111建字第0273號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1Wg27q2pJ2jUhw_ymnNKphJS65YNUwvtD
-333,111建字第0277號,Google Drive,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/1Cj7byVArEqJQAM0rt-IUGjW6K9aN2obe
-334,111建字第0282號,SharePoint,31,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1Sc68VTi-CVwvtq-NTt1_N9vBgcmA8l3D
-335,111建字第0286號,SharePoint,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/1MZGdx63tT78dM7DwQ6_8r3uOQWulCRpJ
-336,111建字第0288號,SharePoint,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1l3oGgKyTdAlOi-qvqiealCQ0Il3SGUHC
-337,111建字第0290號,SharePoint,62,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1Bd2uM_WoXO5oegCNsVWCQSWrTGoBBl5r
-338,111建字第0292號,SharePoint,8,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1a_q1yMtuemKdAplEgRsDYWgcJMDLHyJf
-339,111建字第0293號,SharePoint,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1arGA2FaAZc-CiW8SCnfA8SJfsmZt1esh
-340,111建字第0295號,SharePoint,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1EPgUNqkZesRK--Jo94-E3U0KpUpc__6k
-341,111建字第0300號,Dropbox,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/1adWTJnwiRb6c-6yOX58T1cWLKQHRw3Li
-342,111建字第0302號,Dropbox,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1sXcJeZWqvg8hwS6IanGScOs0Ycg9Bsy-
-343,111建字第0306號,Google Drive,2,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1J26U7At8QN3n93B9rjrS6-fjtDzsBw31
-344,111建字第0307號,短網址,195,0,0,0%,2025-12-09,31,not-uploaded,https://drive.google.com/drive/folders/1GHLs50DacqqCdtGCi_a5TOl4rAOxsa22
-345,111建字第0308號,短網址,0,0,0,0%,,,error,https://drive.google.com/drive/folders/1SIG35NYpDnPOUUMAQIzq85nJYDBg0eik
-346,111建字第0310號,短網址,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/19MikSECkR3srg91GP87J2oV1ADbinGGe
-347,111建字第0311號,Google Drive,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/1DVLA6xTRQhZQSURxZ2mdu1pyvd-gyTeq
-348,111建字第0312號,Google Drive,30,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/11aJkucXrKxM9EmL4wgoSMsUztn6ZM5mH
-349,111建字第0313號,Google Drive,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/1lWAiIQHeHZhA6m5SJQe84SVqobHu6hlM
-350,111建字第0315號,Google Drive,10,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/13i96AZa7sUCFW4cG9Df1ttncgksBn01_
-351,111建字第0317號,Google Drive,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/1b7AzcyeHEIVAh62cWeRAXfKZ6b2ckOPV
-352,111建字第0318號,Google Drive,56,0,0,0%,2025-12-09,31,not-uploaded,https://drive.google.com/drive/folders/1Usizv_3v0appO9joH1h0O9sY8HzZJ8qm
-353,111建字第0329號,Google Drive,86,0,0,0%,2025-11-24,46,not-uploaded,https://drive.google.com/drive/folders/1CzHkVC0FUrVawqHOhls2TK8gkCK1NvNT
-354,111建字第0333號,Google Drive,109,0,0,0%,2025-10-13,88,not-uploaded,https://drive.google.com/drive/folders/1Md4ugR6XnGpOSXyHGFKU8KVKzMcuwndV
-355,111建字第0336號,Google Drive,47,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1aTfLoWw62fkfXWaR58B6b3koDJ1_sRLE
-356,111建字第0341號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1K7h-6IJ5BHKEa2yQ0Fm0ogLJxTzuUIB5
-357,111建字第0342號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1HmH9v1OpNNou5h2-aDJRi-ySKCZmueqJ
-358,111建字第0345號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1uKPBwD9UCaDIZZwVrPK4vhCv2KGPG8Ui
-359,111建字第0347號,Google Drive,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/10JGdO-JZw5GwIzxyd7ti6T8TOFuo7njv
-360,111建字第0351號,GoFile,2,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1OdvxZM9QrHMSe5AaGa9PNiLWYrVE5Ghm
-361,111建字第0352號,GoFile,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1BZ-ONvflbRBZQufngSXSg66BqBMZ_ldv
-362,111建字第0355號,GoFile,47,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1faRXo8TP9z7OVNjrJkd9VFOxnxS1tury
-363,111建字第5688號,Google Drive,117,0,0,0%,2025-11-14,56,not-uploaded,https://drive.google.com/drive/folders/16wUlzWp32zL7w83mh_o3UF7tfxA2aWzO
-364,112建字第0001號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1vMTybp1gJfdv1ZNrLp0YaK2XUePzIku4
-365,112建字第0002號,Google Drive,34,0,0,0%,2025-11-14,56,not-uploaded,https://drive.google.com/drive/folders/1GYEWO14G6M_-EKjOFoMlvz1ZF1IaHLaf
-366,112建字第0005號,SharePoint,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1h2U3Ay8dsYD2o-M0HT3hBKms6FHrI18u
-367,112建字第0010號,SharePoint,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1zcp4k9Gq9PfqOJ1wkXH72xl0IXXbkEBF
-368,112建字第0013號,短網址,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1zALlQKxSvS7_U3xTFqhNTkVqoikhWy_Q
-369,112建字第0019號,短網址,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1spYblacYN4gRXuIsG0bsaN0DcCFZpvo3
-370,112建字第0021號,Google Drive,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/1ee_AzQP-dGaLROQWH-kY56c9eD52p9Ii
-371,112建字第0022號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1TmzAZKCB8Y5AKq7BjdRr8LqJwNOOq5QJ
-372,112建字第0027號,Google Drive,67,0,0,0%,2025-12-15,25,not-uploaded,https://drive.google.com/drive/folders/1aPIvTgP8e8rhBWp22cT2gZJCLzWVS-J1
-373,112建字第0030號,Google Drive,43,0,0,0%,2025-11-24,46,not-uploaded,https://drive.google.com/drive/folders/1tltsjZx4B7SPaD9w5Mkhst5endqaAI6D
-374,112建字第0031號,Google Drive,66,0,0,0%,2025-10-13,88,not-uploaded,https://drive.google.com/drive/folders/1cfXEj2RMCwZCp2QuHeDAJtcHbCTFpffA
-375,112建字第0033號,Google Drive,109,0,0,0%,2025-10-13,88,not-uploaded,https://drive.google.com/drive/folders/1NhKICIsIiVoz4Wf4jKVDkcuqzm7UkKZi
-376,112建字第0037號,Google Drive,39,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1v6oqWUv827k75vqlhs6aFCgRIZMmEq5o
-377,112建字第0041號,Google Drive,41,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1-NZNeqQUXKWQtvrL08LuAAY3NVeGt7Z6
-378,112建字第0048號,Google Drive,47,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1jTwoPYQy-I5ZXCPc3aZFnerNtQwbE4_G
-379,112建字第0049號,Google Drive,28,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1v29lCizldt46bijtc6mLTiE-mXYCNl8X
-380,112建字第0052號,Google Drive,49,0,0,0%,2025-12-09,31,not-uploaded,https://drive.google.com/drive/folders/1LsSz13m_HP05zeIzblJOMl6dP4T-ejYK
-381,112建字第0055號,Google Drive,38,0,0,0%,2025-12-22,18,not-uploaded,https://drive.google.com/drive/folders/1xtWEaGtON3YTembXOvGYh0fiOXYl0xn0
-382,112建字第0057號,Google Drive,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/1Fj3D7WsOMY1xP3NkedGZsfGNQF4dkpAF
-383,112建字第0071號,Google Drive,8,0,0,0%,2025-12-05,35,not-uploaded,https://drive.google.com/drive/folders/1ApF5dDxRPHcfJ9D3uk7daQq7-0AxSNdw
-384,112建字第0079號,Google Drive,2,0,0,0%,2025-11-24,46,not-uploaded,https://drive.google.com/drive/folders/1jRjVeu-sc4fzyv2AybpJGI4MZpgzzKhl
-385,112建字第0080號,Google Drive,45,0,0,0%,2025-12-15,25,not-uploaded,https://drive.google.com/drive/folders/1p6VOGhCJj4_lr4bPwgZldkZ2ViLxgIrU
-386,112建字第0081號,Google Drive,31,0,0,0%,2025-12-09,31,not-uploaded,https://drive.google.com/drive/folders/14kR_I7hXHnYfnPQFE8hoiRSbEfbQuR_2
-387,112建字第0082號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/15xIC6S3TeLT73Xn71yf5Bq8knWkaRoSX
-388,112建字第0092號,Google Drive,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/1I8x62dPX77Gnrz2XxC3tInvne8OfypmV
-389,112建字第0097號,Google Drive,52,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1AwIMJC4Co6vHuQI742ndZtyHkcEX7YOF
-390,112建字第0098號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/17krcb3oTyD-nP-5H4pBRrJ0RS-8xcHai
-391,112建字第0105號,Google Drive,3,0,0,0%,2025-12-09,31,not-uploaded,https://drive.google.com/drive/folders/1fLrvg0jYh3OMCkdMOkwMAMmIRbCo23EA
-392,112建字第0107號,GoFile,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1sHcjufXLs3azx7bPKenUuQs1a1V9YdD_
-393,112建字第0108號,GoFile,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/1MLUCzFGka7FnlcDW09WZxaX-p9SUpgTi
-394,112建字第0109號,GoFile,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1t-FEsNmKfqJdEKB-B7uzUQdF3Cs3Kror
-395,112建字第0112號,GoFile,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/11n6H2GWZ3YeaMmFuOSi_MZW-0fyixbsM
-396,112建字第0117號,Google Drive,1,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/10O2EKIzSiKjr2Bx1Zq2jj2C2bE-mlZe-
-397,112建字第0118號,短網址,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/1Uze4p8PN_Kx2L57OyO-zigerRVQRxrr4
-398,112建字第0121號,短網址,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1Mwtw08kql48c1Dqa_UHJJ5PqTzEESSPV
-399,112建字第0123號,Google Drive,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/1B49ORGmmp3RQIky4MxWSekH3qE3zpC6n
-400,112建字第0125號,SharePoint,0,0,0,0%,,,error,https://drive.google.com/drive/folders/1-peLmGBnAA_5EDxdhLPZIvk2fvj3HNhS
-401,112建字第0126號,SharePoint,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/1hvd1g41FCBL75u3XmltfW6GK45COZQ7J
-402,112建字第0133號,Google Drive,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/1qWolleSWyIpQnP14HZk10O5pPWJUsWzx
-403,112建字第0135號,Google Drive,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/1bsOaaKBuqCL-7fBEDq-NDcIVpVvcfDIc
-404,112建字第0139號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1v9tIEx054bYQgKuQ1uU3TlJRIss2kOAO
-405,112建字第0140號,Google Drive,95,0,0,0%,2025-12-15,25,not-uploaded,https://drive.google.com/drive/folders/1n9OZUxgQJCJHNXii6sCHS-P7z5kFY-t_
-406,112建字第0146號,Google Drive,67,0,0,0%,2025-12-22,18,not-uploaded,https://drive.google.com/drive/folders/1Y4mmczSkTscjMNZ-bCOu-Fp4RUTc6_-r
-407,112建字第0158號,Google Drive,15,0,0,0%,2026-01-05,4,not-uploaded,https://drive.google.com/drive/folders/1Q7aUS9jf_RnIFoUay8C6-JUYMhsEahey
-408,112建字第0162號,Google Drive,31,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1kHWVaSOl4PT_Isg41Np44VDNN8es4HVS
-409,112建字第0163號,Google Drive,9,0,0,0%,2026-01-02,7,not-uploaded,https://drive.google.com/drive/folders/15jlGLfeZcB4ejuqMRw3jlO7R_0yf_rOc
-410,112建字第0165號,Google Drive,19,0,0,0%,2025-12-09,31,not-uploaded,https://drive.google.com/drive/folders/1JGvbGCPGs_vTsQDICHFrztJ3PlFKyck2
-411,112建字第0169號,Google Drive,7,0,0,0%,2025-10-05,96,not-uploaded,https://drive.google.com/drive/folders/1jqxlCSfRmNtm6oFHLhIYh-l-atxV4kXt
-412,112建字第0172號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1xJbX3e68qm9DY63sIVSevur8Tyz4stC2
-413,112建字第0187號,Google Drive,51,0,0,0%,2025-11-24,46,not-uploaded,https://drive.google.com/drive/folders/1zJpf7_EW3x3ociW5YN-TuUBHLdGODYfc
-414,112建字第0205號,Google Drive,39,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1NOZBMZ7hFrVcRjHLFKN-q1xcNrWMkTg8
-415,112建字第0209號,Google Drive,31,0,0,0%,2025-12-09,31,not-uploaded,https://drive.google.com/drive/folders/1-9lOO8hYQjDeBMIhDJTe9a-u844ZeKCA
-416,112建字第0216號,Google Drive,1,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/182evAqRIKhpARg5vWXU7HTBBS_9jWtFz
-417,112建字第0219號,Google Drive,37,0,0,0%,2025-12-22,18,not-uploaded,https://drive.google.com/drive/folders/1gxj4tsTxvXnSWpR6YChjsfx9N-PXFL1I
-418,112建字第0220號,Google Drive,77,0,0,0%,2025-12-22,18,not-uploaded,https://drive.google.com/drive/folders/1bOJGEQLDnyXeg6V0IWq0M1UwqUfPnYuE
-419,112建字第0222號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1Ww6TxMeNhKMzoNKvb1YzyOyOnPlJiePx
-420,112建字第0225號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1xkEjt-NIx-jiAG6wbGIYqONYoa7n2epX
-421,112建字第0231號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1VC2dWCHsffFZ5T67bQih1fGEq64adoGg
-422,112建字第0235號,Google Drive,19,0,0,0%,2025-11-14,56,not-uploaded,https://drive.google.com/drive/folders/1OB3lMNUMyb45I_D3BYQNQKy7p3Rmeg85
-423,112建字第0243號,ownCloud,40,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1XY_1418KhFPHL0zRh2uc34uoSueP7fjK
-424,112建字第0249號,ownCloud,19,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/14-WeLLdwYd7y-yyMr4eBlzGqVHCSXk7m
-425,112建字第0250號,ownCloud,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1pNr2prH26Wetgf1f0QqZXYQMnipRdTeI
-426,112建字第0252號,Google Drive,68,0,0,0%,2026-01-02,7,not-uploaded,https://drive.google.com/drive/folders/1UAQHugstDg_DX824xAfQ6q64pFwW0UXo
-427,112建字第0257號,Google Drive,52,0,0,0%,2025-12-09,31,not-uploaded,https://drive.google.com/drive/folders/1QDGpNB1kwYZmPoY1RC9dolJsxxIraQKi
-428,112建字第0276號,Google Drive,35,0,0,0%,2025-12-09,31,not-uploaded,https://drive.google.com/drive/folders/1CJRIMzEM4I-QPcEieF4CP6H-slj672sf
-429,112建字第0280號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1gsgHwuZxUOdZzLOm_ge7nQ1FE8wyn6Wi
-430,113建字第0007號,Google Drive,161,0,0,0%,2025-12-15,25,not-uploaded,https://drive.google.com/drive/folders/1EWt_8p55aEkMyWUE4ekNNPxrvaTKQT6j
-431,113建字第0017號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1vSFqor0Dm4Jwa0jeqMWKD2CMyERIo0jv
-432,113建字第0025號,Google Drive,0,0,0,0%,,,error,https://drive.google.com/drive/folders/11P7wOgyM-TURwkrsPvIn2vscATxMYoWs
-433,113建字第0028號,Google Drive,72,0,0,0%,2025-12-09,31,not-uploaded,https://drive.google.com/drive/folders/12RGf__9xdVW7S8nbStqL-ll8JwxCLS1r
-434,113建字第0029號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1zjgcx2-l9R4I33lAUZoqSaHFz9yYVRp_
-435,113建字第0040號,Google Drive,0,0,0,0%,,,error,https://drive.google.com/drive/folders/1DmeOu_xEA4aGlmGlHcWQMW-3R3dGruVC
-436,113建字第0045號,Google Drive,1,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1X42Y9F2mDJgS2NYmKfbEEGOS7OW99-zp
-437,113建字第0049號,Google Drive,26,0,0,0%,2025-12-22,18,not-uploaded,https://drive.google.com/drive/folders/1FOYfolvq0tm6WF4jwtdvtlG0DPdZQ6ch
-438,113建字第0051號,Google Drive,10,0,0,0%,2025-12-09,31,not-uploaded,https://drive.google.com/drive/folders/1VjP4aD-WVtHDvi9HgFrfiTP0n8FvNS0k
-439,113建字第0052號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1yd9Gyb7HMttwmmUIAIzOrsNdW8F0qtKV
-440,113建字第0056號,Google Drive,12,0,0,0%,2025-12-22,18,not-uploaded,https://drive.google.com/drive/folders/1-8xedLMsT0ghdIYF3wUvXfiTYv_vI4Qa
-441,113建字第0062號,Google Drive,67,0,0,0%,2025-12-22,18,not-uploaded,https://drive.google.com/drive/folders/17vGF3H8NxD7Pm6PXuKqChvMmHf5BwiTw
-442,113建字第0080號,SharePoint,25,0,0,0%,2025-12-22,18,not-uploaded,https://drive.google.com/drive/folders/1i7WG9DTmM77Xr8k9kg-esINkSQVGIusp
-443,113建字第0087號,SharePoint,22,0,0,0%,2025-12-15,25,not-uploaded,https://drive.google.com/drive/folders/1edOFTqo9nNwvhOZjzACWSYfxovVMIIJS
-444,113建字第0090號,SharePoint,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1YwzajpmeXcxKDgyoslEX3vEO0KPo7zFV
-445,113建字第0125號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/10c68serMBGqK6gI-HW4jC5UuVTnVcD4P
-446,113建字第0136號,Google Drive,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/1X5aLIUR9rd0IYalXbgH16bMGIOWMpLUU
-447,113建字第0149號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1Ss6qLq7-F75wVhXdvcJqz822x3sWo1Yd
-448,113建字第0153號,Google Drive,2,0,0,0%,2025-12-09,31,not-uploaded,https://drive.google.com/drive/folders/1QkTxGWqHWN9l9zo5RWublnWI8XAbsKpR
-449,113建字第0155號,Google Drive,33,0,0,0%,2025-11-14,56,not-uploaded,https://drive.google.com/drive/folders/1PA9oODB5IyjYMFx7fMkoxLYiHpXeffLb
-450,113建字第0186號,Google Drive,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1KXTZ6oJLKj7dj1fGk96XqDkqLB4df-Cn
-451,113建字第0187號,Google Drive,25,0,0,0%,2025-10-02,99,not-uploaded,https://drive.google.com/drive/folders/1ZhhR28LOHEbAz9ckEoTt9SIt7bEW1l5R
-452,113建字第0188號,Google Drive,0,0,0,0%,,,no-pdf,https://drive.google.com/drive/folders/19qPROFgH5geZKsmButjRQG6-L1ki-i_Y
-453,113建字第0207號,Google Drive,34,0,0,0%,2025-10-01,100,not-uploaded,https://drive.google.com/drive/folders/1wmkUUNtToLXfDLR2gJuHactbUNKm3dBX
-454,114建字第0017號,其他: public.redsun.tw,1,0,0,0%,2025-12-05,35,not-uploaded,https://drive.google.com/drive/folders/1n5KldIyj2VQh3YCkw3ytDlxeex9D28Hn
-455,114建字第0022號,Google Drive,12,0,0,0%,2025-12-09,31,not-uploaded,https://drive.google.com/drive/folders/1HqsIwx3fquTLe914muIw-WJ0HPfPN1wD
-456,114建字第0058號,pCloud,0,0,0,0%,,,not-synced,https://drive.google.com/drive/folders/1l_qH3dJ0G4QnUOygQJeNwpsWjqsQq1a0
-457,114建字第0059號,pCloud,23,0,0,0%,2025-12-09,31,not-uploaded,https://drive.google.com/drive/folders/1AiPx2Yu2nWjRp1qVRLP07Qe2v6Z4aTXV
+﻿序號,建照字號,雲端服務,Drive PDF,系統 PDF,覆蓋率,最新報告,距今天數,狀態
+1,"114建字第0059號","Google Drive",23,0,-,,,not_uploaded
+2,"114建字第0058號","Google Drive",0,0,-,,,no_reports
+3,"114建字第0052號","Google Drive",1,0,-,,,not_uploaded
+4,"114建字第0032號","其他: sites.google.com",39,0,-,,,not_uploaded
+5,"114建字第0022號","Google Drive",12,0,-,,,not_uploaded
+6,"114建字第0017號","其他: public.redsun.tw",1,0,-,,,not_uploaded
+7,"113建字第8899號","Google Drive",21,0,-,,,not_uploaded
+8,"113建字第8888號","Google Drive",12,0,-,,,not_uploaded
+9,"113建字第5688號","Google Drive",26,0,-,,,not_uploaded
+10,"113建字第0259號","Google Drive",8,0,-,,,not_uploaded
+11,"113建字第0248號","Google Drive",133,0,-,,,not_uploaded
+12,"113建字第0218號","Google Drive",33,0,-,,,not_uploaded
+13,"113建字第0208號","Google Drive",16,0,-,,,not_uploaded
+14,"113建字第0207號","Google Drive",34,0,-,,,not_uploaded
+15,"113建字第0188號","Google Drive",0,0,-,,,no_reports
+16,"113建字第0187號","Google Drive",25,0,-,,,not_uploaded
+17,"113建字第0186號","Google Drive",0,0,-,,,no_reports
+18,"113建字第0182號","Google Drive",21,0,-,,,not_uploaded
+19,"113建字第0155號","Google Drive",33,0,-,,,not_uploaded
+20,"113建字第0153號","Google Drive",2,0,-,,,not_uploaded
+21,"113建字第0149號","其他: sites.google.com",0,0,-,,,no_reports
+22,"113建字第0143號","Google Drive",21,0,-,,,not_uploaded
+23,"113建字第0140號","Google Drive",50,0,-,,,not_uploaded
+24,"113建字第0136號","Google Drive",0,0,-,,,no_reports
+25,"113建字第0125號","Google Drive",0,0,-,,,no_reports
+26,"113建字第0121號","Google Drive",26,0,-,,,not_uploaded
+27,"113建字第0120號","Google Drive",1,0,-,,,not_uploaded
+28,"113建字第0099號","Google Drive",21,0,-,,,not_uploaded
+29,"113建字第0098號","Google Drive",97,0,-,,,not_uploaded
+30,"113建字第0091號","Google Drive",14,0,-,,,not_uploaded
+31,"113建字第0090號","SharePoint",0,0,-,,,no_reports
+32,"113建字第0087號","Google Drive",22,0,-,,,not_uploaded
+33,"113建字第0080號","Google Drive",25,0,-,,,not_uploaded
+34,"113建字第0062號","Google Drive",67,0,-,,,not_uploaded
+35,"113建字第0061號","Google Drive",10,0,-,,,not_uploaded
+36,"113建字第0056號","Google Drive",12,0,-,,,not_uploaded
+37,"113建字第0052號","Google Drive",0,0,-,,,no_reports
+38,"113建字第0051號","Google Drive",10,0,-,,,not_uploaded
+39,"113建字第0049號","Google Drive",26,0,-,,,not_uploaded
+40,"113建字第0045號","Google Drive",1,0,-,,,not_uploaded
+41,"113建字第0041號","Google Drive",69,0,-,,,not_uploaded
+42,"113建字第0040號","Google Drive",0,0,-,,,no_reports
+43,"113建字第0038號","Google Drive",48,0,-,,,not_uploaded
+44,"113建字第0031號","Google Drive",15,0,-,,,not_uploaded
+45,"113建字第0030號","Google Drive",13,0,-,,,not_uploaded
+46,"113建字第0029號","其他: sites.google.com",0,0,-,,,no_reports
+47,"113建字第0028號","Google Drive",72,0,-,,,not_uploaded
+48,"113建字第0026號","Google Drive",46,0,-,,,not_uploaded
+49,"113建字第0025號","Google Drive",0,0,-,,,no_reports
+50,"113建字第0017號","其他: sites.google.com",0,0,-,,,no_reports
+51,"113建字第0008號","Google Drive",49,0,-,,,not_uploaded
+52,"113建字第0007號","Google Drive",161,0,-,,,not_uploaded
+53,"112建字第1688號","Google Drive",71,0,-,,,not_uploaded
+54,"112建字第0289號","Google Drive",49,0,-,,,not_uploaded
+55,"112建字第0280號","Google Drive",0,0,-,,,no_reports
+56,"112建字第0278號","Google Drive",10,0,-,,,not_uploaded
+57,"112建字第0276號","Google Drive",35,0,-,,,not_uploaded
+58,"112建字第0269號","Google Drive",37,0,-,,,not_uploaded
+59,"112建字第0268號","Google Drive",50,0,-,,,not_uploaded
+60,"112建字第0262號","Google Drive",96,0,-,,,not_uploaded
+61,"112建字第0257號","Google Drive",52,0,-,,,not_uploaded
+62,"112建字第0252號","Google Drive",68,0,-,,,not_uploaded
+63,"112建字第0250號","ownCloud",0,0,-,,,no_reports
+64,"112建字第0249號","Google Drive",19,0,-,,,not_uploaded
+65,"112建字第0243號","Google Drive",40,0,-,,,not_uploaded
+66,"112建字第0238號","Google Drive",50,0,-,,,not_uploaded
+67,"112建字第0235號","Google Drive",19,0,-,,,not_uploaded
+68,"112建字第0232號","Google Drive",2,0,-,,,not_uploaded
+69,"112建字第0231號","其他: sites.google.com",0,0,-,,,no_reports
+70,"112建字第0227號","Google Drive",87,0,-,,,not_uploaded
+71,"112建字第0225號","其他: sites.google.com",0,0,-,,,no_reports
+72,"112建字第0222號","Google Drive",0,0,-,,,no_reports
+73,"112建字第0220號","Google Drive",77,0,-,,,not_uploaded
+74,"112建字第0219號","Google Drive",37,0,-,,,not_uploaded
+75,"112建字第0218號","Google Drive",69,0,-,,,not_uploaded
+76,"112建字第0216號","Google Drive",1,0,-,,,not_uploaded
+77,"112建字第0209號","Google Drive",31,0,-,,,not_uploaded
+78,"112建字第0208號","Google Drive",53,0,-,,,not_uploaded
+79,"112建字第0205號","Google Drive",39,0,-,,,not_uploaded
+80,"112建字第0191號","Google Drive",31,0,-,,,not_uploaded
+81,"112建字第0189號","Google Drive",27,0,-,,,not_uploaded
+82,"112建字第0187號","Google Drive",51,0,-,,,not_uploaded
+83,"112建字第0179號","Google Drive",2,0,-,,,not_uploaded
+84,"112建字第0178號","Google Drive",38,0,-,,,not_uploaded
+85,"112建字第0177號","Google Drive",15,0,-,,,not_uploaded
+86,"112建字第0172號","Google Drive",0,0,-,,,no_reports
+87,"112建字第0169號","Google Drive",7,0,-,,,not_uploaded
+88,"112建字第0167號","Google Drive",2,0,-,,,not_uploaded
+89,"112建字第0165號","Google Drive",19,0,-,,,not_uploaded
+90,"112建字第0163號","Google Drive",9,0,-,,,not_uploaded
+91,"112建字第0162號","Google Drive",31,0,-,,,not_uploaded
+92,"112建字第0158號","Google Drive",15,0,-,,,not_uploaded
+93,"112建字第0156號","Google Drive",61,0,-,,,not_uploaded
+94,"112建字第0146號","Google Drive",67,0,-,,,not_uploaded
+95,"112建字第0140號","Google Drive",95,0,-,,,not_uploaded
+96,"112建字第0139號","Google Drive",0,0,-,,,no_reports
+97,"112建字第0138號","Google Drive",88,0,-,,,not_uploaded
+98,"112建字第0135號","Google Drive",0,0,-,,,no_reports
+99,"112建字第0133號","Google Drive",0,0,-,,,no_reports
+100,"112建字第0127號","SharePoint",0,0,-,,,no_reports
+101,"112建字第0126號","Google Drive",0,0,-,,,no_reports
+102,"112建字第0125號","Google Drive",0,0,-,,,no_reports
+103,"112建字第0123號","Google Drive",0,0,-,,,no_reports
+104,"112建字第0121號","短網址",0,0,-,,,no_reports
+105,"112建字第0119號","Google Drive",68,0,-,,,not_uploaded
+106,"112建字第0118號","Google Drive",0,0,-,,,no_reports
+107,"112建字第0117號","Google Drive",1,0,-,,,not_uploaded
+108,"112建字第0116號","Google Drive",43,0,-,,,not_uploaded
+109,"112建字第0112號","其他: gofile-376d656359.tw5.quickconnect.to",0,0,-,,,no_reports
+110,"112建字第0109號","其他: gofile.me",0,0,-,,,no_reports
+111,"112建字第0108號","Google Drive",0,0,-,,,no_reports
+112,"112建字第0107號","Google Drive",0,0,-,,,no_reports
+113,"112建字第0105號","Google Drive",3,0,-,,,not_uploaded
+114,"112建字第0100號","Google Drive",44,0,-,,,not_uploaded
+115,"112建字第0098號","Google Drive",0,0,-,,,no_reports
+116,"112建字第0097號","Google Drive",52,0,-,,,not_uploaded
+117,"112建字第0096號","Google Drive",52,0,-,,,not_uploaded
+118,"112建字第0092號","Google Drive",0,0,-,,,no_reports
+119,"112建字第0087號","Google Drive",319,0,-,,,not_uploaded
+120,"112建字第0083號","Google Drive",75,0,-,,,not_uploaded
+121,"112建字第0082號","其他: sites.google.com",0,0,-,,,no_reports
+122,"112建字第0081號","Google Drive",31,0,-,,,not_uploaded
+123,"112建字第0080號","Google Drive",45,0,-,,,not_uploaded
+124,"112建字第0079號","Google Drive",2,0,-,,,not_uploaded
+125,"112建字第0078號","Google Drive",56,0,-,,,not_uploaded
+126,"112建字第0071號","Google Drive",8,0,-,,,not_uploaded
+127,"112建字第0066號","SharePoint",0,0,-,,,no_reports
+128,"112建字第0062號","Google Drive",53,0,-,,,not_uploaded
+129,"112建字第0059號","Google Drive",10,0,-,,,not_uploaded
+130,"112建字第0057號","Google Drive",0,0,-,,,no_reports
+131,"112建字第0056號","Google Drive",350,0,-,,,not_uploaded
+132,"112建字第0055號","Google Drive",38,0,-,,,not_uploaded
+133,"112建字第0052號","Google Drive",49,0,-,,,not_uploaded
+134,"112建字第0051號","Google Drive",30,0,-,,,not_uploaded
+135,"112建字第0049號","Google Drive",28,0,-,,,not_uploaded
+136,"112建字第0048號","Google Drive",47,0,-,,,not_uploaded
+137,"112建字第0041號","Google Drive",41,0,-,,,not_uploaded
+138,"112建字第0040號","Google Drive",44,0,-,,,not_uploaded
+139,"112建字第0037號","Google Drive",39,0,-,,,not_uploaded
+140,"112建字第0033號","Google Drive",109,0,-,,,not_uploaded
+141,"112建字第0031號","Google Drive",66,0,-,,,not_uploaded
+142,"112建字第0030號","Google Drive",43,0,-,,,not_uploaded
+143,"112建字第0027號","Google Drive",67,0,-,,,not_uploaded
+144,"112建字第0022號","SharePoint",0,0,-,,,no_reports
+145,"112建字第0021號","Google Drive",0,0,-,,,no_reports
+146,"112建字第0019號","短網址",0,0,-,,,no_reports
+147,"112建字第0018號","Google Drive",82,0,-,,,not_uploaded
+148,"112建字第0013號","Google Drive",0,0,-,,,no_reports
+149,"112建字第0010號","SharePoint",0,0,-,,,no_reports
+150,"112建字第0006號","Google Drive",21,0,-,,,not_uploaded
+151,"112建字第0005號","其他: sites.google.com",0,0,-,,,no_reports
+152,"112建字第0002號","Google Drive",34,0,-,,,not_uploaded
+153,"112建字第0001號","其他: sites.google.com",0,0,-,,,no_reports
+154,"111建字第5688號","Google Drive",117,0,-,,,not_uploaded
+155,"111建字第1688號","Google Drive",94,0,-,,,not_uploaded
+156,"111建字第1188號","其他: gofile.me",0,0,-,,,no_reports
+157,"111建字第0355號","Google Drive",47,0,-,,,not_uploaded
+158,"111建字第0352號","其他: gofile.me",0,0,-,,,no_reports
+159,"111建字第0351號","Google Drive",2,0,-,,,not_uploaded
+160,"111建字第0348號","Google Drive",36,0,-,,,not_uploaded
+161,"111建字第0347號","Google Drive",0,0,-,,,no_reports
+162,"111建字第0345號","Google Drive",0,0,-,,,no_reports
+163,"111建字第0342號","其他: sites.google.com",0,0,-,,,no_reports
+164,"111建字第0341號","其他: sites.google.com",0,0,-,,,no_reports
+165,"111建字第0336號","Google Drive",47,0,-,,,not_uploaded
+166,"111建字第0333號","Google Drive",109,0,-,,,not_uploaded
+167,"111建字第0329號","Google Drive",86,0,-,,,not_uploaded
+168,"111建字第0321號","Google Drive",56,0,-,,,not_uploaded
+169,"111建字第0318號","Google Drive",56,0,-,,,not_uploaded
+170,"111建字第0317號","Google Drive",0,0,-,,,no_reports
+171,"111建字第0316號","Google Drive",164,0,-,,,not_uploaded
+172,"111建字第0315號","Google Drive",10,0,-,,,not_uploaded
+173,"111建字第0313號","Google Drive",0,0,-,,,no_reports
+174,"111建字第0312號","Google Drive",30,0,-,,,not_uploaded
+175,"111建字第0311號","Google Drive",0,0,-,,,no_reports
+176,"111建字第0310號","短網址",0,0,-,,,no_reports
+177,"111建字第0308號","Google Drive",0,0,-,,,no_reports
+178,"111建字第0307號","Google Drive",195,0,-,,,not_uploaded
+179,"111建字第0306號","Google Drive",2,0,-,,,not_uploaded
+180,"111建字第0302號","Dropbox",0,0,-,,,no_reports
+181,"111建字第0300號","Google Drive",0,0,-,,,no_reports
+182,"111建字第0298號","Google Drive",5,0,-,,,not_uploaded
+183,"111建字第0295號","SharePoint",0,0,-,,,no_reports
+184,"111建字第0293號","SharePoint",0,0,-,,,no_reports
+185,"111建字第0292號","Google Drive",8,0,-,,,not_uploaded
+186,"111建字第0290號","Google Drive",62,0,-,,,not_uploaded
+187,"111建字第0288號","SharePoint",0,0,-,,,no_reports
+188,"111建字第0286號","Google Drive",0,0,-,,,no_reports
+189,"111建字第0282號","Google Drive",31,0,-,,,not_uploaded
+190,"111建字第0277號","Google Drive",0,0,-,,,no_reports
+191,"111建字第0276號","Google Drive",69,0,-,,,not_uploaded
+192,"111建字第0273號","Google Drive",0,0,-,,,no_reports
+193,"111建字第0272號","Google Drive",214,0,-,,,not_uploaded
+194,"111建字第0262號","Google Drive",19,0,-,,,not_uploaded
+195,"111建字第0258號","Google Drive",0,0,-,,,no_reports
+196,"111建字第0257號","Google Drive",36,0,-,,,not_uploaded
+197,"111建字第0256號","Google Drive",0,0,-,,,no_reports
+198,"111建字第0253號","Google Drive",0,0,-,,,no_reports
+199,"111建字第0252號","Google Drive",79,0,-,,,not_uploaded
+200,"111建字第0251號","Google Drive",0,0,-,,,no_reports
+201,"111建字第0249號","Google Drive",52,0,-,,,not_uploaded
+202,"111建字第0246號","Google Drive",1,0,-,,,not_uploaded
+203,"111建字第0245號","Google Drive",85,0,-,,,not_uploaded
+204,"111建字第0243號","Google Drive",20,0,-,,,not_uploaded
+205,"111建字第0242號","Google Drive",138,0,-,,,not_uploaded
+206,"111建字第0237號","Google Drive",23,0,-,,,not_uploaded
+207,"111建字第0232號","Google Drive",12,0,-,,,not_uploaded
+208,"111建字第0228號","Google Drive",3,0,-,,,not_uploaded
+209,"111建字第0227號","Google Drive",61,0,-,,,not_uploaded
+210,"111建字第0220號","Google Drive",6,0,-,,,not_uploaded
+211,"111建字第0212號","Google Drive",55,0,-,,,not_uploaded
+212,"111建字第0208號","Google Drive",157,0,-,,,not_uploaded
+213,"111建字第0207號","Google Drive",106,0,-,,,not_uploaded
+214,"111建字第0201號","其他: gofile.me",0,0,-,,,no_reports
+215,"111建字第0199號","Dropbox",0,0,-,,,no_reports
+216,"111建字第0192號","Google Drive",0,0,-,,,no_reports
+217,"111建字第0191號","Google Drive",78,0,-,,,not_uploaded
+218,"111建字第0190號","Google Drive",0,0,-,,,no_reports
+219,"111建字第0188號","SharePoint",256,0,-,,,not_uploaded
+220,"111建字第0186號","Google Drive",38,0,-,,,not_uploaded
+221,"111建字第0185號","Google Drive",72,0,-,,,not_uploaded
+222,"111建字第0183號","Google Drive",2,0,-,,,not_uploaded
+223,"111建字第0181號","Google Drive",99,0,-,,,not_uploaded
+224,"111建字第0175號","Google Drive",87,0,-,,,not_uploaded
+225,"111建字第0167號","Google Drive",108,0,-,,,not_uploaded
+226,"111建字第0166號","Google Drive",31,0,-,,,not_uploaded
+227,"111建字第0162號","Google Drive",46,0,-,,,not_uploaded
+228,"111建字第0158號","Google Drive",0,0,-,,,no_reports
+229,"111建字第0156號","Google Drive",138,0,-,,,not_uploaded
+230,"111建字第0153號","Google Drive",0,0,-,,,no_reports
+231,"111建字第0152號","其他: sites.google.com",0,0,-,,,no_reports
+232,"111建字第0150號","其他: 1.34.155.181:5000",0,0,-,,,no_reports
+233,"111建字第0149號","Google Drive",0,0,-,,,no_reports
+234,"111建字第0147號","Google Drive",0,0,-,,,no_reports
+235,"111建字第0146號","Google Drive",80,0,-,,,not_uploaded
+236,"111建字第0142號","Google Drive",80,0,-,,,not_uploaded
+237,"111建字第0140號","Google Drive",201,0,-,,,not_uploaded
+238,"111建字第0137號","Google Drive",0,0,-,,,no_reports
+239,"111建字第0136號","Google Drive",104,0,-,,,not_uploaded
+240,"111建字第0133號","Google Drive",1,0,-,,,not_uploaded
+241,"111建字第0132號","Google Drive",1,0,-,,,not_uploaded
+242,"111建字第0131號","Google Drive",0,0,-,,,no_reports
+243,"111建字第0130號","Google Drive",24,0,-,,,not_uploaded
+244,"111建字第0129號","Google Drive",99,0,-,,,not_uploaded
+245,"111建字第0127號","Google Drive",34,0,-,,,not_uploaded
+246,"111建字第0125號","Google Drive",6,0,-,,,not_uploaded
+247,"111建字第0123號","Google Drive",60,0,-,,,not_uploaded
+248,"111建字第0122號","Google Drive",292,0,-,,,not_uploaded
+249,"111建字第0121號","Google Drive",0,0,-,,,no_reports
+250,"111建字第0120號","Google Drive",39,0,-,,,not_uploaded
+251,"111建字第0119號","Google Drive",37,0,-,,,not_uploaded
+252,"111建字第0118號","Google Drive",0,0,-,,,no_reports
+253,"111建字第0117號","Google Drive",0,0,-,,,no_reports
+254,"111建字第0116號","Google Drive",7,0,-,,,not_uploaded
+255,"111建字第0112號","Google Drive",16,0,-,,,not_uploaded
+256,"111建字第0111號","Google Drive",70,0,-,,,not_uploaded
+257,"111建字第0107號","Google Drive",40,0,-,,,not_uploaded
+258,"111建字第0103號","其他: sites.google.com",0,0,-,,,no_reports
+259,"111建字第0098號","Google Drive",0,0,-,,,no_reports
+260,"111建字第0097號","Google Drive",82,0,-,,,not_uploaded
+261,"111建字第0096號","Google Drive",29,0,-,,,not_uploaded
+262,"111建字第0095號","Google Drive",88,0,-,,,not_uploaded
+263,"111建字第0093號","OneDrive",0,0,-,,,no_reports
+264,"111建字第0092號","Google Drive",0,0,-,,,no_reports
+265,"111建字第0091號","Google Drive",63,0,-,,,not_uploaded
+266,"111建字第0089號","Google Drive",0,0,-,,,no_reports
+267,"111建字第0086號","Google Drive",3,0,-,,,not_uploaded
+268,"111建字第0083號","Google Drive",18,0,-,,,not_uploaded
+269,"111建字第0082號","Google Drive",108,0,-,,,not_uploaded
+270,"111建字第0080號","Google Drive",394,0,-,,,not_uploaded
+271,"111建字第0075號","Google Drive",35,0,-,,,not_uploaded
+272,"111建字第0069號","Google Drive",113,0,-,,,not_uploaded
+273,"111建字第0068號","Google Drive",73,0,-,,,not_uploaded
+274,"111建字第0062號","Google Drive",68,0,-,,,not_uploaded
+275,"111建字第0061號","Google Drive",41,0,-,,,not_uploaded
+276,"111建字第0060號","Google Drive",23,0,-,,,not_uploaded
+277,"111建字第0059號","Google Drive",6,0,-,,,not_uploaded
+278,"111建字第0058號","Google Drive",120,0,-,,,not_uploaded
+279,"111建字第0057號","Google Drive",3,0,-,,,not_uploaded
+280,"111建字第0056號","Google Drive",63,0,-,,,not_uploaded
+281,"111建字第0053號","Google Drive",74,0,-,,,not_uploaded
+282,"111建字第0052號","Google Drive",0,0,-,,,no_reports
+283,"111建字第0051號","Google Drive",27,0,-,,,not_uploaded
+284,"111建字第0047號","Google Drive",53,0,-,,,not_uploaded
+285,"111建字第0039號","Google Drive",25,0,-,,,not_uploaded
+286,"111建字第0036號","其他: sites.google.com",0,0,-,,,no_reports
+287,"111建字第0033號","Google Drive",86,0,-,,,not_uploaded
+288,"111建字第0027號","Google Drive",4,0,-,,,not_uploaded
+289,"111建字第0026號","Google Drive",75,0,-,,,not_uploaded
+290,"111建字第0021號","Google Drive",114,0,-,,,not_uploaded
+291,"111建字第0017號","SharePoint",0,0,-,,,no_reports
+292,"111建字第0016號","Google Drive",1,0,-,,,not_uploaded
+293,"111建字第0013號","其他: sites.google.com",0,0,-,,,no_reports
+294,"111建字第0005號","Google Drive",0,0,-,,,no_reports
+295,"110建字第0377號","Google Drive",48,0,-,,,not_uploaded
+296,"110建字第0376號","Google Drive",30,0,-,,,not_uploaded
+297,"110建字第0375號","其他: sites.google.com",0,0,-,,,no_reports
+298,"110建字第0372號","Google Drive",37,0,-,,,not_uploaded
+299,"110建字第0371號","Google Drive",4,0,-,,,not_uploaded
+300,"110建字第0370號","Google Drive",4,0,-,,,not_uploaded
+301,"110建字第0367號","Google Drive",28,0,-,,,not_uploaded
+302,"110建字第0362號","Google Drive",23,0,-,,,not_uploaded
+303,"110建字第0360號","Google Drive",213,0,-,,,not_uploaded
+304,"110建字第0359號","Google Drive",27,0,-,,,not_uploaded
+305,"110建字第0358號","Google Drive",0,0,-,,,no_reports
+306,"110建字第0357號","Google Drive",21,0,-,,,not_uploaded
+307,"110建字第0355號","Google Drive",0,0,-,,,no_reports
+308,"110建字第0341號","Google Drive",151,0,-,,,not_uploaded
+309,"110建字第0338號","其他: sites.google.com",0,0,-,,,no_reports
+310,"110建字第0337號","MEGA",0,0,-,,,no_reports
+311,"110建字第0329號","Google Drive",46,0,-,,,not_uploaded
+312,"110建字第0319號","其他: sites.google.com",0,0,-,,,no_reports
+313,"110建字第0315號","Google Drive",70,0,-,,,not_uploaded
+314,"110建字第0307號","Google Drive",0,0,-,,,no_reports
+315,"110建字第0306號","Google Drive",66,0,-,,,not_uploaded
+316,"110建字第0303號","其他: sites.google.com",0,0,-,,,no_reports
+317,"110建字第0295號","Google Drive",35,0,-,,,not_uploaded
+318,"110建字第0291號","Google Drive",2,0,-,,,not_uploaded
+319,"110建字第0287號","Google Drive",0,0,-,,,no_reports
+320,"110建字第0285號","Google Drive",45,0,-,,,not_uploaded
+321,"110建字第0283號","其他: ssp.mailcloud.com.tw",0,0,-,,,no_reports
+322,"110建字第0282號","Google Drive",98,0,-,,,not_uploaded
+323,"110建字第0279號","Google Drive",25,0,-,,,not_uploaded
+324,"110建字第0273號","Google Drive",82,0,-,,,not_uploaded
+325,"110建字第0272號","Google Drive",4,0,-,,,not_uploaded
+326,"110建字第0269號","其他: sites.google.com",0,0,-,,,no_reports
+327,"110建字第0266號","Google Drive",9,0,-,,,not_uploaded
+328,"110建字第0265號","短網址",0,0,-,,,no_reports
+329,"110建字第0263號","Google Drive",53,0,-,,,not_uploaded
+330,"110建字第0262號","MEGA",0,0,-,,,no_reports
+331,"110建字第0257號","Google Drive",0,0,-,,,no_reports
+332,"110建字第0256號","Google Drive",25,0,-,,,not_uploaded
+333,"110建字第0252號","Google Drive",62,0,-,,,not_uploaded
+334,"110建字第0250號","Google Drive",47,0,-,,,not_uploaded
+335,"110建字第0247號","Google Drive",15,0,-,,,not_uploaded
+336,"110建字第0245號","Google Drive",0,0,-,,,no_reports
+337,"110建字第0243號","Google Drive",191,0,-,,,not_uploaded
+338,"110建字第0238號","Google Drive",136,0,-,,,not_uploaded
+339,"110建字第0230號","Google Drive",121,0,-,,,not_uploaded
+340,"110建字第0228號","SharePoint",0,0,-,,,no_reports
+341,"110建字第0227號","SharePoint",0,0,-,,,no_reports
+342,"110建字第0226號","Google Drive",2,0,-,,,not_uploaded
+343,"110建字第0225號","Google Drive",75,0,-,,,not_uploaded
+344,"110建字第0222號","Google Drive",39,0,-,,,not_uploaded
+345,"110建字第0221號","Google Drive",131,0,-,,,not_uploaded
+346,"110建字第0219號","Google Drive",72,0,-,,,not_uploaded
+347,"110建字第0215號","Google Drive",8,0,-,,,not_uploaded
+348,"110建字第0212號","Google Drive",58,0,-,,,not_uploaded
+349,"110建字第0210號","Google Drive",8,0,-,,,not_uploaded
+350,"110建字第0197號","MEGA",0,0,-,,,no_reports
+351,"110建字第0196號","Google Drive",134,0,-,,,not_uploaded
+352,"110建字第0195號","Google Drive",0,0,-,,,no_reports
+353,"110建字第0190號","Google Drive",11,0,-,,,not_uploaded
+354,"110建字第0188號","Google Drive",0,0,-,,,no_reports
+355,"110建字第0187號","Google Drive",41,0,-,,,not_uploaded
+356,"110建字第0177號","Google Drive",21,0,-,,,not_uploaded
+357,"110建字第0176號","Google Drive",0,0,-,,,no_reports
+358,"110建字第0175號","Google Drive",4,0,-,,,not_uploaded
+359,"110建字第0173號","Google Drive",4,0,-,,,not_uploaded
+360,"110建字第0172號","Google Drive",46,0,-,,,not_uploaded
+361,"110建字第0171號","Google Drive",78,0,-,,,not_uploaded
+362,"110建字第0167號","Google Drive",147,0,-,,,not_uploaded
+363,"110建字第0163號","Google Drive",0,0,-,,,no_reports
+364,"110建字第0156號","Google Drive",0,0,-,,,no_reports
+365,"110建字第0152號","其他: gofile.me",0,0,-,,,no_reports
+366,"110建字第0150號","Google Drive",48,0,-,,,not_uploaded
+367,"110建字第0147號","Google Drive",57,0,-,,,not_uploaded
+368,"110建字第0143號","Google Drive",109,0,-,,,not_uploaded
+369,"110建字第0139號","Google Drive",158,0,-,,,not_uploaded
+370,"110建字第0125號","Google Drive",33,0,-,,,not_uploaded
+371,"110建字第0118號","Google Drive",59,0,-,,,not_uploaded
+372,"110建字第0117號","Google Drive",77,0,-,,,not_uploaded
+373,"110建字第0116號","Google Drive",40,0,-,,,not_uploaded
+374,"110建字第0110號","Google Drive",32,0,-,,,not_uploaded
+375,"110建字第0108號","Google Drive",40,0,-,,,not_uploaded
+376,"110建字第0103號","Google Drive",31,0,-,,,not_uploaded
+377,"110建字第0102號","其他: gofile.me",0,0,-,,,no_reports
+378,"110建字第0101號","其他: sites.google.com",0,0,-,,,no_reports
+379,"110建字第0099號","Google Drive",0,0,-,,,no_reports
+380,"110建字第0096號","Dropbox",0,0,-,,,no_reports
+381,"110建字第0093號","Google Drive",4,0,-,,,not_uploaded
+382,"110建字第0086號","Google Drive",137,0,-,,,not_uploaded
+383,"110建字第0076號","Google Drive",42,0,-,,,not_uploaded
+384,"110建字第0075號","Google Drive",0,0,-,,,no_reports
+385,"110建字第0072號","Google Drive",38,0,-,,,not_uploaded
+386,"110建字第0062號","Google Drive",55,0,-,,,not_uploaded
+387,"110建字第0061號","Google Drive",0,0,-,,,no_reports
+388,"110建字第0059號","其他: sites.google.com",0,0,-,,,no_reports
+389,"110建字第0056號","Google Drive",0,0,-,,,no_reports
+390,"110建字第0055號","Google Drive",76,0,-,,,not_uploaded
+391,"110建字第0053號","Google Drive",0,0,-,,,no_reports
+392,"110建字第0052號","其他: sites.google.com",0,0,-,,,no_reports
+393,"110建字第0051號","Google Drive",32,0,-,,,not_uploaded
+394,"110建字第0041號","Google Drive",16,0,-,,,not_uploaded
+395,"110建字第0038號","Google Drive",0,0,-,,,no_reports
+396,"110建字第0035號","Google Drive",3,0,-,,,not_uploaded
+397,"110建字第0033號","其他: sites.google.com",0,0,-,,,no_reports
+398,"110建字第0023號","其他: s05.calm9.com",0,0,-,,,no_reports
+399,"110建字第0017號","Google Drive",10,0,-,,,not_uploaded
+400,"110建字第0016號","Google Drive",100,0,-,,,not_uploaded
+401,"110建字第0012號","Google Drive",43,0,-,,,not_uploaded
+402,"110建字第0011號","其他: sites.google.com",0,0,-,,,no_reports
+403,"110建字第0006號","Google Drive",1,0,-,,,not_uploaded
+404,"109建字第0300號","Google Drive",37,0,-,,,not_uploaded
+405,"109建字第0292號","Google Drive",0,0,-,,,no_reports
+406,"109建字第0287號","Google Drive",76,0,-,,,not_uploaded
+407,"109建字第0285號","Google Drive",0,0,-,,,no_reports
+408,"109建字第0281號","其他: sites.google.com",0,0,-,,,no_reports
+409,"109建字第0272號","Google Drive",80,0,-,,,not_uploaded
+410,"109建字第0269號","Google Drive",36,0,-,,,not_uploaded
+411,"109建字第0267號","Google Drive",1,0,-,,,not_uploaded
+412,"109建字第0262號","Google Drive",174,0,-,,,not_uploaded
+413,"109建字第0256號","Google Drive",5,0,-,,,not_uploaded
+414,"109建字第0255號","Google Drive",6,0,-,,,not_uploaded
+415,"109建字第0252號","Google Drive",0,0,-,,,no_reports
+416,"109建字第0250號","Google Drive",21,0,-,,,not_uploaded
+417,"109建字第0246號","Google Drive",120,0,-,,,not_uploaded
+418,"109建字第0245號","Google Drive",0,0,-,,,no_reports
+419,"109建字第0226號","Google Drive",3,0,-,,,not_uploaded
+420,"109建字第0209號","SharePoint",0,0,-,,,no_reports
+421,"109建字第0201號","Google Drive",0,0,-,,,no_reports
+422,"109建字第0192號","Google Drive",3,0,-,,,not_uploaded
+423,"109建字第0185號","Google Drive",71,0,-,,,not_uploaded
+424,"109建字第0173號","其他: sites.google.com",0,0,-,,,no_reports
+425,"109建字第0170號","Google Drive",18,0,-,,,not_uploaded
+426,"109建字第0159號","Google Drive",0,0,-,,,no_reports
+427,"109建字第0150號","Google Drive",74,0,-,,,not_uploaded
+428,"109建字第0143號","Google Drive",32,0,-,,,not_uploaded
+429,"109建字第0139號","Google Drive",71,0,-,,,not_uploaded
+430,"109建字第0122號","Google Drive",156,0,-,,,not_uploaded
+431,"109建字第0089號","Google Drive",113,0,-,,,not_uploaded
+432,"109建字第0075號","Google Drive",37,0,-,,,not_uploaded
+433,"109建字第0069號","其他: sites.google.com",0,0,-,,,no_reports
+434,"109建字第0035號","其他: sites.google.com",0,0,-,,,no_reports
+435,"109建字第0027號","Google Drive",10,0,-,,,not_uploaded
+436,"109建字第0021號","Google Drive",0,0,-,,,no_reports
+437,"109建字第0016號","Google Drive",54,0,-,,,not_uploaded
+438,"109建字第0015號","Google Drive",42,0,-,,,not_uploaded
+439,"108建字第0252號","Google Drive",43,0,-,,,not_uploaded
+440,"108建字第0212號","Google Drive",12,0,-,,,not_uploaded
+441,"108建字第0211號","Google Drive",46,0,-,,,not_uploaded
+442,"108建字第0207號","Google Drive",121,0,-,,,not_uploaded
+443,"108建字第0201號","Google Drive",40,0,-,,,not_uploaded
+444,"108建字第0192號","Google Drive",0,0,-,,,no_reports
+445,"108建字第0185號","Google Drive",0,0,-,,,no_reports
+446,"108建字第0131號","Google Drive",42,0,-,,,not_uploaded
+447,"108建字第0111號","Google Drive",11,0,-,,,not_uploaded
+448,"108建字第0106號","Google Drive",292,0,-,,,not_uploaded
+449,"108建字第0065號","MEGA",0,0,-,,,no_reports
+450,"108建字第0015號","短網址",0,0,-,,,no_reports
+451,"108建字第0009號","Google Drive",13,0,-,,,not_uploaded
+452,"107建字第0200號","Google Drive",0,0,-,,,no_reports
+453,"107建字第0167號","Google Drive",8,0,-,,,not_uploaded
+454,"107建字第0092號","Google Drive",8,0,-,,,not_uploaded
+455,"107建字第0091號","Google Drive",55,0,-,,,not_uploaded
+456,"106建字第0213號","Google Drive",29,0,-,,,not_uploaded
+457,"106建字第0111號","Google Drive",99,0,-,,,not_uploaded
+458,"106建字第0042號","Google Drive",1,0,-,,,not_uploaded
+459,"105建字第0172號","Google Drive",7,0,-,,,not_uploaded
+460,"104建字第0225號","Google Drive",0,0,-,,,no_reports
+461,"102建字第0325號","Google Drive",53,0,-,,,not_uploaded
