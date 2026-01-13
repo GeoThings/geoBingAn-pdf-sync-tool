@@ -77,6 +77,12 @@ MAX_WORKERS = 3  # 並行上傳的最大執行緒數
 
 # 自動確認（測試模式）
 AUTO_CONFIRM = True  # 啟用自動確認進行批次上傳
+
+# 排除清單：不上傳的檔案（範例檔、測試檔等）
+EXCLUDE_FILES = [
+    '雲端資料庫設置之範例.pdf',  # 範例檔案，內含假資料
+    '雲端資料庫設置之範例',       # 無副檔名版本
+]
 # ============================================
 
 # 全域鎖，用於並行上傳時保護狀態檔案
@@ -696,14 +702,23 @@ def main():
     # 排序：按修改時間降序（最新的在前面）
     recent_pdfs.sort(key=lambda x: x['modifiedTime'], reverse=True)
 
-    # 過濾掉已上傳的，最多取 MAX_UPLOADS 筆
+    # 過濾掉已上傳的和排除清單中的檔案，最多取 MAX_UPLOADS 筆
     pdfs_to_upload = []
+    excluded_count = 0
     for pdf in recent_pdfs:
+        # 檢查是否在排除清單中
+        if pdf['name'] in EXCLUDE_FILES:
+            excluded_count += 1
+            continue
+
         unique_id = f"{pdf['folder_name']}/{pdf['name']}"
         if unique_id not in state['uploaded_files']:
             pdfs_to_upload.append(pdf)
             if len(pdfs_to_upload) >= MAX_UPLOADS:
                 break
+
+    if excluded_count > 0:
+        print(f"⏭️  已跳過 {excluded_count} 個排除清單中的檔案")
 
     if not pdfs_to_upload:
         print(f"\n⚠️  最新的 {MAX_UPLOADS} 筆 PDF 都已上傳過了！")
