@@ -177,7 +177,9 @@ def scan_google_drive(service) -> Dict[str, dict]:
             ).execute()
 
             files = results.get('files', [])
-            permit_folders[permit]['pdf_count'] = len(files)
+            # 計算唯一檔名數量（排除重複）
+            unique_names = set(f.get('name', '') for f in files)
+            permit_folders[permit]['pdf_count'] = len(unique_names)
 
             if files:
                 latest = max(files, key=lambda x: x.get('modifiedTime', ''))
