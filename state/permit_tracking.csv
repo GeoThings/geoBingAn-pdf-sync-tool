@@ -1,9 +1,9 @@
 ﻿序號,建照字號,雲端服務,Drive PDF,系統 PDF,覆蓋率,最新報告,距今天數,狀態
 1,"114建字第0059號","Google Drive",23,45,100%,2025-12-09,42,completed
 2,"114建字第0058號","Google Drive",0,0,-,,,no_reports
-3,"114建字第0052號","Google Drive",1,5,100%,2025-12-09,41,completed
+3,"114建字第0052號","Google Drive",1,5,100%,2025-12-09,42,completed
 4,"114建字第0032號","其他: sites.google.com",39,38,97%,2025-11-04,77,in_progress
-5,"114建字第0022號","Google Drive",12,12,100%,2025-12-09,41,completed
+5,"114建字第0022號","Google Drive",12,12,100%,2025-12-09,42,completed
 6,"114建字第0017號","其他: public.redsun.tw",1,1,100%,2025-12-05,46,completed
 7,"113建字第8899號","Google Drive",21,36,100%,2026-01-05,15,completed
 8,"113建字第8888號","Google Drive",12,27,100%,2026-01-05,15,completed
@@ -30,13 +30,13 @@
 29,"113建字第0098號","Google Drive",97,97,100%,2025-12-22,29,completed
 30,"113建字第0091號","Google Drive",14,16,100%,2026-01-05,15,completed
 31,"113建字第0090號","SharePoint",0,0,-,,,no_reports
-32,"113建字第0087號","Google Drive",22,40,100%,2025-12-15,35,completed
+32,"113建字第0087號","Google Drive",22,40,100%,2025-12-15,36,completed
 33,"113建字第0080號","Google Drive",25,25,100%,2025-12-22,29,completed
 34,"113建字第0062號","Google Drive",67,67,100%,2025-12-22,29,completed
 35,"113建字第0061號","Google Drive",10,10,100%,2025-12-29,22,completed
 36,"113建字第0056號","Google Drive",12,12,100%,2025-12-22,29,completed
 37,"113建字第0052號","Google Drive",0,0,-,,,no_reports
-38,"113建字第0051號","Google Drive",10,10,100%,2025-12-09,41,completed
+38,"113建字第0051號","Google Drive",10,10,100%,2025-12-09,42,completed
 39,"113建字第0049號","Google Drive",26,44,100%,2025-12-22,29,completed
 40,"113建字第0045號","Google Drive",1,1,100%,2025-10-01,111,completed
 41,"113建字第0041號","Google Drive",69,69,100%,2025-12-29,22,completed
@@ -60,7 +60,7 @@
 59,"112建字第0268號","Google Drive",50,50,100%,2026-01-05,15,completed
 60,"112建字第0262號","Google Drive",96,96,100%,2026-01-05,15,completed
 61,"112建字第0257號","Google Drive",52,52,100%,2025-12-09,42,completed
-62,"112建字第0252號","Google Drive",68,118,100%,2026-01-02,17,completed
+62,"112建字第0252號","Google Drive",68,118,100%,2026-01-02,18,completed
 63,"112建字第0250號","ownCloud",0,0,-,,,no_reports
 64,"112建字第0249號","Google Drive",19,0,-,2025-10-01,111,not_uploaded
 65,"112建字第0243號","Google Drive",40,0,-,2025-10-01,111,not_uploaded
@@ -75,7 +75,7 @@
 74,"112建字第0219號","Google Drive",37,67,100%,2025-12-22,29,completed
 75,"112建字第0218號","Google Drive",69,40,57%,2026-01-05,15,in_progress
 76,"112建字第0216號","Google Drive",1,7,100%,2025-10-01,111,completed
-77,"112建字第0209號","Google Drive",31,57,100%,2025-12-09,41,completed
+77,"112建字第0209號","Google Drive",31,57,100%,2025-12-09,42,completed
 78,"112建字第0208號","Google Drive",53,30,56%,2026-01-05,15,in_progress
 79,"112建字第0205號","Google Drive",39,0,-,2025-10-01,111,not_uploaded
 80,"112建字第0191號","Google Drive",31,14,45%,2026-01-05,15,in_progress
@@ -87,8 +87,8 @@
 86,"112建字第0172號","Google Drive",0,0,-,,,no_reports
 87,"112建字第0169號","Google Drive",7,7,100%,2025-10-05,106,completed
 88,"112建字第0167號","Google Drive",2,1,50%,2025-10-01,111,in_progress
-89,"112建字第0165號","Google Drive",19,19,100%,2025-12-09,41,completed
-90,"112建字第0163號","Google Drive",9,9,100%,2026-01-02,17,completed
+89,"112建字第0165號","Google Drive",19,19,100%,2025-12-09,42,completed
+90,"112建字第0163號","Google Drive",9,9,100%,2026-01-02,18,completed
 91,"112建字第0162號","Google Drive",31,0,-,2025-10-01,111,not_uploaded
 92,"112建字第0158號","Google Drive",15,15,100%,2026-01-05,15,completed
 93,"112建字第0156號","Google Drive",61,61,100%,2025-12-15,36,completed
@@ -105,7 +105,7 @@
 104,"112建字第0121號","短網址",0,0,-,,,no_reports
 105,"112建字第0119號","Google Drive",68,69,100%,2026-01-05,15,completed
 106,"112建字第0118號","Google Drive",0,0,-,,,no_reports
-107,"112建字第0117號","Google Drive",1,4,100%,2025-10-01,110,completed
+107,"112建字第0117號","Google Drive",1,4,100%,2025-10-01,111,completed
 108,"112建字第0116號","Google Drive",43,43,100%,2025-10-20,92,completed
 109,"112建字第0112號","其他: gofile-376d656359.tw5.quickconnect.to",0,0,-,,,no_reports
 110,"112建字第0109號","其他: gofile.me",0,0,-,,,no_reports
@@ -114,7 +114,7 @@
 113,"112建字第0105號","Google Drive",3,3,100%,2025-12-09,42,completed
 114,"112建字第0100號","Google Drive",44,44,100%,2025-12-22,29,completed
 115,"112建字第0098號","Google Drive",0,0,-,,,no_reports
-116,"112建字第0097號","Google Drive",52,0,-,2025-10-01,110,not_uploaded
+116,"112建字第0097號","Google Drive",52,0,-,2025-10-01,111,not_uploaded
 117,"112建字第0096號","Google Drive",52,52,100%,2026-01-05,15,completed
 118,"112建字第0092號","Google Drive",0,0,-,,,no_reports
 119,"112建字第0087號","Google Drive",319,353,100%,2025-12-31,20,completed
@@ -138,7 +138,7 @@
 137,"112建字第0041號","Google Drive",41,0,-,2025-10-01,111,not_uploaded
 138,"112建字第0040號","Google Drive",44,44,100%,2026-01-05,15,completed
 139,"112建字第0037號","Google Drive",39,0,-,2025-10-01,111,not_uploaded
-140,"112建字第0033號","Google Drive",109,0,-,2025-10-13,99,not_uploaded
+140,"112建字第0033號","Google Drive",109,109,100%,2025-10-13,99,completed
 141,"112建字第0031號","Google Drive",66,0,-,2025-10-13,99,not_uploaded
 142,"112建字第0030號","Google Drive",43,1,2%,2025-11-24,57,in_progress
 143,"112建字第0027號","Google Drive",67,65,97%,2025-12-15,36,in_progress
@@ -176,7 +176,7 @@
 175,"111建字第0311號","Google Drive",0,270,-,,,no_reports
 176,"111建字第0310號","短網址",0,0,-,,,no_reports
 177,"111建字第0308號","Google Drive",0,0,-,,,no_reports
-178,"111建字第0307號","Google Drive",195,14,7%,2025-12-09,41,in_progress
+178,"111建字第0307號","Google Drive",195,195,100%,2025-12-09,42,completed
 179,"111建字第0306號","Google Drive",2,2,100%,2025-10-01,111,completed
 180,"111建字第0302號","Dropbox",0,0,-,,,no_reports
 181,"111建字第0300號","Google Drive",0,8,-,,,no_reports
@@ -192,7 +192,7 @@
 191,"111建字第0276號","Google Drive",69,69,100%,2026-01-05,15,completed
 192,"111建字第0273號","Google Drive",0,0,-,,,no_reports
 193,"111建字第0272號","Google Drive",214,6,2%,2025-12-15,36,in_progress
-194,"111建字第0262號","Google Drive",19,0,-,2025-10-01,110,not_uploaded
+194,"111建字第0262號","Google Drive",19,0,-,2025-10-01,111,not_uploaded
 195,"111建字第0258號","Google Drive",0,52,-,,,no_reports
 196,"111建字第0257號","Google Drive",36,36,100%,2025-12-01,49,completed
 197,"111建字第0256號","Google Drive",0,0,-,,,no_reports
@@ -200,17 +200,17 @@
 199,"111建字第0252號","Google Drive",79,75,94%,2025-12-31,20,in_progress
 200,"111建字第0251號","Google Drive",0,0,-,,,no_reports
 201,"111建字第0249號","Google Drive",52,52,100%,2026-01-05,15,completed
-202,"111建字第0246號","Google Drive",1,1,100%,2025-10-01,110,completed
+202,"111建字第0246號","Google Drive",1,1,100%,2025-10-01,111,completed
 203,"111建字第0245號","Google Drive",85,85,100%,2025-12-22,29,completed
 204,"111建字第0243號","Google Drive",20,20,100%,2025-11-24,57,completed
-205,"111建字第0242號","Google Drive",138,7,5%,2025-10-01,110,in_progress
-206,"111建字第0237號","Google Drive",23,0,-,2025-10-01,110,not_uploaded
+205,"111建字第0242號","Google Drive",138,7,5%,2025-10-01,111,in_progress
+206,"111建字第0237號","Google Drive",23,0,-,2025-10-01,111,not_uploaded
 207,"111建字第0232號","Google Drive",12,12,100%,2025-12-09,42,completed
-208,"111建字第0228號","Google Drive",3,3,100%,2025-10-01,110,completed
+208,"111建字第0228號","Google Drive",3,3,100%,2025-10-01,111,completed
 209,"111建字第0227號","Google Drive",61,71,100%,2025-12-29,22,completed
-210,"111建字第0220號","Google Drive",6,6,100%,2025-10-01,110,completed
-211,"111建字第0212號","Google Drive",55,0,-,2025-10-01,110,not_uploaded
-212,"111建字第0208號","Google Drive",157,48,30%,2025-12-09,42,in_progress
+210,"111建字第0220號","Google Drive",6,6,100%,2025-10-01,111,completed
+211,"111建字第0212號","Google Drive",55,0,-,2025-10-01,111,not_uploaded
+212,"111建字第0208號","Google Drive",157,159,100%,2025-12-09,42,completed
 213,"111建字第0207號","Google Drive",106,106,100%,2025-12-15,36,completed
 214,"111建字第0201號","其他: gofile.me",0,0,-,,,no_reports
 215,"111建字第0199號","Dropbox",0,0,-,,,no_reports
@@ -218,7 +218,7 @@
 217,"111建字第0191號","Google Drive",78,78,100%,2025-12-16,35,completed
 218,"111建字第0190號","Google Drive",0,0,-,,,no_reports
 219,"111建字第0188號","SharePoint",256,139,54%,2025-12-05,46,in_progress
-220,"111建字第0186號","Google Drive",38,38,100%,2025-12-09,41,completed
+220,"111建字第0186號","Google Drive",38,38,100%,2025-12-09,42,completed
 221,"111建字第0185號","Google Drive",72,0,-,2025-10-01,111,not_uploaded
 222,"111建字第0183號","Google Drive",2,2,100%,2025-11-24,57,completed
 223,"111建字第0181號","Google Drive",99,10,10%,2025-10-01,111,in_progress
@@ -268,17 +268,17 @@
 267,"111建字第0086號","Google Drive",3,3,100%,2025-10-01,111,completed
 268,"111建字第0083號","Google Drive",18,17,94%,2026-01-05,15,in_progress
 269,"111建字第0082號","Google Drive",108,0,-,2025-10-20,92,not_uploaded
-270,"111建字第0080號","Google Drive",394,394,100%,2025-12-09,41,completed
+270,"111建字第0080號","Google Drive",394,394,100%,2025-12-09,42,completed
 271,"111建字第0075號","Google Drive",35,0,-,2025-10-01,111,not_uploaded
 272,"111建字第0069號","Google Drive",113,0,-,2025-10-01,111,not_uploaded
 273,"111建字第0068號","Google Drive",73,73,100%,2025-12-22,29,completed
 274,"111建字第0062號","Google Drive",68,66,97%,2025-11-24,57,in_progress
 275,"111建字第0061號","Google Drive",41,0,-,2025-10-01,111,not_uploaded
-276,"111建字第0060號","Google Drive",23,35,100%,2025-12-09,41,completed
+276,"111建字第0060號","Google Drive",23,35,100%,2025-12-09,42,completed
 277,"111建字第0059號","Google Drive",6,6,100%,2025-10-01,111,completed
 278,"111建字第0058號","Google Drive",120,0,-,2025-10-01,111,not_uploaded
 279,"111建字第0057號","Google Drive",3,3,100%,2025-10-01,111,completed
-280,"111建字第0056號","Google Drive",63,0,-,2025-10-01,110,not_uploaded
+280,"111建字第0056號","Google Drive",63,0,-,2025-10-01,111,not_uploaded
 281,"111建字第0053號","Google Drive",74,73,98%,2025-12-22,29,in_progress
 282,"111建字第0052號","Google Drive",0,0,-,,,no_reports
 283,"111建字第0051號","Google Drive",27,0,-,2025-10-01,111,not_uploaded
@@ -293,7 +293,7 @@
 292,"111建字第0016號","Google Drive",1,1,100%,2025-10-01,111,completed
 293,"111建字第0013號","其他: sites.google.com",0,0,-,,,no_reports
 294,"111建字第0005號","Google Drive",0,0,-,,,no_reports
-295,"110建字第0377號","Google Drive",48,30,62%,2025-12-09,41,in_progress
+295,"110建字第0377號","Google Drive",48,30,62%,2025-12-09,42,in_progress
 296,"110建字第0376號","Google Drive",30,0,-,2025-10-05,106,not_uploaded
 297,"110建字第0375號","其他: sites.google.com",0,0,-,,,no_reports
 298,"110建字第0372號","Google Drive",37,0,-,2025-10-01,111,not_uploaded
@@ -341,8 +341,8 @@
 340,"110建字第0228號","SharePoint",0,0,-,,,no_reports
 341,"110建字第0227號","SharePoint",0,0,-,,,no_reports
 342,"110建字第0226號","Google Drive",2,2,100%,2025-10-01,111,completed
-343,"110建字第0225號","Google Drive",75,75,100%,2025-11-24,56,completed
-344,"110建字第0222號","Google Drive",39,39,100%,2025-12-09,41,completed
+343,"110建字第0225號","Google Drive",75,75,100%,2025-11-24,57,completed
+344,"110建字第0222號","Google Drive",39,39,100%,2025-12-09,42,completed
 345,"110建字第0221號","Google Drive",131,132,100%,2025-12-29,22,completed
 346,"110建字第0219號","Google Drive",72,0,-,2025-10-01,111,not_uploaded
 347,"110建字第0215號","Google Drive",8,8,100%,2025-10-01,111,completed
@@ -358,7 +358,7 @@
 357,"110建字第0176號","Google Drive",0,10,-,,,no_reports
 358,"110建字第0175號","Google Drive",4,4,100%,2025-12-09,42,completed
 359,"110建字第0173號","Google Drive",4,4,100%,2025-11-24,57,completed
-360,"110建字第0172號","Google Drive",46,46,100%,2025-12-09,41,completed
+360,"110建字第0172號","Google Drive",46,46,100%,2025-12-09,42,completed
 361,"110建字第0171號","Google Drive",78,78,100%,2025-12-15,36,completed
 362,"110建字第0167號","Google Drive",147,147,100%,2026-01-05,15,completed
 363,"110建字第0163號","Google Drive",0,116,-,,,no_reports
@@ -371,7 +371,7 @@
 370,"110建字第0125號","Google Drive",33,33,100%,2025-10-01,111,completed
 371,"110建字第0118號","Google Drive",59,0,-,2025-10-01,111,not_uploaded
 372,"110建字第0117號","Google Drive",77,77,100%,2025-12-15,36,completed
-373,"110建字第0116號","Google Drive",40,40,100%,2025-11-24,56,completed
+373,"110建字第0116號","Google Drive",40,40,100%,2025-11-24,57,completed
 374,"110建字第0110號","Google Drive",32,0,-,2025-10-01,111,not_uploaded
 375,"110建字第0108號","Google Drive",40,0,-,2025-10-01,111,not_uploaded
 376,"110建字第0103號","Google Drive",31,31,100%,2025-12-09,42,completed
@@ -391,7 +391,7 @@
 390,"110建字第0055號","Google Drive",76,76,100%,2025-11-24,57,completed
 391,"110建字第0053號","Google Drive",0,0,-,,,no_reports
 392,"110建字第0052號","其他: sites.google.com",0,0,-,,,no_reports
-393,"110建字第0051號","Google Drive",32,32,100%,2025-12-09,41,completed
+393,"110建字第0051號","Google Drive",32,32,100%,2025-12-09,42,completed
 394,"110建字第0041號","Google Drive",16,0,-,2025-10-01,111,not_uploaded
 395,"110建字第0038號","Google Drive",0,0,-,,,no_reports
 396,"110建字第0035號","Google Drive",3,5,100%,2025-11-24,57,completed
@@ -429,7 +429,7 @@
 428,"109建字第0143號","Google Drive",32,0,-,2025-10-01,111,not_uploaded
 429,"109建字第0139號","Google Drive",71,0,-,2025-10-01,111,not_uploaded
 430,"109建字第0122號","Google Drive",156,0,-,2025-10-01,111,not_uploaded
-431,"109建字第0089號","Google Drive",113,113,100%,2025-12-09,41,completed
+431,"109建字第0089號","Google Drive",113,113,100%,2025-12-09,42,completed
 432,"109建字第0075號","Google Drive",37,0,-,2025-10-01,111,not_uploaded
 433,"109建字第0069號","其他: sites.google.com",0,0,-,,,no_reports
 434,"109建字第0035號","其他: sites.google.com",0,0,-,,,no_reports
