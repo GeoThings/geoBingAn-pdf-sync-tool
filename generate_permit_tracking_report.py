@@ -228,7 +228,13 @@ def load_filename_to_permit_mapping() -> Dict[str, str]:
 
     print(f"  載入 {len(all_files)} 個上傳記錄")
 
-    for filepath in all_files:
+    for item in all_files:
+        # 處理不同格式：可能是字串或 dict
+        if isinstance(item, dict):
+            filepath = item.get('permit', '') + '/' + item.get('pdf', {}).get('name', '')
+        else:
+            filepath = str(item)
+
         match = re.search(permit_pattern, filepath)
         if match:
             permit = match.group(1)
@@ -243,11 +249,40 @@ def load_filename_to_permit_mapping() -> Dict[str, str]:
     return mapping
 
 
+def load_upload_history_by_permit() -> Dict[str, set]:
+    """從上傳記錄取得每個建案已上傳的檔案"""
+    permit_files = {}
+    history_file = './state/upload_history_all.json'
+
+    if os.path.exists(history_file):
+        try:
+            with open(history_file, 'r', encoding='utf-8') as f:
+                history = json.load(f)
+
+            for item in history.get('uploaded_files', []):
+                if isinstance(item, str) and '/' in item:
+                    parts = item.split('/', 1)
+                    permit = parts[0]
+                    filename = parts[1]
+                    if permit not in permit_files:
+                        permit_files[permit] = set()
+                    permit_files[permit].add(filename)
+        except Exception as e:
+            print(f"  載入上傳記錄時發生錯誤: {e}")
+
+    return permit_files
+
+
 def fetch_api_reports() -> Dict[str, List[dict]]:
-    """從 geoBingAn API 取得所有報告"""
+    """從 geoBingAn API 取得所有報告，並結合上傳記錄"""
     print("\n📡 從 geoBingAn API 取得報告資料...")
 
-    # 先載入檔名對應
+    # 載入上傳記錄（按建案分組）
+    upload_history = load_upload_history_by_permit()
+    total_uploaded = sum(len(files) for files in upload_history.values())
+    print(f"  載入 {total_uploaded} 個上傳記錄")
+
+    # 先載入檔名對應（用於 API 報告匹配）
     filename_to_permit = load_filename_to_permit_mapping()
     print(f"  已載入 {len(filename_to_permit)} 個檔名對應")
 
@@ -295,13 +330,17 @@ def fetch_api_reports() -> Dict[str, List[dict]]:
 
     print(f"  共取得 {len(all_reports)} 筆報告")
 
-    # 按建照號碼分組
+    # 按建照號碼分組（結合 API 報告和上傳記錄）
     permit_reports = {}
     matched = 0
     unmatched = 0
 
+    # 先從上傳記錄建立基礎計數
+    for permit, files in upload_history.items():
+        permit_reports[permit] = [{'filename': f, 'created_at': '', 'status': 'uploaded'} for f in files]
+
+    # 再處理 API 報告（避免重複計算）
     for report in all_reports:
-        # 嘗試多個欄位
         filename = report.get('file_name', '') or report.get('original_filename', '')
 
         # 方法 1: 直接從檔名找建照號
@@ -316,13 +355,18 @@ def fetch_api_reports() -> Dict[str, List[dict]]:
 
         if permit:
             matched += 1
+            # 只有當檔案不在上傳記錄中時才加入（避免重複）
             if permit not in permit_reports:
                 permit_reports[permit] = []
-            permit_reports[permit].append({
-                'filename': filename,
-                'created_at': report.get('created_at', ''),
-                'status': report.get('parse_status', report.get('status', ''))
-            })
+
+            # 檢查是否已存在
+            existing_files = {r['filename'] for r in permit_reports[permit]}
+            if filename not in existing_files:
+                permit_reports[permit].append({
+                    'filename': filename,
+                    'created_at': report.get('created_at', ''),
+                    'status': report.get('parse_status', report.get('status', ''))
+                })
         else:
             unmatched += 1
 
@@ -752,11 +796,8 @@ def main():
         system_count = len(system_reports)
         drive_count = info.get('pdf_count', 0)
 
-        # 計算最新報告日期
-        latest_report = ''
-        if system_reports:
-            latest = max(system_reports, key=lambda x: x.get('created_at', ''))
-            latest_report = latest.get('created_at', '')
+        # 計算最新報告日期（使用 Google Drive 的修改時間）
+        latest_report = info.get('latest_pdf', '')
 
         # 計算天數
         days_since = ''
