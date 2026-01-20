@@ -50,13 +50,16 @@ a{color:#dc2626;text-decoration:none}
 .days{font-size:10px}
 .days-old{color:#dc2626;font-weight:600}
 .days-recent{color:#22c55e}
+.alert-warning{color:#f59e0b;font-weight:600}
+.alert-action{color:#dc2626;font-weight:600}
+.alert-critical{color:#7c2d12;font-weight:700;background:#fee2e2;padding:2px 6px;border-radius:3px}
 </style>
 </head>
 <body>
 <div class="container">
 <div class="header">
 <h1>建照監測追蹤報告</h1>
-<div class="meta">2026年01月20日 16:04 | 自動生成</div>
+<div class="meta">2026年01月20日 16:27 | 自動生成</div>
 </div>
 <div class="stats">
 <div class="stat"><div class="label">總建照</div><div class="value">461</div></div>
@@ -144,9 +147,12 @@ a{color:#dc2626;text-decoration:none}
 <th onclick="sortTable(3)">Drive PDF</th>
 <th onclick="sortTable(4)">系統 PDF</th>
 <th onclick="sortTable(5)">覆蓋率</th>
-<th onclick="sortTable(6)">最新報告</th>
-<th onclick="sortTable(7)">距今</th>
-<th onclick="sortTable(8)">狀態</th>
+<th onclick="sortTable(6)">警戒</th>
+<th onclick="sortTable(7)">行動</th>
+<th onclick="sortTable(8)">Alert</th>
+<th onclick="sortTable(9)">最新報告</th>
+<th onclick="sortTable(10)">距今</th>
+<th onclick="sortTable(11)">狀態</th>
 </tr>
 </thead>
 <tbody>
@@ -157,6 +163,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1AiPx2Yu2nWjRp1qVRLP07Qe2v6Z4aTXV" target="_blank">23</a></td>
 <td>23</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-09</td>
 <td><span class="days days-old">42 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -170,6 +179,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -179,6 +191,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1VqpV7IpcSk5xGFKkh_Eez6rbGs5rb-xe" target="_blank">1</a></td>
 <td>1</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-09</td>
 <td><span class="days days-old">42 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -190,6 +205,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1YD_kF8Anb7XAeaQ9Ummo5oSFUPXkenfA" target="_blank">39</a></td>
 <td>39</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-11-04</td>
 <td><span class="days days-old">77 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -201,6 +219,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1HqsIwx3fquTLe914muIw-WJ0HPfPN1wD" target="_blank">12</a></td>
 <td>12</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-09</td>
 <td><span class="days days-old">42 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -212,6 +233,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1n5KldIyj2VQh3YCkw3ytDlxeex9D28Hn" target="_blank">1</a></td>
 <td>1</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-05</td>
 <td><span class="days days-old">46 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -223,6 +247,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1trlWmJsctF2R1ut0EiDillw2pDp6P1H1" target="_blank">21</a></td>
 <td>21</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2026-01-05</td>
 <td><span class="days ">15 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -234,6 +261,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1_eGF1eF0yA7RsaRGsSIL1xbpUQkTPwVT" target="_blank">12</a></td>
 <td>12</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2026-01-05</td>
 <td><span class="days ">15 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -245,6 +275,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1dB1YcymqxN0X6pX6C4TQnp3TZ_ij_L4F" target="_blank">26</a></td>
 <td>26</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2026-01-05</td>
 <td><span class="days ">15 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -256,6 +289,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1sqJXuCzISC6FjkWsECTqmT5kw29dadvU" target="_blank">8</a></td>
 <td>8</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2026-01-05</td>
 <td><span class="days ">15 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -267,6 +303,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1iTsXA9YFQatmspt_k08-jk9KMdQjMTJB" target="_blank">134</a></td>
 <td>134</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><span class="alert-warning">161</span></td>
+<td><span class="alert-action">18</span></td>
+<td><span class="alert-critical">2</span></td>
 <td>2026-01-19</td>
 <td><span class="days days-recent">1 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -278,6 +317,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1m4_3DAUJxBiVTcGYhB7MS7x3v5a7eSTn" target="_blank">33</a></td>
 <td>33</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-29</td>
 <td><span class="days ">22 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -289,6 +331,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1lHfSdhHDksaRohcnbcRk8TVF89VFaIsu" target="_blank">16</a></td>
 <td>16</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2026-01-05</td>
 <td><span class="days ">15 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -299,6 +344,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1wmkUUNtToLXfDLR2gJuHactbUNKm3dBX" target="_blank">34</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -313,6 +361,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -322,6 +373,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1ZhhR28LOHEbAz9ckEoTt9SIt7bEW1l5R" target="_blank">25</a></td>
 <td>38</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-02</td>
 <td><span class="days days-old">110 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -335,6 +389,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -344,6 +401,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1nj7CIlQGT7lXBc9D6i09LMkMQdhTxnvt" target="_blank">21</a></td>
 <td>21</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-31</td>
 <td><span class="days ">20 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -355,6 +415,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1PA9oODB5IyjYMFx7fMkoxLYiHpXeffLb" target="_blank">33</a></td>
 <td>8</td>
 <td>24% <span class="bar"><span class="bar-fill" style="width:24%;background:#dc2626"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-11-14</td>
 <td><span class="days days-old">67 天</span></td>
 <td><span class="badge badge-info">處理中</span></td>
@@ -366,6 +429,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1QkTxGWqHWN9l9zo5RWublnWI8XAbsKpR" target="_blank">2</a></td>
 <td>19</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><span class="alert-warning">9</span></td>
+<td><span class="alert-action">1</span></td>
+<td>-</td>
 <td>2025-12-09</td>
 <td><span class="days days-old">42 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -379,6 +445,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -388,6 +457,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1jzAX8Dl7y4_4WeS0qZuJajvIACHGESA2" target="_blank">21</a></td>
 <td>21</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td><span class="alert-action">1</span></td>
+<td>-</td>
 <td>2025-12-29</td>
 <td><span class="days ">22 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -399,6 +471,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1ZMCEPCGOrFP82-tXilKLmpOQ_6mk8L3f" target="_blank">50</a></td>
 <td>50</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2026-01-05</td>
 <td><span class="days ">15 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -409,6 +484,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1X5aLIUR9rd0IYalXbgH16bMGIOWMpLUU" target="_blank">0</a></td>
 <td>2</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -423,6 +501,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -432,6 +513,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1F9wdO38PutCFeesp5zDYoP-ksG2HUOLo" target="_blank">26</a></td>
 <td>54</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td><span class="alert-action">2</span></td>
+<td>-</td>
 <td>2026-01-14</td>
 <td><span class="days days-recent">6 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -443,6 +527,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1Bw8wK8A6VxcdBqKSy5PuLXzj_RW0HSWL" target="_blank">1</a></td>
 <td>1</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><span class="alert-warning">2</span></td>
+<td>-</td>
+<td>-</td>
 <td>2026-01-05</td>
 <td><span class="days ">15 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -454,6 +541,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1K52nyv_-DP8Yg-OvnTnzbUWmllGq7U7w" target="_blank">21</a></td>
 <td>21</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td><span class="alert-action">17</span></td>
+<td>-</td>
 <td>2026-01-05</td>
 <td><span class="days ">15 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -465,6 +555,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1iAfcsl306xUfzBz7W7y6P8TgGKOTpCu5" target="_blank">97</a></td>
 <td>97</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><span class="alert-warning">1</span></td>
+<td>-</td>
+<td><span class="alert-critical">2</span></td>
 <td>2025-12-22</td>
 <td><span class="days ">29 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -476,6 +569,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1TyEH29d3a4OSu6S2fEPwVxBi4eS5ao1N" target="_blank">14</a></td>
 <td>14</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2026-01-05</td>
 <td><span class="days ">15 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -489,6 +585,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -498,6 +597,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1edOFTqo9nNwvhOZjzACWSYfxovVMIIJS" target="_blank">22</a></td>
 <td>22</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><span class="alert-warning">1</span></td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-15</td>
 <td><span class="days days-old">36 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -509,6 +611,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1i7WG9DTmM77Xr8k9kg-esINkSQVGIusp" target="_blank">25</a></td>
 <td>25</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-22</td>
 <td><span class="days ">29 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -520,6 +625,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/17vGF3H8NxD7Pm6PXuKqChvMmHf5BwiTw" target="_blank">67</a></td>
 <td>67</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-22</td>
 <td><span class="days ">29 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -531,6 +639,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1tTJerLLwGgXV3F50OkvpVxF6r-lsyR6f" target="_blank">10</a></td>
 <td>10</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-29</td>
 <td><span class="days ">22 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -542,6 +653,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1-8xedLMsT0ghdIYF3wUvXfiTYv_vI4Qa" target="_blank">12</a></td>
 <td>12</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-22</td>
 <td><span class="days ">29 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -555,6 +669,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -564,6 +681,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1VjP4aD-WVtHDvi9HgFrfiTP0n8FvNS0k" target="_blank">10</a></td>
 <td>10</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-09</td>
 <td><span class="days days-old">42 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -575,6 +695,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1FOYfolvq0tm6WF4jwtdvtlG0DPdZQ6ch" target="_blank">26</a></td>
 <td>26</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-22</td>
 <td><span class="days ">29 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -586,6 +709,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1X42Y9F2mDJgS2NYmKfbEEGOS7OW99-zp" target="_blank">1</a></td>
 <td>1</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -597,6 +723,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1hPv71jmXlVvOkBwfwMZ67WysarzVtWg5" target="_blank">69</a></td>
 <td>70</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><span class="alert-warning">12</span></td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-29</td>
 <td><span class="days ">22 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -610,6 +739,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -619,6 +751,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1xNBTuyMT5dAypjgL6XbAv1Tet5cDxsox" target="_blank">48</a></td>
 <td>48</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-11-14</td>
 <td><span class="days days-old">67 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -630,6 +765,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1bOiV1GdxDzsMJ9mzuS1W8-6kixjcEIpg" target="_blank">15</a></td>
 <td>15</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-29</td>
 <td><span class="days ">22 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -641,6 +779,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1STaccfjKJzp3FWMIjjOH45eda3xO-H1C" target="_blank">13</a></td>
 <td>13</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2026-01-05</td>
 <td><span class="days ">15 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -654,6 +795,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -663,6 +807,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/12RGf__9xdVW7S8nbStqL-ll8JwxCLS1r" target="_blank">72</a></td>
 <td>72</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><span class="alert-warning">1</span></td>
+<td><span class="alert-action">21</span></td>
+<td>-</td>
 <td>2025-12-09</td>
 <td><span class="days days-old">42 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -674,6 +821,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1cCrMxw2t_xtcLFsqT637VmW3fBt6Py4g" target="_blank">46</a></td>
 <td>46</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2026-01-05</td>
 <td><span class="days ">15 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -684,6 +834,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/11P7wOgyM-TURwkrsPvIn2vscATxMYoWs" target="_blank">0</a></td>
 <td>44</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -698,6 +851,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -707,6 +863,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1LfaLmHMhcvVIyJCfqOWfVNiLnc44O1F1" target="_blank">49</a></td>
 <td>49</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-29</td>
 <td><span class="days ">22 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -718,6 +877,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1EWt_8p55aEkMyWUE4ekNNPxrvaTKQT6j" target="_blank">161</a></td>
 <td>161</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-15</td>
 <td><span class="days days-old">36 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -729,6 +891,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1wAI0PbFQt6UPPMeMsQ1B_Pol6wettvEb" target="_blank">71</a></td>
 <td>71</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><span class="alert-warning">1</span></td>
+<td>-</td>
+<td>-</td>
 <td>2026-01-05</td>
 <td><span class="days ">15 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -740,6 +905,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1nLjkoB8g536o5XTpYbMWZjz7J153gddA" target="_blank">49</a></td>
 <td>49</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2026-01-05</td>
 <td><span class="days ">15 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -753,6 +921,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -762,6 +933,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1Fx7SQwBh5W240BwXLiJuxac7mOAyQVyG" target="_blank">10</a></td>
 <td>10</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-22</td>
 <td><span class="days ">29 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -773,6 +947,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1CJRIMzEM4I-QPcEieF4CP6H-slj672sf" target="_blank">35</a></td>
 <td>35</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-09</td>
 <td><span class="days days-old">42 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -784,6 +961,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/16fF8evGJQuAypRzgMCRI0oVOfuNhB5VN" target="_blank">37</a></td>
 <td>37</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2026-01-05</td>
 <td><span class="days ">15 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -795,6 +975,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/14ggT1RF4yC7L1d-e4tYN0L0aAepCEoBN" target="_blank">50</a></td>
 <td>50</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td><span class="alert-action">2</span></td>
+<td>-</td>
 <td>2026-01-05</td>
 <td><span class="days ">15 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -806,6 +989,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/13aMAj-sgHAAKcqXg7a8Ht5ui8LfZKJKo" target="_blank">96</a></td>
 <td>96</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2026-01-05</td>
 <td><span class="days ">15 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -817,6 +1003,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1QDGpNB1kwYZmPoY1RC9dolJsxxIraQKi" target="_blank">52</a></td>
 <td>52</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-09</td>
 <td><span class="days days-old">42 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -828,6 +1017,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1UAQHugstDg_DX824xAfQ6q64pFwW0UXo" target="_blank">68</a></td>
 <td>68</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2026-01-02</td>
 <td><span class="days ">18 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -841,6 +1033,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive">
@@ -849,6 +1044,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/14-WeLLdwYd7y-yyMr4eBlzGqVHCSXk7m" target="_blank">19</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -861,6 +1059,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1XY_1418KhFPHL0zRh2uc34uoSueP7fjK" target="_blank">40</a></td>
 <td>0</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-warning">未上傳</span></td>
@@ -872,6 +1073,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1pOH670P7feZTY2v3FBykarMV-E0xDCCT" target="_blank">50</a></td>
 <td>50</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2026-01-05</td>
 <td><span class="days ">15 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -883,6 +1087,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1OB3lMNUMyb45I_D3BYQNQKy7p3Rmeg85" target="_blank">19</a></td>
 <td>3</td>
 <td>15% <span class="bar"><span class="bar-fill" style="width:15%;background:#dc2626"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-11-14</td>
 <td><span class="days days-old">67 天</span></td>
 <td><span class="badge badge-info">處理中</span></td>
@@ -894,6 +1101,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1cT1tg0uCpFDV44zb-o4F9xQ_deYkhoXR" target="_blank">2</a></td>
 <td>2</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -907,6 +1117,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -916,6 +1129,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/11wDWhHvMg-JOzOACivodWNDDa9Kr4plt" target="_blank">87</a></td>
 <td>87</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-31</td>
 <td><span class="days ">20 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -926,6 +1142,9 @@ a{color:#dc2626;text-decoration:none}
 <td><span class="badge badge-orange">其他: sites.google.com</span></td>
 <td><a href="https://drive.google.com/drive/folders/1xkEjt-NIx-jiAG6wbGIYqONYoa7n2epX" target="_blank">0</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -940,6 +1159,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -949,6 +1171,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1bOJGEQLDnyXeg6V0IWq0M1UwqUfPnYuE" target="_blank">77</a></td>
 <td>77</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-22</td>
 <td><span class="days ">29 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -960,6 +1185,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1gxj4tsTxvXnSWpR6YChjsfx9N-PXFL1I" target="_blank">37</a></td>
 <td>37</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td><span class="alert-action">5</span></td>
+<td>-</td>
 <td>2025-12-22</td>
 <td><span class="days ">29 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -971,6 +1199,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1NQfeHwZO75qaDFtk6z_wASUygZMOAk_o" target="_blank">69</a></td>
 <td>69</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><span class="alert-warning">1</span></td>
+<td>-</td>
+<td>-</td>
 <td>2026-01-05</td>
 <td><span class="days ">15 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -982,6 +1213,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/182evAqRIKhpARg5vWXU7HTBBS_9jWtFz" target="_blank">1</a></td>
 <td>7</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -993,6 +1227,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1-9lOO8hYQjDeBMIhDJTe9a-u844ZeKCA" target="_blank">31</a></td>
 <td>31</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-09</td>
 <td><span class="days days-old">42 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -1004,6 +1241,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1OPxB3kAmNu6N6TL407niMzn6yvB25K5V" target="_blank">53</a></td>
 <td>53</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2026-01-05</td>
 <td><span class="days ">15 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -1014,6 +1254,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1NOZBMZ7hFrVcRjHLFKN-q1xcNrWMkTg8" target="_blank">39</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -1026,6 +1269,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1ekfnDCwgzZo3-VA_WMgEUlDJiNWsOsSp" target="_blank">31</a></td>
 <td>31</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2026-01-05</td>
 <td><span class="days ">15 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -1037,6 +1283,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1VK-rquytLIfYB92k0M4NkiSnJMSDBujT" target="_blank">27</a></td>
 <td>1</td>
 <td>3% <span class="bar"><span class="bar-fill" style="width:3%;background:#dc2626"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-info">處理中</span></td>
@@ -1048,6 +1297,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1zJpf7_EW3x3ociW5YN-TuUBHLdGODYfc" target="_blank">51</a></td>
 <td>51</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><span class="alert-warning">27</span></td>
+<td><span class="alert-action">48</span></td>
+<td>-</td>
 <td>2025-11-24</td>
 <td><span class="days days-old">57 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -1059,6 +1311,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1UzFOq2oG9qhzomoXsIq9LG_fdoCtJp3u" target="_blank">2</a></td>
 <td>2</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -1070,6 +1325,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1L0VKcqFKLeqOfB7GYelLxA1TKrYBWA2h" target="_blank">38</a></td>
 <td>38</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-29</td>
 <td><span class="days ">22 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -1081,6 +1339,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/14hVTYuEOq91-skwM7m3sdiLQESG_j6Jh" target="_blank">15</a></td>
 <td>85</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><span class="alert-warning">17</span></td>
+<td><span class="alert-action">30</span></td>
+<td><span class="alert-critical">3</span></td>
 <td>2025-12-29</td>
 <td><span class="days ">22 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -1094,6 +1355,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -1103,6 +1367,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1jqxlCSfRmNtm6oFHLhIYh-l-atxV4kXt" target="_blank">7</a></td>
 <td>7</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-05</td>
 <td><span class="days days-old">106 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -1114,6 +1381,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1Rx1zjbByhhdgPsJ2QHvKCNw_YJCqzZ6F" target="_blank">2</a></td>
 <td>2</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -1125,6 +1395,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1JGvbGCPGs_vTsQDICHFrztJ3PlFKyck2" target="_blank">19</a></td>
 <td>19</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-09</td>
 <td><span class="days days-old">42 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -1136,6 +1409,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/15jlGLfeZcB4ejuqMRw3jlO7R_0yf_rOc" target="_blank">9</a></td>
 <td>9</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2026-01-02</td>
 <td><span class="days ">18 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -1146,6 +1422,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1kHWVaSOl4PT_Isg41Np44VDNN8es4HVS" target="_blank">31</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -1158,6 +1437,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1Q7aUS9jf_RnIFoUay8C6-JUYMhsEahey" target="_blank">15</a></td>
 <td>15</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><span class="alert-warning">1</span></td>
+<td>-</td>
+<td>-</td>
 <td>2026-01-05</td>
 <td><span class="days ">15 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -1169,6 +1451,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1vdgkPvliEl_RiEnWdjKT_6z-cpxh9Xs3" target="_blank">61</a></td>
 <td>60</td>
 <td>98% <span class="bar"><span class="bar-fill" style="width:98%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-15</td>
 <td><span class="days days-old">36 天</span></td>
 <td><span class="badge badge-info">處理中</span></td>
@@ -1180,6 +1465,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1Y4mmczSkTscjMNZ-bCOu-Fp4RUTc6_-r" target="_blank">67</a></td>
 <td>67</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-22</td>
 <td><span class="days ">29 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -1191,6 +1479,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1n9OZUxgQJCJHNXii6sCHS-P7z5kFY-t_" target="_blank">95</a></td>
 <td>95</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-15</td>
 <td><span class="days days-old">36 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -1204,6 +1495,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -1213,6 +1507,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1xdOjfsAOa2Cy2xNmzTt9tb_AEgjGPAdi" target="_blank">88</a></td>
 <td>88</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-16</td>
 <td><span class="days days-old">35 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -1223,6 +1520,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1bsOaaKBuqCL-7fBEDq-NDcIVpVvcfDIc" target="_blank">0</a></td>
 <td>5</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -1237,6 +1537,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="no_reports" data-cloud="SharePoint">
@@ -1245,6 +1548,9 @@ a{color:#dc2626;text-decoration:none}
 <td><span class="badge badge-orange">SharePoint</span></td>
 <td>0</td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -1259,6 +1565,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="no_reports" data-cloud="Google Drive">
@@ -1267,6 +1576,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1-peLmGBnAA_5EDxdhLPZIvk2fvj3HNhS" target="_blank">0</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -1281,6 +1593,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="no_reports" data-cloud="短網址">
@@ -1289,6 +1604,9 @@ a{color:#dc2626;text-decoration:none}
 <td><span class="badge badge-orange">短網址</span></td>
 <td><a href="https://drive.google.com/drive/folders/1Mwtw08kql48c1Dqa_UHJJ5PqTzEESSPV" target="_blank">0</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -1301,6 +1619,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1XIaqhoXLOq19Sid6aBLSQSr_fOJ97X7S" target="_blank">68</a></td>
 <td>68</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td><span class="alert-action">3</span></td>
+<td>-</td>
 <td>2026-01-05</td>
 <td><span class="days ">15 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -1314,6 +1635,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -1323,6 +1647,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/10O2EKIzSiKjr2Bx1Zq2jj2C2bE-mlZe-" target="_blank">1</a></td>
 <td>2</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -1334,6 +1661,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1tKQscgsFQK8WhQRclrKoqpuonRaMfrWj" target="_blank">43</a></td>
 <td>43</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><span class="alert-warning">57</span></td>
+<td><span class="alert-action">120</span></td>
+<td>-</td>
 <td>2025-10-20</td>
 <td><span class="days days-old">92 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -1344,6 +1674,9 @@ a{color:#dc2626;text-decoration:none}
 <td><span class="badge badge-orange">其他: gofile-376d656359.tw5.quickconnect.to</span></td>
 <td><a href="https://drive.google.com/drive/folders/11n6H2GWZ3YeaMmFuOSi_MZW-0fyixbsM" target="_blank">0</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -1358,6 +1691,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="no_reports" data-cloud="Google Drive">
@@ -1366,6 +1702,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1MLUCzFGka7FnlcDW09WZxaX-p9SUpgTi" target="_blank">0</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -1380,6 +1719,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -1389,6 +1731,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1fLrvg0jYh3OMCkdMOkwMAMmIRbCo23EA" target="_blank">3</a></td>
 <td>3</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><span class="alert-warning">1</span></td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-09</td>
 <td><span class="days days-old">42 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -1400,6 +1745,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1F5K3iLisvL9iokA6DiCz_TH6ciVC87hX" target="_blank">44</a></td>
 <td>44</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-22</td>
 <td><span class="days ">29 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -1413,6 +1761,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive">
@@ -1421,6 +1772,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1AwIMJC4Co6vHuQI742ndZtyHkcEX7YOF" target="_blank">52</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -1433,6 +1787,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1zVrG9-o1bgHbk7Pr27YHJokfs6B2IKOV" target="_blank">52</a></td>
 <td>52</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2026-01-05</td>
 <td><span class="days ">15 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -1446,6 +1803,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -1455,6 +1815,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1wNiB_rJP92xdjKDJQcyDUqfVKioQeg6y" target="_blank">319</a></td>
 <td>319</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-31</td>
 <td><span class="days ">20 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -1466,6 +1829,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1RcwvmJQoBmHyd20dPexYowJhOHdy3Xp_" target="_blank">75</a></td>
 <td>75</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-22</td>
 <td><span class="days ">29 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -1479,6 +1845,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -1488,6 +1857,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/14kR_I7hXHnYfnPQFE8hoiRSbEfbQuR_2" target="_blank">31</a></td>
 <td>31</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-09</td>
 <td><span class="days days-old">42 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -1499,6 +1871,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1p6VOGhCJj4_lr4bPwgZldkZ2ViLxgIrU" target="_blank">45</a></td>
 <td>45</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><span class="alert-warning">20</span></td>
+<td><span class="alert-action">9</span></td>
+<td>-</td>
 <td>2025-12-15</td>
 <td><span class="days days-old">36 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -1510,6 +1885,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1jRjVeu-sc4fzyv2AybpJGI4MZpgzzKhl" target="_blank">2</a></td>
 <td>2</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-11-24</td>
 <td><span class="days days-old">57 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -1521,6 +1899,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1jmM1dVJutb8yMOC6kbsq4KlR8pzCsEfg" target="_blank">56</a></td>
 <td>56</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-08</td>
 <td><span class="days days-old">43 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -1532,6 +1913,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1ApF5dDxRPHcfJ9D3uk7daQq7-0AxSNdw" target="_blank">8</a></td>
 <td>8</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-05</td>
 <td><span class="days days-old">46 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -1545,6 +1929,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -1554,6 +1941,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1HXY7eBPusE2aczbVdNTYuhEuLZJasTzD" target="_blank">53</a></td>
 <td>53</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-09</td>
 <td><span class="days days-old">42 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -1565,6 +1955,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1XiQvbQ0NkHddwB6MuLgbypZkzpPTCwzU" target="_blank">10</a></td>
 <td>10</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-22</td>
 <td><span class="days ">29 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -1578,6 +1971,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -1587,6 +1983,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1kktZcR3OAns4ebEVHWdLbnqz8Xw_6TiB" target="_blank">350</a></td>
 <td>350</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><span class="alert-warning">21</span></td>
+<td><span class="alert-action">18</span></td>
+<td><span class="alert-critical">2</span></td>
 <td>2025-12-29</td>
 <td><span class="days ">22 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -1598,6 +1997,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1xtWEaGtON3YTembXOvGYh0fiOXYl0xn0" target="_blank">38</a></td>
 <td>38</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><span class="alert-warning">4</span></td>
+<td><span class="alert-action">4</span></td>
+<td>-</td>
 <td>2025-12-22</td>
 <td><span class="days ">29 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -1609,6 +2011,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1LsSz13m_HP05zeIzblJOMl6dP4T-ejYK" target="_blank">49</a></td>
 <td>49</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-09</td>
 <td><span class="days days-old">42 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -1620,6 +2025,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1AGgsplRcXR6yBOKFjGA7Tw9XXEsWXjkc" target="_blank">30</a></td>
 <td>30</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2026-01-05</td>
 <td><span class="days ">15 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -1630,6 +2038,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1v29lCizldt46bijtc6mLTiE-mXYCNl8X" target="_blank">28</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -1642,6 +2053,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1jTwoPYQy-I5ZXCPc3aZFnerNtQwbE4_G" target="_blank">47</a></td>
 <td>0</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-warning">未上傳</span></td>
@@ -1652,6 +2066,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1-NZNeqQUXKWQtvrL08LuAAY3NVeGt7Z6" target="_blank">41</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -1664,6 +2081,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/17v4Lxty_dGk8pYXREZM8DO0rlgQPokmq" target="_blank">44</a></td>
 <td>44</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2026-01-05</td>
 <td><span class="days ">15 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -1674,6 +2094,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1v6oqWUv827k75vqlhs6aFCgRIZMmEq5o" target="_blank">39</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -1686,6 +2109,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1NhKICIsIiVoz4Wf4jKVDkcuqzm7UkKZi" target="_blank">109</a></td>
 <td>109</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><span class="alert-warning">182</span></td>
+<td><span class="alert-action">51</span></td>
+<td><span class="alert-critical">25</span></td>
 <td>2025-10-13</td>
 <td><span class="days days-old">99 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -1696,6 +2122,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1cfXEj2RMCwZCp2QuHeDAJtcHbCTFpffA" target="_blank">66</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-13</td>
 <td><span class="days days-old">99 天</span></td>
@@ -1708,6 +2137,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1tltsjZx4B7SPaD9w5Mkhst5endqaAI6D" target="_blank">43</a></td>
 <td>1</td>
 <td>2% <span class="bar"><span class="bar-fill" style="width:2%;background:#dc2626"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-11-24</td>
 <td><span class="days days-old">57 天</span></td>
 <td><span class="badge badge-info">處理中</span></td>
@@ -1719,6 +2151,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1aPIvTgP8e8rhBWp22cT2gZJCLzWVS-J1" target="_blank">67</a></td>
 <td>65</td>
 <td>97% <span class="bar"><span class="bar-fill" style="width:97%;background:#22c55e"></span></span></td>
+<td><span class="alert-warning">11</span></td>
+<td><span class="alert-action">17</span></td>
+<td>-</td>
 <td>2025-12-15</td>
 <td><span class="days days-old">36 天</span></td>
 <td><span class="badge badge-info">處理中</span></td>
@@ -1729,6 +2164,9 @@ a{color:#dc2626;text-decoration:none}
 <td><span class="badge badge-orange">SharePoint</span></td>
 <td><a href="https://drive.google.com/drive/folders/1TmzAZKCB8Y5AKq7BjdRr8LqJwNOOq5QJ" target="_blank">0</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -1743,6 +2181,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="no_reports" data-cloud="短網址">
@@ -1751,6 +2192,9 @@ a{color:#dc2626;text-decoration:none}
 <td><span class="badge badge-orange">短網址</span></td>
 <td><a href="https://drive.google.com/drive/folders/1spYblacYN4gRXuIsG0bsaN0DcCFZpvo3" target="_blank">0</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -1763,6 +2207,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1DTZUgLaHC6owthDnDaiHkbsHmZ17Dm0h" target="_blank">82</a></td>
 <td>1</td>
 <td>1% <span class="bar"><span class="bar-fill" style="width:1%;background:#dc2626"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-27</td>
 <td><span class="days days-old">85 天</span></td>
 <td><span class="badge badge-info">處理中</span></td>
@@ -1773,6 +2220,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1zALlQKxSvS7_U3xTFqhNTkVqoikhWy_Q" target="_blank">0</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -1787,6 +2237,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -1796,6 +2249,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1fH4uV2xAMxmmUWk6Wv6vAn2U-jCIW6Ml" target="_blank">21</a></td>
 <td>56</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2026-01-05</td>
 <td><span class="days ">15 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -1809,6 +2265,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive">
@@ -1818,6 +2277,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1GYEWO14G6M_-EKjOFoMlvz1ZF1IaHLaf" target="_blank">34</a></td>
 <td>1</td>
 <td>2% <span class="bar"><span class="bar-fill" style="width:2%;background:#dc2626"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-11-14</td>
 <td><span class="days days-old">67 天</span></td>
 <td><span class="badge badge-info">處理中</span></td>
@@ -1831,6 +2293,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive">
@@ -1840,6 +2305,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/16wUlzWp32zL7w83mh_o3UF7tfxA2aWzO" target="_blank">117</a></td>
 <td>79</td>
 <td>67% <span class="bar"><span class="bar-fill" style="width:67%;background:#f59e0b"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-11-14</td>
 <td><span class="days days-old">67 天</span></td>
 <td><span class="badge badge-info">處理中</span></td>
@@ -1851,6 +2319,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1eDHRWan38_-I4XfBL_6DmjtncumotY77" target="_blank">94</a></td>
 <td>94</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-31</td>
 <td><span class="days ">20 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -1864,6 +2335,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive">
@@ -1872,6 +2346,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1faRXo8TP9z7OVNjrJkd9VFOxnxS1tury" target="_blank">47</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -1886,6 +2363,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive">
@@ -1895,6 +2375,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1OdvxZM9QrHMSe5AaGa9PNiLWYrVE5Ghm" target="_blank">2</a></td>
 <td>1</td>
 <td>50% <span class="bar"><span class="bar-fill" style="width:50%;background:#f59e0b"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-info">處理中</span></td>
@@ -1906,6 +2389,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1aTFkbUS0bi-IzIxdyhXMPZjqdVIsEQTV" target="_blank">36</a></td>
 <td>36</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2026-01-05</td>
 <td><span class="days ">15 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -1916,6 +2402,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/10JGdO-JZw5GwIzxyd7ti6T8TOFuo7njv" target="_blank">0</a></td>
 <td>126</td>
+<td>-</td>
+<td>-</td>
+<td><span class="alert-action">1</span></td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -1930,6 +2419,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="no_reports" data-cloud="其他: sites.google.com">
@@ -1938,6 +2430,9 @@ a{color:#dc2626;text-decoration:none}
 <td><span class="badge badge-orange">其他: sites.google.com</span></td>
 <td><a href="https://drive.google.com/drive/folders/1HmH9v1OpNNou5h2-aDJRi-ySKCZmueqJ" target="_blank">0</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -1952,6 +2447,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive">
@@ -1960,6 +2458,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1aTfLoWw62fkfXWaR58B6b3koDJ1_sRLE" target="_blank">47</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -1972,6 +2473,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1Md4ugR6XnGpOSXyHGFKU8KVKzMcuwndV" target="_blank">109</a></td>
 <td>0</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-13</td>
 <td><span class="days days-old">99 天</span></td>
 <td><span class="badge badge-warning">未上傳</span></td>
@@ -1983,6 +2487,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1CzHkVC0FUrVawqHOhls2TK8gkCK1NvNT" target="_blank">86</a></td>
 <td>86</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-11-24</td>
 <td><span class="days days-old">57 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -1994,6 +2501,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/16WdPHzXTxkQVEcRPE-OeDFvxFXVv7Ydz" target="_blank">56</a></td>
 <td>56</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-29</td>
 <td><span class="days ">22 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -2005,6 +2515,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1Usizv_3v0appO9joH1h0O9sY8HzZJ8qm" target="_blank">56</a></td>
 <td>55</td>
 <td>98% <span class="bar"><span class="bar-fill" style="width:98%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-09</td>
 <td><span class="days days-old">42 天</span></td>
 <td><span class="badge badge-info">處理中</span></td>
@@ -2015,6 +2528,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1b7AzcyeHEIVAh62cWeRAXfKZ6b2ckOPV" target="_blank">0</a></td>
 <td>48</td>
+<td>-</td>
+<td><span class="alert-warning">7</span></td>
+<td><span class="alert-action">14</span></td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -2027,6 +2543,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1_p7y8EvoQHfmPX_aA6PweVoUdPvNe_4t" target="_blank">164</a></td>
 <td>100</td>
 <td>60% <span class="bar"><span class="bar-fill" style="width:60%;background:#f59e0b"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-info">處理中</span></td>
@@ -2038,6 +2557,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/13i96AZa7sUCFW4cG9Df1ttncgksBn01_" target="_blank">10</a></td>
 <td>10</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -2051,6 +2573,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive">
@@ -2059,6 +2584,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/11aJkucXrKxM9EmL4wgoSMsUztn6ZM5mH" target="_blank">30</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -2073,6 +2601,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="no_reports" data-cloud="短網址">
@@ -2081,6 +2612,9 @@ a{color:#dc2626;text-decoration:none}
 <td><span class="badge badge-orange">短網址</span></td>
 <td><a href="https://drive.google.com/drive/folders/19MikSECkR3srg91GP87J2oV1ADbinGGe" target="_blank">0</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -2095,6 +2629,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -2104,6 +2641,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1GHLs50DacqqCdtGCi_a5TOl4rAOxsa22" target="_blank">195</a></td>
 <td>195</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><span class="alert-warning">249</span></td>
+<td><span class="alert-action">107</span></td>
+<td><span class="alert-critical">72</span></td>
 <td>2025-12-09</td>
 <td><span class="days days-old">42 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -2115,6 +2655,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1J26U7At8QN3n93B9rjrS6-fjtDzsBw31" target="_blank">2</a></td>
 <td>2</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -2125,6 +2668,9 @@ a{color:#dc2626;text-decoration:none}
 <td><span class="badge badge-orange">Dropbox</span></td>
 <td><a href="https://drive.google.com/drive/folders/1sXcJeZWqvg8hwS6IanGScOs0Ycg9Bsy-" target="_blank">0</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -2139,6 +2685,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -2148,6 +2697,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1f9HtYugwjwdnIaVHMccsQCM1eInYqTjI" target="_blank">5</a></td>
 <td>5</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><span class="alert-warning">3</span></td>
+<td><span class="alert-action">2</span></td>
+<td>-</td>
 <td>2026-01-05</td>
 <td><span class="days ">15 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -2158,6 +2710,9 @@ a{color:#dc2626;text-decoration:none}
 <td><span class="badge badge-orange">SharePoint</span></td>
 <td><a href="https://drive.google.com/drive/folders/1EPgUNqkZesRK--Jo94-E3U0KpUpc__6k" target="_blank">0</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -2172,6 +2727,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -2181,6 +2739,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1a_q1yMtuemKdAplEgRsDYWgcJMDLHyJf" target="_blank">8</a></td>
 <td>8</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -2191,6 +2752,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1Bd2uM_WoXO5oegCNsVWCQSWrTGoBBl5r" target="_blank">62</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -2205,6 +2769,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="no_reports" data-cloud="Google Drive">
@@ -2216,6 +2783,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive">
@@ -2224,6 +2794,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1Sc68VTi-CVwvtq-NTt1_N9vBgcmA8l3D" target="_blank">31</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -2238,6 +2811,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -2247,6 +2823,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1zxLfxbevxkpw3rXwJkDvwyVGH855dNtH" target="_blank">69</a></td>
 <td>69</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2026-01-05</td>
 <td><span class="days ">15 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -2260,6 +2839,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive">
@@ -2269,6 +2851,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/16EPUk5fdCQuD-5fMrKbhnm49zgtJLrrd" target="_blank">214</a></td>
 <td>12</td>
 <td>5% <span class="bar"><span class="bar-fill" style="width:5%;background:#dc2626"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-15</td>
 <td><span class="days days-old">36 天</span></td>
 <td><span class="badge badge-info">處理中</span></td>
@@ -2279,6 +2864,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1WWP2FtWK8lICy6BdZpcOdeKF7QjpqPv4" target="_blank">19</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -2293,6 +2881,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -2302,6 +2893,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1eTaK2SDREjt1wqqxiIX-GsVFR0v80GIC" target="_blank">36</a></td>
 <td>36</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-01</td>
 <td><span class="days days-old">50 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -2312,6 +2906,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1g0RNEGarPwlLVthNgCLzCaYvfJ-uv1wk" target="_blank">0</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -2326,6 +2923,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -2335,6 +2935,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/14sEIGmXcF1UzyAQsFWJE-qrTJG-pbCsp" target="_blank">79</a></td>
 <td>80</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><span class="alert-warning">1</span></td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-31</td>
 <td><span class="days ">20 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -2348,6 +2951,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -2357,6 +2963,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1yJZIA5qIjubbtBXrNpkZqI-nUxG7E2jh" target="_blank">52</a></td>
 <td>52</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2026-01-05</td>
 <td><span class="days ">15 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -2368,6 +2977,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1jWMH_9SSjK3AfvVYt9TzSPj9AgxPhNeW" target="_blank">1</a></td>
 <td>1</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -2379,6 +2991,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1xSwwkRHNVuV6Baw3OWTB7oz5r6UP0LoL" target="_blank">85</a></td>
 <td>85</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-22</td>
 <td><span class="days ">29 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -2390,6 +3005,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1WfLbWD-HqCsVf48xP66fBDFGfSLYOMxn" target="_blank">20</a></td>
 <td>20</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><span class="alert-warning">1</span></td>
+<td>-</td>
+<td>-</td>
 <td>2025-11-24</td>
 <td><span class="days days-old">57 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -2401,6 +3019,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/12FPkNMdt2NiENfAuqa-3FWQr7zABq2Ds" target="_blank">138</a></td>
 <td>7</td>
 <td>5% <span class="bar"><span class="bar-fill" style="width:5%;background:#dc2626"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-info">處理中</span></td>
@@ -2411,6 +3032,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1iq4MJ25eYJ_DMPxABodDa0Gsv4Eq4eyw" target="_blank">23</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -2423,6 +3047,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1DhrSYkcByHvxAKiL3qwkeDb_EIYT94bC" target="_blank">12</a></td>
 <td>12</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-09</td>
 <td><span class="days days-old">42 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -2434,6 +3061,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1F_ro89KodsvcPO6373PuiuS3FJ74BZh4" target="_blank">3</a></td>
 <td>3</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -2445,6 +3075,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1pk7jI0_KgJvgI4_woxbiwD2bTMNniv1x" target="_blank">61</a></td>
 <td>61</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-29</td>
 <td><span class="days ">22 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -2456,6 +3089,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1Ce56XpY9ysQ90YZTmwd44h_mZF6D1I9u" target="_blank">6</a></td>
 <td>6</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -2466,6 +3102,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1IFNgN0ljbsg0sKf-GLVHFy2Rg8w6pJxR" target="_blank">55</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -2478,6 +3117,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1sxyyWAdqODUfTggcX-iE217yMmphpO1K" target="_blank">157</a></td>
 <td>157</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><span class="alert-warning">26</span></td>
+<td><span class="alert-action">8</span></td>
+<td>-</td>
 <td>2025-12-09</td>
 <td><span class="days days-old">42 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -2489,6 +3131,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1s5M9hSi7zOpEmHfm-mZ6aiysVAloI6Es" target="_blank">106</a></td>
 <td>106</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-15</td>
 <td><span class="days days-old">36 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -2499,6 +3144,9 @@ a{color:#dc2626;text-decoration:none}
 <td><span class="badge badge-orange">其他: gofile.me</span></td>
 <td><a href="https://drive.google.com/drive/folders/14JfO6En0XydIwphyjZvRcyVJHrOYpKMC" target="_blank">0</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -2513,6 +3161,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="no_reports" data-cloud="Google Drive">
@@ -2521,6 +3172,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1HvuFcadbNTBsstg7Ko_cEH4XmNOIJh8Q" target="_blank">0</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -2533,6 +3187,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1GdDJlQMcfHMMK_sL3IS91P6Z23yVE_4d" target="_blank">78</a></td>
 <td>78</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-16</td>
 <td><span class="days days-old">35 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -2546,6 +3203,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="SharePoint">
@@ -2555,6 +3215,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1AafyQtOTh7z-KSGFzF13c-CPfw94md4d" target="_blank">256</a></td>
 <td>256</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-05</td>
 <td><span class="days days-old">46 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -2566,6 +3229,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1SFbJOcap0dzoipfZ7Mm5rgmIPbv-fXqn" target="_blank">38</a></td>
 <td>38</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><span class="alert-warning">4</span></td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-09</td>
 <td><span class="days days-old">42 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -2576,6 +3242,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1PH8JDtxmq10A4wkeX0_nTA5frBeZvSRX" target="_blank">72</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -2588,6 +3257,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1je_7IFnw1Z1H4L51UvLbbnRCU-ZsOl1G" target="_blank">2</a></td>
 <td>2</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><span class="alert-warning">2</span></td>
+<td>-</td>
+<td>-</td>
 <td>2025-11-24</td>
 <td><span class="days days-old">57 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -2599,6 +3271,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1_gWmqz2kcOJT01swAARwjsvjdtQ_Sqqf" target="_blank">99</a></td>
 <td>10</td>
 <td>10% <span class="bar"><span class="bar-fill" style="width:10%;background:#dc2626"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-info">處理中</span></td>
@@ -2609,6 +3284,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1QfZqUxGFyq4Z3hsst8h1vbB-p3eyQ8o9" target="_blank">87</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -2621,6 +3299,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1_qLQ_wZ27dlqU_T-Zz5vhH5HWW48MHy0" target="_blank">108</a></td>
 <td>13</td>
 <td>12% <span class="bar"><span class="bar-fill" style="width:12%;background:#dc2626"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-27</td>
 <td><span class="days days-old">85 天</span></td>
 <td><span class="badge badge-info">處理中</span></td>
@@ -2632,6 +3313,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/16EnYujOaCR9QuB4dU1GuiN0sfMSw6Hxs" target="_blank">31</a></td>
 <td>0</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-warning">未上傳</span></td>
@@ -2642,6 +3326,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1OxEPOWyDpm59t3xGjAS_BqXVPCSy4jiS" target="_blank">46</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -2656,6 +3343,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive">
@@ -2664,6 +3354,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1C3gHSSYX9FPjZWMgfKga-BD6rHMWVC_J" target="_blank">138</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -2678,6 +3371,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="no_reports" data-cloud="其他: sites.google.com">
@@ -2686,6 +3382,9 @@ a{color:#dc2626;text-decoration:none}
 <td><span class="badge badge-orange">其他: sites.google.com</span></td>
 <td><a href="https://drive.google.com/drive/folders/1cncrYzj914fEM1p1_Si4tfTi11226OHF" target="_blank">0</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -2700,6 +3399,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="no_reports" data-cloud="Google Drive">
@@ -2708,6 +3410,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1CPjx1JPNaDVA_2D11XQss7QUwbgS9UWf" target="_blank">0</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -2722,6 +3427,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive">
@@ -2730,6 +3438,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/17QyPFMGGsZT67u3TAFTSE9WRyBnu0QYJ" target="_blank">80</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -2742,6 +3453,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1dLDglKLZFbbqMd5iEhYK9-c-Fl5ZpPmB" target="_blank">80</a></td>
 <td>80</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2026-01-05</td>
 <td><span class="days ">15 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -2753,6 +3467,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1NRTOQ4xtP0wI5-0E38udGpPrBX4zno0N" target="_blank">201</a></td>
 <td>201</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2026-01-05</td>
 <td><span class="days ">15 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -2766,6 +3483,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -2775,6 +3495,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1aKMp8uj-hKTNjuCaSwjJ7OQtzvonyNHC" target="_blank">104</a></td>
 <td>104</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-29</td>
 <td><span class="days ">22 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -2786,6 +3509,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/144pPb0i6KUofCEO62qeBLthT16cCfVVL" target="_blank">1</a></td>
 <td>1</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -2797,6 +3523,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1dzxOZRM08h6LHFJERrCzZUe-v-inmlgO" target="_blank">1</a></td>
 <td>1</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -2810,6 +3539,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive">
@@ -2818,6 +3550,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1gVoiPPPpIh8aWXIdAjmoQvZVVQrpsYen" target="_blank">24</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -2830,6 +3565,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/15DfWm7cipaXXw3RazysbcZqY7X-7Rxva" target="_blank">99</a></td>
 <td>99</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-09</td>
 <td><span class="days days-old">42 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -2840,6 +3578,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1_SK8VSDDy2C3v8drHqwbIWA86ZPG1B-_" target="_blank">34</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -2852,6 +3593,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1hwIAZGZLmaJmiLeWILK3Zx9n3UPEjD1e" target="_blank">6</a></td>
 <td>6</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -2862,6 +3606,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1LSQI0gEOSoXjCoNTVH1KMLn2GK4Y4VCR" target="_blank">60</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -2874,6 +3621,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1LYGelNJozYNbwDyUuVFNbjVUUW7ZcQkN" target="_blank">292</a></td>
 <td>42</td>
 <td>14% <span class="bar"><span class="bar-fill" style="width:14%;background:#dc2626"></span></span></td>
+<td><span class="alert-warning">2</span></td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-08</td>
 <td><span class="days days-old">43 天</span></td>
 <td><span class="badge badge-info">處理中</span></td>
@@ -2887,6 +3637,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -2896,6 +3649,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1aRsSZzresNoJ87yGFhsAdPKvOCCONpEr" target="_blank">39</a></td>
 <td>39</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><span class="alert-warning">4</span></td>
+<td><span class="alert-action">2</span></td>
+<td>-</td>
 <td>2025-12-09</td>
 <td><span class="days days-old">42 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -2906,6 +3662,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1M95wydFYs_zh2e6v6y_g-Nm00_ggGqsq" target="_blank">37</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -2920,6 +3679,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="no_reports" data-cloud="Google Drive">
@@ -2928,6 +3690,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/10qwjyU0oUSNspBHydgi6LXEYkwJ_onXc" target="_blank">0</a></td>
 <td>4</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -2940,6 +3705,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1gLK9WdHuSuUh5Ouo9roPPf9wpnUG7ILu" target="_blank">7</a></td>
 <td>7</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -2951,6 +3719,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1xTD9gIGb_mfJuokG-V1HmLCPJm3Ddkom" target="_blank">16</a></td>
 <td>16</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td><span class="alert-action">1</span></td>
+<td>-</td>
 <td>2025-12-09</td>
 <td><span class="days days-old">42 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -2962,6 +3733,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1M85VY9uIi78ZW4p8-Bsc2sJpHoJBrM35" target="_blank">70</a></td>
 <td>70</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-22</td>
 <td><span class="days ">29 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -2972,6 +3746,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1VT5TCBL_ADgOh_qnp7J0Jr9Z9hM1MEB1" target="_blank">40</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -2986,6 +3763,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="no_reports" data-cloud="Google Drive">
@@ -2994,6 +3774,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1ySxjbP3UdxvBOBKScwROQiToWH5xleDh" target="_blank">0</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -3006,6 +3789,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1sZj1Ag177mv421QpkJkuOHxyNINJr_2Y" target="_blank">82</a></td>
 <td>3</td>
 <td>3% <span class="bar"><span class="bar-fill" style="width:3%;background:#dc2626"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-11-14</td>
 <td><span class="days days-old">67 天</span></td>
 <td><span class="badge badge-info">處理中</span></td>
@@ -3017,6 +3803,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/12p2gzVDrqVTVM2uo8FBIsSB85Hvcc3bz" target="_blank">29</a></td>
 <td>2</td>
 <td>6% <span class="bar"><span class="bar-fill" style="width:6%;background:#dc2626"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-info">處理中</span></td>
@@ -3028,6 +3817,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1GA9cNS8fJ9YNDe7HDNGX64iqE_e_0arK" target="_blank">88</a></td>
 <td>88</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-22</td>
 <td><span class="days ">29 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -3038,6 +3830,9 @@ a{color:#dc2626;text-decoration:none}
 <td><span class="badge badge-orange">OneDrive</span></td>
 <td><a href="https://drive.google.com/drive/folders/1HMWftuo60ipDnrb0g0HMKQtQPTpzbeaT" target="_blank">0</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -3052,6 +3847,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -3061,6 +3859,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1HmZ20N4Y1y5nDzZO_zzYxGR6X-w9KZqL" target="_blank">63</a></td>
 <td>63</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-16</td>
 <td><span class="days days-old">35 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -3074,6 +3875,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -3083,6 +3887,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1CgvaXso3PQjX2o9rJa7ijk81r_wms3-V" target="_blank">3</a></td>
 <td>3</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -3094,6 +3901,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1DorXtdrsk32PfX3AEgbhl80BjvGHDzBj" target="_blank">18</a></td>
 <td>18</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2026-01-05</td>
 <td><span class="days ">15 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -3104,6 +3914,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1zHuLWnhpNKzutoW-KcGNy3jI35ZTpg_q" target="_blank">108</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-20</td>
 <td><span class="days days-old">92 天</span></td>
@@ -3116,6 +3929,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1_KMp49zOrXEYzEDWPQs_x4HS1lR2tynY" target="_blank">394</a></td>
 <td>394</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><span class="alert-warning">161</span></td>
+<td><span class="alert-action">185</span></td>
+<td><span class="alert-critical">26</span></td>
 <td>2025-12-09</td>
 <td><span class="days days-old">42 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -3126,6 +3942,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1WXvtUne5cSM5wkX6QhGyOZGL5ezqdSwE" target="_blank">35</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -3138,6 +3957,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1tU2JuJBjKGHmd4gUJ8r4yo3Mwv23G3T_" target="_blank">113</a></td>
 <td>0</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-warning">未上傳</span></td>
@@ -3149,6 +3971,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/13Ea6hFkOz0kgcIV7PaAnv5q7YEGt2geo" target="_blank">73</a></td>
 <td>73</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-22</td>
 <td><span class="days ">29 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -3160,6 +3985,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1WwEQy_vDfz8TdR04Gd2sk3Y_LCPuW7L0" target="_blank">68</a></td>
 <td>68</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><span class="alert-warning">901</span></td>
+<td><span class="alert-action">186</span></td>
+<td><span class="alert-critical">44</span></td>
 <td>2025-11-24</td>
 <td><span class="days days-old">57 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -3170,6 +3998,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1h-s1Rwm1xIj8j7c6HyQ6bJrIIV1Wd95W" target="_blank">41</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -3182,6 +4013,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1o02Zd02U6bkEhE1_dt4K0O0sPI_lu_Gp" target="_blank">23</a></td>
 <td>23</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><span class="alert-warning">28</span></td>
+<td><span class="alert-action">70</span></td>
+<td>-</td>
 <td>2025-12-09</td>
 <td><span class="days days-old">42 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -3193,6 +4027,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/133lCP6wxLqS5hcEytIkxtmdH_DohMb8v" target="_blank">6</a></td>
 <td>6</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -3203,6 +4040,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1cMruK8-4ItvtT2ZgbyBEz6j-icvsn5ok" target="_blank">120</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -3215,6 +4055,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1YlnpinL-U08xIKa-c0X2gkmQ5dbAzGA7" target="_blank">3</a></td>
 <td>3</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -3225,6 +4068,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1iP_l2TiksL18utkz533iwv9vC7f0SZG4" target="_blank">63</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -3237,6 +4083,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1_detHXKo_ddiIefxrIbF6Nf5FZUREHTu" target="_blank">73</a></td>
 <td>73</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-22</td>
 <td><span class="days ">29 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -3250,6 +4099,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive">
@@ -3258,6 +4110,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1AcfeBm7zpZLYdOlqLdbhuvXKKFhLmbh1" target="_blank">27</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -3270,6 +4125,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1cdmv4rd8T9H0X8KaC_9UnSjIgSAZxkPI" target="_blank">53</a></td>
 <td>1</td>
 <td>1% <span class="bar"><span class="bar-fill" style="width:1%;background:#dc2626"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-11-14</td>
 <td><span class="days days-old">67 天</span></td>
 <td><span class="badge badge-info">處理中</span></td>
@@ -3280,6 +4138,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1kzK940Uo7T-R8nf0grBx59UCL5mz3r1T" target="_blank">25</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -3294,6 +4155,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive">
@@ -3302,6 +4166,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/14YcmCF6L-nWJvHpz_ZR5-8WNH2mUAGwQ" target="_blank">86</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -3314,6 +4181,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1iH9WTsQzimHzt_YQLVcvQc5G1WR5-soT" target="_blank">4</a></td>
 <td>4</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -3325,6 +4195,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1gnA8LbamacgUIT_7MTYnI_hXSWg-Mbtn" target="_blank">75</a></td>
 <td>0</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-warning">未上傳</span></td>
@@ -3335,6 +4208,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1IuT6UnpqYQ5u9jFVKaJGh63CKeIb0S42" target="_blank">114</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -3349,6 +4225,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -3358,6 +4237,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1j42kKLE_lfDvUuyh3xkoKSOebwpmw2ae" target="_blank">1</a></td>
 <td>1</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -3368,6 +4250,9 @@ a{color:#dc2626;text-decoration:none}
 <td><span class="badge badge-orange">其他: sites.google.com</span></td>
 <td><a href="https://drive.google.com/drive/folders/1qbr_UjzcbsTbQ5UXP-xy6shFwyKyGKTX" target="_blank">0</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -3382,6 +4267,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -3391,6 +4279,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1gvH1eQgLnBYGbszfco9LxMzxgplC4Eq4" target="_blank">48</a></td>
 <td>48</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-09</td>
 <td><span class="days days-old">42 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -3401,6 +4292,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1X4nluEgaPD1qfNZao5IL-IF4y_2_LW1E" target="_blank">29</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-05</td>
 <td><span class="days days-old">106 天</span></td>
@@ -3415,6 +4309,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive">
@@ -3423,6 +4320,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1vACiYeisfNlHSJql-HpJZcY-hlJjHozj" target="_blank">37</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -3435,6 +4335,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1ISHMvdFwpt1Z5J-TyfhEA_foilEr8eod" target="_blank">4</a></td>
 <td>4</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-02</td>
 <td><span class="days days-old">110 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -3446,6 +4349,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1NM4Tx_rWe6q70UukpZt2c1u9SU94BAxl" target="_blank">4</a></td>
 <td>4</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -3457,6 +4363,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1-R88R46juuEaTAlDIDSHPxfVgfGcZFKz" target="_blank">28</a></td>
 <td>28</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -3467,6 +4376,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1DHQ041MH2RX_dhKMEgbzsBsjjph_BGZl" target="_blank">23</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -3479,6 +4391,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1iJKrn8t13nJMQz_2nYW0d6u1EVadXaSy" target="_blank">213</a></td>
 <td>213</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-29</td>
 <td><span class="days ">22 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -3490,6 +4405,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1Lkh9X6ZM9gR3m-ajRA5mD3QOvl1jG65-" target="_blank">27</a></td>
 <td>27</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-09</td>
 <td><span class="days days-old">42 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -3503,6 +4421,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive">
@@ -3511,6 +4432,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/17ozArqX5cdgjwgQZaPZu5fHw2sGmaeQa" target="_blank">21</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -3525,6 +4449,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive">
@@ -3534,6 +4461,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1TeeXges9OsgKf6St6jSuw5BFaA2x61C0" target="_blank">151</a></td>
 <td>2</td>
 <td>1% <span class="bar"><span class="bar-fill" style="width:1%;background:#dc2626"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-02</td>
 <td><span class="days days-old">110 天</span></td>
 <td><span class="badge badge-info">處理中</span></td>
@@ -3544,6 +4474,9 @@ a{color:#dc2626;text-decoration:none}
 <td><span class="badge badge-orange">其他: sites.google.com</span></td>
 <td><a href="https://drive.google.com/drive/folders/1ebWQVDWf89rr8I6sZ8q7NzMuXSM1aBcB" target="_blank">0</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -3558,6 +4491,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -3567,6 +4503,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1ssL6J-EckoxG_nrJL_NzXs7h1IrCuxPt" target="_blank">46</a></td>
 <td>46</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><span class="alert-warning">15</span></td>
+<td><span class="alert-action">2</span></td>
+<td>-</td>
 <td>2025-12-09</td>
 <td><span class="days days-old">42 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -3580,6 +4519,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -3589,6 +4531,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1bEJYW8WDly6JPs5GXonWn1QrKzDw8xKU" target="_blank">70</a></td>
 <td>70</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-05</td>
 <td><span class="days days-old">46 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -3602,6 +4547,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive">
@@ -3610,6 +4558,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1475g1YHo1ByWXVyI5nAB_-2qRTVNee7d" target="_blank">66</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -3624,6 +4575,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -3633,6 +4587,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1Ub6uK2JeQEUkKYjFSTPN0RUSBXnoRkKT" target="_blank">35</a></td>
 <td>35</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2026-01-05</td>
 <td><span class="days ">15 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -3644,6 +4601,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1qxYrW49C0mYNkQS7y2dOT8XHRcEkowuP" target="_blank">2</a></td>
 <td>2</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -3657,6 +4617,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -3666,6 +4629,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1LsvSlRL9-gCKzjUTc_heiCYxv30DArK5" target="_blank">45</a></td>
 <td>45</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-15</td>
 <td><span class="days days-old">36 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -3679,6 +4645,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -3688,6 +4657,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1ysYKPQHssi5sQ3wYXbF4hpe0VA71o9WH" target="_blank">98</a></td>
 <td>98</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-11-24</td>
 <td><span class="days days-old">57 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -3699,6 +4671,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1R8qBmPOGe3G8_S2n4Y5Jx7n20993_PDo" target="_blank">25</a></td>
 <td>25</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><span class="alert-warning">26</span></td>
+<td><span class="alert-action">83</span></td>
+<td>-</td>
 <td>2026-01-05</td>
 <td><span class="days ">15 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -3710,6 +4685,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1Lp6I2p8LSC4Ab0waR4Yy-bddVfdCLW_t" target="_blank">82</a></td>
 <td>10</td>
 <td>12% <span class="bar"><span class="bar-fill" style="width:12%;background:#dc2626"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-info">處理中</span></td>
@@ -3721,6 +4699,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1-wRLyOCgtPD7x2Xu2jomygbBT-eD-zdq" target="_blank">4</a></td>
 <td>4</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -3734,6 +4715,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -3743,6 +4727,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1kvnTJQRTSEk6WrJvgS4_sDWtISUgk1rP" target="_blank">9</a></td>
 <td>9</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -3756,6 +4743,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive">
@@ -3765,6 +4755,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1SAARiFj-ivoPmT1lOlgcr5tp3gM8BVC3" target="_blank">52</a></td>
 <td>1</td>
 <td>1% <span class="bar"><span class="bar-fill" style="width:1%;background:#dc2626"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-11-14</td>
 <td><span class="days days-old">67 天</span></td>
 <td><span class="badge badge-info">處理中</span></td>
@@ -3775,6 +4768,9 @@ a{color:#dc2626;text-decoration:none}
 <td><span class="badge badge-orange">MEGA</span></td>
 <td><a href="https://drive.google.com/drive/folders/17Pef_cNoDA9WG1JAJTxogNNe5dH7tpyc" target="_blank">0</a></td>
 <td>42</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -3789,6 +4785,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -3798,6 +4797,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1Jq2Lvp7l0biZFfbrMtFXfiR5HKgOysqJ" target="_blank">25</a></td>
 <td>25</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-22</td>
 <td><span class="days ">29 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -3808,6 +4810,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/19TL5sjhdykf-REMfSfTOZ7alceI6tMcj" target="_blank">62</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -3820,6 +4825,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1u6by5u3tI6bs1w8sN3G37oNulWjsKA3-" target="_blank">47</a></td>
 <td>10</td>
 <td>21% <span class="bar"><span class="bar-fill" style="width:21%;background:#dc2626"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-info">處理中</span></td>
@@ -3831,6 +4839,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1Se1MXvxLG8yiWCyhKOwcZ6mfw89JvfRS" target="_blank">15</a></td>
 <td>15</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><span class="alert-warning">3</span></td>
+<td><span class="alert-action">3</span></td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -3844,6 +4855,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -3853,6 +4867,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1NjhrpKa9dE_JxVXiCOMmlNlCweHYCeZq" target="_blank">191</a></td>
 <td>191</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-22</td>
 <td><span class="days ">29 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -3863,6 +4880,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1Cpz2eyYdgaDIdQdq7_rQWUL4KoRVZViD" target="_blank">136</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -3875,6 +4895,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1N9ot6SQpOzNTAMfpac_GPmS6z61i41gx" target="_blank">121</a></td>
 <td>121</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-22</td>
 <td><span class="days ">29 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -3885,6 +4908,9 @@ a{color:#dc2626;text-decoration:none}
 <td><span class="badge badge-orange">SharePoint</span></td>
 <td><a href="https://drive.google.com/drive/folders/1jQ2QETJ7TH9CJwvv2Pia2IgRC_zUPxtO" target="_blank">0</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -3899,6 +4925,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -3908,6 +4937,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1cxTgQ9OArUSdU4EXnMGwOVmWcA4N0vF8" target="_blank">2</a></td>
 <td>2</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -3919,6 +4951,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1xkw8ztg7D22qK3c1OgQRZH4pwlPS9p4J" target="_blank">75</a></td>
 <td>75</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-11-24</td>
 <td><span class="days days-old">57 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -3930,6 +4965,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1MzC27Koyxz9bBiEO3-APCsTEV64Xbqqg" target="_blank">39</a></td>
 <td>39</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><span class="alert-warning">37</span></td>
+<td><span class="alert-action">23</span></td>
+<td>-</td>
 <td>2025-12-09</td>
 <td><span class="days days-old">42 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -3941,6 +4979,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1-br2SSkntbO9SAEDdcJeQR27hAPfwupY" target="_blank">131</a></td>
 <td>131</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-29</td>
 <td><span class="days ">22 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -3951,6 +4992,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1Dm4R1mZ43FcsJ3BUKJP5rzKWBeyTU0Ae" target="_blank">72</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -3963,6 +5007,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1-5p2GNhsQFJmK5aICPwEjRhVieNBVw5u" target="_blank">8</a></td>
 <td>8</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -3974,6 +5021,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1G6Qt1mP6HF7zZChaIhNPEzjTj4Gv0Jye" target="_blank">58</a></td>
 <td>5</td>
 <td>8% <span class="bar"><span class="bar-fill" style="width:8%;background:#dc2626"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-info">處理中</span></td>
@@ -3985,6 +5035,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1r97lnOob2xe9c0jVJXq128wdUThpvnMR" target="_blank">8</a></td>
 <td>8</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-15</td>
 <td><span class="days days-old">36 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -3998,6 +5051,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -4007,6 +5063,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1GG0QJrHWhyEYQ6o6Zheww90DMqS4SHmB" target="_blank">134</a></td>
 <td>134</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-31</td>
 <td><span class="days ">20 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -4020,6 +5079,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive">
@@ -4028,6 +5090,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1Nd_59bP_9rB3YtEru-8eD5pqeP49aOVP" target="_blank">11</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -4042,6 +5107,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive">
@@ -4050,6 +5118,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1BLXReEBcxOitXWRmZgym2v7zSnTi5dKi" target="_blank">41</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -4061,6 +5132,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1UIRDqQiip5OENl_VjWm-VWKlo-_OAlOb" target="_blank">21</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -4075,6 +5149,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -4084,6 +5161,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1LvKJbfQqHGIOjtfDFUBJlWE7mhqC-JlE" target="_blank">4</a></td>
 <td>4</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-09</td>
 <td><span class="days days-old">42 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -4095,6 +5175,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1ZpRXvnMaC3ybmh6Hk5s1pNsGbynM1Qi6" target="_blank">4</a></td>
 <td>4</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-11-24</td>
 <td><span class="days days-old">57 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -4106,6 +5189,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1QgWLBFVUYKOdni_ono866xPaodyglNvX" target="_blank">46</a></td>
 <td>46</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-09</td>
 <td><span class="days days-old">42 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -4117,6 +5203,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1cxn3MBQV4P_rynG1Ht-Yw61eu3wpzUkx" target="_blank">77</a></td>
 <td>77</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><span class="alert-warning">8</span></td>
+<td><span class="alert-action">1</span></td>
+<td>-</td>
 <td>2025-12-15</td>
 <td><span class="days days-old">36 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -4128,6 +5217,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1MfeSGz7euR-O9B1t25XMaFh0Lkbjmhq8" target="_blank">147</a></td>
 <td>147</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2026-01-05</td>
 <td><span class="days ">15 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -4138,6 +5230,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/133Jsg1i-ToMcdEt53XY3WIFVUDlIAs3i" target="_blank">0</a></td>
 <td>58</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -4152,6 +5247,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="no_reports" data-cloud="其他: gofile.me">
@@ -4160,6 +5258,9 @@ a{color:#dc2626;text-decoration:none}
 <td><span class="badge badge-orange">其他: gofile.me</span></td>
 <td><a href="https://drive.google.com/drive/folders/1am1NuR0Q1oTmExRih3SrdJwY_beLx3Ez" target="_blank">0</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -4172,6 +5273,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1NX1-gp-d7pLbSAS6dTP2088qkv7u8CSX" target="_blank">48</a></td>
 <td>48</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><span class="alert-warning">1</span></td>
+<td>-</td>
+<td>-</td>
 <td>2026-01-05</td>
 <td><span class="days ">15 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -4183,6 +5287,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1wTL1iDE3WpaPsAaQyTdk3xhHo4d0BIDB" target="_blank">57</a></td>
 <td>57</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td><span class="alert-action">3</span></td>
+<td>-</td>
 <td>2025-12-09</td>
 <td><span class="days days-old">42 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -4193,6 +5300,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1rN4M-IwaiB14V2db7ZQkh8cFRGjfcHcg" target="_blank">109</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -4205,6 +5315,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1z7cfB_mYb_LiEXyHlKH5Yht42wVH67h5" target="_blank">157</a></td>
 <td>0</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-06</td>
 <td><span class="days days-old">106 天</span></td>
 <td><span class="badge badge-warning">未上傳</span></td>
@@ -4216,6 +5329,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1xR5kPl4ju_tYB5u2YJ3WoZ2jC28seOJG" target="_blank">33</a></td>
 <td>33</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -4226,6 +5342,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1d5oHgDFJo4OPFKQU5DjtStDMdOrxxERd" target="_blank">59</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -4238,6 +5357,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/12lZTM4XrTsy-FnqcRA9n3eJTJ_7GG2T-" target="_blank">77</a></td>
 <td>77</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><span class="alert-warning">14</span></td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-15</td>
 <td><span class="days days-old">36 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -4249,6 +5371,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1CT2eksvTxD5xZZnQ46kklnvQ3PsajxYw" target="_blank">40</a></td>
 <td>40</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-11-24</td>
 <td><span class="days days-old">57 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -4259,6 +5384,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1jnubUygX5noBgXgZUOS6SFYz2mQZENmz" target="_blank">32</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -4271,6 +5399,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1DX9Q-DhTGZpv5OxE5DAgkFAeY5RFW_c-" target="_blank">40</a></td>
 <td>0</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-warning">未上傳</span></td>
@@ -4282,6 +5413,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1rFQuiItdbUvdrO0opZgRGC8vgoF8kEsU" target="_blank">31</a></td>
 <td>31</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-09</td>
 <td><span class="days days-old">42 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -4292,6 +5426,9 @@ a{color:#dc2626;text-decoration:none}
 <td><span class="badge badge-orange">其他: gofile.me</span></td>
 <td><a href="https://drive.google.com/drive/folders/1t-F2GtErHdC85qq7APHMHeTUbH7DiZir" target="_blank">0</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -4306,6 +5443,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="no_reports" data-cloud="Google Drive">
@@ -4314,6 +5454,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1BITiUdNO2VEnG7zJEB5jjte6IWfGjgEE" target="_blank">0</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -4328,6 +5471,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -4337,6 +5483,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1p1YP_ZNZgvphHf1UB8CH20PxS85J4VLU" target="_blank">4</a></td>
 <td>4</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -4348,6 +5497,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1k1kQNf182kdYLwn20l-WRVBzOwmQUTrs" target="_blank">137</a></td>
 <td>137</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-09</td>
 <td><span class="days days-old">42 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -4359,6 +5511,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/17ROwfWSlKPcOqmjhQ3us3FbApOtimWKM" target="_blank">42</a></td>
 <td>42</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><span class="alert-warning">19</span></td>
+<td><span class="alert-action">22</span></td>
+<td>-</td>
 <td>2025-11-24</td>
 <td><span class="days days-old">57 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -4372,6 +5527,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -4381,6 +5539,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1szUMGcO6i6bCa2344CSGEVMmwJgUsZue" target="_blank">38</a></td>
 <td>38</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-01</td>
 <td><span class="days days-old">50 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -4392,6 +5553,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1bPdCpU6EUwFtF_aJlO8gHIKYWFlVcDKe" target="_blank">55</a></td>
 <td>55</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-09</td>
 <td><span class="days days-old">42 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -4402,6 +5566,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1n-KEjRRIJ7YWwN-PxwzR1H10gF0uF-T1" target="_blank">0</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -4416,6 +5583,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="no_reports" data-cloud="Google Drive">
@@ -4424,6 +5594,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1SlmOU84DbKeVY9JG80rnvWkSzXRN0Qbb" target="_blank">0</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -4436,6 +5609,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1khGTHvvSxIKkBDhWBO_LN25lbh4gyA8v" target="_blank">76</a></td>
 <td>76</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-11-24</td>
 <td><span class="days days-old">57 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -4446,6 +5622,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1iZqowkLjVyKfyhDrMeHtumDmIIAzG9zi" target="_blank">0</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -4460,6 +5639,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -4469,6 +5651,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1vxTUNpY4ldZEWndXKJnCDFmMWxlvMbnw" target="_blank">32</a></td>
 <td>32</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-09</td>
 <td><span class="days days-old">42 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -4479,6 +5664,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1K99T7yDC0IW2CO6ZOwcEkAYGmZo2YaEg" target="_blank">16</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -4493,6 +5681,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -4502,6 +5693,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1U8ngtU8K3PPxjcciQvnMDUeMevqmE-Zq" target="_blank">3</a></td>
 <td>3</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><span class="alert-warning">3</span></td>
+<td><span class="alert-action">3</span></td>
+<td>-</td>
 <td>2025-11-24</td>
 <td><span class="days days-old">57 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -4512,6 +5706,9 @@ a{color:#dc2626;text-decoration:none}
 <td><span class="badge badge-orange">其他: sites.google.com</span></td>
 <td><a href="https://drive.google.com/drive/folders/1B0YhEVVxj65ptPnzc3RzZMU600IU1YEF" target="_blank">0</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -4526,6 +5723,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -4535,6 +5735,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1Hhqoeom0QwhkuVTqdejUgYq8y3KVnZhh" target="_blank">10</a></td>
 <td>10</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -4546,6 +5749,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1z7FwlrREj4bYQP4YhxnbUng-cIaykL-T" target="_blank">100</a></td>
 <td>100</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-09</td>
 <td><span class="days days-old">42 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -4556,6 +5762,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/11QhtFZXWOb8nrKKUeQ0GAAmj3QVxZ_NY" target="_blank">43</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -4570,6 +5779,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -4579,6 +5791,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1tv5bohL_4P5xVgU--gigAGthY92wttH_" target="_blank">1</a></td>
 <td>1</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -4590,6 +5805,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1aQK7hjB_7sDf8pusJjFwi7ffvmk8ctHu" target="_blank">37</a></td>
 <td>15</td>
 <td>40% <span class="bar"><span class="bar-fill" style="width:40%;background:#dc2626"></span></span></td>
+<td><span class="alert-warning">3</span></td>
+<td>-</td>
+<td>-</td>
 <td>2025-11-14</td>
 <td><span class="days days-old">67 天</span></td>
 <td><span class="badge badge-info">處理中</span></td>
@@ -4603,6 +5821,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive">
@@ -4611,6 +5832,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1K6QVGZ9Cl_aX-E3Z4oc6e8v_wxeGjJq5" target="_blank">76</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -4625,6 +5849,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="no_reports" data-cloud="其他: sites.google.com">
@@ -4633,6 +5860,9 @@ a{color:#dc2626;text-decoration:none}
 <td><span class="badge badge-orange">其他: sites.google.com</span></td>
 <td><a href="https://drive.google.com/drive/folders/1Thhx97Iaksz2atPI1VPCrdCjASSekPTU" target="_blank">0</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -4645,6 +5875,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1Sdc2gVjZcP-qpa5D9h_U7rfXDqujyJTE" target="_blank">80</a></td>
 <td>10</td>
 <td>12% <span class="bar"><span class="bar-fill" style="width:12%;background:#dc2626"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-info">處理中</span></td>
@@ -4656,6 +5889,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1c5gZPuMnTU3zVsCmXNx4e2bq1eNH3wgp" target="_blank">36</a></td>
 <td>36</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-11-24</td>
 <td><span class="days days-old">57 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -4667,6 +5903,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/17LYbgaWXT_uj62x20fja3MOtm0P_MhFy" target="_blank">1</a></td>
 <td>1</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -4678,6 +5917,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1TbH3itlHo_9VXgQMP6Y1IhYTxNYWuZXX" target="_blank">174</a></td>
 <td>174</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2026-01-05</td>
 <td><span class="days ">15 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -4689,6 +5931,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1WUz8jeToHfFffzjO4DUCeQeLNnHQp_0i" target="_blank">5</a></td>
 <td>5</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -4700,6 +5945,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/15Oxl44jElySv2KDloieI4FceuLyvBP-7" target="_blank">6</a></td>
 <td>6</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -4713,6 +5961,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive">
@@ -4721,6 +5972,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1qbDbjfh8g3NP7ImNvubhAvTEJafLzd7Q" target="_blank">21</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -4733,6 +5987,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1skf80KfARzBC2rEQm9sCrROAfg40pmI6" target="_blank">119</a></td>
 <td>119</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2026-01-05</td>
 <td><span class="days ">15 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -4746,6 +6003,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -4755,6 +6015,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1USPe8amYo4PA2WT2q8n3uD3q5Q-4gIJp" target="_blank">3</a></td>
 <td>3</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -4765,6 +6028,9 @@ a{color:#dc2626;text-decoration:none}
 <td><span class="badge badge-orange">SharePoint</span></td>
 <td><a href="https://drive.google.com/drive/folders/16UsaZv2yJk9RSQc75IanewJuqCx6XPEr" target="_blank">0</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -4779,6 +6045,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -4788,6 +6057,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/19SK-HR8kewo0TdnsAlHSN7ti1MtypewG" target="_blank">3</a></td>
 <td>3</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -4799,6 +6071,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1SL7EFpVdUpasfvgKC3dKpTHyfmHpOscM" target="_blank">71</a></td>
 <td>71</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-11-24</td>
 <td><span class="days days-old">57 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -4812,6 +6087,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive">
@@ -4820,6 +6098,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1IUstjEo_8oRu4GcIzYuk7Ap6PhoHNb6L" target="_blank">18</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -4834,6 +6115,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive">
@@ -4842,6 +6126,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1_1KQLqdCWQkZ34CXTL4y7-IjFHc2L-Ly" target="_blank">74</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -4854,6 +6141,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1yRMPeA2R49m7kd3JpF2BXnK6RvS-MAWJ" target="_blank">32</a></td>
 <td>0</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-warning">未上傳</span></td>
@@ -4865,6 +6155,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1HDf032wVstteuyGBsgfUBhiQnAxijsZr" target="_blank">71</a></td>
 <td>6</td>
 <td>8% <span class="bar"><span class="bar-fill" style="width:8%;background:#dc2626"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-info">處理中</span></td>
@@ -4875,6 +6168,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1fJuUSxVtB5EYOJuUdRCivtCirmnJh6vp" target="_blank">156</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -4887,6 +6183,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1epWQ71PnbcEXKbaO0NjMqfFzhw2wGhq5" target="_blank">113</a></td>
 <td>113</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-09</td>
 <td><span class="days days-old">42 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -4897,6 +6196,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1z8A2NofpLaFZZEafZBszDDpM06guGXih" target="_blank">37</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -4911,6 +6213,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="no_reports" data-cloud="其他: sites.google.com">
@@ -4919,6 +6224,9 @@ a{color:#dc2626;text-decoration:none}
 <td><span class="badge badge-orange">其他: sites.google.com</span></td>
 <td><a href="https://drive.google.com/drive/folders/18WEnPDc3FEX-TNBx1O6qtqQUWRQkTH8t" target="_blank">0</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -4931,6 +6239,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1o7oOS56v_N7rUPOSVD-yjW22Ov4zJ_zk" target="_blank">10</a></td>
 <td>45</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-29</td>
 <td><span class="days ">22 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -4944,6 +6255,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -4953,6 +6267,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1iPVKwdyG6AJa3LTYAizQTBdje9VlVICV" target="_blank">54</a></td>
 <td>54</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-11-24</td>
 <td><span class="days days-old">57 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -4963,6 +6280,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1lkrMVtnKUI9L1r8EZqi066GTvZjzBogb" target="_blank">42</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -4975,6 +6295,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1OKTMGpZ-UZXZ7YERs8HvLhUj5cgwTyM_" target="_blank">43</a></td>
 <td>0</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-warning">未上傳</span></td>
@@ -4986,6 +6309,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1NiMwunwLgf5pfwcU3ujXhlJH5ml7ni8c" target="_blank">12</a></td>
 <td>12</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-11-24</td>
 <td><span class="days days-old">57 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -4997,6 +6323,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1yEnBZ_eK2waTylQ65_9wh1LJNkSNr87B" target="_blank">46</a></td>
 <td>46</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-09</td>
 <td><span class="days days-old">42 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -5008,6 +6337,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1V7haPHHgTfljhjGOTGbIVufj5aB-lsJC" target="_blank">121</a></td>
 <td>0</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-warning">未上傳</span></td>
@@ -5018,6 +6350,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1eyVAuoKYuSCzKIkyJ-6vOskndns7v_MZ" target="_blank">40</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -5032,6 +6367,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="no_reports" data-cloud="Google Drive">
@@ -5040,6 +6378,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1JHQS4DRDtq4HO6Hn0zqHzR5FAZKf4un_" target="_blank">0</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -5052,6 +6393,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1uHwwLW3Zhdk6j9q8EA7aJWVFJbffIBiN" target="_blank">42</a></td>
 <td>0</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-02</td>
 <td><span class="days days-old">110 天</span></td>
 <td><span class="badge badge-warning">未上傳</span></td>
@@ -5063,6 +6407,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1GxIg_KlGyru8E5-6VvAQCxJGOEmaRWY_" target="_blank">11</a></td>
 <td>11</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -5074,6 +6421,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1oH6nNJVL1FwVP529zGhBIg6t7nyHHOA9" target="_blank">291</a></td>
 <td>291</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-05</td>
 <td><span class="days days-old">46 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -5084,6 +6434,9 @@ a{color:#dc2626;text-decoration:none}
 <td><span class="badge badge-orange">MEGA</span></td>
 <td>0</td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -5098,6 +6451,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -5107,6 +6463,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1-IIljJg484Z_SKVq5RzOef3vdZhyrvjK" target="_blank">13</a></td>
 <td>13</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-09</td>
 <td><span class="days days-old">42 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -5120,6 +6479,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive">
@@ -5129,6 +6491,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1j8d7cslQNlNBUDNTxiRB4aDaCQb9reco" target="_blank">8</a></td>
 <td>8</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -5140,6 +6505,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1Xg7Jhnya7BDdb6LxQC4BnUhR8HiJqOxG" target="_blank">8</a></td>
 <td>33</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-11-24</td>
 <td><span class="days days-old">57 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -5151,6 +6519,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1PeR3B89hvC98W2j0M84OUkOmOU2qAC-2" target="_blank">55</a></td>
 <td>55</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-12-22</td>
 <td><span class="days ">29 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -5161,6 +6532,9 @@ a{color:#dc2626;text-decoration:none}
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1sdC3kLi95WYdGRV6mTWZrl0UV0a-bOmm" target="_blank">29</a></td>
 <td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
@@ -5173,6 +6547,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1tUEbIpwJHUmjXUMx-PVDIYRS6AY44BqC" target="_blank">99</a></td>
 <td>99</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><span class="alert-warning">6</span></td>
+<td><span class="alert-action">22</span></td>
+<td><span class="alert-critical">3</span></td>
 <td>2025-12-29</td>
 <td><span class="days ">22 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -5184,6 +6561,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/13zN8xuavOe07AYkrFJm0G0lmZ4k-bANV" target="_blank">1</a></td>
 <td>1</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -5195,6 +6575,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1iJkv9SlBxzNtODZx-jxm7_AWKyyrFjJU" target="_blank">7</a></td>
 <td>7</td>
 <td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-10-01</td>
 <td><span class="days days-old">111 天</span></td>
 <td><span class="badge badge-success">✓ 完成</span></td>
@@ -5208,6 +6591,9 @@ a{color:#dc2626;text-decoration:none}
 <td>-</td>
 <td>-</td>
 <td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td><span class="badge badge-gray">無報告</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive">
@@ -5217,6 +6603,9 @@ a{color:#dc2626;text-decoration:none}
 <td><a href="https://drive.google.com/drive/folders/1t6TVcBUZ9k9_GEYaFJ3wIDL2keJWr0-B" target="_blank">53</a></td>
 <td>7</td>
 <td>13% <span class="bar"><span class="bar-fill" style="width:13%;background:#dc2626"></span></span></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>2025-11-24</td>
 <td><span class="days days-old">57 天</span></td>
 <td><span class="badge badge-info">處理中</span></td>
