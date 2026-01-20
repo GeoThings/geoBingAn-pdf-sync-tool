@@ -474,6 +474,7 @@ def load_alert_data() -> Tuple[Dict[str, dict], Dict[str, str]]:
     # 建立建案名稱到建照號碼的對應（雙向）
     name_to_permit = {}
     permit_to_name = {}  # 建照號碼 -> 建案名稱
+    permit_name_counts = {}  # 建照號碼 -> {名稱: 出現次數}
     history_file = './state/upload_history_all.json'
 
     if os.path.exists(history_file):
@@ -492,13 +493,29 @@ def load_alert_data() -> Tuple[Dict[str, dict], Dict[str, str]]:
                     name = re.sub(r'\.pdf$', '', name, flags=re.IGNORECASE)  # 去除 .pdf
                     name = re.sub(r'_\d+$', '', name)  # 去除結尾數字
                     name = re.sub(r'報告$', '', name)  # 去除「報告」
-                    name = name.strip()
+                    name = re.sub(r'-\d{4}-\d{2}-\d{2}.*$', '', name)  # 去除日期格式
+                    name = re.sub(r' NO\.\d+$', '', name)  # 去除 NO.xx
+                    name = re.sub(r'-\d+$', '', name)  # 去除結尾數字
+                    name = name.strip(' -_')
 
-                    if name and permit:
+                    # 過濾通用名稱
+                    generic_names = {'觀測紀錄', '監測數據', '安全觀測系統', '初始值', '整體進度',
+                                     '觀測儀器配置圖', '量測報表', '報表', '日報告', '周報告', '月報告',
+                                     '安全觀測', '監測報告', '工地監測報告', '專案區間報告書'}
+                    if name and permit and len(name) >= 3 and name not in generic_names:
                         name_to_permit[name] = permit
-                        # 保存最長的建案名稱（通常較完整）
-                        if permit not in permit_to_name or len(name) > len(permit_to_name[permit]):
-                            permit_to_name[permit] = name
+                        # 統計每個名稱出現次數
+                        if permit not in permit_name_counts:
+                            permit_name_counts[permit] = {}
+                        permit_name_counts[permit][name] = permit_name_counts[permit].get(name, 0) + 1
+
+            # 選擇最常出現的名稱
+            for permit, name_counts in permit_name_counts.items():
+                if name_counts:
+                    # 找出現次數最多的名稱
+                    most_common = max(name_counts.items(), key=lambda x: x[1])
+                    permit_to_name[permit] = most_common[0]
+
         except Exception as e:
             print(f"  載入上傳記錄時發生錯誤: {e}")
 
@@ -539,18 +556,25 @@ def load_alert_data() -> Tuple[Dict[str, dict], Dict[str, str]]:
                             break
 
                 if permit:
-                    # 如果同一建照有多筆資料，累加
+                    # 取得最近日期
+                    latest_alert_date = row.get('最近日期', '')
+
+                    # 如果同一建照有多筆資料，累加並保留最新日期
                     if permit in alert_data:
                         alert_data[permit]['warning_count'] += warning_count
                         alert_data[permit]['action_count'] += action_count
                         alert_data[permit]['alert_count'] += alert_count
                         alert_data[permit]['report_count'] += report_count
+                        # 保留較新的日期
+                        if latest_alert_date > alert_data[permit].get('latest_alert_date', ''):
+                            alert_data[permit]['latest_alert_date'] = latest_alert_date
                     else:
                         alert_data[permit] = {
                             'warning_count': warning_count,
                             'action_count': action_count,
                             'alert_count': alert_count,
-                            'report_count': report_count
+                            'report_count': report_count,
+                            'latest_alert_date': latest_alert_date
                         }
                     # 更新建案名稱（優先使用 CSV 中的名稱）
                     if building_name:
@@ -689,6 +713,7 @@ def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], a
         warning_count = permit_alert.get('warning_count', 0)
         action_count = permit_alert.get('action_count', 0)
         alert_count = permit_alert.get('alert_count', 0)
+        latest_alert_date = permit_alert.get('latest_alert_date', '')
 
         # 警戒值顯示（有則顯示數字，無則顯示 -）
         if warning_count > 0:
@@ -706,6 +731,12 @@ def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], a
         else:
             alert_html = '-'
 
+        # 最近警戒日期
+        if latest_alert_date and (warning_count > 0 or action_count > 0 or alert_count > 0):
+            alert_date_html = latest_alert_date[:10]
+        else:
+            alert_date_html = '-'
+
         rows_html += f'''
 <tr data-status="{status}" data-cloud="{cloud}">
 <td>{i}</td>
@@ -718,6 +749,7 @@ def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], a
 <td>{warning_html}</td>
 <td>{action_html}</td>
 <td>{alert_html}</td>
+<td>{alert_date_html}</td>
 <td>{latest_html}</td>
 <td>{days_html}</td>
 <td><span class="badge {badge_class}">{badge_text}</span></td>
@@ -825,9 +857,10 @@ a{{color:#dc2626;text-decoration:none}}
 <th onclick="sortTable(7)">警戒</th>
 <th onclick="sortTable(8)">行動</th>
 <th onclick="sortTable(9)">Alert</th>
-<th onclick="sortTable(10)">最新報告</th>
-<th onclick="sortTable(11)">距今</th>
-<th onclick="sortTable(12)">狀態</th>
+<th onclick="sortTable(10)">最近警戒</th>
+<th onclick="sortTable(11)">最新報告</th>
+<th onclick="sortTable(12)">距今</th>
+<th onclick="sortTable(13)">狀態</th>
 </tr>
 </thead>
 <tbody>{rows_html}</tbody>
@@ -898,7 +931,7 @@ def generate_csv_report(permit_data: Dict[str, dict], non_google: List[dict], al
         int(re.search(r'第(\d+)號', x).group(1)) if re.search(r'第(\d+)號', x) else 0
     ), reverse=True)
 
-    lines = ['序號,建照字號,建案名稱,雲端服務,Drive PDF,系統 PDF,覆蓋率,警戒次數,行動次數,Alert次數,最新報告,距今天數,狀態']
+    lines = ['序號,建照字號,建案名稱,雲端服務,Drive PDF,系統 PDF,覆蓋率,警戒次數,行動次數,Alert次數,最近警戒日期,最新報告,距今天數,狀態']
 
     for i, permit in enumerate(sorted_permits, 1):
         data = permit_data[permit]
@@ -918,8 +951,9 @@ def generate_csv_report(permit_data: Dict[str, dict], non_google: List[dict], al
         warning = permit_alert.get('warning_count', 0)
         action = permit_alert.get('action_count', 0)
         alert = permit_alert.get('alert_count', 0)
+        latest_alert = permit_alert.get('latest_alert_date', '')[:10] if permit_alert.get('latest_alert_date') else ''
 
-        lines.append(f'{i},"{permit}","{building_name}","{cloud}",{drive},{system},{coverage},{warning},{action},{alert},{latest},{days},{status}')
+        lines.append(f'{i},"{permit}","{building_name}","{cloud}",{drive},{system},{coverage},{warning},{action},{alert},{latest_alert},{latest},{days},{status}')
 
     with open(OUTPUT_CSV, 'w', encoding='utf-8-sig') as f:
         f.write('\n'.join(lines))
