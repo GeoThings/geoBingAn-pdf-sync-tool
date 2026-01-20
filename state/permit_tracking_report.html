@@ -53,13 +53,14 @@ a{color:#dc2626;text-decoration:none}
 .alert-warning{color:#f59e0b;font-weight:600}
 .alert-action{color:#dc2626;font-weight:600}
 .alert-critical{color:#7c2d12;font-weight:700;background:#fee2e2;padding:2px 6px;border-radius:3px}
+.name-cell{max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:#666}
 </style>
 </head>
 <body>
 <div class="container">
 <div class="header">
 <h1>建照監測追蹤報告</h1>
-<div class="meta">2026年01月20日 16:27 | 自動生成</div>
+<div class="meta">2026年01月20日 16:44 | 自動生成</div>
 </div>
 <div class="stats">
 <div class="stat"><div class="label">總建照</div><div class="value">461</div></div>
@@ -143,22 +144,24 @@ a{color:#dc2626;text-decoration:none}
 <tr>
 <th onclick="sortTable(0)">#</th>
 <th onclick="sortTable(1)">建照字號</th>
-<th onclick="sortTable(2)">雲端</th>
-<th onclick="sortTable(3)">Drive PDF</th>
-<th onclick="sortTable(4)">系統 PDF</th>
-<th onclick="sortTable(5)">覆蓋率</th>
-<th onclick="sortTable(6)">警戒</th>
-<th onclick="sortTable(7)">行動</th>
-<th onclick="sortTable(8)">Alert</th>
-<th onclick="sortTable(9)">最新報告</th>
-<th onclick="sortTable(10)">距今</th>
-<th onclick="sortTable(11)">狀態</th>
+<th onclick="sortTable(2)">建案名稱</th>
+<th onclick="sortTable(3)">雲端</th>
+<th onclick="sortTable(4)">Drive PDF</th>
+<th onclick="sortTable(5)">系統 PDF</th>
+<th onclick="sortTable(6)">覆蓋率</th>
+<th onclick="sortTable(7)">警戒</th>
+<th onclick="sortTable(8)">行動</th>
+<th onclick="sortTable(9)">Alert</th>
+<th onclick="sortTable(10)">最新報告</th>
+<th onclick="sortTable(11)">距今</th>
+<th onclick="sortTable(12)">狀態</th>
 </tr>
 </thead>
 <tbody>
 <tr data-status="completed" data-cloud="Google Drive">
 <td>1</td>
 <td><strong>114建字第0059號</strong></td>
+<td class="name-cell"><span title="成功市場改建工程-專案區間報告書-2023-12-24 00_00-2023-12-30 00_00 (2)">成功市場改建工程-專案區間報告書-2023-12-...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1AiPx2Yu2nWjRp1qVRLP07Qe2v6Z4aTXV" target="_blank">23</a></td>
 <td>23</td>
@@ -173,6 +176,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>2</td>
 <td><strong>114建字第0058號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1l_qH3dJ0G4QnUOygQJeNwpsWjqsQq1a0" target="_blank">0</a></td>
 <td>0</td>
@@ -187,6 +191,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>3</td>
 <td><strong>114建字第0052號</strong></td>
+<td class="name-cell">17-中華經濟-114.11.24~11.30</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1VqpV7IpcSk5xGFKkh_Eez6rbGs5rb-xe" target="_blank">1</a></td>
 <td>1</td>
@@ -201,6 +206,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="其他: sites.google.com">
 <td>4</td>
 <td><strong>114建字第0032號</strong></td>
+<td class="name-cell">安全觀測</td>
 <td><span class="badge badge-orange">其他: sites.google.com</span></td>
 <td><a href="https://drive.google.com/drive/folders/1YD_kF8Anb7XAeaQ9Ummo5oSFUPXkenfA" target="_blank">39</a></td>
 <td>39</td>
@@ -215,6 +221,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>5</td>
 <td><strong>114建字第0022號</strong></td>
+<td class="name-cell"><span title="東源營造工程-齊興建設AR1台北市北投區軟橋段12地號集合住宅新建工程 1140703 0">東源營造工程-齊興建設AR1台北市北投區軟橋段12...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1HqsIwx3fquTLe914muIw-WJ0HPfPN1wD" target="_blank">12</a></td>
 <td>12</td>
@@ -229,6 +236,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="其他: public.redsun.tw">
 <td>6</td>
 <td><strong>114建字第0017號</strong></td>
+<td class="name-cell"><span title="台北市中山區長安段二小段580-1、581、582地號住宅新建工程-初始值報告書-2025-08-11">台北市中山區長安段二小段580-1、581、582...</span></td>
 <td><span class="badge badge-orange">其他: public.redsun.tw</span></td>
 <td><a href="https://drive.google.com/drive/folders/1n5KldIyj2VQh3YCkw3ytDlxeex9D28Hn" target="_blank">1</a></td>
 <td>1</td>
@@ -243,6 +251,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>7</td>
 <td><strong>113建字第8899號</strong></td>
+<td class="name-cell">thenorthface_event_copy</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1trlWmJsctF2R1ut0EiDillw2pDp6P1H1" target="_blank">21</a></td>
 <td>21</td>
@@ -257,6 +266,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>8</td>
 <td><strong>113建字第8888號</strong></td>
+<td class="name-cell"><span title="富品建設松山區寶清段一小段582等10筆地住商大樓新建工程-專案日報告書-2025-0912">富品建設松山區寶清段一小段582等10筆地住商大樓...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1_eGF1eF0yA7RsaRGsSIL1xbpUQkTPwVT" target="_blank">12</a></td>
 <td>12</td>
@@ -271,6 +281,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>9</td>
 <td><strong>113建字第5688號</strong></td>
+<td class="name-cell">富金四平街-初始值</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1dB1YcymqxN0X6pX6C4TQnp3TZ_ij_L4F" target="_blank">26</a></td>
 <td>26</td>
@@ -285,6 +296,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>10</td>
 <td><strong>113建字第0259號</strong></td>
+<td class="name-cell">遠百寶慶工地監測報告_114年4月18日(初始值)</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1sqJXuCzISC6FjkWsECTqmT5kw29dadvU" target="_blank">8</a></td>
 <td>8</td>
@@ -299,6 +311,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>11</td>
 <td><strong>113建字第0248號</strong></td>
+<td class="name-cell">富德納骨塔設施新建工程</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1iTsXA9YFQatmspt_k08-jk9KMdQjMTJB" target="_blank">134</a></td>
 <td>134</td>
@@ -313,6 +326,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>12</td>
 <td><strong>113建字第0218號</strong></td>
+<td class="name-cell">113建字0218號-工地基本資料</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1m4_3DAUJxBiVTcGYhB7MS7x3v5a7eSTn" target="_blank">33</a></td>
 <td>33</td>
@@ -327,6 +341,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>13</td>
 <td><strong>113建字第0208號</strong></td>
+<td class="name-cell">J-PARK B案 0611初值觀測</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1lHfSdhHDksaRohcnbcRk8TVF89VFaIsu" target="_blank">16</a></td>
 <td>16</td>
@@ -341,6 +356,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>14</td>
 <td><strong>113建字第0207號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1wmkUUNtToLXfDLR2gJuHactbUNKm3dBX" target="_blank">34</a></td>
 <td>0</td>
@@ -355,6 +371,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>15</td>
 <td><strong>113建字第0188號</strong></td>
+<td class="name-cell">宏林TOP31-捷運報告-1140502(初始值)</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/19qPROFgH5geZKsmButjRQG6-L1ki-i_Y" target="_blank">0</a></td>
 <td>45</td>
@@ -369,6 +386,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>16</td>
 <td><strong>113建字第0187號</strong></td>
+<td class="name-cell">_凌霄好室_安全監測系統報告-0023</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1ZhhR28LOHEbAz9ckEoTt9SIt7bEW1l5R" target="_blank">25</a></td>
 <td>38</td>
@@ -383,6 +401,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>17</td>
 <td><strong>113建字第0186號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1KXTZ6oJLKj7dj1fGk96XqDkqLB4df-Cn" target="_blank">0</a></td>
 <td>0</td>
@@ -397,6 +416,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>18</td>
 <td><strong>113建字第0182號</strong></td>
+<td class="name-cell">長見振家雙城街1141105</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1nj7CIlQGT7lXBc9D6i09LMkMQdhTxnvt" target="_blank">21</a></td>
 <td>21</td>
@@ -411,6 +431,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="in_progress" data-cloud="Google Drive">
 <td>19</td>
 <td><strong>113建字第0155號</strong></td>
+<td class="name-cell">0~20251112安全監測系統報告-松山八德</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1PA9oODB5IyjYMFx7fMkoxLYiHpXeffLb" target="_blank">33</a></td>
 <td>8</td>
@@ -425,6 +446,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>20</td>
 <td><strong>113建字第0153號</strong></td>
+<td class="name-cell">兩廳院(基地)()NO.32</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1QkTxGWqHWN9l9zo5RWublnWI8XAbsKpR" target="_blank">2</a></td>
 <td>19</td>
@@ -439,6 +461,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="其他: sites.google.com">
 <td>21</td>
 <td><strong>113建字第0149號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">其他: sites.google.com</span></td>
 <td><a href="https://drive.google.com/drive/folders/1Ss6qLq7-F75wVhXdvcJqz822x3sWo1Yd" target="_blank">0</a></td>
 <td>0</td>
@@ -453,6 +476,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>22</td>
 <td><strong>113建字第0143號</strong></td>
+<td class="name-cell">建義建設懷生段新建工程</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1jzAX8Dl7y4_4WeS0qZuJajvIACHGESA2" target="_blank">21</a></td>
 <td>21</td>
@@ -467,6 +491,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>23</td>
 <td><strong>113建字第0140號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1ZMCEPCGOrFP82-tXilKLmpOQ_6mk8L3f" target="_blank">50</a></td>
 <td>50</td>
@@ -481,6 +506,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>24</td>
 <td><strong>113建字第0136號</strong></td>
+<td class="name-cell">真實和光0909初值觀測</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1X5aLIUR9rd0IYalXbgH16bMGIOWMpLUU" target="_blank">0</a></td>
 <td>2</td>
@@ -495,6 +521,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>25</td>
 <td><strong>113建字第0125號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/10c68serMBGqK6gI-HW4jC5UuVTnVcD4P" target="_blank">0</a></td>
 <td>0</td>
@@ -509,6 +536,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>26</td>
 <td><strong>113建字第0121號</strong></td>
+<td class="name-cell">中華電信濱江資料中心</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1F9wdO38PutCFeesp5zDYoP-ksG2HUOLo" target="_blank">26</a></td>
 <td>54</td>
@@ -523,6 +551,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>27</td>
 <td><strong>113建字第0120號</strong></td>
+<td class="name-cell">士林區蘭雅段新建案工地</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1Bw8wK8A6VxcdBqKSy5PuLXzj_RW0HSWL" target="_blank">1</a></td>
 <td>1</td>
@@ -537,6 +566,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>28</td>
 <td><strong>113建字第0099號</strong></td>
+<td class="name-cell">114.07.31文山區木柵段新建工程_初始值</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1K52nyv_-DP8Yg-OvnTnzbUWmllGq7U7w" target="_blank">21</a></td>
 <td>21</td>
@@ -551,6 +581,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>29</td>
 <td><strong>113建字第0098號</strong></td>
+<td class="name-cell">金藏奧斯卡</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1iAfcsl306xUfzBz7W7y6P8TgGKOTpCu5" target="_blank">97</a></td>
 <td>97</td>
@@ -565,6 +596,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>30</td>
 <td><strong>113建字第0091號</strong></td>
+<td class="name-cell"><span title="M08恆悅麗山新建工程-專案日報告書-2025-10-16 00">M08恆悅麗山新建工程-專案日報告書-2025-1...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1TyEH29d3a4OSu6S2fEPwVxBi4eS5ao1N" target="_blank">14</a></td>
 <td>14</td>
@@ -579,6 +611,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="SharePoint">
 <td>31</td>
 <td><strong>113建字第0090號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">SharePoint</span></td>
 <td><a href="https://drive.google.com/drive/folders/1YwzajpmeXcxKDgyoslEX3vEO0KPo7zFV" target="_blank">0</a></td>
 <td>0</td>
@@ -593,6 +626,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>32</td>
 <td><strong>113建字第0087號</strong></td>
+<td class="name-cell">滙源中山段114.12.01觀測結果</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1edOFTqo9nNwvhOZjzACWSYfxovVMIIJS" target="_blank">22</a></td>
 <td>22</td>
@@ -607,6 +641,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>33</td>
 <td><strong>113建字第0080號</strong></td>
+<td class="name-cell">~1141129禾進-士林欣暘溪泊林週</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1i7WG9DTmM77Xr8k9kg-esINkSQVGIusp" target="_blank">25</a></td>
 <td>25</td>
@@ -621,6 +656,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>34</td>
 <td><strong>113建字第0062號</strong></td>
+<td class="name-cell">民權東路(1141204)NO.56V1-簽證版</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/17vGF3H8NxD7Pm6PXuKqChvMmHf5BwiTw" target="_blank">67</a></td>
 <td>67</td>
@@ -635,6 +671,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>35</td>
 <td><strong>113建字第0061號</strong></td>
+<td class="name-cell"><span title="台大敏盛護理健康大樓新建工程工地監測報告114年10月01日">台大敏盛護理健康大樓新建工程工地監測報告114年1...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1tTJerLLwGgXV3F50OkvpVxF6r-lsyR6f" target="_blank">10</a></td>
 <td>10</td>
@@ -649,6 +686,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>36</td>
 <td><strong>113建字第0056號</strong></td>
+<td class="name-cell"><span title="中鹿營造-豐裕興業天母段集合住宅新建工程 1141104 NO.30">中鹿營造-豐裕興業天母段集合住宅新建工程 1141...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1-8xedLMsT0ghdIYF3wUvXfiTYv_vI4Qa" target="_blank">12</a></td>
 <td>12</td>
@@ -663,6 +701,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>37</td>
 <td><strong>113建字第0052號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1yd9Gyb7HMttwmmUIAIzOrsNdW8F0qtKV" target="_blank">0</a></td>
 <td>0</td>
@@ -677,6 +716,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>38</td>
 <td><strong>113建字第0051號</strong></td>
+<td class="name-cell">安全觀測系統工作月報(114.08)</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1VjP4aD-WVtHDvi9HgFrfiTP0n8FvNS0k" target="_blank">10</a></td>
 <td>10</td>
@@ -691,6 +731,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>39</td>
 <td><strong>113建字第0049號</strong></td>
+<td class="name-cell"><span title="M07-1141108-1141114-安全觀測監測報表">M07-1141108-1141114-安全觀測監...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1FOYfolvq0tm6WF4jwtdvtlG0DPdZQ6ch" target="_blank">26</a></td>
 <td>26</td>
@@ -705,6 +746,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>40</td>
 <td><strong>113建字第0045號</strong></td>
+<td class="name-cell">高福內湖初始值</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1X42Y9F2mDJgS2NYmKfbEEGOS7OW99-zp" target="_blank">1</a></td>
 <td>1</td>
@@ -719,6 +761,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>41</td>
 <td><strong>113建字第0041號</strong></td>
+<td class="name-cell">恆合-錦西街    日</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1hPv71jmXlVvOkBwfwMZ67WysarzVtWg5" target="_blank">69</a></td>
 <td>70</td>
@@ -733,6 +776,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>42</td>
 <td><strong>113建字第0040號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1DmeOu_xEA4aGlmGlHcWQMW-3R3dGruVC" target="_blank">0</a></td>
 <td>0</td>
@@ -747,6 +791,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>43</td>
 <td><strong>113建字第0038號</strong></td>
+<td class="name-cell">-1</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1xNBTuyMT5dAypjgL6XbAv1Tet5cDxsox" target="_blank">48</a></td>
 <td>48</td>
@@ -761,6 +806,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>44</td>
 <td><strong>113建字第0031號</strong></td>
+<td class="name-cell">0-1116大中華建設泰順街新建工程監測</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1bOiV1GdxDzsMJ9mzuS1W8-6kixjcEIpg" target="_blank">15</a></td>
 <td>15</td>
@@ -775,6 +821,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>45</td>
 <td><strong>113建字第0030號</strong></td>
+<td class="name-cell">J-PARK A案 0611初值觀測</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1STaccfjKJzp3FWMIjjOH45eda3xO-H1C" target="_blank">13</a></td>
 <td>13</td>
@@ -789,6 +836,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="其他: sites.google.com">
 <td>46</td>
 <td><strong>113建字第0029號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">其他: sites.google.com</span></td>
 <td><a href="https://drive.google.com/drive/folders/1zjgcx2-l9R4I33lAUZoqSaHFz9yYVRp_" target="_blank">0</a></td>
 <td>0</td>
@@ -803,6 +851,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>47</td>
 <td><strong>113建字第0028號</strong></td>
+<td class="name-cell">114.06.10</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/12RGf__9xdVW7S8nbStqL-ll8JwxCLS1r" target="_blank">72</a></td>
 <td>72</td>
@@ -817,6 +866,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>48</td>
 <td><strong>113建字第0026號</strong></td>
+<td class="name-cell">民生東1140924(NO.17)V1</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1cCrMxw2t_xtcLFsqT637VmW3fBt6Py4g" target="_blank">46</a></td>
 <td>46</td>
@@ -831,6 +881,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>49</td>
 <td><strong>113建字第0025號</strong></td>
+<td class="name-cell">兩廳院(基地)(1140709)NO.10</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/11P7wOgyM-TURwkrsPvIn2vscATxMYoWs" target="_blank">0</a></td>
 <td>44</td>
@@ -845,6 +896,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="其他: sites.google.com">
 <td>50</td>
 <td><strong>113建字第0017號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">其他: sites.google.com</span></td>
 <td><a href="https://drive.google.com/drive/folders/1vSFqor0Dm4Jwa0jeqMWKD2CMyERIo0jv" target="_blank">0</a></td>
 <td>0</td>
@@ -859,6 +911,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>51</td>
 <td><strong>113建字第0008號</strong></td>
+<td class="name-cell"><span title="長春段-捷運暨基地監測39週報告 (1141214-1220)更正">長春段-捷運暨基地監測39週報告 (1141214...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1LfaLmHMhcvVIyJCfqOWfVNiLnc44O1F1" target="_blank">49</a></td>
 <td>49</td>
@@ -873,6 +926,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>52</td>
 <td><strong>113建字第0007號</strong></td>
+<td class="name-cell"><span title="東源營造工程-臺北市北投區新洲美段112地號集合住宅及店鋪新建工程(AH2) 1140619NO.115   V1">東源營造工程-臺北市北投區新洲美段112地號集合住...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1EWt_8p55aEkMyWUE4ekNNPxrvaTKQT6j" target="_blank">161</a></td>
 <td>161</td>
@@ -887,6 +941,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>53</td>
 <td><strong>112建字第1688號</strong></td>
+<td class="name-cell">金朋敦北</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1wAI0PbFQt6UPPMeMsQ1B_Pol6wettvEb" target="_blank">71</a></td>
 <td>71</td>
@@ -901,6 +956,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>54</td>
 <td><strong>112建字第0289號</strong></td>
+<td class="name-cell"><span title="112-0289安全觀測報告書(初始值2025-02-28 00_00)">112-0289安全觀測報告書(初始值2025-0...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1nLjkoB8g536o5XTpYbMWZjz7J153gddA" target="_blank">49</a></td>
 <td>49</td>
@@ -915,6 +971,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>55</td>
 <td><strong>112建字第0280號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1gsgHwuZxUOdZzLOm_ge7nQ1FE8wyn6Wi" target="_blank">0</a></td>
 <td>0</td>
@@ -929,6 +986,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>56</td>
 <td><strong>112建字第0278號</strong></td>
+<td class="name-cell"><span title="64100184480_台北市士林區蘭雅段一小段552、553、554、559地號工地監測報告_113年07月10日">64100184480_台北市士林區蘭雅段一小段5...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1Fx7SQwBh5W240BwXLiJuxac7mOAyQVyG" target="_blank">10</a></td>
 <td>10</td>
@@ -943,6 +1001,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>57</td>
 <td><strong>112建字第0276號</strong></td>
+<td class="name-cell">中山區德惠段二小段990等地號監測計劃書</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1CJRIMzEM4I-QPcEieF4CP6H-slj672sf" target="_blank">35</a></td>
 <td>35</td>
@@ -957,6 +1016,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>58</td>
 <td><strong>112建字第0269號</strong></td>
+<td class="name-cell"><span title="宗盛建設台北市士林區永新段二小段55等12筆地號集合住宅新建工程工地監測報告_114年12月10">宗盛建設台北市士林區永新段二小段55等12筆地號集...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/16fF8evGJQuAypRzgMCRI0oVOfuNhB5VN" target="_blank">37</a></td>
 <td>37</td>
@@ -971,6 +1031,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>59</td>
 <td><strong>112建字第0268號</strong></td>
+<td class="name-cell">至善路</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/14ggT1RF4yC7L1d-e4tYN0L0aAepCEoBN" target="_blank">50</a></td>
 <td>50</td>
@@ -985,6 +1046,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>60</td>
 <td><strong>112建字第0262號</strong></td>
+<td class="name-cell"><span title="113.05.27 透地雷達探測結果報告_木柵段_技簽">113.05.27 透地雷達探測結果報告_木柵段_...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/13aMAj-sgHAAKcqXg7a8Ht5ui8LfZKJKo" target="_blank">96</a></td>
 <td>96</td>
@@ -999,6 +1061,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>61</td>
 <td><strong>112建字第0257號</strong></td>
+<td class="name-cell">禾進誼德1141114</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1QDGpNB1kwYZmPoY1RC9dolJsxxIraQKi" target="_blank">52</a></td>
 <td>52</td>
@@ -1013,6 +1076,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>62</td>
 <td><strong>112建字第0252號</strong></td>
+<td class="name-cell">安全觀測系統報告(1141107)58</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1UAQHugstDg_DX824xAfQ6q64pFwW0UXo" target="_blank">68</a></td>
 <td>68</td>
@@ -1027,6 +1091,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="ownCloud">
 <td>63</td>
 <td><strong>112建字第0250號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">ownCloud</span></td>
 <td><a href="https://drive.google.com/drive/folders/1pNr2prH26Wetgf1f0QqZXYQMnipRdTeI" target="_blank">0</a></td>
 <td>0</td>
@@ -1041,6 +1106,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>64</td>
 <td><strong>112建字第0249號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/14-WeLLdwYd7y-yyMr4eBlzGqVHCSXk7m" target="_blank">19</a></td>
 <td>0</td>
@@ -1055,6 +1121,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>65</td>
 <td><strong>112建字第0243號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1XY_1418KhFPHL0zRh2uc34uoSueP7fjK" target="_blank">40</a></td>
 <td>0</td>
@@ -1069,6 +1136,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>66</td>
 <td><strong>112建字第0238號</strong></td>
+<td class="name-cell">114.10.15日報表(璞真宇見)追加量測</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1pOH670P7feZTY2v3FBykarMV-E0xDCCT" target="_blank">50</a></td>
 <td>50</td>
@@ -1083,6 +1151,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="in_progress" data-cloud="Google Drive">
 <td>67</td>
 <td><strong>112建字第0235號</strong></td>
+<td class="name-cell">-福順一觀測報告(建管)</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1OB3lMNUMyb45I_D3BYQNQKy7p3Rmeg85" target="_blank">19</a></td>
 <td>3</td>
@@ -1097,6 +1166,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>68</td>
 <td><strong>112建字第0232號</strong></td>
+<td class="name-cell">新倫文山1140623</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1cT1tg0uCpFDV44zb-o4F9xQ_deYkhoXR" target="_blank">2</a></td>
 <td>2</td>
@@ -1111,6 +1181,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="其他: sites.google.com">
 <td>69</td>
 <td><strong>112建字第0231號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">其他: sites.google.com</span></td>
 <td><a href="https://drive.google.com/drive/folders/1VC2dWCHsffFZ5T67bQih1fGEq64adoGg" target="_blank">0</a></td>
 <td>0</td>
@@ -1125,6 +1196,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>70</td>
 <td><strong>112建字第0227號</strong></td>
+<td class="name-cell">永陞韶光11401114觀測報告(上傳)</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/11wDWhHvMg-JOzOACivodWNDDa9Kr4plt" target="_blank">87</a></td>
 <td>87</td>
@@ -1139,6 +1211,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="其他: sites.google.com">
 <td>71</td>
 <td><strong>112建字第0225號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">其他: sites.google.com</span></td>
 <td><a href="https://drive.google.com/drive/folders/1xkEjt-NIx-jiAG6wbGIYqONYoa7n2epX" target="_blank">0</a></td>
 <td>0</td>
@@ -1153,6 +1226,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>72</td>
 <td><strong>112建字第0222號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1Ww6TxMeNhKMzoNKvb1YzyOyOnPlJiePx" target="_blank">0</a></td>
 <td>0</td>
@@ -1167,6 +1241,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>73</td>
 <td><strong>112建字第0220號</strong></td>
+<td class="name-cell"><span title="東源營造工程-台北市內湖區碧湖段四小段382等地號新建工程(A69案)1140210初值-1 -簽證版">東源營造工程-台北市內湖區碧湖段四小段382等地號...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1bOJGEQLDnyXeg6V0IWq0M1UwqUfPnYuE" target="_blank">77</a></td>
 <td>77</td>
@@ -1181,6 +1256,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>74</td>
 <td><strong>112建字第0219號</strong></td>
+<td class="name-cell">114.10.08~10.15 鼎真觀測數據</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1gxj4tsTxvXnSWpR6YChjsfx9N-PXFL1I" target="_blank">37</a></td>
 <td>37</td>
@@ -1195,6 +1271,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>75</td>
 <td><strong>112建字第0218號</strong></td>
+<td class="name-cell">水井初值</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1NQfeHwZO75qaDFtk6z_wASUygZMOAk_o" target="_blank">69</a></td>
 <td>69</td>
@@ -1209,6 +1286,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>76</td>
 <td><strong>112建字第0216號</strong></td>
+<td class="name-cell">範例-監測數據告示牌</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/182evAqRIKhpARg5vWXU7HTBBS_9jWtFz" target="_blank">1</a></td>
 <td>7</td>
@@ -1223,6 +1301,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>77</td>
 <td><strong>112建字第0209號</strong></td>
+<td class="name-cell">9 觀測報告-西園路案-修正</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1-9lOO8hYQjDeBMIhDJTe9a-u844ZeKCA" target="_blank">31</a></td>
 <td>31</td>
@@ -1237,6 +1316,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>78</td>
 <td><strong>112建字第0208號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1OPxB3kAmNu6N6TL407niMzn6yvB25K5V" target="_blank">53</a></td>
 <td>53</td>
@@ -1251,6 +1331,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>79</td>
 <td><strong>112建字第0205號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1NOZBMZ7hFrVcRjHLFKN-q1xcNrWMkTg8" target="_blank">39</a></td>
 <td>0</td>
@@ -1265,6 +1346,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>80</td>
 <td><strong>112建字第0191號</strong></td>
+<td class="name-cell">112建字第0191號建照資料</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1ekfnDCwgzZo3-VA_WMgEUlDJiNWsOsSp" target="_blank">31</a></td>
 <td>31</td>
@@ -1279,6 +1361,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="in_progress" data-cloud="Google Drive">
 <td>81</td>
 <td><strong>112建字第0189號</strong></td>
+<td class="name-cell">監測</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1VK-rquytLIfYB92k0M4NkiSnJMSDBujT" target="_blank">27</a></td>
 <td>1</td>
@@ -1293,6 +1376,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>82</td>
 <td><strong>112建字第0187號</strong></td>
+<td class="name-cell">0902福林案</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1zJpf7_EW3x3ociW5YN-TuUBHLdGODYfc" target="_blank">51</a></td>
 <td>51</td>
@@ -1307,6 +1391,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>83</td>
 <td><strong>112建字第0179號</strong></td>
+<td class="name-cell">吳興街(1140626)NO.36</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1UzFOq2oG9qhzomoXsIq9LG_fdoCtJp3u" target="_blank">2</a></td>
 <td>2</td>
@@ -1321,6 +1406,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>84</td>
 <td><strong>112建字第0178號</strong></td>
+<td class="name-cell"><span title="內湖區石潭段四小段新建工程-專案日報告書-2025-11-17 00">內湖區石潭段四小段新建工程-專案日報告書-2025...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1L0VKcqFKLeqOfB7GYelLxA1TKrYBWA2h" target="_blank">38</a></td>
 <td>38</td>
@@ -1335,6 +1421,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>85</td>
 <td><strong>112建字第0177號</strong></td>
+<td class="name-cell">112建字第0177號12月11日</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/14hVTYuEOq91-skwM7m3sdiLQESG_j6Jh" target="_blank">15</a></td>
 <td>85</td>
@@ -1349,6 +1436,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>86</td>
 <td><strong>112建字第0172號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1xJbX3e68qm9DY63sIVSevur8Tyz4stC2" target="_blank">0</a></td>
 <td>0</td>
@@ -1363,6 +1451,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>87</td>
 <td><strong>112建字第0169號</strong></td>
+<td class="name-cell">北市中山區三小段648地號住宅新建工程監測</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1jqxlCSfRmNtm6oFHLhIYh-l-atxV4kXt" target="_blank">7</a></td>
 <td>7</td>
@@ -1377,6 +1466,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>88</td>
 <td><strong>112建字第0167號</strong></td>
+<td class="name-cell"><span title="性能評估報告-大安區龍泉段671 678號修訂版  0527">性能評估報告-大安區龍泉段671 678號修訂版 ...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1Rx1zjbByhhdgPsJ2QHvKCNw_YJCqzZ6F" target="_blank">2</a></td>
 <td>2</td>
@@ -1391,6 +1481,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>89</td>
 <td><strong>112建字第0165號</strong></td>
+<td class="name-cell">晶綻大直新建工程1213初值觀測報告(上傳)</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1JGvbGCPGs_vTsQDICHFrztJ3PlFKyck2" target="_blank">19</a></td>
 <td>19</td>
@@ -1405,6 +1496,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>90</td>
 <td><strong>112建字第0163號</strong></td>
+<td class="name-cell">保強里哲1217觀測</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/15jlGLfeZcB4ejuqMRw3jlO7R_0yf_rOc" target="_blank">9</a></td>
 <td>9</td>
@@ -1419,6 +1511,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>91</td>
 <td><strong>112建字第0162號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1kHWVaSOl4PT_Isg41Np44VDNN8es4HVS" target="_blank">31</a></td>
 <td>0</td>
@@ -1433,6 +1526,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>92</td>
 <td><strong>112建字第0158號</strong></td>
+<td class="name-cell">懷德街47號</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1Q7aUS9jf_RnIFoUay8C6-JUYMhsEahey" target="_blank">15</a></td>
 <td>15</td>
@@ -1447,6 +1541,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="in_progress" data-cloud="Google Drive">
 <td>93</td>
 <td><strong>112建字第0156號</strong></td>
+<td class="name-cell"><span title="允升營造-北投區致遠一路二段112 巷集合住宅新建工程 1141201 60">允升營造-北投區致遠一路二段112 巷集合住宅新建...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1vdgkPvliEl_RiEnWdjKT_6z-cpxh9Xs3" target="_blank">61</a></td>
 <td>60</td>
@@ -1461,6 +1556,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>94</td>
 <td><strong>112建字第0146號</strong></td>
+<td class="name-cell">114.12.16觀測</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1Y4mmczSkTscjMNZ-bCOu-Fp4RUTc6_-r" target="_blank">67</a></td>
 <td>67</td>
@@ -1475,6 +1571,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>95</td>
 <td><strong>112建字第0140號</strong></td>
+<td class="name-cell">博愛賦御1130828觀測資料</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1n9OZUxgQJCJHNXii6sCHS-P7z5kFY-t_" target="_blank">95</a></td>
 <td>95</td>
@@ -1489,6 +1586,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>96</td>
 <td><strong>112建字第0139號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1v9tIEx054bYQgKuQ1uU3TlJRIss2kOAO" target="_blank">0</a></td>
 <td>0</td>
@@ -1503,6 +1601,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>97</td>
 <td><strong>112建字第0138號</strong></td>
+<td class="name-cell">鄉林中山賦工地檢測報告 114年03.月28日</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1xdOjfsAOa2Cy2xNmzTt9tb_AEgjGPAdi" target="_blank">88</a></td>
 <td>88</td>
@@ -1517,6 +1616,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>98</td>
 <td><strong>112建字第0135號</strong></td>
+<td class="name-cell">大龍段(1141223)NO.61</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1bsOaaKBuqCL-7fBEDq-NDcIVpVvcfDIc" target="_blank">0</a></td>
 <td>5</td>
@@ -1531,6 +1631,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>99</td>
 <td><strong>112建字第0133號</strong></td>
+<td class="name-cell">天母樺園1141226觀測報告(開挖開始後)(1)</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1qWolleSWyIpQnP14HZk10O5pPWJUsWzx" target="_blank">0</a></td>
 <td>29</td>
@@ -1545,6 +1646,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="SharePoint">
 <td>100</td>
 <td><strong>112建字第0127號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">SharePoint</span></td>
 <td>0</td>
 <td>0</td>
@@ -1559,6 +1661,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>101</td>
 <td><strong>112建字第0126號</strong></td>
+<td class="name-cell"><span title="揚昇君悅-監測初始值(TI,SB,SM)報告1130612 上傳">揚昇君悅-監測初始值(TI,SB,SM)報告113...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1hvd1g41FCBL75u3XmltfW6GK45COZQ7J" target="_blank">0</a></td>
 <td>80</td>
@@ -1573,6 +1676,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>102</td>
 <td><strong>112建字第0125號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1-peLmGBnAA_5EDxdhLPZIvk2fvj3HNhS" target="_blank">0</a></td>
 <td>0</td>
@@ -1587,6 +1691,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>103</td>
 <td><strong>112建字第0123號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1B49ORGmmp3RQIky4MxWSekH3qE3zpC6n" target="_blank">0</a></td>
 <td>0</td>
@@ -1601,6 +1706,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="短網址">
 <td>104</td>
 <td><strong>112建字第0121號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">短網址</span></td>
 <td><a href="https://drive.google.com/drive/folders/1Mwtw08kql48c1Dqa_UHJJ5PqTzEESSPV" target="_blank">0</a></td>
 <td>0</td>
@@ -1615,6 +1721,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>105</td>
 <td><strong>112建字第0119號</strong></td>
+<td class="name-cell">觀測紀錄</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1XIaqhoXLOq19Sid6aBLSQSr_fOJ97X7S" target="_blank">68</a></td>
 <td>68</td>
@@ -1629,6 +1736,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>106</td>
 <td><strong>112建字第0118號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1Uze4p8PN_Kx2L57OyO-zigerRVQRxrr4" target="_blank">0</a></td>
 <td>0</td>
@@ -1643,6 +1751,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>107</td>
 <td><strong>112建字第0117號</strong></td>
+<td class="name-cell">初值報告(20240604)</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/10O2EKIzSiKjr2Bx1Zq2jj2C2bE-mlZe-" target="_blank">1</a></td>
 <td>2</td>
@@ -1657,6 +1766,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>108</td>
 <td><strong>112建字第0116號</strong></td>
+<td class="name-cell">長春段-捷運暨基地監測40</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1tKQscgsFQK8WhQRclrKoqpuonRaMfrWj" target="_blank">43</a></td>
 <td>43</td>
@@ -1671,6 +1781,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="其他: gofile-376d656359.tw5.quickconnect.to">
 <td>109</td>
 <td><strong>112建字第0112號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">其他: gofile-376d656359.tw5.quickconnect.to</span></td>
 <td><a href="https://drive.google.com/drive/folders/11n6H2GWZ3YeaMmFuOSi_MZW-0fyixbsM" target="_blank">0</a></td>
 <td>0</td>
@@ -1685,6 +1796,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="其他: gofile.me">
 <td>110</td>
 <td><strong>112建字第0109號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">其他: gofile.me</span></td>
 <td><a href="https://drive.google.com/drive/folders/1t-FEsNmKfqJdEKB-B7uzUQdF3Cs3Kror" target="_blank">0</a></td>
 <td>0</td>
@@ -1699,6 +1811,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>111</td>
 <td><strong>112建字第0108號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1MLUCzFGka7FnlcDW09WZxaX-p9SUpgTi" target="_blank">0</a></td>
 <td>0</td>
@@ -1713,6 +1826,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>112</td>
 <td><strong>112建字第0107號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1sHcjufXLs3azx7bPKenUuQs1a1V9YdD_" target="_blank">0</a></td>
 <td>0</td>
@@ -1727,6 +1841,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>113</td>
 <td><strong>112建字第0105號</strong></td>
+<td class="name-cell">112建字第0105號工地</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1fLrvg0jYh3OMCkdMOkwMAMmIRbCo23EA" target="_blank">3</a></td>
 <td>3</td>
@@ -1741,6 +1856,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>114</td>
 <td><strong>112建字第0100號</strong></td>
+<td class="name-cell">(雲端)通化段四小段336地號1141003</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1F5K3iLisvL9iokA6DiCz_TH6ciVC87hX" target="_blank">44</a></td>
 <td>44</td>
@@ -1755,6 +1871,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>115</td>
 <td><strong>112建字第0098號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/17krcb3oTyD-nP-5H4pBRrJ0RS-8xcHai" target="_blank">0</a></td>
 <td>0</td>
@@ -1769,6 +1886,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>116</td>
 <td><strong>112建字第0097號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1AwIMJC4Co6vHuQI742ndZtyHkcEX7YOF" target="_blank">52</a></td>
 <td>0</td>
@@ -1783,6 +1901,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>117</td>
 <td><strong>112建字第0096號</strong></td>
+<td class="name-cell">品嘉新明路1141205觀測</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1zVrG9-o1bgHbk7Pr27YHJokfs6B2IKOV" target="_blank">52</a></td>
 <td>52</td>
@@ -1797,6 +1916,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>118</td>
 <td><strong>112建字第0092號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1I8x62dPX77Gnrz2XxC3tInvne8OfypmV" target="_blank">0</a></td>
 <td>0</td>
@@ -1811,6 +1931,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>119</td>
 <td><strong>112建字第0087號</strong></td>
+<td class="name-cell"><span title="202508汎德永業BMW 北士科服務中心新建工程監測月報">202508汎德永業BMW 北士科服務中心新建工程...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1wNiB_rJP92xdjKDJQcyDUqfVKioQeg6y" target="_blank">319</a></td>
 <td>319</td>
@@ -1825,6 +1946,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>120</td>
 <td><strong>112建字第0083號</strong></td>
+<td class="name-cell">夏沐時工地監測報告-113年6月27日觀測初值</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1RcwvmJQoBmHyd20dPexYowJhOHdy3Xp_" target="_blank">75</a></td>
 <td>75</td>
@@ -1839,6 +1961,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="其他: sites.google.com">
 <td>121</td>
 <td><strong>112建字第0082號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">其他: sites.google.com</span></td>
 <td><a href="https://drive.google.com/drive/folders/15xIC6S3TeLT73Xn71yf5Bq8knWkaRoSX" target="_blank">0</a></td>
 <td>0</td>
@@ -1853,6 +1976,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>122</td>
 <td><strong>112建字第0081號</strong></td>
+<td class="name-cell">欣建文林路1203觀測</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/14kR_I7hXHnYfnPQFE8hoiRSbEfbQuR_2" target="_blank">31</a></td>
 <td>31</td>
@@ -1867,6 +1991,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>123</td>
 <td><strong>112建字第0080號</strong></td>
+<td class="name-cell">天母段三小段39、40等二筆地號新建工程工地</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1p6VOGhCJj4_lr4bPwgZldkZ2ViLxgIrU" target="_blank">45</a></td>
 <td>45</td>
@@ -1881,6 +2006,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>124</td>
 <td><strong>112建字第0079號</strong></td>
+<td class="name-cell">112建字0079-初值報告20250813</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1jRjVeu-sc4fzyv2AybpJGI4MZpgzzKhl" target="_blank">2</a></td>
 <td>2</td>
@@ -1895,6 +2021,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>125</td>
 <td><strong>112建字第0078號</strong></td>
+<td class="name-cell"><span title="112建字第0078號監測報告1131125(沉陷點及傾斜計初值)">112建字第0078號監測報告1131125(沉陷...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1jmM1dVJutb8yMOC6kbsq4KlR8pzCsEfg" target="_blank">56</a></td>
 <td>56</td>
@@ -1909,6 +2036,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>126</td>
 <td><strong>112建字第0071號</strong></td>
+<td class="name-cell"><span title="北投新民段集合住宅新建工程工地(降挖50cm)監測報告_114年01月08日">北投新民段集合住宅新建工程工地(降挖50cm)監測...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1ApF5dDxRPHcfJ9D3uk7daQq7-0AxSNdw" target="_blank">8</a></td>
 <td>8</td>
@@ -1923,6 +2051,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="SharePoint">
 <td>127</td>
 <td><strong>112建字第0066號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">SharePoint</span></td>
 <td>0</td>
 <td>0</td>
@@ -1937,6 +2066,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>128</td>
 <td><strong>112建字第0062號</strong></td>
+<td class="name-cell">114.09..24伊邸集合住宅新建工程監測月</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1HXY7eBPusE2aczbVdNTYuhEuLZJasTzD" target="_blank">53</a></td>
 <td>53</td>
@@ -1951,6 +2081,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>129</td>
 <td><strong>112建字第0059號</strong></td>
+<td class="name-cell"><span title="64100184480_台北市士林區蘭雅段一小段552、553、554、559地號工地監測報告_113年07月10日">64100184480_台北市士林區蘭雅段一小段5...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1XiQvbQ0NkHddwB6MuLgbypZkzpPTCwzU" target="_blank">10</a></td>
 <td>10</td>
@@ -1965,6 +2096,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>130</td>
 <td><strong>112建字第0057號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1Fj3D7WsOMY1xP3NkedGZsfGNQF4dkpAF" target="_blank">0</a></td>
 <td>0</td>
@@ -1979,6 +2111,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>131</td>
 <td><strong>112建字第0056號</strong></td>
+<td class="name-cell">利晉緯成</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1kktZcR3OAns4ebEVHWdLbnqz8Xw_6TiB" target="_blank">350</a></td>
 <td>350</td>
@@ -1993,6 +2126,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>132</td>
 <td><strong>112建字第0055號</strong></td>
+<td class="name-cell">112建字第0055號新建工程114.2.11</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1xtWEaGtON3YTembXOvGYh0fiOXYl0xn0" target="_blank">38</a></td>
 <td>38</td>
@@ -2007,6 +2141,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>133</td>
 <td><strong>112建字第0052號</strong></td>
+<td class="name-cell">上承 1130613初始值</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1LsSz13m_HP05zeIzblJOMl6dP4T-ejYK" target="_blank">49</a></td>
 <td>49</td>
@@ -2021,6 +2156,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>134</td>
 <td><strong>112建字第0051號</strong></td>
+<td class="name-cell"><span title="安全觀測系統初始值報告書-支撐應變計(第一層)、中間柱隆起點">安全觀測系統初始值報告書-支撐應變計(第一層)、中...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1AGgsplRcXR6yBOKFjGA7Tw9XXEsWXjkc" target="_blank">30</a></td>
 <td>30</td>
@@ -2035,6 +2171,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>135</td>
 <td><strong>112建字第0049號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1v29lCizldt46bijtc6mLTiE-mXYCNl8X" target="_blank">28</a></td>
 <td>0</td>
@@ -2049,6 +2186,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>136</td>
 <td><strong>112建字第0048號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1jTwoPYQy-I5ZXCPc3aZFnerNtQwbE4_G" target="_blank">47</a></td>
 <td>0</td>
@@ -2063,6 +2201,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>137</td>
 <td><strong>112建字第0041號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1-NZNeqQUXKWQtvrL08LuAAY3NVeGt7Z6" target="_blank">41</a></td>
 <td>0</td>
@@ -2077,6 +2216,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>138</td>
 <td><strong>112建字第0040號</strong></td>
+<td class="name-cell">23安全觀測系統報告70</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/17v4Lxty_dGk8pYXREZM8DO0rlgQPokmq" target="_blank">44</a></td>
 <td>44</td>
@@ -2091,6 +2231,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>139</td>
 <td><strong>112建字第0037號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1v6oqWUv827k75vqlhs6aFCgRIZMmEq5o" target="_blank">39</a></td>
 <td>0</td>
@@ -2105,6 +2246,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>140</td>
 <td><strong>112建字第0033號</strong></td>
+<td class="name-cell">台大仁愛醫護大樓(古蹟區含周邊)</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1NhKICIsIiVoz4Wf4jKVDkcuqzm7UkKZi" target="_blank">109</a></td>
 <td>109</td>
@@ -2119,6 +2261,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>141</td>
 <td><strong>112建字第0031號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1cfXEj2RMCwZCp2QuHeDAJtcHbCTFpffA" target="_blank">66</a></td>
 <td>0</td>
@@ -2133,6 +2276,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="in_progress" data-cloud="Google Drive">
 <td>142</td>
 <td><strong>112建字第0030號</strong></td>
+<td class="name-cell"><span title="萬華青年段工地監測報告_114年09月29日(沉陷點、建物傾斜) (壁體倾度管、鋼筋計、水壓計、水位觀測井初始值)(支撐應變計(第一、二層)、中間樁隆起)">萬華青年段工地監測報告_114年09月29日(沉陷...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1tltsjZx4B7SPaD9w5Mkhst5endqaAI6D" target="_blank">43</a></td>
 <td>1</td>
@@ -2147,6 +2291,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="in_progress" data-cloud="Google Drive">
 <td>143</td>
 <td><strong>112建字第0027號</strong></td>
+<td class="name-cell"><span title="113.08.12-112建字第0027號力寶榮星工地">113.08.12-112建字第0027號力寶榮星...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1aPIvTgP8e8rhBWp22cT2gZJCLzWVS-J1" target="_blank">67</a></td>
 <td>65</td>
@@ -2161,6 +2306,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="SharePoint">
 <td>144</td>
 <td><strong>112建字第0022號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">SharePoint</span></td>
 <td><a href="https://drive.google.com/drive/folders/1TmzAZKCB8Y5AKq7BjdRr8LqJwNOOq5QJ" target="_blank">0</a></td>
 <td>0</td>
@@ -2175,6 +2321,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>145</td>
 <td><strong>112建字第0021號</strong></td>
+<td class="name-cell">新建工程監測案1141103</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1ee_AzQP-dGaLROQWH-kY56c9eD52p9Ii" target="_blank">0</a></td>
 <td>26</td>
@@ -2189,6 +2336,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="短網址">
 <td>146</td>
 <td><strong>112建字第0019號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">短網址</span></td>
 <td><a href="https://drive.google.com/drive/folders/1spYblacYN4gRXuIsG0bsaN0DcCFZpvo3" target="_blank">0</a></td>
 <td>0</td>
@@ -2203,6 +2351,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="in_progress" data-cloud="Google Drive">
 <td>147</td>
 <td><strong>112建字第0018號</strong></td>
+<td class="name-cell">順泰奇岩段0625觀測</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1DTZUgLaHC6owthDnDaiHkbsHmZ17Dm0h" target="_blank">82</a></td>
 <td>1</td>
@@ -2217,6 +2366,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>148</td>
 <td><strong>112建字第0013號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1zALlQKxSvS7_U3xTFqhNTkVqoikhWy_Q" target="_blank">0</a></td>
 <td>0</td>
@@ -2231,6 +2381,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="SharePoint">
 <td>149</td>
 <td><strong>112建字第0010號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">SharePoint</span></td>
 <td><a href="https://drive.google.com/drive/folders/1zcp4k9Gq9PfqOJ1wkXH72xl0IXXbkEBF" target="_blank">0</a></td>
 <td>0</td>
@@ -2245,6 +2396,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>150</td>
 <td><strong>112建字第0006號</strong></td>
+<td class="name-cell"><span title="112建字第0006號-安全監測報告1131025(初始值)">112建字第0006號-安全監測報告1131025...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1fH4uV2xAMxmmUWk6Wv6vAn2U-jCIW6Ml" target="_blank">21</a></td>
 <td>56</td>
@@ -2259,6 +2411,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="其他: sites.google.com">
 <td>151</td>
 <td><strong>112建字第0005號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">其他: sites.google.com</span></td>
 <td><a href="https://drive.google.com/drive/folders/1h2U3Ay8dsYD2o-M0HT3hBKms6FHrI18u" target="_blank">0</a></td>
 <td>0</td>
@@ -2273,6 +2426,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="in_progress" data-cloud="Google Drive">
 <td>152</td>
 <td><strong>112建字第0002號</strong></td>
+<td class="name-cell">大安區懷生段1141028觀測</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1GYEWO14G6M_-EKjOFoMlvz1ZF1IaHLaf" target="_blank">34</a></td>
 <td>1</td>
@@ -2287,6 +2441,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="其他: sites.google.com">
 <td>153</td>
 <td><strong>112建字第0001號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">其他: sites.google.com</span></td>
 <td><a href="https://drive.google.com/drive/folders/1vMTybp1gJfdv1ZNrLp0YaK2XUePzIku4" target="_blank">0</a></td>
 <td>0</td>
@@ -2301,6 +2456,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="in_progress" data-cloud="Google Drive">
 <td>154</td>
 <td><strong>111建字第5688號</strong></td>
+<td class="name-cell">松湖-113年11月-月報成果報告書-簽證</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/16wUlzWp32zL7w83mh_o3UF7tfxA2aWzO" target="_blank">117</a></td>
 <td>79</td>
@@ -2315,6 +2471,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>155</td>
 <td><strong>111建字第1688號</strong></td>
+<td class="name-cell">114年11月02日監測</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1eDHRWan38_-I4XfBL_6DmjtncumotY77" target="_blank">94</a></td>
 <td>94</td>
@@ -2329,6 +2486,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="其他: gofile.me">
 <td>156</td>
 <td><strong>111建字第1188號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">其他: gofile.me</span></td>
 <td>0</td>
 <td>0</td>
@@ -2343,6 +2501,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>157</td>
 <td><strong>111建字第0355號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1faRXo8TP9z7OVNjrJkd9VFOxnxS1tury" target="_blank">47</a></td>
 <td>0</td>
@@ -2357,6 +2516,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="其他: gofile.me">
 <td>158</td>
 <td><strong>111建字第0352號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">其他: gofile.me</span></td>
 <td><a href="https://drive.google.com/drive/folders/1BZ-ONvflbRBZQufngSXSg66BqBMZ_ldv" target="_blank">0</a></td>
 <td>0</td>
@@ -2371,6 +2531,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="in_progress" data-cloud="Google Drive">
 <td>159</td>
 <td><strong>111建字第0351號</strong></td>
+<td class="name-cell"><span title="P-1222 新第營造-寶敦建設民權東路六段新建工程日報表112.06.28">P-1222 新第營造-寶敦建設民權東路六段新建工...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1OdvxZM9QrHMSe5AaGa9PNiLWYrVE5Ghm" target="_blank">2</a></td>
 <td>1</td>
@@ -2385,6 +2546,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>160</td>
 <td><strong>111建字第0348號</strong></td>
+<td class="name-cell"><span title="111建字第0348號1140527觀測圖示及觀測紀錄">111建字第0348號1140527觀測圖示及觀測...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1aTFkbUS0bi-IzIxdyhXMPZjqdVIsEQTV" target="_blank">36</a></td>
 <td>36</td>
@@ -2399,6 +2561,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>161</td>
 <td><strong>111建字第0347號</strong></td>
+<td class="name-cell">國土大將0606</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/10JGdO-JZw5GwIzxyd7ti6T8TOFuo7njv" target="_blank">0</a></td>
 <td>126</td>
@@ -2413,6 +2576,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>162</td>
 <td><strong>111建字第0345號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1uKPBwD9UCaDIZZwVrPK4vhCv2KGPG8Ui" target="_blank">0</a></td>
 <td>0</td>
@@ -2427,6 +2591,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="其他: sites.google.com">
 <td>163</td>
 <td><strong>111建字第0342號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">其他: sites.google.com</span></td>
 <td><a href="https://drive.google.com/drive/folders/1HmH9v1OpNNou5h2-aDJRi-ySKCZmueqJ" target="_blank">0</a></td>
 <td>0</td>
@@ -2441,6 +2606,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="其他: sites.google.com">
 <td>164</td>
 <td><strong>111建字第0341號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">其他: sites.google.com</span></td>
 <td><a href="https://drive.google.com/drive/folders/1K7h-6IJ5BHKEa2yQ0Fm0ogLJxTzuUIB5" target="_blank">0</a></td>
 <td>0</td>
@@ -2455,6 +2621,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>165</td>
 <td><strong>111建字第0336號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1aTfLoWw62fkfXWaR58B6b3koDJ1_sRLE" target="_blank">47</a></td>
 <td>0</td>
@@ -2469,6 +2636,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>166</td>
 <td><strong>111建字第0333號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1Md4ugR6XnGpOSXyHGFKU8KVKzMcuwndV" target="_blank">109</a></td>
 <td>0</td>
@@ -2483,6 +2651,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>167</td>
 <td><strong>111建字第0329號</strong></td>
+<td class="name-cell">平陽街1130308-監測報告(初始歸0)</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1CzHkVC0FUrVawqHOhls2TK8gkCK1NvNT" target="_blank">86</a></td>
 <td>86</td>
@@ -2497,6 +2666,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>168</td>
 <td><strong>111建字第0321號</strong></td>
+<td class="name-cell">111建字第0321號工地監測報告1141224</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/16WdPHzXTxkQVEcRPE-OeDFvxFXVv7Ydz" target="_blank">56</a></td>
 <td>56</td>
@@ -2511,6 +2681,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="in_progress" data-cloud="Google Drive">
 <td>169</td>
 <td><strong>111建字第0318號</strong></td>
+<td class="name-cell">安全觀測系統報告書</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1Usizv_3v0appO9joH1h0O9sY8HzZJ8qm" target="_blank">56</a></td>
 <td>55</td>
@@ -2525,6 +2696,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>170</td>
 <td><strong>111建字第0317號</strong></td>
+<td class="name-cell">圓山富璟</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1b7AzcyeHEIVAh62cWeRAXfKZ6b2ckOPV" target="_blank">0</a></td>
 <td>48</td>
@@ -2539,6 +2711,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="in_progress" data-cloud="Google Drive">
 <td>171</td>
 <td><strong>111建字第0316號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1_p7y8EvoQHfmPX_aA6PweVoUdPvNe_4t" target="_blank">164</a></td>
 <td>100</td>
@@ -2553,6 +2726,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>172</td>
 <td><strong>111建字第0315號</strong></td>
+<td class="name-cell">嘉磐日光0708觀測報告(上傳)</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/13i96AZa7sUCFW4cG9Df1ttncgksBn01_" target="_blank">10</a></td>
 <td>10</td>
@@ -2567,6 +2741,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>173</td>
 <td><strong>111建字第0313號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1lWAiIQHeHZhA6m5SJQe84SVqobHu6hlM" target="_blank">0</a></td>
 <td>0</td>
@@ -2581,6 +2756,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>174</td>
 <td><strong>111建字第0312號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/11aJkucXrKxM9EmL4wgoSMsUztn6ZM5mH" target="_blank">30</a></td>
 <td>0</td>
@@ -2595,6 +2771,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>175</td>
 <td><strong>111建字第0311號</strong></td>
+<td class="name-cell"><span title="4-南港之星工地監測報告_113年11月20日(變電站初始值)">4-南港之星工地監測報告_113年11月20日(變...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1DVLA6xTRQhZQSURxZ2mdu1pyvd-gyTeq" target="_blank">0</a></td>
 <td>238</td>
@@ -2609,6 +2786,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="短網址">
 <td>176</td>
 <td><strong>111建字第0310號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">短網址</span></td>
 <td><a href="https://drive.google.com/drive/folders/19MikSECkR3srg91GP87J2oV1ADbinGGe" target="_blank">0</a></td>
 <td>0</td>
@@ -2623,6 +2801,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>177</td>
 <td><strong>111建字第0308號</strong></td>
+<td class="name-cell">鄰桃園捷運設施安全監測系統報告202511</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1SIG35NYpDnPOUUMAQIzq85nJYDBg0eik" target="_blank">0</a></td>
 <td>2</td>
@@ -2637,6 +2816,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>178</td>
 <td><strong>111建字第0307號</strong></td>
+<td class="name-cell"><span title="新總陽建設北投區大業段四小段574地號商辦大樓新建工程">新總陽建設北投區大業段四小段574地號商辦大樓新建...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1GHLs50DacqqCdtGCi_a5TOl4rAOxsa22" target="_blank">195</a></td>
 <td>195</td>
@@ -2651,6 +2831,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>179</td>
 <td><strong>111建字第0306號</strong></td>
+<td class="name-cell">平菁街監測報表1130715(第10次)</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1J26U7At8QN3n93B9rjrS6-fjtDzsBw31" target="_blank">2</a></td>
 <td>2</td>
@@ -2665,6 +2846,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Dropbox">
 <td>180</td>
 <td><strong>111建字第0302號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">Dropbox</span></td>
 <td><a href="https://drive.google.com/drive/folders/1sXcJeZWqvg8hwS6IanGScOs0Ycg9Bsy-" target="_blank">0</a></td>
 <td>0</td>
@@ -2679,6 +2861,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>181</td>
 <td><strong>111建字第0300號</strong></td>
+<td class="name-cell">鄰桃園捷運設施安全監測系統報告202511</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1adWTJnwiRb6c-6yOX58T1cWLKQHRw3Li" target="_blank">0</a></td>
 <td>2</td>
@@ -2693,6 +2876,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>182</td>
 <td><strong>111建字第0298號</strong></td>
+<td class="name-cell">0.11501-02</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1f9HtYugwjwdnIaVHMccsQCM1eInYqTjI" target="_blank">5</a></td>
 <td>5</td>
@@ -2707,6 +2891,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="SharePoint">
 <td>183</td>
 <td><strong>111建字第0295號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">SharePoint</span></td>
 <td><a href="https://drive.google.com/drive/folders/1EPgUNqkZesRK--Jo94-E3U0KpUpc__6k" target="_blank">0</a></td>
 <td>0</td>
@@ -2721,6 +2906,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="SharePoint">
 <td>184</td>
 <td><strong>111建字第0293號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">SharePoint</span></td>
 <td><a href="https://drive.google.com/drive/folders/1arGA2FaAZc-CiW8SCnfA8SJfsmZt1esh" target="_blank">0</a></td>
 <td>0</td>
@@ -2735,6 +2921,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>185</td>
 <td><strong>111建字第0292號</strong></td>
+<td class="name-cell">首鋼橋北段二小段1131126觀測</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1a_q1yMtuemKdAplEgRsDYWgcJMDLHyJf" target="_blank">8</a></td>
 <td>8</td>
@@ -2749,6 +2936,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>186</td>
 <td><strong>111建字第0290號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1Bd2uM_WoXO5oegCNsVWCQSWrTGoBBl5r" target="_blank">62</a></td>
 <td>0</td>
@@ -2763,6 +2951,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="SharePoint">
 <td>187</td>
 <td><strong>111建字第0288號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">SharePoint</span></td>
 <td><a href="https://drive.google.com/drive/folders/1l3oGgKyTdAlOi-qvqiealCQ0Il3SGUHC" target="_blank">0</a></td>
 <td>0</td>
@@ -2777,6 +2966,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>188</td>
 <td><strong>111建字第0286號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1MZGdx63tT78dM7DwQ6_8r3uOQWulCRpJ" target="_blank">0</a></td>
 <td>0</td>
@@ -2791,6 +2981,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>189</td>
 <td><strong>111建字第0282號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1Sc68VTi-CVwvtq-NTt1_N9vBgcmA8l3D" target="_blank">31</a></td>
 <td>0</td>
@@ -2805,6 +2996,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>190</td>
 <td><strong>111建字第0277號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1Cj7byVArEqJQAM0rt-IUGjW6K9aN2obe" target="_blank">0</a></td>
 <td>0</td>
@@ -2819,6 +3011,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>191</td>
 <td><strong>111建字第0276號</strong></td>
+<td class="name-cell">連雲玥恒1140108報告(傾度盤破壞數據)</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1zxLfxbevxkpw3rXwJkDvwyVGH855dNtH" target="_blank">69</a></td>
 <td>69</td>
@@ -2833,6 +3026,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>192</td>
 <td><strong>111建字第0273號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1Wg27q2pJ2jUhw_ymnNKphJS65YNUwvtD" target="_blank">0</a></td>
 <td>0</td>
@@ -2847,6 +3041,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="in_progress" data-cloud="Google Drive">
 <td>193</td>
 <td><strong>111建字第0272號</strong></td>
+<td class="name-cell"><span title="力方越集合住宅新建工程-專案日報告書-2025-11-03 00">力方越集合住宅新建工程-專案日報告書-2025-1...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/16EPUk5fdCQuD-5fMrKbhnm49zgtJLrrd" target="_blank">214</a></td>
 <td>12</td>
@@ -2861,6 +3056,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>194</td>
 <td><strong>111建字第0262號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1WWP2FtWK8lICy6BdZpcOdeKF7QjpqPv4" target="_blank">19</a></td>
 <td>0</td>
@@ -2875,6 +3071,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>195</td>
 <td><strong>111建字第0258號</strong></td>
+<td class="name-cell">第一果菜市場(匝道)-1130126</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1ceAgl3mC7FdKTJo_MeYyu1jdW-VJ7_ZD" target="_blank">0</a></td>
 <td>25</td>
@@ -2889,6 +3086,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>196</td>
 <td><strong>111建字第0257號</strong></td>
+<td class="name-cell">安全監測系統觀測結果報告-1130710</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1eTaK2SDREjt1wqqxiIX-GsVFR0v80GIC" target="_blank">36</a></td>
 <td>36</td>
@@ -2903,6 +3101,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>197</td>
 <td><strong>111建字第0256號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1g0RNEGarPwlLVthNgCLzCaYvfJ-uv1wk" target="_blank">0</a></td>
 <td>0</td>
@@ -2917,6 +3116,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>198</td>
 <td><strong>111建字第0253號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1WDq1Yzn7QYVfWf6x9fh0W6hBTVQvwOcN" target="_blank">0</a></td>
 <td>0</td>
@@ -2931,6 +3131,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>199</td>
 <td><strong>111建字第0252號</strong></td>
+<td class="name-cell">觀測數據資料</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/14sEIGmXcF1UzyAQsFWJE-qrTJG-pbCsp" target="_blank">79</a></td>
 <td>80</td>
@@ -2945,6 +3146,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>200</td>
 <td><strong>111建字第0251號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1Y4os426eGz_o4WKiCeaE1yJjl2YsY5BA" target="_blank">0</a></td>
 <td>0</td>
@@ -2959,6 +3161,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>201</td>
 <td><strong>111建字第0249號</strong></td>
+<td class="name-cell">信義雙星二期1223初值觀測</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1yJZIA5qIjubbtBXrNpkZqI-nUxG7E2jh" target="_blank">52</a></td>
 <td>52</td>
@@ -2973,6 +3176,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>202</td>
 <td><strong>111建字第0246號</strong></td>
+<td class="name-cell"><span title="璞承營造-泊隱 監測數據告示牌相關內容及尺寸 (1121124)">璞承營造-泊隱 監測數據告示牌相關內容及尺寸 (1...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1jWMH_9SSjK3AfvVYt9TzSPj9AgxPhNeW" target="_blank">1</a></td>
 <td>1</td>
@@ -2987,6 +3191,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>203</td>
 <td><strong>111建字第0245號</strong></td>
+<td class="name-cell"><span title="國產建材實業B棟商業辦公大樓-114年01月09日量測">國產建材實業B棟商業辦公大樓-114年01月09日...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1xSwwkRHNVuV6Baw3OWTB7oz5r6UP0LoL" target="_blank">85</a></td>
 <td>85</td>
@@ -3001,6 +3206,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>204</td>
 <td><strong>111建字第0243號</strong></td>
+<td class="name-cell">泛亞-松山空勤工程(C區)</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1WfLbWD-HqCsVf48xP66fBDFGfSLYOMxn" target="_blank">20</a></td>
 <td>20</td>
@@ -3015,6 +3221,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="in_progress" data-cloud="Google Drive">
 <td>205</td>
 <td><strong>111建字第0242號</strong></td>
+<td class="name-cell">豐譽南港轉運站工地監測報告_114年01月14日</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/12FPkNMdt2NiENfAuqa-3FWQr7zABq2Ds" target="_blank">138</a></td>
 <td>7</td>
@@ -3029,6 +3236,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>206</td>
 <td><strong>111建字第0237號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1iq4MJ25eYJ_DMPxABodDa0Gsv4Eq4eyw" target="_blank">23</a></td>
 <td>0</td>
@@ -3043,6 +3251,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>207</td>
 <td><strong>111建字第0232號</strong></td>
+<td class="name-cell">寶信營造軟橋段監測報告-112年12月25日</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1DhrSYkcByHvxAKiL3qwkeDb_EIYT94bC" target="_blank">12</a></td>
 <td>12</td>
@@ -3057,6 +3266,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>208</td>
 <td><strong>111建字第0228號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1F_ro89KodsvcPO6373PuiuS3FJ74BZh4" target="_blank">3</a></td>
 <td>3</td>
@@ -3071,6 +3281,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>209</td>
 <td><strong>111建字第0227號</strong></td>
+<td class="name-cell">114.10.30第五十九次觀測</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1pk7jI0_KgJvgI4_woxbiwD2bTMNniv1x" target="_blank">61</a></td>
 <td>61</td>
@@ -3085,6 +3296,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>210</td>
 <td><strong>111建字第0220號</strong></td>
+<td class="name-cell"><span title="常殷金泰段-(全文)綠建築專章報告書(2023)20250213">常殷金泰段-(全文)綠建築專章報告書(2023)2...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1Ce56XpY9ysQ90YZTmwd44h_mZF6D1I9u" target="_blank">6</a></td>
 <td>6</td>
@@ -3099,6 +3311,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>211</td>
 <td><strong>111建字第0212號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1IFNgN0ljbsg0sKf-GLVHFy2Rg8w6pJxR" target="_blank">55</a></td>
 <td>0</td>
@@ -3113,6 +3326,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>212</td>
 <td><strong>111建字第0208號</strong></td>
+<td class="name-cell">開揚-大安區金華段日</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1sxyyWAdqODUfTggcX-iE217yMmphpO1K" target="_blank">157</a></td>
 <td>157</td>
@@ -3127,6 +3341,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>213</td>
 <td><strong>111建字第0207號</strong></td>
+<td class="name-cell">工區安全觀測</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1s5M9hSi7zOpEmHfm-mZ6aiysVAloI6Es" target="_blank">106</a></td>
 <td>106</td>
@@ -3141,6 +3356,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="其他: gofile.me">
 <td>214</td>
 <td><strong>111建字第0201號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">其他: gofile.me</span></td>
 <td><a href="https://drive.google.com/drive/folders/14JfO6En0XydIwphyjZvRcyVJHrOYpKMC" target="_blank">0</a></td>
 <td>0</td>
@@ -3155,6 +3371,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Dropbox">
 <td>215</td>
 <td><strong>111建字第0199號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">Dropbox</span></td>
 <td><a href="https://drive.google.com/drive/folders/1WNK-K-_NcnaypUvNQzaH99WEszCtNzRk" target="_blank">0</a></td>
 <td>0</td>
@@ -3169,6 +3386,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>216</td>
 <td><strong>111建字第0192號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1HvuFcadbNTBsstg7Ko_cEH4XmNOIJh8Q" target="_blank">0</a></td>
 <td>0</td>
@@ -3183,6 +3401,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>217</td>
 <td><strong>111建字第0191號</strong></td>
+<td class="name-cell"><span title="互助南港向陽段新建工程量測報表1140228-簽證(中間柱隆起點H1_2、地面沉陷點SM4超過警戒值)">互助南港向陽段新建工程量測報表1140228-簽證...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1GdDJlQMcfHMMK_sL3IS91P6Z23yVE_4d" target="_blank">78</a></td>
 <td>78</td>
@@ -3197,6 +3416,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>218</td>
 <td><strong>111建字第0190號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1qNtX99oYcpI8pSEacNsobs3dJZVG11pO" target="_blank">0</a></td>
 <td>0</td>
@@ -3211,6 +3431,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="SharePoint">
 <td>219</td>
 <td><strong>111建字第0188號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">SharePoint</span></td>
 <td><a href="https://drive.google.com/drive/folders/1AafyQtOTh7z-KSGFzF13c-CPfw94md4d" target="_blank">256</a></td>
 <td>256</td>
@@ -3225,6 +3446,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>220</td>
 <td><strong>111建字第0186號</strong></td>
+<td class="name-cell">和風悅工地</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1SFbJOcap0dzoipfZ7Mm5rgmIPbv-fXqn" target="_blank">38</a></td>
 <td>38</td>
@@ -3239,6 +3461,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>221</td>
 <td><strong>111建字第0185號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1PH8JDtxmq10A4wkeX0_nTA5frBeZvSRX" target="_blank">72</a></td>
 <td>0</td>
@@ -3253,6 +3476,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>222</td>
 <td><strong>111建字第0183號</strong></td>
+<td class="name-cell">安全鑑測</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1je_7IFnw1Z1H4L51UvLbbnRCU-ZsOl1G" target="_blank">2</a></td>
 <td>2</td>
@@ -3267,6 +3491,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="in_progress" data-cloud="Google Drive">
 <td>223</td>
 <td><strong>111建字第0181號</strong></td>
+<td class="name-cell">簡美-中山區日</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1_gWmqz2kcOJT01swAARwjsvjdtQ_Sqqf" target="_blank">99</a></td>
 <td>10</td>
@@ -3281,6 +3506,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>224</td>
 <td><strong>111建字第0175號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1QfZqUxGFyq4Z3hsst8h1vbB-p3eyQ8o9" target="_blank">87</a></td>
 <td>0</td>
@@ -3295,6 +3521,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="in_progress" data-cloud="Google Drive">
 <td>225</td>
 <td><strong>111建字第0167號</strong></td>
+<td class="name-cell">-1</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1_qLQ_wZ27dlqU_T-Zz5vhH5HWW48MHy0" target="_blank">108</a></td>
 <td>13</td>
@@ -3309,6 +3536,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>226</td>
 <td><strong>111建字第0166號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/16EnYujOaCR9QuB4dU1GuiN0sfMSw6Hxs" target="_blank">31</a></td>
 <td>0</td>
@@ -3323,6 +3551,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>227</td>
 <td><strong>111建字第0162號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1OxEPOWyDpm59t3xGjAS_BqXVPCSy4jiS" target="_blank">46</a></td>
 <td>0</td>
@@ -3337,6 +3566,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>228</td>
 <td><strong>111建字第0158號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1Y3PvCyeH9UB48TdGwdCpKa-mTJ4ZDOoe" target="_blank">0</a></td>
 <td>0</td>
@@ -3351,6 +3581,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>229</td>
 <td><strong>111建字第0156號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1C3gHSSYX9FPjZWMgfKga-BD6rHMWVC_J" target="_blank">138</a></td>
 <td>0</td>
@@ -3365,6 +3596,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>230</td>
 <td><strong>111建字第0153號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1ohCImfdjryOlhnzFGd0mXOECE6cnFmp-" target="_blank">0</a></td>
 <td>0</td>
@@ -3379,6 +3611,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="其他: sites.google.com">
 <td>231</td>
 <td><strong>111建字第0152號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">其他: sites.google.com</span></td>
 <td><a href="https://drive.google.com/drive/folders/1cncrYzj914fEM1p1_Si4tfTi11226OHF" target="_blank">0</a></td>
 <td>0</td>
@@ -3393,6 +3626,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="其他: 1.34.155.181:5000">
 <td>232</td>
 <td><strong>111建字第0150號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">其他: 1.34.155.181:5000</span></td>
 <td><a href="https://drive.google.com/drive/folders/1to7VGLQV0-7d_aZKZBWQ_DxzfkXws5i_" target="_blank">0</a></td>
 <td>0</td>
@@ -3407,6 +3641,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>233</td>
 <td><strong>111建字第0149號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1CPjx1JPNaDVA_2D11XQss7QUwbgS9UWf" target="_blank">0</a></td>
 <td>0</td>
@@ -3421,6 +3656,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>234</td>
 <td><strong>111建字第0147號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1L-Q60QSYm2q_NlAt2y4ORNmrxAQHeL2G" target="_blank">0</a></td>
 <td>0</td>
@@ -3435,6 +3671,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>235</td>
 <td><strong>111建字第0146號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/17QyPFMGGsZT67u3TAFTSE9WRyBnu0QYJ" target="_blank">80</a></td>
 <td>0</td>
@@ -3449,6 +3686,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>236</td>
 <td><strong>111建字第0142號</strong></td>
+<td class="name-cell">寶鉅-雅祥段114.1203</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1dLDglKLZFbbqMd5iEhYK9-c-Fl5ZpPmB" target="_blank">80</a></td>
 <td>80</td>
@@ -3463,6 +3701,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>237</td>
 <td><strong>111建字第0140號</strong></td>
+<td class="name-cell"><span title="文昌217店鋪(1130613)NO.47-V1(抽換地1頁)">文昌217店鋪(1130613)NO.47-V1(...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1NRTOQ4xtP0wI5-0E38udGpPrBX4zno0N" target="_blank">201</a></td>
 <td>201</td>
@@ -3477,6 +3716,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>238</td>
 <td><strong>111建字第0137號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1uO0MpPxDfsf2hH7EZ03WRqvNsYZIqMZ1" target="_blank">0</a></td>
 <td>0</td>
@@ -3491,6 +3731,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>239</td>
 <td><strong>111建字第0136號</strong></td>
+<td class="name-cell">1.該網站由承造人自行維護並即時更新數據</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1aKMp8uj-hKTNjuCaSwjJ7OQtzvonyNHC" target="_blank">104</a></td>
 <td>104</td>
@@ -3505,6 +3746,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>240</td>
 <td><strong>111建字第0133號</strong></td>
+<td class="name-cell">品嘉民權1140714基地</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/144pPb0i6KUofCEO62qeBLthT16cCfVVL" target="_blank">1</a></td>
 <td>1</td>
@@ -3519,6 +3761,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>241</td>
 <td><strong>111建字第0132號</strong></td>
+<td class="name-cell">福德路18號旅館觀測平面圖 1121117</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1dzxOZRM08h6LHFJERrCzZUe-v-inmlgO" target="_blank">1</a></td>
 <td>1</td>
@@ -3533,6 +3776,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>242</td>
 <td><strong>111建字第0131號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1oT2368zmUf75B_9391GkgcHuCopAbvBa" target="_blank">0</a></td>
 <td>0</td>
@@ -3547,6 +3791,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>243</td>
 <td><strong>111建字第0130號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1gVoiPPPpIh8aWXIdAjmoQvZVVQrpsYen" target="_blank">24</a></td>
 <td>0</td>
@@ -3561,6 +3806,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>244</td>
 <td><strong>111建字第0129號</strong></td>
+<td class="name-cell">118.1140124-安全監測日報</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/15DfWm7cipaXXw3RazysbcZqY7X-7Rxva" target="_blank">99</a></td>
 <td>99</td>
@@ -3575,6 +3821,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>245</td>
 <td><strong>111建字第0127號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1_SK8VSDDy2C3v8drHqwbIWA86ZPG1B-_" target="_blank">34</a></td>
 <td>0</td>
@@ -3589,6 +3836,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>246</td>
 <td><strong>111建字第0125號</strong></td>
+<td class="name-cell">~1121008元祖實業-中山區南京東路商辦_周</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1hwIAZGZLmaJmiLeWILK3Zx9n3UPEjD1e" target="_blank">6</a></td>
 <td>6</td>
@@ -3603,6 +3851,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>247</td>
 <td><strong>111建字第0123號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1LSQI0gEOSoXjCoNTVH1KMLn2GK4Y4VCR" target="_blank">60</a></td>
 <td>0</td>
@@ -3617,6 +3866,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="in_progress" data-cloud="Google Drive">
 <td>248</td>
 <td><strong>111建字第0122號</strong></td>
+<td class="name-cell">統創翼 114.11.18</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1LYGelNJozYNbwDyUuVFNbjVUUW7ZcQkN" target="_blank">292</a></td>
 <td>42</td>
@@ -3631,6 +3881,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>249</td>
 <td><strong>111建字第0121號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1t-BqMX2aezi0XfzMOeQr2qYLpHn7tUd_" target="_blank">0</a></td>
 <td>0</td>
@@ -3645,6 +3896,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>250</td>
 <td><strong>111建字第0120號</strong></td>
+<td class="name-cell">東匯工地</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1aRsSZzresNoJ87yGFhsAdPKvOCCONpEr" target="_blank">39</a></td>
 <td>39</td>
@@ -3659,6 +3911,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>251</td>
 <td><strong>111建字第0119號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1M95wydFYs_zh2e6v6y_g-Nm00_ggGqsq" target="_blank">37</a></td>
 <td>0</td>
@@ -3673,6 +3926,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>252</td>
 <td><strong>111建字第0118號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1uG6_n3HTuS1ZOy4WwCVXPzw2p4LPDqwi" target="_blank">0</a></td>
 <td>0</td>
@@ -3687,6 +3941,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>253</td>
 <td><strong>111建字第0117號</strong></td>
+<td class="name-cell"><span title="車道區-臺灣戲曲學院_內湖校區 「劇藝教學大樓新建工程」-車道區-專案區間報告書-2025-06-02">車道區-臺灣戲曲學院_內湖校區 「劇藝教學大樓新建...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/10qwjyU0oUSNspBHydgi6LXEYkwJ_onXc" target="_blank">0</a></td>
 <td>4</td>
@@ -3701,6 +3956,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>254</td>
 <td><strong>111建字第0116號</strong></td>
+<td class="name-cell"><span title="~1121112禾進-吉美合江街週報告(頻率須符合圖面)">~1121112禾進-吉美合江街週報告(頻率須符合...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1gLK9WdHuSuUh5Ouo9roPPf9wpnUG7ILu" target="_blank">7</a></td>
 <td>7</td>
@@ -3715,6 +3971,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>255</td>
 <td><strong>111建字第0112號</strong></td>
+<td class="name-cell">111建字第0112號工地</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1xTD9gIGb_mfJuokG-V1HmLCPJm3Ddkom" target="_blank">16</a></td>
 <td>16</td>
@@ -3729,6 +3986,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>256</td>
 <td><strong>111建字第0111號</strong></td>
+<td class="name-cell">信升昌-士林區蘭雅段489地號日報告#351</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1M85VY9uIi78ZW4p8-Bsc2sJpHoJBrM35" target="_blank">70</a></td>
 <td>70</td>
@@ -3743,6 +4001,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>257</td>
 <td><strong>111建字第0107號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1VT5TCBL_ADgOh_qnp7J0Jr9Z9hM1MEB1" target="_blank">40</a></td>
 <td>0</td>
@@ -3757,6 +4016,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="其他: sites.google.com">
 <td>258</td>
 <td><strong>111建字第0103號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">其他: sites.google.com</span></td>
 <td><a href="https://drive.google.com/drive/folders/1I-IDVqTgYdC_y4ZELVygpunwyi05rvrU" target="_blank">0</a></td>
 <td>0</td>
@@ -3771,6 +4031,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>259</td>
 <td><strong>111建字第0098號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1ySxjbP3UdxvBOBKScwROQiToWH5xleDh" target="_blank">0</a></td>
 <td>0</td>
@@ -3785,6 +4046,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="in_progress" data-cloud="Google Drive">
 <td>260</td>
 <td><strong>111建字第0097號</strong></td>
+<td class="name-cell">璞園喆里東1141028觀測</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1sZj1Ag177mv421QpkJkuOHxyNINJr_2Y" target="_blank">82</a></td>
 <td>3</td>
@@ -3799,6 +4061,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="in_progress" data-cloud="Google Drive">
 <td>261</td>
 <td><strong>111建字第0096號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/12p2gzVDrqVTVM2uo8FBIsSB85Hvcc3bz" target="_blank">29</a></td>
 <td>2</td>
@@ -3813,6 +4076,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>262</td>
 <td><strong>111建字第0095號</strong></td>
+<td class="name-cell">璞承-璞開石1130112</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1GA9cNS8fJ9YNDe7HDNGX64iqE_e_0arK" target="_blank">88</a></td>
 <td>88</td>
@@ -3827,6 +4091,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="OneDrive">
 <td>263</td>
 <td><strong>111建字第0093號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">OneDrive</span></td>
 <td><a href="https://drive.google.com/drive/folders/1HMWftuo60ipDnrb0g0HMKQtQPTpzbeaT" target="_blank">0</a></td>
 <td>0</td>
@@ -3841,6 +4106,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>264</td>
 <td><strong>111建字第0092號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1NHxmTXUd58_ST8xILHU643IrfbVHPqWO" target="_blank">0</a></td>
 <td>0</td>
@@ -3855,6 +4121,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>265</td>
 <td><strong>111建字第0091號</strong></td>
+<td class="name-cell">維昌臨沂-1140225(初值)</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1HmZ20N4Y1y5nDzZO_zzYxGR6X-w9KZqL" target="_blank">63</a></td>
 <td>63</td>
@@ -3869,6 +4136,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>266</td>
 <td><strong>111建字第0089號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/10JolPIxQXQMXBHkNwSremNi62BBTE9a9" target="_blank">0</a></td>
 <td>0</td>
@@ -3883,6 +4151,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>267</td>
 <td><strong>111建字第0086號</strong></td>
+<td class="name-cell"><span title="士林華岡段112.4.10-112.9.11觀測結果">士林華岡段112.4.10-112.9.11觀測結...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1CgvaXso3PQjX2o9rJa7ijk81r_wms3-V" target="_blank">3</a></td>
 <td>3</td>
@@ -3897,6 +4166,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>268</td>
 <td><strong>111建字第0083號</strong></td>
+<td class="name-cell">南港調車場(單元二)1141205觀測</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1DorXtdrsk32PfX3AEgbhl80BjvGHDzBj" target="_blank">18</a></td>
 <td>18</td>
@@ -3911,6 +4181,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>269</td>
 <td><strong>111建字第0082號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1zHuLWnhpNKzutoW-KcGNy3jI35ZTpg_q" target="_blank">108</a></td>
 <td>0</td>
@@ -3925,6 +4196,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>270</td>
 <td><strong>111建字第0080號</strong></td>
+<td class="name-cell">職能發展學院工地</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1_KMp49zOrXEYzEDWPQs_x4HS1lR2tynY" target="_blank">394</a></td>
 <td>394</td>
@@ -3939,6 +4211,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>271</td>
 <td><strong>111建字第0075號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1WXvtUne5cSM5wkX6QhGyOZGL5ezqdSwE" target="_blank">35</a></td>
 <td>0</td>
@@ -3953,6 +4226,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>272</td>
 <td><strong>111建字第0069號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1tU2JuJBjKGHmd4gUJ8r4yo3Mwv23G3T_" target="_blank">113</a></td>
 <td>0</td>
@@ -3967,6 +4241,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>273</td>
 <td><strong>111建字第0068號</strong></td>
+<td class="name-cell"><span title="114.08.26台北市大同區橋北段三小段581地號等十筆土地新建工程安全安全監測報告(826)">114.08.26台北市大同區橋北段三小段581地...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/13Ea6hFkOz0kgcIV7PaAnv5q7YEGt2geo" target="_blank">73</a></td>
 <td>73</td>
@@ -3981,6 +4256,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>274</td>
 <td><strong>111建字第0062號</strong></td>
+<td class="name-cell">信義雙星二期0102</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1WwEQy_vDfz8TdR04Gd2sk3Y_LCPuW7L0" target="_blank">68</a></td>
 <td>68</td>
@@ -3995,6 +4271,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>275</td>
 <td><strong>111建字第0061號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1h-s1Rwm1xIj8j7c6HyQ6bJrIIV1Wd95W" target="_blank">41</a></td>
 <td>0</td>
@@ -4009,6 +4286,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>276</td>
 <td><strong>111建字第0060號</strong></td>
+<td class="name-cell">(嘉鎷)114.01監測月報</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1o02Zd02U6bkEhE1_dt4K0O0sPI_lu_Gp" target="_blank">23</a></td>
 <td>23</td>
@@ -4023,6 +4301,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>277</td>
 <td><strong>111建字第0059號</strong></td>
+<td class="name-cell">A1安全觀測系統報告(1130403)76</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/133lCP6wxLqS5hcEytIkxtmdH_DohMb8v" target="_blank">6</a></td>
 <td>6</td>
@@ -4037,6 +4316,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>278</td>
 <td><strong>111建字第0058號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1cMruK8-4ItvtT2ZgbyBEz6j-icvsn5ok" target="_blank">120</a></td>
 <td>0</td>
@@ -4051,6 +4331,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>279</td>
 <td><strong>111建字第0057號</strong></td>
+<td class="name-cell">B區安全觀測系統報告(1130207)56</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1YlnpinL-U08xIKa-c0X2gkmQ5dbAzGA7" target="_blank">3</a></td>
 <td>3</td>
@@ -4065,6 +4346,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>280</td>
 <td><strong>111建字第0056號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1iP_l2TiksL18utkz533iwv9vC7f0SZG4" target="_blank">63</a></td>
 <td>0</td>
@@ -4079,6 +4361,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>281</td>
 <td><strong>111建字第0053號</strong></td>
+<td class="name-cell">大安綠映-1140507.1</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1_detHXKo_ddiIefxrIbF6Nf5FZUREHTu" target="_blank">73</a></td>
 <td>73</td>
@@ -4093,6 +4376,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>282</td>
 <td><strong>111建字第0052號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1PEwzYUemqfzRQPysnyDtXmHNwEvMWOG-" target="_blank">0</a></td>
 <td>0</td>
@@ -4107,6 +4391,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>283</td>
 <td><strong>111建字第0051號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1AcfeBm7zpZLYdOlqLdbhuvXKKFhLmbh1" target="_blank">27</a></td>
 <td>0</td>
@@ -4121,6 +4406,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="in_progress" data-cloud="Google Drive">
 <td>284</td>
 <td><strong>111建字第0047號</strong></td>
+<td class="name-cell">集順生僑安1103觀測</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1cdmv4rd8T9H0X8KaC_9UnSjIgSAZxkPI" target="_blank">53</a></td>
 <td>1</td>
@@ -4135,6 +4421,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>285</td>
 <td><strong>111建字第0039號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1kzK940Uo7T-R8nf0grBx59UCL5mz3r1T" target="_blank">25</a></td>
 <td>0</td>
@@ -4149,6 +4436,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="其他: sites.google.com">
 <td>286</td>
 <td><strong>111建字第0036號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">其他: sites.google.com</span></td>
 <td><a href="https://drive.google.com/drive/folders/1vGpGg2d9iYY-RUDSkq2Zt7I6LP4WTMdb" target="_blank">0</a></td>
 <td>0</td>
@@ -4163,6 +4451,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>287</td>
 <td><strong>111建字第0033號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/14YcmCF6L-nWJvHpz_ZR5-8WNH2mUAGwQ" target="_blank">86</a></td>
 <td>0</td>
@@ -4177,6 +4466,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>288</td>
 <td><strong>111建字第0027號</strong></td>
+<td class="name-cell">58543919156</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1iH9WTsQzimHzt_YQLVcvQc5G1WR5-soT" target="_blank">4</a></td>
 <td>4</td>
@@ -4191,6 +4481,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>289</td>
 <td><strong>111建字第0026號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1gnA8LbamacgUIT_7MTYnI_hXSWg-Mbtn" target="_blank">75</a></td>
 <td>0</td>
@@ -4205,6 +4496,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>290</td>
 <td><strong>111建字第0021號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1IuT6UnpqYQ5u9jFVKaJGh63CKeIb0S42" target="_blank">114</a></td>
 <td>0</td>
@@ -4219,6 +4511,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="SharePoint">
 <td>291</td>
 <td><strong>111建字第0017號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">SharePoint</span></td>
 <td><a href="https://drive.google.com/drive/folders/1i-jWFRJn8hF6TH1oYrNefeEDpWHYBIrr" target="_blank">0</a></td>
 <td>0</td>
@@ -4233,6 +4526,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>292</td>
 <td><strong>111建字第0016號</strong></td>
+<td class="name-cell">文林北路安全監測總結</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1j42kKLE_lfDvUuyh3xkoKSOebwpmw2ae" target="_blank">1</a></td>
 <td>1</td>
@@ -4247,6 +4541,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="其他: sites.google.com">
 <td>293</td>
 <td><strong>111建字第0013號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">其他: sites.google.com</span></td>
 <td><a href="https://drive.google.com/drive/folders/1qbr_UjzcbsTbQ5UXP-xy6shFwyKyGKTX" target="_blank">0</a></td>
 <td>0</td>
@@ -4261,6 +4556,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>294</td>
 <td><strong>111建字第0005號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1g9XbesTQxgoJ4d-6VDVHlJy0Vxthx10n" target="_blank">0</a></td>
 <td>0</td>
@@ -4275,6 +4571,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>295</td>
 <td><strong>110建字第0377號</strong></td>
+<td class="name-cell">福生堂報告書_01(202410)</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1gvH1eQgLnBYGbszfco9LxMzxgplC4Eq4" target="_blank">48</a></td>
 <td>48</td>
@@ -4289,6 +4586,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>296</td>
 <td><strong>110建字第0376號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1X4nluEgaPD1qfNZao5IL-IF4y_2_LW1E" target="_blank">29</a></td>
 <td>0</td>
@@ -4303,6 +4601,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="其他: sites.google.com">
 <td>297</td>
 <td><strong>110建字第0375號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">其他: sites.google.com</span></td>
 <td><a href="https://drive.google.com/drive/folders/1PkylOuv3YUtOXwzJPr7r5Su7wRiHB8BK" target="_blank">0</a></td>
 <td>0</td>
@@ -4317,6 +4616,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>298</td>
 <td><strong>110建字第0372號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1vACiYeisfNlHSJql-HpJZcY-hlJjHozj" target="_blank">37</a></td>
 <td>0</td>
@@ -4331,6 +4631,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>299</td>
 <td><strong>110建字第0371號</strong></td>
+<td class="name-cell">福清1002-1008(BD區)週報電子檔</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1ISHMvdFwpt1Z5J-TyfhEA_foilEr8eod" target="_blank">4</a></td>
 <td>4</td>
@@ -4345,6 +4646,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>300</td>
 <td><strong>110建字第0370號</strong></td>
+<td class="name-cell">福清1002-1008(BD區)週報電子檔</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1NM4Tx_rWe6q70UukpZt2c1u9SU94BAxl" target="_blank">4</a></td>
 <td>4</td>
@@ -4359,6 +4661,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>301</td>
 <td><strong>110建字第0367號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1-R88R46juuEaTAlDIDSHPxfVgfGcZFKz" target="_blank">28</a></td>
 <td>28</td>
@@ -4373,6 +4676,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>302</td>
 <td><strong>110建字第0362號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1DHQ041MH2RX_dhKMEgbzsBsjjph_BGZl" target="_blank">23</a></td>
 <td>0</td>
@@ -4387,6 +4691,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>303</td>
 <td><strong>110建字第0360號</strong></td>
+<td class="name-cell"><span title="國產建材實業A棟企業總部大樓-114年03月31日量測">國產建材實業A棟企業總部大樓-114年03月31日...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1iJKrn8t13nJMQz_2nYW0d6u1EVadXaSy" target="_blank">213</a></td>
 <td>213</td>
@@ -4401,6 +4706,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>304</td>
 <td><strong>110建字第0359號</strong></td>
+<td class="name-cell">觀測報告1121124-TI</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1Lkh9X6ZM9gR3m-ajRA5mD3QOvl1jG65-" target="_blank">27</a></td>
 <td>27</td>
@@ -4415,6 +4721,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>305</td>
 <td><strong>110建字第0358號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1BocDG6gZiJ7t1mnN3opyk1cagyHHdzGy" target="_blank">0</a></td>
 <td>0</td>
@@ -4429,6 +4736,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>306</td>
 <td><strong>110建字第0357號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/17ozArqX5cdgjwgQZaPZu5fHw2sGmaeQa" target="_blank">21</a></td>
 <td>0</td>
@@ -4443,6 +4751,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>307</td>
 <td><strong>110建字第0355號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1k5_CZLpqKTbEBZewfSDVgaBLUw1ccmuk" target="_blank">0</a></td>
 <td>0</td>
@@ -4457,6 +4766,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="in_progress" data-cloud="Google Drive">
 <td>308</td>
 <td><strong>110建字第0341號</strong></td>
+<td class="name-cell">松信社會住宅113.11.19觀測結果</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1TeeXges9OsgKf6St6jSuw5BFaA2x61C0" target="_blank">151</a></td>
 <td>2</td>
@@ -4471,6 +4781,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="其他: sites.google.com">
 <td>309</td>
 <td><strong>110建字第0338號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">其他: sites.google.com</span></td>
 <td><a href="https://drive.google.com/drive/folders/1ebWQVDWf89rr8I6sZ8q7NzMuXSM1aBcB" target="_blank">0</a></td>
 <td>0</td>
@@ -4485,6 +4796,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="MEGA">
 <td>310</td>
 <td><strong>110建字第0337號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">MEGA</span></td>
 <td><a href="https://drive.google.com/drive/folders/1aMmAaAjeROGdB0SFnDKIqnPjFknJ6O7T" target="_blank">0</a></td>
 <td>0</td>
@@ -4499,6 +4811,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>311</td>
 <td><strong>110建字第0329號</strong></td>
+<td class="name-cell">金藏家居0404</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1ssL6J-EckoxG_nrJL_NzXs7h1IrCuxPt" target="_blank">46</a></td>
 <td>46</td>
@@ -4513,6 +4826,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="其他: sites.google.com">
 <td>312</td>
 <td><strong>110建字第0319號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">其他: sites.google.com</span></td>
 <td><a href="https://drive.google.com/drive/folders/1-RjSsmMpXrhPCJb1Ou8pXRMUlXNpIOCT" target="_blank">0</a></td>
 <td>0</td>
@@ -4527,6 +4841,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>313</td>
 <td><strong>110建字第0315號</strong></td>
+<td class="name-cell"><span title="113-1007信義區永吉段152等4筆地號工地監測報告_113年10月07日">113-1007信義區永吉段152等4筆地號工地監...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1bEJYW8WDly6JPs5GXonWn1QrKzDw8xKU" target="_blank">70</a></td>
 <td>70</td>
@@ -4541,6 +4856,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>314</td>
 <td><strong>110建字第0307號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1zQ_QMuJT2pswxd6T1M1e31sjb2XnMyWB" target="_blank">0</a></td>
 <td>0</td>
@@ -4555,6 +4871,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>315</td>
 <td><strong>110建字第0306號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1475g1YHo1ByWXVyI5nAB_-2qRTVNee7d" target="_blank">66</a></td>
 <td>0</td>
@@ -4569,6 +4886,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="其他: sites.google.com">
 <td>316</td>
 <td><strong>110建字第0303號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">其他: sites.google.com</span></td>
 <td><a href="https://drive.google.com/drive/folders/19J-sYg_3xQndiSzsaU3rR7jH_fGM3bnF" target="_blank">0</a></td>
 <td>0</td>
@@ -4583,6 +4901,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>317</td>
 <td><strong>110建字第0295號</strong></td>
+<td class="name-cell">南京東路B案新建大樓1150101觀測</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1Ub6uK2JeQEUkKYjFSTPN0RUSBXnoRkKT" target="_blank">35</a></td>
 <td>35</td>
@@ -4597,6 +4916,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>318</td>
 <td><strong>110建字第0291號</strong></td>
+<td class="name-cell">松山區美仁段二小段697集合住宅昕建案 - 複製</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1qxYrW49C0mYNkQS7y2dOT8XHRcEkowuP" target="_blank">2</a></td>
 <td>2</td>
@@ -4611,6 +4931,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>319</td>
 <td><strong>110建字第0287號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/193rdGbPq-agQvGs4N6HmXqJK4Nw0c8x4" target="_blank">0</a></td>
 <td>0</td>
@@ -4625,6 +4946,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>320</td>
 <td><strong>110建字第0285號</strong></td>
+<td class="name-cell">森城金泰段1027觀測報告(1)</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1LsvSlRL9-gCKzjUTc_heiCYxv30DArK5" target="_blank">45</a></td>
 <td>45</td>
@@ -4639,6 +4961,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="其他: ssp.mailcloud.com.tw">
 <td>321</td>
 <td><strong>110建字第0283號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">其他: ssp.mailcloud.com.tw</span></td>
 <td><a href="https://drive.google.com/drive/folders/1pM_T0rETTXB2DcDbVWeV1Wc3J6o3qGc6" target="_blank">0</a></td>
 <td>0</td>
@@ -4653,6 +4976,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>322</td>
 <td><strong>110建字第0282號</strong></td>
+<td class="name-cell"><span title="森美南海段新建工程工地監測日報_112年04月10日">森美南海段新建工程工地監測日報_112年04月10...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1ysYKPQHssi5sQ3wYXbF4hpe0VA71o9WH" target="_blank">98</a></td>
 <td>98</td>
@@ -4667,6 +4991,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>323</td>
 <td><strong>110建字第0279號</strong></td>
+<td class="name-cell">開誠和境內湖康寧段</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1R8qBmPOGe3G8_S2n4Y5Jx7n20993_PDo" target="_blank">25</a></td>
 <td>25</td>
@@ -4681,6 +5006,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="in_progress" data-cloud="Google Drive">
 <td>324</td>
 <td><strong>110建字第0273號</strong></td>
+<td class="name-cell">-安全觀測</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1Lp6I2p8LSC4Ab0waR4Yy-bddVfdCLW_t" target="_blank">82</a></td>
 <td>10</td>
@@ -4695,6 +5021,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>325</td>
 <td><strong>110建字第0272號</strong></td>
+<td class="name-cell">監測週報表1130430</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1-wRLyOCgtPD7x2Xu2jomygbBT-eD-zdq" target="_blank">4</a></td>
 <td>4</td>
@@ -4709,6 +5036,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="其他: sites.google.com">
 <td>326</td>
 <td><strong>110建字第0269號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">其他: sites.google.com</span></td>
 <td><a href="https://drive.google.com/drive/folders/1kk5TC1c7Rgl-LQj_2cxo_cb6U_baw4VJ" target="_blank">0</a></td>
 <td>0</td>
@@ -4723,6 +5051,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>327</td>
 <td><strong>110建字第0266號</strong></td>
+<td class="name-cell">光華段_觀測報告(最終版)1120605</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1kvnTJQRTSEk6WrJvgS4_sDWtISUgk1rP" target="_blank">9</a></td>
 <td>9</td>
@@ -4737,6 +5066,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="短網址">
 <td>328</td>
 <td><strong>110建字第0265號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">短網址</span></td>
 <td><a href="https://drive.google.com/drive/folders/1UrnZ1QszndS-W9QIgd9mrmQX_UBqTEZM" target="_blank">0</a></td>
 <td>0</td>
@@ -4751,6 +5081,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="in_progress" data-cloud="Google Drive">
 <td>329</td>
 <td><strong>110建字第0263號</strong></td>
+<td class="name-cell">金慶實業林森北路案新建工程工地監測</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1SAARiFj-ivoPmT1lOlgcr5tp3gM8BVC3" target="_blank">52</a></td>
 <td>1</td>
@@ -4765,6 +5096,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="MEGA">
 <td>330</td>
 <td><strong>110建字第0262號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">MEGA</span></td>
 <td><a href="https://drive.google.com/drive/folders/17Pef_cNoDA9WG1JAJTxogNNe5dH7tpyc" target="_blank">0</a></td>
 <td>42</td>
@@ -4779,6 +5111,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>331</td>
 <td><strong>110建字第0257號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1TrFEzliSvitqpvI-jBNEBW8TswYlCXxk" target="_blank">0</a></td>
 <td>0</td>
@@ -4793,6 +5126,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>332</td>
 <td><strong>110建字第0256號</strong></td>
+<td class="name-cell"><span title="亦安建基建設八德路三段集合住宅-專案日報告書-2025-11-03~11-09">亦安建基建設八德路三段集合住宅-專案日報告書-20...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1Jq2Lvp7l0biZFfbrMtFXfiR5HKgOysqJ" target="_blank">25</a></td>
 <td>25</td>
@@ -4807,6 +5141,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>333</td>
 <td><strong>110建字第0252號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/19TL5sjhdykf-REMfSfTOZ7alceI6tMcj" target="_blank">62</a></td>
 <td>0</td>
@@ -4821,6 +5156,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="in_progress" data-cloud="Google Drive">
 <td>334</td>
 <td><strong>110建字第0250號</strong></td>
+<td class="name-cell">春越-萬華華江段日</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1u6by5u3tI6bs1w8sN3G37oNulWjsKA3-" target="_blank">47</a></td>
 <td>10</td>
@@ -4835,6 +5171,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>335</td>
 <td><strong>110建字第0247號</strong></td>
+<td class="name-cell">全樂-士林永平段日</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1Se1MXvxLG8yiWCyhKOwcZ6mfw89JvfRS" target="_blank">15</a></td>
 <td>15</td>
@@ -4849,6 +5186,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>336</td>
 <td><strong>110建字第0245號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/14Eu4fPhZsG_n4alLodffd2LB4tg2l9hp" target="_blank">0</a></td>
 <td>0</td>
@@ -4863,6 +5201,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>337</td>
 <td><strong>110建字第0243號</strong></td>
+<td class="name-cell">璞真之道新建大樓日報-1130406</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1NjhrpKa9dE_JxVXiCOMmlNlCweHYCeZq" target="_blank">191</a></td>
 <td>191</td>
@@ -4877,6 +5216,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>338</td>
 <td><strong>110建字第0238號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1Cpz2eyYdgaDIdQdq7_rQWUL4KoRVZViD" target="_blank">136</a></td>
 <td>0</td>
@@ -4891,6 +5231,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>339</td>
 <td><strong>110建字第0230號</strong></td>
+<td class="name-cell"><span title="信升昌-中山區中山段三小段32地號日報告(依結構變更修正)">信升昌-中山區中山段三小段32地號日報告(依結構變...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1N9ot6SQpOzNTAMfpac_GPmS6z61i41gx" target="_blank">121</a></td>
 <td>121</td>
@@ -4905,6 +5246,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="SharePoint">
 <td>340</td>
 <td><strong>110建字第0228號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">SharePoint</span></td>
 <td><a href="https://drive.google.com/drive/folders/1jQ2QETJ7TH9CJwvv2Pia2IgRC_zUPxtO" target="_blank">0</a></td>
 <td>0</td>
@@ -4919,6 +5261,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="SharePoint">
 <td>341</td>
 <td><strong>110建字第0227號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">SharePoint</span></td>
 <td><a href="https://drive.google.com/drive/folders/1GEFXshPt0FL7IOinpTH3w7tEkTYDvDDN" target="_blank">0</a></td>
 <td>0</td>
@@ -4933,6 +5276,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>342</td>
 <td><strong>110建字第0226號</strong></td>
+<td class="name-cell">南京西路住商大樓古蹟監測(初始值)</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1cxTgQ9OArUSdU4EXnMGwOVmWcA4N0vF8" target="_blank">2</a></td>
 <td>2</td>
@@ -4947,6 +5291,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>343</td>
 <td><strong>110建字第0225號</strong></td>
+<td class="name-cell">愛國西路工地監測報告112年05月02日</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1xkw8ztg7D22qK3c1OgQRZH4pwlPS9p4J" target="_blank">75</a></td>
 <td>75</td>
@@ -4961,6 +5306,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>344</td>
 <td><strong>110建字第0222號</strong></td>
+<td class="name-cell"><span title="北市110建字第0222號_112.05.25-日安吉林">北市110建字第0222號_112.05.25-日...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1MzC27Koyxz9bBiEO3-APCsTEV64Xbqqg" target="_blank">39</a></td>
 <td>39</td>
@@ -4975,6 +5321,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>345</td>
 <td><strong>110建字第0221號</strong></td>
+<td class="name-cell"><span title="君隆監測週報114.10.11~114.10.17上傳">君隆監測週報114.10.11~114.10.17...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1-br2SSkntbO9SAEDdcJeQR27hAPfwupY" target="_blank">131</a></td>
 <td>131</td>
@@ -4989,6 +5336,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>346</td>
 <td><strong>110建字第0219號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1Dm4R1mZ43FcsJ3BUKJP5rzKWBeyTU0Ae" target="_blank">72</a></td>
 <td>0</td>
@@ -5003,6 +5351,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>347</td>
 <td><strong>110建字第0215號</strong></td>
+<td class="name-cell">永碁大湖山莊康寧路 1140519</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1-5p2GNhsQFJmK5aICPwEjRhVieNBVw5u" target="_blank">8</a></td>
 <td>8</td>
@@ -5017,6 +5366,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="in_progress" data-cloud="Google Drive">
 <td>348</td>
 <td><strong>110建字第0212號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1G6Qt1mP6HF7zZChaIhNPEzjTj4Gv0Jye" target="_blank">58</a></td>
 <td>5</td>
@@ -5031,6 +5381,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>349</td>
 <td><strong>110建字第0210號</strong></td>
+<td class="name-cell"><span title="士林區蘭雅段一小段530,540~542地號等4筆集合住宅新建案等4筆土地新建工程工地監測">士林區蘭雅段一小段530,540~542地號等4筆...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1r97lnOob2xe9c0jVJXq128wdUThpvnMR" target="_blank">8</a></td>
 <td>8</td>
@@ -5045,6 +5396,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="MEGA">
 <td>350</td>
 <td><strong>110建字第0197號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">MEGA</span></td>
 <td><a href="https://drive.google.com/drive/folders/1QAGBcd4JCP0DMl_iW5TOV0kiseI0PyTG" target="_blank">0</a></td>
 <td>0</td>
@@ -5059,6 +5411,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>351</td>
 <td><strong>110建字第0196號</strong></td>
+<td class="name-cell">1.該網站由承造人自行維護並即時更新數據</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1GG0QJrHWhyEYQ6o6Zheww90DMqS4SHmB" target="_blank">134</a></td>
 <td>134</td>
@@ -5073,6 +5426,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>352</td>
 <td><strong>110建字第0195號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1se2vbqEXSmfSWRSoi_P_Y_SJlTlOh8Pk" target="_blank">0</a></td>
 <td>0</td>
@@ -5087,6 +5441,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>353</td>
 <td><strong>110建字第0190號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1Nd_59bP_9rB3YtEru-8eD5pqeP49aOVP" target="_blank">11</a></td>
 <td>0</td>
@@ -5101,6 +5456,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>354</td>
 <td><strong>110建字第0188號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1slLmezP08YQS_bNxSMTH9l3ncV6pCzl2" target="_blank">0</a></td>
 <td>0</td>
@@ -5115,6 +5471,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>355</td>
 <td><strong>110建字第0187號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1BLXReEBcxOitXWRmZgym2v7zSnTi5dKi" target="_blank">41</a></td>
 <td>0</td>
@@ -5129,6 +5486,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>356</td>
 <td><strong>110建字第0177號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1UIRDqQiip5OENl_VjWm-VWKlo-_OAlOb" target="_blank">21</a></td>
 <td>0</td>
@@ -5143,6 +5501,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>357</td>
 <td><strong>110建字第0176號</strong></td>
+<td class="name-cell"><span title="(基地)六福豐融商業大樓新建工程-專案區間報告書-2025-12-15 00_00-2025-12-21 00_00 (1)">(基地)六福豐融商業大樓新建工程-專案區間報告書-...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1w3jmbdUszuyVnuD639wbYTPMsLqo0zaV" target="_blank">0</a></td>
 <td>4</td>
@@ -5157,6 +5516,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>358</td>
 <td><strong>110建字第0175號</strong></td>
+<td class="name-cell">松旭-三玉段量測報表1140611</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1LvKJbfQqHGIOjtfDFUBJlWE7mhqC-JlE" target="_blank">4</a></td>
 <td>4</td>
@@ -5171,6 +5531,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>359</td>
 <td><strong>110建字第0173號</strong></td>
+<td class="name-cell"><span title="110建字0173號工地監測報告 113年02月06日">110建字0173號工地監測報告 113年02月0...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1ZpRXvnMaC3ybmh6Hk5s1pNsGbynM1Qi6" target="_blank">4</a></td>
 <td>4</td>
@@ -5185,6 +5546,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>360</td>
 <td><strong>110建字第0172號</strong></td>
+<td class="name-cell"><span title="達永開發-達永豐盛學新建工程 1121130 105">達永開發-達永豐盛學新建工程 1121130 10...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1QgWLBFVUYKOdni_ono866xPaodyglNvX" target="_blank">46</a></td>
 <td>46</td>
@@ -5199,6 +5561,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>361</td>
 <td><strong>110建字第0171號</strong></td>
+<td class="name-cell">璞承-中山築觀</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1cxn3MBQV4P_rynG1Ht-Yw61eu3wpzUkx" target="_blank">77</a></td>
 <td>77</td>
@@ -5213,6 +5576,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>362</td>
 <td><strong>110建字第0167號</strong></td>
+<td class="name-cell"><span title="檢送「忠孝勤靜大樓新建工程(建照字號110建字第0167號)」開挖施工對捷運設施安全監測系統114年02月監測報告書">檢送「忠孝勤靜大樓新建工程(建照字號110建字第0...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1MfeSGz7euR-O9B1t25XMaFh0Lkbjmhq8" target="_blank">147</a></td>
 <td>147</td>
@@ -5227,6 +5591,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>363</td>
 <td><strong>110建字第0163號</strong></td>
+<td class="name-cell"><span title="110-0163安全觀測報告書(114年06月02日) (1)">110-0163安全觀測報告書(114年06月02...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/133Jsg1i-ToMcdEt53XY3WIFVUDlIAs3i" target="_blank">0</a></td>
 <td>58</td>
@@ -5241,6 +5606,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>364</td>
 <td><strong>110建字第0156號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/14xkPUNtqLkm18tvwjhK2j3Iyqs5OUB89" target="_blank">0</a></td>
 <td>0</td>
@@ -5255,6 +5621,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="其他: gofile.me">
 <td>365</td>
 <td><strong>110建字第0152號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">其他: gofile.me</span></td>
 <td><a href="https://drive.google.com/drive/folders/1am1NuR0Q1oTmExRih3SrdJwY_beLx3Ez" target="_blank">0</a></td>
 <td>0</td>
@@ -5269,6 +5636,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>366</td>
 <td><strong>110建字第0150號</strong></td>
+<td class="name-cell">長見中山北路</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1NX1-gp-d7pLbSAS6dTP2088qkv7u8CSX" target="_blank">48</a></td>
 <td>48</td>
@@ -5283,6 +5651,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>367</td>
 <td><strong>110建字第0147號</strong></td>
+<td class="name-cell">台北市內湖區康寧段集合住宅新建工程</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1wTL1iDE3WpaPsAaQyTdk3xhHo4d0BIDB" target="_blank">57</a></td>
 <td>57</td>
@@ -5297,6 +5666,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>368</td>
 <td><strong>110建字第0143號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1rN4M-IwaiB14V2db7ZQkh8cFRGjfcHcg" target="_blank">109</a></td>
 <td>0</td>
@@ -5311,6 +5681,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>369</td>
 <td><strong>110建字第0139號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1z7cfB_mYb_LiEXyHlKH5Yht42wVH67h5" target="_blank">157</a></td>
 <td>0</td>
@@ -5325,6 +5696,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>370</td>
 <td><strong>110建字第0125號</strong></td>
+<td class="name-cell">北投1120320</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1xR5kPl4ju_tYB5u2YJ3WoZ2jC28seOJG" target="_blank">33</a></td>
 <td>33</td>
@@ -5339,6 +5711,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>371</td>
 <td><strong>110建字第0118號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1d5oHgDFJo4OPFKQU5DjtStDMdOrxxERd" target="_blank">59</a></td>
 <td>0</td>
@@ -5353,6 +5726,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>372</td>
 <td><strong>110建字第0117號</strong></td>
+<td class="name-cell">北市110建字第0117號_高田誠美知寓遼寧街工地</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/12lZTM4XrTsy-FnqcRA9n3eJTJ_7GG2T-" target="_blank">77</a></td>
 <td>77</td>
@@ -5367,6 +5741,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>373</td>
 <td><strong>110建字第0116號</strong></td>
+<td class="name-cell">雙園段(1120425)NO.2 (1)</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1CT2eksvTxD5xZZnQ46kklnvQ3PsajxYw" target="_blank">40</a></td>
 <td>40</td>
@@ -5381,6 +5756,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>374</td>
 <td><strong>110建字第0110號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1jnubUygX5noBgXgZUOS6SFYz2mQZENmz" target="_blank">32</a></td>
 <td>0</td>
@@ -5395,6 +5771,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>375</td>
 <td><strong>110建字第0108號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1DX9Q-DhTGZpv5OxE5DAgkFAeY5RFW_c-" target="_blank">40</a></td>
 <td>0</td>
@@ -5409,6 +5786,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>376</td>
 <td><strong>110建字第0103號</strong></td>
+<td class="name-cell"><span title="-45康寶建設日出印象住宅新建工程 1121227 45">-45康寶建設日出印象住宅新建工程 1121227...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1rFQuiItdbUvdrO0opZgRGC8vgoF8kEsU" target="_blank">31</a></td>
 <td>31</td>
@@ -5423,6 +5801,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="其他: gofile.me">
 <td>377</td>
 <td><strong>110建字第0102號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">其他: gofile.me</span></td>
 <td><a href="https://drive.google.com/drive/folders/1t-F2GtErHdC85qq7APHMHeTUbH7DiZir" target="_blank">0</a></td>
 <td>0</td>
@@ -5437,6 +5816,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="其他: sites.google.com">
 <td>378</td>
 <td><strong>110建字第0101號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">其他: sites.google.com</span></td>
 <td><a href="https://drive.google.com/drive/folders/1YF-oVfvPdVGY07a9JPnCJypGVv-sQ8Fd" target="_blank">0</a></td>
 <td>0</td>
@@ -5451,6 +5831,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>379</td>
 <td><strong>110建字第0099號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1BITiUdNO2VEnG7zJEB5jjte6IWfGjgEE" target="_blank">0</a></td>
 <td>0</td>
@@ -5465,6 +5846,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Dropbox">
 <td>380</td>
 <td><strong>110建字第0096號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">Dropbox</span></td>
 <td><a href="https://drive.google.com/drive/folders/1Wd6kNFLthXCwUtZBJHf0tNxrbKfKhdPw" target="_blank">0</a></td>
 <td>0</td>
@@ -5479,6 +5861,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>381</td>
 <td><strong>110建字第0093號</strong></td>
+<td class="name-cell">久年幕舍0913報告(1)</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1p1YP_ZNZgvphHf1UB8CH20PxS85J4VLU" target="_blank">4</a></td>
 <td>4</td>
@@ -5493,6 +5876,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>382</td>
 <td><strong>110建字第0086號</strong></td>
+<td class="name-cell">筑丰興業1213觀測報告 (1)</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1k1kQNf182kdYLwn20l-WRVBzOwmQUTrs" target="_blank">137</a></td>
 <td>137</td>
@@ -5507,6 +5891,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>383</td>
 <td><strong>110建字第0076號</strong></td>
+<td class="name-cell">台大590_教職員宿舍新建工程</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/17ROwfWSlKPcOqmjhQ3us3FbApOtimWKM" target="_blank">42</a></td>
 <td>42</td>
@@ -5521,6 +5906,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>384</td>
 <td><strong>110建字第0075號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1N0yjcnR-Ll3OIYVioqqLK5WMQcAMN8X1" target="_blank">0</a></td>
 <td>0</td>
@@ -5535,6 +5921,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>385</td>
 <td><strong>110建字第0072號</strong></td>
+<td class="name-cell">忠孝東路113-1024 觀測</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1szUMGcO6i6bCa2344CSGEVMmwJgUsZue" target="_blank">38</a></td>
 <td>38</td>
@@ -5549,6 +5936,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>386</td>
 <td><strong>110建字第0062號</strong></td>
+<td class="name-cell">02-英雄廈門街-113.07.29</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1bPdCpU6EUwFtF_aJlO8gHIKYWFlVcDKe" target="_blank">55</a></td>
 <td>55</td>
@@ -5563,6 +5951,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>387</td>
 <td><strong>110建字第0061號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1n-KEjRRIJ7YWwN-PxwzR1H10gF0uF-T1" target="_blank">0</a></td>
 <td>0</td>
@@ -5577,6 +5966,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="其他: sites.google.com">
 <td>388</td>
 <td><strong>110建字第0059號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">其他: sites.google.com</span></td>
 <td><a href="https://drive.google.com/drive/folders/1ucdyeSmY3tiBRgVi-B5E0_Gdi2AWAr4l" target="_blank">0</a></td>
 <td>0</td>
@@ -5591,6 +5981,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>389</td>
 <td><strong>110建字第0056號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1SlmOU84DbKeVY9JG80rnvWkSzXRN0Qbb" target="_blank">0</a></td>
 <td>0</td>
@@ -5605,6 +5996,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>390</td>
 <td><strong>110建字第0055號</strong></td>
+<td class="name-cell">113.03.05監測</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1khGTHvvSxIKkBDhWBO_LN25lbh4gyA8v" target="_blank">76</a></td>
 <td>76</td>
@@ -5619,6 +6011,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>391</td>
 <td><strong>110建字第0053號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1iZqowkLjVyKfyhDrMeHtumDmIIAzG9zi" target="_blank">0</a></td>
 <td>0</td>
@@ -5633,6 +6026,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="其他: sites.google.com">
 <td>392</td>
 <td><strong>110建字第0052號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">其他: sites.google.com</span></td>
 <td><a href="https://drive.google.com/drive/folders/17AspJdzk8WjtxrhR2aOJW9LSr4WVX2yc" target="_blank">0</a></td>
 <td>0</td>
@@ -5647,6 +6041,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>393</td>
 <td><strong>110建字第0051號</strong></td>
+<td class="name-cell">潤泰松江1120222初值觀測</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1vxTUNpY4ldZEWndXKJnCDFmMWxlvMbnw" target="_blank">32</a></td>
 <td>32</td>
@@ -5661,6 +6056,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>394</td>
 <td><strong>110建字第0041號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1K99T7yDC0IW2CO6ZOwcEkAYGmZo2YaEg" target="_blank">16</a></td>
 <td>0</td>
@@ -5675,6 +6071,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>395</td>
 <td><strong>110建字第0038號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1yOj73yaqXAxcO4mj_Kc6sIATYURtf2tN" target="_blank">0</a></td>
 <td>0</td>
@@ -5689,6 +6086,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>396</td>
 <td><strong>110建字第0035號</strong></td>
+<td class="name-cell">雲端資料庫設置之範例</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1U8ngtU8K3PPxjcciQvnMDUeMevqmE-Zq" target="_blank">3</a></td>
 <td>3</td>
@@ -5703,6 +6101,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="其他: sites.google.com">
 <td>397</td>
 <td><strong>110建字第0033號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">其他: sites.google.com</span></td>
 <td><a href="https://drive.google.com/drive/folders/1B0YhEVVxj65ptPnzc3RzZMU600IU1YEF" target="_blank">0</a></td>
 <td>0</td>
@@ -5717,6 +6116,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="其他: s05.calm9.com">
 <td>398</td>
 <td><strong>110建字第0023號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">其他: s05.calm9.com</span></td>
 <td><a href="https://drive.google.com/drive/folders/1As96kpYTglm2-Dg4TFR_3H60xrriLQR7" target="_blank">0</a></td>
 <td>0</td>
@@ -5731,6 +6131,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>399</td>
 <td><strong>110建字第0017號</strong></td>
+<td class="name-cell">優寶營造承造人自行維護，即時更新監測相關數據</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1Hhqoeom0QwhkuVTqdejUgYq8y3KVnZhh" target="_blank">10</a></td>
 <td>10</td>
@@ -5745,6 +6146,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>400</td>
 <td><strong>110建字第0016號</strong></td>
+<td class="name-cell">聖得福躍大直-基地監測日報-20240510-1</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1z7FwlrREj4bYQP4YhxnbUng-cIaykL-T" target="_blank">100</a></td>
 <td>100</td>
@@ -5759,6 +6161,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>401</td>
 <td><strong>110建字第0012號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/11QhtFZXWOb8nrKKUeQ0GAAmj3QVxZ_NY" target="_blank">43</a></td>
 <td>0</td>
@@ -5773,6 +6176,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="其他: sites.google.com">
 <td>402</td>
 <td><strong>110建字第0011號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">其他: sites.google.com</span></td>
 <td><a href="https://drive.google.com/drive/folders/1TMdO1iiW69Hd7gyqjYqQDGaM-_paGt5J" target="_blank">0</a></td>
 <td>0</td>
@@ -5787,6 +6191,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>403</td>
 <td><strong>110建字第0006號</strong></td>
+<td class="name-cell">112年5月30日觀測</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1tv5bohL_4P5xVgU--gigAGthY92wttH_" target="_blank">1</a></td>
 <td>1</td>
@@ -5801,6 +6206,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="in_progress" data-cloud="Google Drive">
 <td>404</td>
 <td><strong>109建字第0300號</strong></td>
+<td class="name-cell">台大447_教職員宿舍新建工程</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1aQK7hjB_7sDf8pusJjFwi7ffvmk8ctHu" target="_blank">37</a></td>
 <td>15</td>
@@ -5815,6 +6221,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>405</td>
 <td><strong>109建字第0292號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1LUyOQy2cW73MSEodL72NCm6V3AbZDjam" target="_blank">0</a></td>
 <td>0</td>
@@ -5829,6 +6236,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>406</td>
 <td><strong>109建字第0287號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1K6QVGZ9Cl_aX-E3Z4oc6e8v_wxeGjJq5" target="_blank">76</a></td>
 <td>0</td>
@@ -5843,6 +6251,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>407</td>
 <td><strong>109建字第0285號</strong></td>
+<td class="name-cell">松山呈居1140708</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/10iSdW7bi-cbvDVCPb5UuQwgNz9baaCun" target="_blank">0</a></td>
 <td>3</td>
@@ -5857,6 +6266,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="其他: sites.google.com">
 <td>408</td>
 <td><strong>109建字第0281號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">其他: sites.google.com</span></td>
 <td><a href="https://drive.google.com/drive/folders/1Thhx97Iaksz2atPI1VPCrdCjASSekPTU" target="_blank">0</a></td>
 <td>0</td>
@@ -5871,6 +6281,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="in_progress" data-cloud="Google Drive">
 <td>409</td>
 <td><strong>109建字第0272號</strong></td>
+<td class="name-cell">-安全觀測週報表</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1Sdc2gVjZcP-qpa5D9h_U7rfXDqujyJTE" target="_blank">80</a></td>
 <td>10</td>
@@ -5885,6 +6296,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>410</td>
 <td><strong>109建字第0269號</strong></td>
+<td class="name-cell">三合段1226觀測</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1c5gZPuMnTU3zVsCmXNx4e2bq1eNH3wgp" target="_blank">36</a></td>
 <td>36</td>
@@ -5899,6 +6311,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>411</td>
 <td><strong>109建字第0267號</strong></td>
+<td class="name-cell">吉美君悦1121031觀測</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/17LYbgaWXT_uj62x20fja3MOtm0P_MhFy" target="_blank">1</a></td>
 <td>1</td>
@@ -5913,6 +6326,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>412</td>
 <td><strong>109建字第0262號</strong></td>
+<td class="name-cell">-TI 8</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1TbH3itlHo_9VXgQMP6Y1IhYTxNYWuZXX" target="_blank">174</a></td>
 <td>174</td>
@@ -5927,6 +6341,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>413</td>
 <td><strong>109建字第0256號</strong></td>
+<td class="name-cell">01-耀達廠-113.01.05(1)</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1WUz8jeToHfFffzjO4DUCeQeLNnHQp_0i" target="_blank">5</a></td>
 <td>5</td>
@@ -5941,6 +6356,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>414</td>
 <td><strong>109建字第0255號</strong></td>
+<td class="name-cell">109建字第0255號-監測報告1130909</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/15Oxl44jElySv2KDloieI4FceuLyvBP-7" target="_blank">6</a></td>
 <td>6</td>
@@ -5955,6 +6371,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>415</td>
 <td><strong>109建字第0252號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1TCmeweCfgYa6Q6UYPZhXTlAaVkJTyGt0" target="_blank">0</a></td>
 <td>0</td>
@@ -5969,6 +6386,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>416</td>
 <td><strong>109建字第0250號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1qbDbjfh8g3NP7ImNvubhAvTEJafLzd7Q" target="_blank">21</a></td>
 <td>0</td>
@@ -5983,6 +6401,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>417</td>
 <td><strong>109建字第0246號</strong></td>
+<td class="name-cell">安全觀測報告(No.31)</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1skf80KfARzBC2rEQm9sCrROAfg40pmI6" target="_blank">119</a></td>
 <td>119</td>
@@ -5997,6 +6416,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>418</td>
 <td><strong>109建字第0245號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1YWsoR6ffY7oMHn_DIBe2MhUrDqkFaFoq" target="_blank">0</a></td>
 <td>0</td>
@@ -6011,6 +6431,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>419</td>
 <td><strong>109建字第0226號</strong></td>
+<td class="name-cell"><span title="收1121108 台北市政府都市發展局_涉及連續壁施作及地下室開挖之建築工程，施工期間應依安全監測系統施工計畫辦理監測">收1121108 台北市政府都市發展局_涉及連續壁...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1USPe8amYo4PA2WT2q8n3uD3q5Q-4gIJp" target="_blank">3</a></td>
 <td>3</td>
@@ -6025,6 +6446,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="SharePoint">
 <td>420</td>
 <td><strong>109建字第0209號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">SharePoint</span></td>
 <td><a href="https://drive.google.com/drive/folders/16UsaZv2yJk9RSQc75IanewJuqCx6XPEr" target="_blank">0</a></td>
 <td>0</td>
@@ -6039,6 +6461,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>421</td>
 <td><strong>109建字第0201號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1oMsTv-iUxj2L-Mzzds8BBaFzJFRy3PyV" target="_blank">0</a></td>
 <td>0</td>
@@ -6053,6 +6476,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>422</td>
 <td><strong>109建字第0192號</strong></td>
+<td class="name-cell">工地監測報告_114年02月13日</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/19SK-HR8kewo0TdnsAlHSN7ti1MtypewG" target="_blank">3</a></td>
 <td>3</td>
@@ -6067,6 +6491,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>423</td>
 <td><strong>109建字第0185號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1SL7EFpVdUpasfvgKC3dKpTHyfmHpOscM" target="_blank">71</a></td>
 <td>71</td>
@@ -6081,6 +6506,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="其他: sites.google.com">
 <td>424</td>
 <td><strong>109建字第0173號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">其他: sites.google.com</span></td>
 <td><a href="https://drive.google.com/drive/folders/1GgVxct_D1BGuC32N36qSxZGG8LdOpxIZ" target="_blank">0</a></td>
 <td>0</td>
@@ -6095,6 +6521,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>425</td>
 <td><strong>109建字第0170號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1IUstjEo_8oRu4GcIzYuk7Ap6PhoHNb6L" target="_blank">18</a></td>
 <td>0</td>
@@ -6109,6 +6536,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>426</td>
 <td><strong>109建字第0159號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/18lIFW9IFzHRaskLbrahgjgA0b8oZGulI" target="_blank">0</a></td>
 <td>0</td>
@@ -6123,6 +6551,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>427</td>
 <td><strong>109建字第0150號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1_1KQLqdCWQkZ34CXTL4y7-IjFHc2L-Ly" target="_blank">74</a></td>
 <td>0</td>
@@ -6137,6 +6566,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>428</td>
 <td><strong>109建字第0143號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1yRMPeA2R49m7kd3JpF2BXnK6RvS-MAWJ" target="_blank">32</a></td>
 <td>0</td>
@@ -6151,6 +6581,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="in_progress" data-cloud="Google Drive">
 <td>429</td>
 <td><strong>109建字第0139號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1HDf032wVstteuyGBsgfUBhiQnAxijsZr" target="_blank">71</a></td>
 <td>6</td>
@@ -6165,6 +6596,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>430</td>
 <td><strong>109建字第0122號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1fJuUSxVtB5EYOJuUdRCivtCirmnJh6vp" target="_blank">156</a></td>
 <td>0</td>
@@ -6179,6 +6611,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>431</td>
 <td><strong>109建字第0089號</strong></td>
+<td class="name-cell"><span title="東禧建設嘉興街住宅新建工程-專案日報告書-2023-09-20 00_00 (2)">東禧建設嘉興街住宅新建工程-專案日報告書-2023...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1epWQ71PnbcEXKbaO0NjMqfFzhw2wGhq5" target="_blank">113</a></td>
 <td>113</td>
@@ -6193,6 +6626,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>432</td>
 <td><strong>109建字第0075號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1z8A2NofpLaFZZEafZBszDDpM06guGXih" target="_blank">37</a></td>
 <td>0</td>
@@ -6207,6 +6641,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="其他: sites.google.com">
 <td>433</td>
 <td><strong>109建字第0069號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">其他: sites.google.com</span></td>
 <td><a href="https://drive.google.com/drive/folders/1Wzfjne-7fTndxi9GqYfdsZwH_UuC-ZFu" target="_blank">0</a></td>
 <td>0</td>
@@ -6221,6 +6656,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="其他: sites.google.com">
 <td>434</td>
 <td><strong>109建字第0035號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">其他: sites.google.com</span></td>
 <td><a href="https://drive.google.com/drive/folders/18WEnPDc3FEX-TNBx1O6qtqQUWRQkTH8t" target="_blank">0</a></td>
 <td>0</td>
@@ -6235,6 +6671,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>435</td>
 <td><strong>109建字第0027號</strong></td>
+<td class="name-cell"><span title="台肥南港C4辦公大樓新建工程 (109建字第0027號)-專案日報告書-2025-12-22 00">台肥南港C4辦公大樓新建工程 (109建字第002...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1o7oOS56v_N7rUPOSVD-yjW22Ov4zJ_zk" target="_blank">10</a></td>
 <td>45</td>
@@ -6249,6 +6686,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>436</td>
 <td><strong>109建字第0021號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/17GNj_qjL-1_nyuDZO_JDNlxPomAa1znT" target="_blank">0</a></td>
 <td>0</td>
@@ -6263,6 +6701,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>437</td>
 <td><strong>109建字第0016號</strong></td>
+<td class="name-cell">褚敏雄新建工程工地監測報告_112年06月28日</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1iPVKwdyG6AJa3LTYAizQTBdje9VlVICV" target="_blank">54</a></td>
 <td>54</td>
@@ -6277,6 +6716,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>438</td>
 <td><strong>109建字第0015號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1lkrMVtnKUI9L1r8EZqi066GTvZjzBogb" target="_blank">42</a></td>
 <td>0</td>
@@ -6291,6 +6731,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>439</td>
 <td><strong>108建字第0252號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1OKTMGpZ-UZXZ7YERs8HvLhUj5cgwTyM_" target="_blank">43</a></td>
 <td>0</td>
@@ -6305,6 +6746,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>440</td>
 <td><strong>108建字第0212號</strong></td>
+<td class="name-cell">樂業街案112.01.04觀測結果</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1NiMwunwLgf5pfwcU3ujXhlJH5ml7ni8c" target="_blank">12</a></td>
 <td>12</td>
@@ -6319,6 +6761,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>441</td>
 <td><strong>108建字第0211號</strong></td>
+<td class="name-cell">豪豐營造慶山北投案工地監測報告112年11月02日</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1yEnBZ_eK2waTylQ65_9wh1LJNkSNr87B" target="_blank">46</a></td>
 <td>46</td>
@@ -6333,6 +6776,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>442</td>
 <td><strong>108建字第0207號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1V7haPHHgTfljhjGOTGbIVufj5aB-lsJC" target="_blank">121</a></td>
 <td>0</td>
@@ -6347,6 +6791,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>443</td>
 <td><strong>108建字第0201號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1eyVAuoKYuSCzKIkyJ-6vOskndns7v_MZ" target="_blank">40</a></td>
 <td>0</td>
@@ -6361,6 +6806,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>444</td>
 <td><strong>108建字第0192號</strong></td>
+<td class="name-cell">時詣建設城中段三小段1141127觀測</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1Q8taMY54nTRAbZCG8fsIgPS9lRBuuvag" target="_blank">0</a></td>
 <td>1</td>
@@ -6375,6 +6821,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>445</td>
 <td><strong>108建字第0185號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1JHQS4DRDtq4HO6Hn0zqHzR5FAZKf4un_" target="_blank">0</a></td>
 <td>0</td>
@@ -6389,6 +6836,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>446</td>
 <td><strong>108建字第0131號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1uHwwLW3Zhdk6j9q8EA7aJWVFJbffIBiN" target="_blank">42</a></td>
 <td>0</td>
@@ -6403,6 +6851,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>447</td>
 <td><strong>108建字第0111號</strong></td>
+<td class="name-cell">宏築信義監測報告-2024.07.01-07.31</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1GxIg_KlGyru8E5-6VvAQCxJGOEmaRWY_" target="_blank">11</a></td>
 <td>11</td>
@@ -6417,6 +6866,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>448</td>
 <td><strong>108建字第0106號</strong></td>
+<td class="name-cell"><span title="108建字第0106號工地監測報告 興富發建設北投大業段集合住宅新建工程-1121113 88(含垂直度量測)">108建字第0106號工地監測報告 興富發建設北投...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1oH6nNJVL1FwVP529zGhBIg6t7nyHHOA9" target="_blank">291</a></td>
 <td>291</td>
@@ -6431,6 +6881,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="MEGA">
 <td>449</td>
 <td><strong>108建字第0065號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">MEGA</span></td>
 <td>0</td>
 <td>0</td>
@@ -6445,6 +6896,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="短網址">
 <td>450</td>
 <td><strong>108建字第0015號</strong></td>
+<td class="name-cell">-</td>
 <td><span class="badge badge-orange">短網址</span></td>
 <td><a href="https://drive.google.com/drive/folders/1vriZPWH11eXjax5oZDbrUxMn_xPBagcd" target="_blank">0</a></td>
 <td>0</td>
@@ -6459,6 +6911,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>451</td>
 <td><strong>108建字第0009號</strong></td>
+<td class="name-cell">富瑄108-0009-光復南路-1121115</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1-IIljJg484Z_SKVq5RzOef3vdZhyrvjK" target="_blank">13</a></td>
 <td>13</td>
@@ -6473,6 +6926,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>452</td>
 <td><strong>107建字第0200號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1RQrbnlQ9QRLv-oGbCgVnuga1HZGME38J" target="_blank">0</a></td>
 <td>0</td>
@@ -6487,6 +6941,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>453</td>
 <td><strong>107建字第0167號</strong></td>
+<td class="name-cell"><span title="鴻輝建設-崇仰段一小段131地號等住宅新建工程 1121025 24">鴻輝建設-崇仰段一小段131地號等住宅新建工程 1...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1j8d7cslQNlNBUDNTxiRB4aDaCQb9reco" target="_blank">8</a></td>
 <td>8</td>
@@ -6501,6 +6956,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>454</td>
 <td><strong>107建字第0092號</strong></td>
+<td class="name-cell"><span title="鴻輝建設-崇仰段一小段131地號等住宅新建工程 1121129 29">鴻輝建設-崇仰段一小段131地號等住宅新建工程 1...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1Xg7Jhnya7BDdb6LxQC4BnUhR8HiJqOxG" target="_blank">8</a></td>
 <td>33</td>
@@ -6515,6 +6971,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>455</td>
 <td><strong>107建字第0091號</strong></td>
+<td class="name-cell"><span title="承德民生住宅A棟大樓-工地監測報告_1130417(SB_SM_TI初值報告)">承德民生住宅A棟大樓-工地監測報告_1130417...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1PeR3B89hvC98W2j0M84OUkOmOU2qAC-2" target="_blank">55</a></td>
 <td>55</td>
@@ -6529,6 +6986,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="not_uploaded" data-cloud="Google Drive">
 <td>456</td>
 <td><strong>106建字第0213號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1sdC3kLi95WYdGRV6mTWZrl0UV0a-bOmm" target="_blank">29</a></td>
 <td>0</td>
@@ -6543,6 +7001,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>457</td>
 <td><strong>106建字第0111號</strong></td>
+<td class="name-cell">桓億龍泉工地</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1tUEbIpwJHUmjXUMx-PVDIYRS6AY44BqC" target="_blank">99</a></td>
 <td>99</td>
@@ -6557,6 +7016,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>458</td>
 <td><strong>106建字第0042號</strong></td>
+<td class="name-cell">112年監測總結報告電子檔</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/13zN8xuavOe07AYkrFJm0G0lmZ4k-bANV" target="_blank">1</a></td>
 <td>1</td>
@@ -6571,6 +7031,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="completed" data-cloud="Google Drive">
 <td>459</td>
 <td><strong>105建字第0172號</strong></td>
+<td class="name-cell"><span title="助群營造台北市北投區石牌市場新建工程11301月監測">助群營造台北市北投區石牌市場新建工程11301月監...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1iJkv9SlBxzNtODZx-jxm7_AWKyyrFjJU" target="_blank">7</a></td>
 <td>7</td>
@@ -6585,6 +7046,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="no_reports" data-cloud="Google Drive">
 <td>460</td>
 <td><strong>104建字第0225號</strong></td>
+<td class="name-cell">-</td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1vBaBr5BuBMSX0lVo-bW5iPjrhiEH2UGv" target="_blank">0</a></td>
 <td>0</td>
@@ -6599,6 +7061,7 @@ a{color:#dc2626;text-decoration:none}
 <tr data-status="in_progress" data-cloud="Google Drive">
 <td>461</td>
 <td><strong>102建字第0325號</strong></td>
+<td class="name-cell"><span title="助群營造台北市北投區石牌市場新建工程11301月監測">助群營造台北市北投區石牌市場新建工程11301月監...</span></td>
 <td></td>
 <td><a href="https://drive.google.com/drive/folders/1t6TVcBUZ9k9_GEYaFJ3wIDL2keJWr0-B" target="_blank">53</a></td>
 <td>7</td>

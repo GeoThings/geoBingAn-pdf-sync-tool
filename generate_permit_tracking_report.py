@@ -467,16 +467,13 @@ def download_and_parse_gov_pdf() -> List[dict]:
     return non_google_permits
 
 
-def load_alert_data() -> Dict[str, dict]:
-    """載入警戒/行動值資料，並對應到建照號碼"""
+def load_alert_data() -> Tuple[Dict[str, dict], Dict[str, str]]:
+    """載入警戒/行動值資料，並對應到建照號碼。同時返回建案名稱對應表"""
     print("\n📊 載入警戒值資料...")
 
-    if not os.path.exists(ALERT_DATA_CSV):
-        print(f"  找不到警戒資料檔案: {ALERT_DATA_CSV}")
-        return {}
-
-    # 建立建案名稱到建照號碼的對應
+    # 建立建案名稱到建照號碼的對應（雙向）
     name_to_permit = {}
+    permit_to_name = {}  # 建照號碼 -> 建案名稱
     history_file = './state/upload_history_all.json'
 
     if os.path.exists(history_file):
@@ -499,8 +496,15 @@ def load_alert_data() -> Dict[str, dict]:
 
                     if name and permit:
                         name_to_permit[name] = permit
+                        # 保存最長的建案名稱（通常較完整）
+                        if permit not in permit_to_name or len(name) > len(permit_to_name[permit]):
+                            permit_to_name[permit] = name
         except Exception as e:
             print(f"  載入上傳記錄時發生錯誤: {e}")
+
+    if not os.path.exists(ALERT_DATA_CSV):
+        print(f"  找不到警戒資料檔案: {ALERT_DATA_CSV}")
+        return {}, permit_to_name
 
     # 讀取警戒資料 CSV
     alert_data = {}
@@ -548,20 +552,26 @@ def load_alert_data() -> Dict[str, dict]:
                             'alert_count': alert_count,
                             'report_count': report_count
                         }
+                    # 更新建案名稱（優先使用 CSV 中的名稱）
+                    if building_name:
+                        permit_to_name[permit] = building_name
 
         print(f"  已載入 {len(alert_data)} 個建照的警戒資料")
+        print(f"  已載入 {len(permit_to_name)} 個建案名稱")
     except Exception as e:
         print(f"  載入警戒資料時發生錯誤: {e}")
 
-    return alert_data
+    return alert_data, permit_to_name
 
 
-def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], alert_data: Dict[str, dict] = None):
+def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], alert_data: Dict[str, dict] = None, permit_names: Dict[str, str] = None):
     """生成 HTML 報告"""
     print("\n📊 生成 HTML 報告...")
 
     if alert_data is None:
         alert_data = {}
+    if permit_names is None:
+        permit_names = {}
 
     now = datetime.now()
 
@@ -666,6 +676,14 @@ def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], a
         # 最新報告日期
         latest_html = latest[:10] if latest else '-'
 
+        # 建案名稱
+        building_name = permit_names.get(permit, '')
+        # 截斷過長的名稱
+        if len(building_name) > 25:
+            name_html = f'<span title="{building_name}">{building_name[:25]}...</span>'
+        else:
+            name_html = building_name if building_name else '-'
+
         # 警戒/行動值
         permit_alert = alert_data.get(permit, {})
         warning_count = permit_alert.get('warning_count', 0)
@@ -692,6 +710,7 @@ def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], a
 <tr data-status="{status}" data-cloud="{cloud}">
 <td>{i}</td>
 <td><strong>{permit}</strong></td>
+<td class="name-cell">{name_html}</td>
 <td>{cloud_badge}</td>
 <td>{drive_link}</td>
 <td>{system_count}</td>
@@ -759,6 +778,7 @@ a{{color:#dc2626;text-decoration:none}}
 .alert-warning{{color:#f59e0b;font-weight:600}}
 .alert-action{{color:#dc2626;font-weight:600}}
 .alert-critical{{color:#7c2d12;font-weight:700;background:#fee2e2;padding:2px 6px;border-radius:3px}}
+.name-cell{{max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:#666}}
 </style>
 </head>
 <body>
@@ -797,16 +817,17 @@ a{{color:#dc2626;text-decoration:none}}
 <tr>
 <th onclick="sortTable(0)">#</th>
 <th onclick="sortTable(1)">建照字號</th>
-<th onclick="sortTable(2)">雲端</th>
-<th onclick="sortTable(3)">Drive PDF</th>
-<th onclick="sortTable(4)">系統 PDF</th>
-<th onclick="sortTable(5)">覆蓋率</th>
-<th onclick="sortTable(6)">警戒</th>
-<th onclick="sortTable(7)">行動</th>
-<th onclick="sortTable(8)">Alert</th>
-<th onclick="sortTable(9)">最新報告</th>
-<th onclick="sortTable(10)">距今</th>
-<th onclick="sortTable(11)">狀態</th>
+<th onclick="sortTable(2)">建案名稱</th>
+<th onclick="sortTable(3)">雲端</th>
+<th onclick="sortTable(4)">Drive PDF</th>
+<th onclick="sortTable(5)">系統 PDF</th>
+<th onclick="sortTable(6)">覆蓋率</th>
+<th onclick="sortTable(7)">警戒</th>
+<th onclick="sortTable(8)">行動</th>
+<th onclick="sortTable(9)">Alert</th>
+<th onclick="sortTable(10)">最新報告</th>
+<th onclick="sortTable(11)">距今</th>
+<th onclick="sortTable(12)">狀態</th>
 </tr>
 </thead>
 <tbody>{rows_html}</tbody>
@@ -861,12 +882,14 @@ function sortTable(n) {{
     print(f"  已生成: {OUTPUT_HTML}")
 
 
-def generate_csv_report(permit_data: Dict[str, dict], non_google: List[dict], alert_data: Dict[str, dict] = None):
+def generate_csv_report(permit_data: Dict[str, dict], non_google: List[dict], alert_data: Dict[str, dict] = None, permit_names: Dict[str, str] = None):
     """生成 CSV 報告"""
     print("📄 生成 CSV 報告...")
 
     if alert_data is None:
         alert_data = {}
+    if permit_names is None:
+        permit_names = {}
 
     non_google_set = {item['permit']: item['cloud'] for item in non_google}
 
@@ -875,7 +898,7 @@ def generate_csv_report(permit_data: Dict[str, dict], non_google: List[dict], al
         int(re.search(r'第(\d+)號', x).group(1)) if re.search(r'第(\d+)號', x) else 0
     ), reverse=True)
 
-    lines = ['序號,建照字號,雲端服務,Drive PDF,系統 PDF,覆蓋率,警戒次數,行動次數,Alert次數,最新報告,距今天數,狀態']
+    lines = ['序號,建照字號,建案名稱,雲端服務,Drive PDF,系統 PDF,覆蓋率,警戒次數,行動次數,Alert次數,最新報告,距今天數,狀態']
 
     for i, permit in enumerate(sorted_permits, 1):
         data = permit_data[permit]
@@ -887,13 +910,16 @@ def generate_csv_report(permit_data: Dict[str, dict], non_google: List[dict], al
         days = data.get('days_since_update', '')
         status = data.get('status', 'unknown')
 
+        # 建案名稱
+        building_name = permit_names.get(permit, '')
+
         # 警戒值
         permit_alert = alert_data.get(permit, {})
         warning = permit_alert.get('warning_count', 0)
         action = permit_alert.get('action_count', 0)
         alert = permit_alert.get('alert_count', 0)
 
-        lines.append(f'{i},"{permit}","{cloud}",{drive},{system},{coverage},{warning},{action},{alert},{latest},{days},{status}')
+        lines.append(f'{i},"{permit}","{building_name}","{cloud}",{drive},{system},{coverage},{warning},{action},{alert},{latest},{days},{status}')
 
     with open(OUTPUT_CSV, 'w', encoding='utf-8-sig') as f:
         f.write('\n'.join(lines))
@@ -977,8 +1003,8 @@ def main():
                 'cloud_service': item['cloud']
             }
 
-    # 5. 載入警戒資料
-    alert_data = load_alert_data()
+    # 5. 載入警戒資料和建案名稱
+    alert_data, permit_names = load_alert_data()
 
     # 6. 儲存資料
     with open(MAPPING_JSON, 'w', encoding='utf-8') as f:
@@ -988,8 +1014,8 @@ def main():
         json.dump(non_google, f, indent=2, ensure_ascii=False)
 
     # 7. 生成報告
-    generate_html_report(permit_data, non_google, alert_data)
-    generate_csv_report(permit_data, non_google, alert_data)
+    generate_html_report(permit_data, non_google, alert_data, permit_names)
+    generate_csv_report(permit_data, non_google, alert_data, permit_names)
 
     elapsed = time.time() - start_time
     print(f"\n✅ 報告生成完成！耗時 {elapsed:.1f} 秒")
