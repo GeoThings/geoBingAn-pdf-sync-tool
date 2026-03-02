@@ -34,7 +34,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 SERVICE_ACCOUNT_FILE = '/Users/geothingsmacbookair/Downloads/credentials.json'
 SCOPES = ['https://www.googleapis.com/auth/drive']
 SHARED_DRIVE_ID = '0AIvp1h-6BZ1oUk9PVA'
-PDF_LIST_URL = 'https://www-ws.gov.taipei/001/Upload/845/relfile/-1/845/2a1b5b50-13e7-4378-bcb2-03888bf5c462.pdf'
+PDF_LIST_URL = 'https://www-ws.gov.taipei/001/Upload/845/relfile/-1/845/03b35db7-a123-4b29-b881-1cb17fa9c4f2.pdf'
 STATE_FILE = './state/sync_permits_progress.json'
 # ============================================
 

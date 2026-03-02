@@ -37,7 +37,7 @@ try:
         REFRESH_TOKEN,
         GEOBINGAN_REFRESH_URL
     )
-    print(f"✅ 已載入認證配置（用戶: {USER_EMAIL}）")
+    print(f"✅ 已載入認證配置（用戶: {USER_EMAIL}）", flush=True)
 except ImportError as e:
     print("❌ 找不到 config.py 或缺少必要設定")
     print(f"   錯誤: {e}")
@@ -146,7 +146,7 @@ def refresh_access_token() -> Optional[str]:
     global current_access_token
 
     try:
-        print("🔄 正在刷新 JWT Token...")
+        print("🔄 正在刷新 JWT Token...", flush=True)
 
         response = requests.post(
             GEOBINGAN_REFRESH_URL,
@@ -166,17 +166,17 @@ def refresh_access_token() -> Optional[str]:
                 # 更新 config.py 中的 token
                 update_config_token(new_token)
 
-                print("✅ JWT Token 刷新成功")
+                print("✅ JWT Token 刷新成功", flush=True)
                 return new_token
             else:
-                print(f"❌ 刷新回應中找不到 access token: {data}")
+                print(f"❌ 刷新回應中找不到 access token: {data}", flush=True)
                 return None
         else:
-            print(f"❌ Token 刷新失敗 ({response.status_code}): {response.text[:200]}")
+            print(f"❌ Token 刷新失敗 ({response.status_code}): {response.text[:200]}", flush=True)
             return None
 
     except Exception as e:
-        print(f"❌ Token 刷新發生錯誤: {e}")
+        print(f"❌ Token 刷新發生錯誤: {e}", flush=True)
         return None
 
 
@@ -199,9 +199,9 @@ def update_config_token(new_token: str):
         with open(config_path, 'w', encoding='utf-8') as f:
             f.write(new_content)
 
-        print(f"📝 已更新 config.py 中的 Token")
+        print(f"📝 已更新 config.py 中的 Token", flush=True)
     except Exception as e:
-        print(f"⚠️  無法更新 config.py: {e}")
+        print(f"⚠️  無法更新 config.py: {e}", flush=True)
 
 
 def get_valid_token() -> str:
@@ -217,12 +217,12 @@ def get_valid_token() -> str:
 
     with token_lock:
         if is_token_expired(current_access_token):
-            print("⚠️  JWT Token 已過期或即將過期")
+            print("⚠️  JWT Token 已過期或即將過期", flush=True)
             new_token = refresh_access_token()
             if new_token:
                 return new_token
             else:
-                print("⚠️  使用舊 Token 嘗試（可能會失敗）")
+                print("⚠️  使用舊 Token 嘗試（可能會失敗）", flush=True)
 
         return current_access_token
 
@@ -300,7 +300,7 @@ def save_state(state: dict):
 
 def get_drive_service():
     """初始化 Google Drive API（Service Account）"""
-    print("🔑 初始化 Google Drive API (Service Account)")
+    print("🔑 初始化 Google Drive API (Service Account)", flush=True)
 
     if not os.path.exists(SERVICE_ACCOUNT_FILE):
         print(f"❌ 找不到 Service Account 金鑰: {SERVICE_ACCOUNT_FILE}")
@@ -310,7 +310,7 @@ def get_drive_service():
         SERVICE_ACCOUNT_FILE, scopes=SCOPES)
 
     service = build('drive', 'v3', credentials=credentials)
-    print(f"✅ 已初始化 ({credentials.service_account_email})")
+    print(f"✅ 已初始化 ({credentials.service_account_email})", flush=True)
     return service
 
 
@@ -453,7 +453,7 @@ def download_pdf(service, file_id: str, file_name: str, max_retries: int = 3) ->
 
             fh.seek(0)
             content = fh.read()
-            print(f"  📥 已下載: {file_name} ({len(content)} bytes)")
+            print(f"  📥 已下載: {file_name} ({len(content)} bytes)", flush=True)
             return content
 
         except (ConnectionError, TimeoutError, OSError) as e:
@@ -523,12 +523,12 @@ def upload_to_geobingan(pdf_content: bytes, file_name: str, project_code: str) -
             report_id = result.get('id') or result.get('report_id', 'N/A')
             parse_status = result.get('parse_status', '')
 
-            print(f"  ✅ 上傳成功！")
-            print(f"     - Report ID: {report_id}")
+            print(f"  ✅ 上傳成功！", flush=True)
+            print(f"     - Report ID: {report_id}", flush=True)
             if parse_status:
-                print(f"     - 解析狀態: {parse_status}")
+                print(f"     - 解析狀態: {parse_status}", flush=True)
             if result.get('message'):
-                print(f"     - {result.get('message')}")
+                print(f"     - {result.get('message')}", flush=True)
             return result
         elif response.status_code == 504:
             # 504 Gateway Timeout - 後端可能仍在處理中
@@ -601,7 +601,7 @@ def process_single_pdf(service, pdf: Dict, state: dict, idx: int, total: int) ->
     Returns:
         Dict with keys: success (bool), pdf (Dict), result (Optional[dict])
     """
-    print(f"\n[{idx}/{total}] 處理: {pdf['folder_name']}/{pdf['name']}")
+    print(f"\n[{idx}/{total}] 處理: {pdf['folder_name']}/{pdf['name']}", flush=True)
 
     # 下載
     pdf_content = download_pdf(service, pdf['id'], pdf['name'])
@@ -782,7 +782,7 @@ def main():
 
             # 速率控制：等待避免觸發 API 限制（除了最後一個）
             if idx < len(pdfs_to_upload):
-                print(f"  ⏳ 等待 {DELAY_BETWEEN_UPLOADS} 秒（避免 API 速率限制）...")
+                print(f"  ⏳ 等待 {DELAY_BETWEEN_UPLOADS} 秒（避免 API 速率限制）...", flush=True)
                 time.sleep(DELAY_BETWEEN_UPLOADS)
 
     # 最終統計
