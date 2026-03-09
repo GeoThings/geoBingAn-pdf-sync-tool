@@ -1,7 +1,7 @@
 # Cron Job 設定指南
 
-**文檔版本：** v1.0
-**最後更新：** 2026-01-06
+**文檔版本：** v2.0
+**最後更新：** 2026-03-09
 **檢查狀態：** ✅ 已驗證
 
 ---
@@ -73,17 +73,22 @@ Python 3.14.2
 
 - ✅ `sync_permits.py` - PDF 同步腳本
 - ✅ `upload_pdfs.py` - PDF 上傳腳本
+- ✅ `generate_permit_tracking_report.py` - 報告生成腳本
 - ✅ `config.py` - 配置檔案（包含 JWT Token）
-- ✅ `/Users/geothingsmacbookair/Downloads/credentials.json` - Google Drive 認證
+- ✅ `credentials.json` - Google Drive 認證（專案目錄下）
 
 ### 5. ✅ 腳本內容驗證
 
-**執行流程：**
-1. 啟動虛擬環境
-2. 執行 `sync_permits.py`（同步 PDF 從政府網站到 Google Drive）
-3. 執行 `upload_pdfs.py`（上傳 7 天內的 PDF 到後端）
-4. 記錄日誌到 `logs/weekly_sync_YYYYMMDD_HHMMSS.log`
-5. 清理 30 天以上的舊日誌
+**執行流程（4 步驟）：**
+1. 📥 **步驟 1/4**: 執行 `sync_permits.py`（同步 PDF 從台北市政府到 Google Drive）
+2. 📤 **步驟 2/4**: 執行 `upload_pdfs.py`（上傳 7 天內的 PDF 到究平安）
+3. 📊 **步驟 3/4**: 執行 `generate_permit_tracking_report.py`（生成追蹤報告）
+4. 🌐 **步驟 4/4**: 更新線上報告（推送到 GitHub）
+5. 記錄日誌到 `logs/weekly_sync_YYYYMMDD_HHMMSS.log`
+6. 清理 30 天以上的舊日誌
+
+**線上報告連結：**
+https://htmlpreview.github.io/?https://github.com/GeoThings/geoBingAn-pdf-sync-tool/blob/main/docs/index.html
 
 ---
 
@@ -344,7 +349,7 @@ crontab -e
 
 ## ✅ 設定驗證確認
 
-**驗證日期：** 2026-01-06
+**驗證日期：** 2026-03-09
 **驗證人員：** Claude Code
 **驗證結果：** ✅ 通過
 
@@ -355,10 +360,12 @@ crontab -e
 - ✅ 所有依賴檔案存在
 - ✅ 日誌機制正常
 - ✅ 錯誤處理完善
+- ✅ 報告生成功能正常
+- ✅ GitHub 自動推送正常
 
 **結論：**
-當前的 cron job 設定完整且正確，**可以正常運作**，無需立即修改。建議的改進為可選項，可根據實際需求決定是否採用。
+當前的 cron job 設定完整且正確，**可以正常運作**。已更新為 4 步驟流程，包含報告生成和線上報告自動更新。
 
 ---
 
-**下次檢查建議：** 2026-02-06（一個月後）
+**下次檢查建議：** 2026-04-09（一個月後）

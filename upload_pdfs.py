@@ -50,7 +50,10 @@ token_lock = threading.Lock()
 
 # ================== 設定區域 ==================
 # Google Drive 認證
-SERVICE_ACCOUNT_FILE = '/Users/geothingsmacbookair/Downloads/credentials.json'
+SERVICE_ACCOUNT_FILE = os.environ.get(
+    'GOOGLE_CREDENTIALS',
+    os.path.join(os.path.dirname(__file__), 'credentials.json')
+)
 SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
 SHARED_DRIVE_ID = '0AIvp1h-6BZ1oUk9PVA'
 

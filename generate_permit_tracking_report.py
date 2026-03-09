@@ -43,7 +43,10 @@ except ImportError as e:
     sys.exit(1)
 
 # ================== 設定區域 ==================
-SERVICE_ACCOUNT_FILE = '/Users/geothingsmacbookair/Downloads/credentials.json'
+SERVICE_ACCOUNT_FILE = os.environ.get(
+    'GOOGLE_CREDENTIALS',
+    os.path.join(os.path.dirname(__file__), 'credentials.json')
+)
 SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
 SHARED_DRIVE_ID = '0AIvp1h-6BZ1oUk9PVA'
 PDF_LIST_URL = 'https://www-ws.gov.taipei/001/Upload/845/relfile/-1/845/03b35db7-a123-4b29-b881-1cb17fa9c4f2.pdf'
