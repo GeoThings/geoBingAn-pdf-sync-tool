@@ -2,15 +2,16 @@
 
 自動從台北市政府建管處同步建案 PDF，並上傳到 geoBingAn Backend API 建立監測報告。
 
-## 📊 最新測試結果（2026-01-09）
+## 📊 最新同步結果（2026-03-09）
 
-**上傳測試：** ✅ 通過
+**每週同步：** ✅ 完成
 
-| 測試項目 | 狀態 | 成功率 |
+| 項目 | 狀態 | 數量 |
 |---------|------|--------|
-| upload_pdfs.py | ✅ 成功 | 100% (16/16 PDF) |
+| Shared Drive PDF | ✅ 已同步 | 27,194 個 |
+| 2026/115年 PDF 上傳 | ✅ 完成 | 522 個 |
+| 究平安報告對應 | ✅ 成功 | 18,775 筆 |
 | JWT 自動刷新 | ✅ 正常 | Token 過期自動更新 |
-| 後端 AI 解析 | ✅ 完成 | Gemini 2.5 Pro |
 
 **功能特色：**
 - ✅ JWT Token 自動刷新（過期前 5 分鐘自動更新）
@@ -183,6 +184,29 @@ Body (multipart/form-data):
 
 ---
 
+### `generate_permit_tracking_report.py`
+生成建案追蹤報告，整合台北市政府建案清單與究平安系統資料
+
+**功能：**
+- 下載台北市政府最新建案清單 PDF
+- 從究平安 API 取得所有監測報告
+- 比對建案與系統報告的對應關係
+- 載入警戒值資料並標記異常
+- 生成 HTML 和 CSV 格式的追蹤報告
+
+**輸出檔案：**
+```
+state/permit_tracking_report.html  # 互動式 HTML 報告
+state/permit_tracking.csv          # CSV 資料匯出
+```
+
+**執行：**
+```bash
+python3 generate_permit_tracking_report.py
+```
+
+---
+
 ### `run_weekly_sync.sh`
 自動執行完整流程的 Shell 腳本
 
@@ -236,9 +260,10 @@ crontab -e
 
 ```
 geoBingAn-pdf-sync-tool/
-├── sync_permits.py              # 核心：同步 PDF from 台北市政府
-├── upload_pdfs.py               # 核心：上傳 PDF to Backend API
-├── run_weekly_sync.sh           # 核心：自動執行腳本
+├── sync_permits.py                    # 核心：同步 PDF from 台北市政府
+├── upload_pdfs.py                     # 核心：上傳 PDF to Backend API
+├── generate_permit_tracking_report.py # 核心：生成建案追蹤報告
+├── run_weekly_sync.sh                 # 核心：自動執行腳本
 │
 ├── config.py                    # API 認證配置（需自行建立）
 ├── credentials.json             # Google Drive 金鑰（需自行建立）
@@ -248,14 +273,21 @@ geoBingAn-pdf-sync-tool/
 │
 ├── state/                       # 狀態追蹤
 │   ├── sync_permits_progress.json       # 同步進度
-│   └── uploaded_to_geobingan_7days.json # 上傳記錄
+│   ├── uploaded_to_geobingan_7days.json # 上傳記錄
+│   ├── permit_tracking_report.html      # 追蹤報告 (HTML)
+│   └── permit_tracking.csv              # 追蹤報告 (CSV)
 │
 ├── logs/                        # 執行日誌
 │   └── weekly_sync_*.log        # 週期執行日誌
 │
-└── archive/                     # 舊檔案備份（可選工具）
-    ├── check_upload_status.py  # 檢查上傳狀態工具
-    ├── upload_attachments.py   # 附件補充工具（已廢棄）
+├── docs/                        # 技術文檔
+│   ├── API.md                   # API 說明
+│   ├── troubleshooting.md       # 問題排解指南
+│   └── ...
+│
+└── archive/                     # 舊檔案備份（測試工具）
+    ├── check_upload_status.py   # 檢查上傳狀態工具
+    ├── test_cache_performance.py # 快取效能測試
     └── ...
 ```
 
@@ -407,6 +439,13 @@ Service Account 只需要：
 
 ## 📝 版本歷史
 
+### v2.2.0 (2026-03-09)
+- ✅ 新增 `generate_permit_tracking_report.py` 建案追蹤報告功能
+- ✅ 更新台北市政府 PDF 來源 URL
+- ✅ 修正輸出緩衝問題（加入 flush=True）
+- ✅ 完成 522 個 2026/115年 PDF 上傳至究平安
+- 🧹 整理 repository：移動測試檔案至 archive/
+
 ### v2.1.0 (2026-01-09)
 - ✅ 新增 JWT Token 自動刷新機制
 - ✅ 修復死鎖問題（threading.Lock 優化）
@@ -458,4 +497,4 @@ MIT License
 ---
 
 **維護者**: geoBingAn Team
-**最後更新**: 2026-01-09
+**最後更新**: 2026-03-09
