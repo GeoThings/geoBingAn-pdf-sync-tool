@@ -3,6 +3,7 @@ credentials.json
 
 # State files (may contain sensitive info)
 state/*.json
+state/.sync_start_time
 
 # Python
 __pycache__/
