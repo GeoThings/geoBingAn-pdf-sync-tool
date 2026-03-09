@@ -13,13 +13,21 @@
 | 究平安報告對應 | ✅ 成功 | 18,775 筆 |
 | JWT 自動刷新 | ✅ 正常 | Token 過期自動更新 |
 
+### 📋 線上追蹤報告
+
+👉 **[建照監測追蹤報告](https://raw.githack.com/GeoThings/geoBingAn-pdf-sync-tool/main/docs/index.html)** 👈
+
+報告包含：建案同步狀態、究平安對應情況、警戒值標記、可搜尋篩選
+
 **功能特色：**
 - ✅ JWT Token 自動刷新（過期前 5 分鐘自動更新）
 - ✅ 死鎖問題已修復（threading.Lock 優化）
 - ✅ 智慧快取機制（99.5% 效能提升）
 - ✅ 支援每日 cron job 自動執行
+- ✅ 線上追蹤報告自動更新
 
 詳見文件：
+- [建照監測追蹤報告](https://raw.githack.com/GeoThings/geoBingAn-pdf-sync-tool/main/docs/index.html) 📊 線上即時查看
 - [問題排解指南](docs/troubleshooting.md) 🔧 常見問題解決方案
 - [效能優化報告](docs/cache_optimization_report.md)
 
