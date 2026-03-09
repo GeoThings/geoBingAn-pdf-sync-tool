@@ -13,3 +13,6 @@ urllib3==2.1.0
 
 # Optional: Progress bars
 tqdm==4.66.1
+
+# Environment variables
+python-dotenv==1.0.0

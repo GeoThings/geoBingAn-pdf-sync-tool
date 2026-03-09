@@ -39,5 +39,5 @@ venv/
 env/
 ENV/
 
-# geoBingAn 認證配置（敏感資訊）
-config.py
+# 保留 config.py.example 作為範本
+# config.py 現在從 .env 載入，不再包含敏感資訊
