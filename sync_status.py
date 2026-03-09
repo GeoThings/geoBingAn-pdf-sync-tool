@@ -47,6 +47,7 @@ class SyncStatus:
 
         self.state_dir.mkdir(exist_ok=True)
         self.status_file = self.state_dir / 'sync_status.json'
+        self._start_time_file = self.state_dir / '.sync_start_time'
         self.data = self._load_status()
         self._start_time: Optional[datetime] = None
 
@@ -80,8 +81,11 @@ class SyncStatus:
             json.dump(self.data, f, ensure_ascii=False, indent=2)
 
     def start_run(self):
-        """標記執行開始"""
+        """標記執行開始（會保存到檔案以支援跨 process）"""
         self._start_time = datetime.now()
+        # 保存到檔案以支援跨 process
+        with open(self._start_time_file, 'w') as f:
+            f.write(self._start_time.isoformat())
         print(f"📝 同步開始於 {self._start_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
     def end_run(self,
@@ -89,7 +93,8 @@ class SyncStatus:
                 synced_pdfs: int = 0,
                 uploaded_pdfs: int = 0,
                 failed_uploads: int = 0,
-                error_message: Optional[str] = None):
+                error_message: Optional[str] = None,
+                duration_seconds: Optional[int] = None):
         """
         標記執行結束並記錄結果
 
@@ -99,12 +104,26 @@ class SyncStatus:
             uploaded_pdfs: 上傳的 PDF 數量
             failed_uploads: 上傳失敗的數量
             error_message: 錯誤訊息（如果失敗）
+            duration_seconds: 執行秒數（可由 shell 傳入，否則從檔案計算）
         """
         end_time = datetime.now()
-        duration_seconds = 0
 
-        if self._start_time:
-            duration_seconds = (end_time - self._start_time).total_seconds()
+        # 優先使用傳入的 duration，否則從檔案計算
+        if duration_seconds is None:
+            duration_seconds = 0
+            # 嘗試從檔案讀取 start_time
+            if self._start_time_file.exists():
+                try:
+                    with open(self._start_time_file, 'r') as f:
+                        start_iso = f.read().strip()
+                        self._start_time = datetime.fromisoformat(start_iso)
+                        duration_seconds = (end_time - self._start_time).total_seconds()
+                    # 清理暫存檔
+                    self._start_time_file.unlink()
+                except Exception:
+                    pass
+            elif self._start_time:
+                duration_seconds = (end_time - self._start_time).total_seconds()
 
         # 更新最後執行資訊
         self.data["last_run"] = end_time.isoformat()

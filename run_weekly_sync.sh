@@ -15,7 +15,8 @@
 # - 完成摘要通知
 #
 
-# 遇到錯誤不立即退出，改為手動處理
+# 關鍵步驟失敗即中止
+set -e
 set -o pipefail
 
 # 切換到腳本所在目錄
@@ -37,6 +38,63 @@ HAS_ERROR=0
 ERROR_MESSAGE=""
 START_TIME=$(date +%s)
 
+# 清理函數（在腳本結束時執行）
+cleanup() {
+    local exit_code=$?
+
+    # 計算執行時間
+    END_TIME=$(date +%s)
+    DURATION_SECONDS=$((END_TIME - START_TIME))
+
+    # 如果有未捕獲的錯誤
+    if [ $exit_code -ne 0 ] && [ $HAS_ERROR -eq 0 ]; then
+        HAS_ERROR=1
+        ERROR_MESSAGE="未預期的錯誤 (exit code: $exit_code)"
+    fi
+
+    # 決定狀態
+    local STATUS="success"
+    if [ $HAS_ERROR -ne 0 ]; then
+        STATUS="failure"
+    fi
+
+    # 使用環境變數傳遞給 Python，避免字串注入問題
+    export SYNC_STATUS="$STATUS"
+    export SYNC_SYNCED_COUNT="$SYNCED_COUNT"
+    export SYNC_UPLOADED_COUNT="$UPLOADED_COUNT"
+    export SYNC_FAILED_COUNT="$FAILED_COUNT"
+    export SYNC_DURATION_SECONDS="$DURATION_SECONDS"
+    export SYNC_ERROR_MESSAGE="$ERROR_MESSAGE"
+
+    echo "" | tee -a "$LOG_FILE"
+    echo "📝 記錄執行結果..." | tee -a "$LOG_FILE"
+
+    # 使用獨立的 Python 腳本處理通知和狀態記錄
+    python3 "$SCRIPT_DIR/record_sync_result.py" 2>&1 | tee -a "$LOG_FILE" || true
+
+    # 完成訊息
+    echo "" | tee -a "$LOG_FILE"
+    echo "========================================" | tee -a "$LOG_FILE"
+    DURATION_MINUTES=$(echo "scale=1; $DURATION_SECONDS / 60" | bc)
+    if [ $HAS_ERROR -eq 0 ]; then
+        echo "✅ 週期同步執行完成 - $(date)" | tee -a "$LOG_FILE"
+    else
+        echo "⚠️ 週期同步執行完成（有錯誤） - $(date)" | tee -a "$LOG_FILE"
+        echo "錯誤訊息: $ERROR_MESSAGE" | tee -a "$LOG_FILE"
+    fi
+    echo "執行時間: ${DURATION_MINUTES} 分鐘" | tee -a "$LOG_FILE"
+    echo "========================================" | tee -a "$LOG_FILE"
+    echo "" | tee -a "$LOG_FILE"
+
+    # 清理超過 30 天的舊日誌
+    find "$LOG_DIR" -name "weekly_sync_*.log" -mtime +30 -delete 2>/dev/null || true
+
+    exit $HAS_ERROR
+}
+
+# 註冊清理函數
+trap cleanup EXIT
+
 # 錯誤處理函數
 handle_error() {
     local step="$1"
@@ -50,7 +108,11 @@ echo "========================================" | tee -a "$LOG_FILE"
 echo "🚀 開始執行週期同步 - $(date)" | tee -a "$LOG_FILE"
 echo "========================================" | tee -a "$LOG_FILE"
 
-# 啟動虛擬環境
+# 啟動虛擬環境（關鍵步驟，失敗會觸發 set -e 退出）
+if [ ! -f "$SCRIPT_DIR/venv/bin/activate" ]; then
+    handle_error "初始化" "找不到虛擬環境"
+    exit 1
+fi
 source "$SCRIPT_DIR/venv/bin/activate"
 
 # 記錄開始執行
@@ -69,7 +131,7 @@ if ! python3 "$SCRIPT_DIR/sync_permits.py" 2>&1 | tee -a "$LOG_FILE"; then
 fi
 
 # 從日誌解析同步數量
-SYNCED_COUNT=$(grep -o "新增 [0-9]* 個 PDF" "$LOG_FILE" | tail -1 | grep -o "[0-9]*" || echo "0")
+SYNCED_COUNT=$(grep -o "新增 [0-9]* 個 PDF" "$LOG_FILE" 2>/dev/null | tail -1 | grep -o "[0-9]*" || echo "0")
 
 # 清除 PDF 快取（確保偵測到新同步的檔案）
 echo "" | tee -a "$LOG_FILE"
@@ -98,8 +160,8 @@ if ! python3 "$SCRIPT_DIR/upload_pdfs.py" 2>&1 | tee -a "$LOG_FILE"; then
 fi
 
 # 從日誌解析上傳數量
-UPLOADED_COUNT=$(grep -c "報告上傳成功" "$LOG_FILE" || echo "0")
-FAILED_COUNT=$(grep -c "上傳失敗" "$LOG_FILE" || echo "0")
+UPLOADED_COUNT=$(grep -c "報告上傳成功" "$LOG_FILE" 2>/dev/null || echo "0")
+FAILED_COUNT=$(grep -c "上傳失敗" "$LOG_FILE" 2>/dev/null || echo "0")
 
 # 步驟 3: 生成建照監測追蹤報告
 echo "" | tee -a "$LOG_FILE"
@@ -115,15 +177,22 @@ echo "🌐 步驟 4/4: 更新線上報告到 GitHub..." | tee -a "$LOG_FILE"
 echo "----------------------------------------" | tee -a "$LOG_FILE"
 
 # 複製報告到 docs 目錄
-cp "$SCRIPT_DIR/state/permit_tracking_report.html" "$SCRIPT_DIR/docs/index.html"
-echo "✅ 已複製報告到 docs/index.html" | tee -a "$LOG_FILE"
+if [ -f "$SCRIPT_DIR/state/permit_tracking_report.html" ]; then
+    if ! cp "$SCRIPT_DIR/state/permit_tracking_report.html" "$SCRIPT_DIR/docs/index.html"; then
+        handle_error "步驟4" "複製報告失敗"
+    else
+        echo "✅ 已複製報告到 docs/index.html" | tee -a "$LOG_FILE"
+    fi
+else
+    echo "⚠️ 找不到報告檔案，跳過複製" | tee -a "$LOG_FILE"
+fi
 
 # 提交並推送到 GitHub
 cd "$SCRIPT_DIR"
 if git diff --quiet docs/index.html 2>/dev/null; then
     echo "ℹ️  報告無變更，跳過推送" | tee -a "$LOG_FILE"
 else
-    git add docs/index.html state/permit_tracking_report.html state/permit_tracking.csv
+    git add docs/index.html state/permit_tracking_report.html state/permit_tracking.csv 2>/dev/null || true
     if git commit -m "Weekly sync report update ($(date +%Y-%m-%d))" 2>&1 | tee -a "$LOG_FILE"; then
         if git push origin main 2>&1 | tee -a "$LOG_FILE"; then
             echo "✅ 已推送到 GitHub" | tee -a "$LOG_FILE"
@@ -136,59 +205,4 @@ else
     fi
 fi
 
-# 計算執行時間
-END_TIME=$(date +%s)
-DURATION_SECONDS=$((END_TIME - START_TIME))
-DURATION_MINUTES=$(echo "scale=1; $DURATION_SECONDS / 60" | bc)
-
-# 記錄執行結果並發送通知
-echo "" | tee -a "$LOG_FILE"
-echo "📝 記錄執行結果..." | tee -a "$LOG_FILE"
-
-if [ $HAS_ERROR -eq 0 ]; then
-    STATUS="success"
-else
-    STATUS="failure"
-fi
-
-python3 << EOF 2>&1 | tee -a "$LOG_FILE"
-from sync_status import SyncStatus
-from notify import send_success, send_failure
-
-status = SyncStatus()
-result = status.end_run(
-    status='$STATUS',
-    synced_pdfs=$SYNCED_COUNT,
-    uploaded_pdfs=$UPLOADED_COUNT,
-    failed_uploads=$FAILED_COUNT,
-    error_message='$ERROR_MESSAGE' if '$STATUS' == 'failure' else None
-)
-
-# 發送通知
-if '$STATUS' == 'success':
-    send_success(
-        synced=$SYNCED_COUNT,
-        uploaded=$UPLOADED_COUNT,
-        failed=$FAILED_COUNT,
-        duration_minutes=$DURATION_MINUTES
-    )
-else:
-    send_failure('執行失敗', '$ERROR_MESSAGE')
-EOF
-
-# 完成
-echo "" | tee -a "$LOG_FILE"
-echo "========================================" | tee -a "$LOG_FILE"
-if [ $HAS_ERROR -eq 0 ]; then
-    echo "✅ 週期同步執行完成 - $(date)" | tee -a "$LOG_FILE"
-else
-    echo "⚠️ 週期同步執行完成（有錯誤） - $(date)" | tee -a "$LOG_FILE"
-fi
-echo "執行時間: ${DURATION_MINUTES} 分鐘" | tee -a "$LOG_FILE"
-echo "========================================" | tee -a "$LOG_FILE"
-echo "" | tee -a "$LOG_FILE"
-
-# 清理超過 30 天的舊日誌
-find "$LOG_DIR" -name "weekly_sync_*.log" -mtime +30 -delete
-
-exit $HAS_ERROR
+# cleanup 會在 EXIT trap 中執行
