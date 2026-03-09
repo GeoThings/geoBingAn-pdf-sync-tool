@@ -1,26 +1,16 @@
 """
-配置檔案範例 - 請複製為 config.py 並填入實際值
+⚠️ 此檔案已棄用 - 請改用 .env.example
 
-⚠️ 請勿直接使用此檔案！
-請執行：cp config.py.example config.py
-然後編輯 config.py 填入您的認證資訊
+自 v2.3.0 起，設定已改用環境變數管理。
+請參考 .env.example 建立 .env 檔案。
+
+設定步驟：
+1. cp .env.example .env
+2. 編輯 .env 填入認證資訊
+3. config.py 會自動從 .env 載入設定
+
+詳見 README.md 的「設定環境變數」章節。
 """
 
-# JWT Token（從後端取得，有效期約 1 小時）
-JWT_TOKEN = 'your-jwt-token-here'
-
-# Refresh Token（用於自動刷新 access token，有效期 7 天）
-REFRESH_TOKEN = 'your-refresh-token-here'
-
-# 用戶資訊
-USER_EMAIL = 'your-email@example.com'
-USER_ID = 'your-user-id-here'
-
-# 群組資訊
-GROUP_ID = 'your-group-id-here'
-GROUP_NAME = 'your-group-name-here'
-
-# API 設定（正式環境）
-GEOBINGAN_BASE_URL = 'https://riskmap.today'
-GEOBINGAN_API_URL = 'https://riskmap.today/api/reports/construction-reports/upload/'
-GEOBINGAN_REFRESH_URL = 'https://riskmap.today/api/auth/auth/refresh_token/'
+# 此檔案保留供參考，實際設定請使用 .env
+raise DeprecationWarning("請使用 .env 設定環境變數，參考 .env.example")

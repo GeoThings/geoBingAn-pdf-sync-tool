@@ -81,7 +81,8 @@ Python 3.14.2
 - ✅ `sync_permits.py` - PDF 同步腳本
 - ✅ `upload_pdfs.py` - PDF 上傳腳本
 - ✅ `generate_permit_tracking_report.py` - 報告生成腳本
-- ✅ `config.py` - 配置檔案（包含 JWT Token）
+- ✅ `.env` - 環境變數（包含 JWT Token 等敏感資訊）
+- ✅ `config.py` - 設定載入器（從 .env 讀取）
 - ✅ `credentials.json` - Google Drive 認證（專案目錄下）
 
 ### 5. ✅ 腳本內容驗證

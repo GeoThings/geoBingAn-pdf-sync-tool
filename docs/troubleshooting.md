@@ -91,10 +91,10 @@ def refresh_access_token() -> Optional[str]:
     return None
 ```
 
-3. **config.py 需要的設定**：
-```python
+3. **.env 需要的設定**：
+```bash
 # Refresh Token（有效期 7 天）
-REFRESH_TOKEN = 'your_refresh_token_here'
+REFRESH_TOKEN=your_refresh_token_here
 
 # Token 刷新 API
 GEOBINGAN_REFRESH_URL = 'https://riskmap.today/api/auth/auth/refresh_token/'

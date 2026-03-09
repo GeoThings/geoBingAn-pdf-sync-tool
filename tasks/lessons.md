@@ -50,7 +50,7 @@ set_key('.env', 'TOKEN', new_value)
 ## 📝 文檔維護規則
 
 1. **API 端點變更時必須更新 docs/API.md**
-2. **新增設定欄位時必須更新 config.py.example**
+2. **新增設定欄位時必須更新 .env.example**
 3. **流程變更時必須更新 cron_setup_guide.md**
 4. **每次發版時更新 README.md 版本歷史**
 

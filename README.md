@@ -471,7 +471,7 @@ python3 -m json.tool credentials.json
 
 **解決：**
 - v2.1.0 已內建自動刷新機制
-- 確認 `config.py` 中有設定 `REFRESH_TOKEN`
+- 確認 `.env` 中有設定 `REFRESH_TOKEN`
 - Refresh Token 有效期 7 天，過期需重新登入取得
 
 ### 3. PDF 上傳失敗
