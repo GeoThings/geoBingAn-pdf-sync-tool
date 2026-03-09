@@ -185,26 +185,14 @@ def refresh_access_token() -> Optional[str]:
 
 def update_config_token(new_token: str):
     """
-    更新 config.py 中的 JWT_TOKEN
+    更新 .env 中的 JWT_TOKEN（透過 config 模組）
     """
-    config_path = Path(__file__).parent / 'config.py'
-
     try:
-        with open(config_path, 'r', encoding='utf-8') as f:
-            content = f.read()
-
-        # 使用正則表達式替換 token
-        import re
-        pattern = r"JWT_TOKEN = '[^']+'"
-        replacement = f"JWT_TOKEN = '{new_token}'"
-        new_content = re.sub(pattern, replacement, content)
-
-        with open(config_path, 'w', encoding='utf-8') as f:
-            f.write(new_content)
-
-        print(f"📝 已更新 config.py 中的 Token", flush=True)
+        from config import update_jwt_token
+        update_jwt_token(new_token)
+        print(f"📝 已更新 .env 中的 Token", flush=True)
     except Exception as e:
-        print(f"⚠️  無法更新 config.py: {e}", flush=True)
+        print(f"⚠️  無法更新 Token: {e}", flush=True)
 
 
 def get_valid_token() -> str:
