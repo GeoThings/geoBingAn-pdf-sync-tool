@@ -15,7 +15,7 @@
 
 ### 📋 線上追蹤報告
 
-👉 **[建照監測追蹤報告](https://raw.githack.com/GeoThings/geoBingAn-pdf-sync-tool/main/docs/index.html)** 👈
+👉 **[建照監測追蹤報告](https://cdn.jsdelivr.net/gh/GeoThings/geoBingAn-pdf-sync-tool@main/docs/index.html)** 👈
 
 報告包含：建案同步狀態、究平安對應情況、警戒值標記、可搜尋篩選
 
@@ -27,7 +27,7 @@
 - ✅ 線上追蹤報告自動更新
 
 詳見文件：
-- [建照監測追蹤報告](https://raw.githack.com/GeoThings/geoBingAn-pdf-sync-tool/main/docs/index.html) 📊 線上即時查看
+- [建照監測追蹤報告](https://cdn.jsdelivr.net/gh/GeoThings/geoBingAn-pdf-sync-tool@main/docs/index.html) 📊 線上即時查看
 - [問題排解指南](docs/troubleshooting.md) 🔧 常見問題解決方案
 - [效能優化報告](docs/cache_optimization_report.md)
 
