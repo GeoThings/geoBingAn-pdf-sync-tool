@@ -25,6 +25,9 @@
 - ✅ 智慧快取機制（99.5% 效能提升）
 - ✅ 支援每日 cron job 自動執行
 - ✅ 線上追蹤報告自動更新
+- ✅ 環境變數管理（.env 檔案）
+- ✅ 執行狀態追蹤與歷史記錄
+- ✅ 通知功能（LINE Notify / macOS）
 
 詳見文件：
 - [建照監測追蹤報告](https://htmlpreview.github.io/?https://github.com/GeoThings/geoBingAn-pdf-sync-tool/blob/main/docs/index.html) 📊 線上即時查看
@@ -68,22 +71,35 @@ pip install -r requirements.txt
 3. 下載 JSON 金鑰並儲存為 `credentials.json`
 4. 將 Service Account email 加入共享雲端的協作者
 
-### 3. 設定 API 認證
+### 3. 設定環境變數
 
 複製範例並填入你的認證資訊：
 ```bash
-cp config.py.example config.py
-# 編輯 config.py 填入以下資訊
+cp .env.example .env
+# 編輯 .env 填入以下資訊
 ```
 
-**config.py 必要設定：**
-```python
-JWT_TOKEN = 'your_access_token'           # Access Token（會自動刷新）
-REFRESH_TOKEN = 'your_refresh_token'      # Refresh Token（有效期 7 天）
-USER_EMAIL = 'your_email@example.com'
-GROUP_ID = 'your-group-id'
-GEOBINGAN_API_URL = 'https://riskmap.today/api/reports/construction-reports/upload/'
-GEOBINGAN_REFRESH_URL = 'https://riskmap.today/api/auth/auth/refresh_token/'
+**.env 必要設定：**
+```bash
+# Google Drive
+GOOGLE_CREDENTIALS=./credentials.json
+SHARED_DRIVE_ID=your-shared-drive-id
+
+# geoBingAn API 認證
+JWT_TOKEN=your_access_token           # Access Token（會自動刷新）
+REFRESH_TOKEN=your_refresh_token      # Refresh Token（有效期 7 天）
+USER_EMAIL=your_email@example.com
+USER_ID=your-user-id
+GROUP_ID=your-group-id
+GROUP_NAME=your-group-name
+
+# API 端點
+GEOBINGAN_API_URL=https://riskmap.today/api/reports/construction-reports/upload/
+GEOBINGAN_REFRESH_URL=https://riskmap.today/api/auth/auth/refresh_token/
+
+# 通知設定（可選）
+LINE_NOTIFY_TOKEN=your-line-token     # 從 https://notify-bot.line.me/ 取得
+ENABLE_MACOS_NOTIFY=true              # 啟用 macOS 系統通知
 ```
 
 ### 4. 執行
@@ -221,6 +237,14 @@ python3 generate_permit_tracking_report.py
 **執行順序：**
 1. `sync_permits.py` - 同步最新 PDF 到 Google Drive
 2. `upload_pdfs.py` - 上傳最近 7 天的 PDF 到 Backend
+3. `generate_permit_tracking_report.py` - 生成追蹤報告
+4. Git push - 更新線上報告
+
+**自動化功能：**
+- 執行狀態追蹤（`state/sync_status.json`）
+- 失敗時發送通知（LINE Notify / macOS）
+- 完成時發送摘要通知
+- 錯誤處理與自動清理
 
 **日誌管理：**
 - 日誌檔案：`logs/weekly_sync_YYYYMMDD_HHMMSS.log`
@@ -232,6 +256,12 @@ python3 generate_permit_tracking_report.py
 
 # 查看日誌
 tail -f logs/weekly_sync_*.log
+```
+
+**查看執行歷史：**
+```bash
+# 查看狀態追蹤
+python3 -c "from sync_status import SyncStatus; SyncStatus().print_summary()"
 ```
 
 ---
@@ -264,6 +294,36 @@ crontab -e
 
 ---
 
+## 🔔 通知設定
+
+### LINE Notify（推薦）
+
+1. 前往 [LINE Notify](https://notify-bot.line.me/) 申請 Token
+2. 在 `.env` 中設定：
+   ```bash
+   LINE_NOTIFY_TOKEN=your-token-here
+   ```
+3. 執行測試：
+   ```bash
+   python3 notify.py
+   ```
+
+### macOS 系統通知
+
+預設啟用，可在 `.env` 中關閉：
+```bash
+ENABLE_MACOS_NOTIFY=false
+```
+
+### 通知觸發時機
+
+| 事件 | 通知內容 |
+|------|----------|
+| 執行成功 | 同步數量、上傳數量、執行時間 |
+| 執行失敗 | 錯誤類型、錯誤訊息 |
+
+---
+
 ## 📁 專案結構
 
 ```
@@ -273,7 +333,13 @@ geoBingAn-pdf-sync-tool/
 ├── generate_permit_tracking_report.py # 核心：生成建案追蹤報告
 ├── run_weekly_sync.sh                 # 核心：自動執行腳本
 │
-├── config.py                    # API 認證配置（需自行建立）
+├── config.py                    # 設定載入（從 .env 讀取）
+├── notify.py                    # 通知模組（LINE / macOS）
+├── sync_status.py               # 狀態追蹤模組
+├── record_sync_result.py        # 執行結果記錄
+│
+├── .env                         # 環境變數（需自行建立，勿提交）
+├── .env.example                 # 環境變數範本
 ├── credentials.json             # Google Drive 金鑰（需自行建立）
 ├── requirements.txt             # Python 依賴
 ├── README.md                    # 本文件
@@ -282,6 +348,7 @@ geoBingAn-pdf-sync-tool/
 ├── state/                       # 狀態追蹤
 │   ├── sync_permits_progress.json       # 同步進度
 │   ├── uploaded_to_geobingan_7days.json # 上傳記錄
+│   ├── sync_status.json                 # 執行狀態與歷史
 │   ├── permit_tracking_report.html      # 追蹤報告 (HTML)
 │   └── permit_tracking.csv              # 追蹤報告 (CSV)
 │
@@ -290,8 +357,10 @@ geoBingAn-pdf-sync-tool/
 │
 ├── docs/                        # 技術文檔
 │   ├── API.md                   # API 說明
+│   ├── automation_improvement_plan.md  # 自動化改善計劃
+│   ├── cron_setup_guide.md      # Cron 設定指南
 │   ├── troubleshooting.md       # 問題排解指南
-│   └── ...
+│   └── index.html               # 線上追蹤報告
 │
 └── archive/                     # 舊檔案備份（測試工具）
     ├── check_upload_status.py   # 檢查上傳狀態工具
@@ -323,6 +392,31 @@ geoBingAn-pdf-sync-tool/
     ...
   ],
   "errors": []
+}
+```
+
+### `state/sync_status.json`
+執行狀態追蹤與歷史記錄
+```json
+{
+  "last_run": "2026-03-09T12:00:00",
+  "last_status": "success",
+  "stats": {
+    "total_runs": 52,
+    "success_count": 50,
+    "failure_count": 2,
+    "total_synced_pdfs": 1234,
+    "total_uploaded_pdfs": 567
+  },
+  "history": [
+    {
+      "date": "2026-03-09",
+      "status": "success",
+      "synced": 45,
+      "uploaded": 12,
+      "duration_seconds": 3600
+    }
+  ]
 }
 ```
 
@@ -430,12 +524,16 @@ tail -f logs/weekly_sync_*.log
 ### 敏感檔案管理
 
 **不要提交到 Git：**
+- ❌ `.env` - 環境變數（含 Token 等敏感資訊）
 - ❌ `credentials.json` - Service Account 金鑰
-- ❌ `config.py` - API 認證資訊
 - ❌ `state/*.json` - 可能包含敏感資訊
 - ❌ `*.log` - 執行日誌
 
 這些檔案已在 `.gitignore` 中排除。
+
+**安全的檔案（可提交）：**
+- ✅ `.env.example` - 環境變數範本（不含實際值）
+- ✅ `config.py` - 設定載入器（從 .env 讀取，不含硬編碼值）
 
 ### 權限最小化
 
@@ -446,6 +544,15 @@ Service Account 只需要：
 ---
 
 ## 📝 版本歷史
+
+### v2.3.0 (2026-03-09)
+- ✅ 新增環境變數管理（`.env` 檔案 + `python-dotenv`）
+- ✅ 新增通知模組（LINE Notify / macOS 系統通知）
+- ✅ 新增執行狀態追蹤與歷史記錄（`sync_status.py`）
+- ✅ 改善 `run_weekly_sync.sh` 錯誤處理（`set -e` + `trap cleanup`）
+- ✅ JWT Token 更新現在會正確寫入 `.env` 檔案
+- 🔒 敏感資訊從 `config.py` 移至 `.env`（不會被提交到 Git）
+- 📄 新增 `docs/automation_improvement_plan.md` 文件
 
 ### v2.2.0 (2026-03-09)
 - ✅ 新增 `generate_permit_tracking_report.py` 建案追蹤報告功能
