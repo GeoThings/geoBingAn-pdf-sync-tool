@@ -159,9 +159,12 @@ if ! python3 "$SCRIPT_DIR/upload_pdfs.py" 2>&1 | tee -a "$LOG_FILE"; then
     handle_error "步驟2" "上傳 PDF 失敗"
 fi
 
-# 從日誌解析上傳數量
-UPLOADED_COUNT=$(grep -c "報告上傳成功" "$LOG_FILE" 2>/dev/null || echo "0")
-FAILED_COUNT=$(grep -c "上傳失敗" "$LOG_FILE" 2>/dev/null || echo "0")
+# 從日誌解析上傳數量（確保只取單一數字）
+UPLOADED_COUNT=$(grep -c "報告上傳成功" "$LOG_FILE" 2>/dev/null | head -1 | tr -d '\n' || echo "0")
+FAILED_COUNT=$(grep -c "上傳失敗" "$LOG_FILE" 2>/dev/null | head -1 | tr -d '\n' || echo "0")
+# 確保是有效數字
+[[ "$UPLOADED_COUNT" =~ ^[0-9]+$ ]] || UPLOADED_COUNT=0
+[[ "$FAILED_COUNT" =~ ^[0-9]+$ ]] || FAILED_COUNT=0
 
 # 步驟 3: 生成建照監測追蹤報告
 echo "" | tee -a "$LOG_FILE"
