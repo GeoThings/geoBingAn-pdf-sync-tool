@@ -36,7 +36,12 @@ SERVICE_ACCOUNT_FILE = os.environ.get(
     os.path.join(os.path.dirname(__file__), 'credentials.json')
 )
 SCOPES = ['https://www.googleapis.com/auth/drive']
-SHARED_DRIVE_ID = '0AIvp1h-6BZ1oUk9PVA'
+
+# 從 config.py 匯入 Shared Drive ID
+try:
+    from config import SHARED_DRIVE_ID
+except ImportError:
+    SHARED_DRIVE_ID = os.environ.get('SHARED_DRIVE_ID', '0AIvp1h-6BZ1oUk9PVA')
 PDF_LIST_URL = 'https://www-ws.gov.taipei/001/Upload/845/relfile/-1/845/03b35db7-a123-4b29-b881-1cb17fa9c4f2.pdf'
 STATE_FILE = './state/sync_permits_progress.json'
 # ============================================
