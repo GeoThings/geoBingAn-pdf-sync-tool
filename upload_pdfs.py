@@ -98,9 +98,13 @@ FILENAME_DATE_CUTOFF = datetime(2026, 2, 17)
 
 def parse_date_from_filename(filename: str) -> Optional[datetime]:
     """從 PDF 檔名中解析日期。支援多種格式：
-    - 民國年: 1150311, 115.03.24, 115年03月09日, 1150311
-    - 西元年: 2026-02-23, 20260303, 0303 (當年)
-    - 混合: 1131028 (民國113年10月28日)
+    - 民國年7碼: 1150311
+    - 民國年點分隔: 115.03.24
+    - 民國年中文: 115年03月09日
+    - 民國年嵌入文字: 連雲玥恒1150331報告
+    - 西元年連字號: 2026-02-23
+    - 西元年8碼: 20260303
+    - 短日期+路徑推斷: 0303觀測報告（從路徑取年份）
     回傳 datetime 或 None（無法解析時）
     """
     basename = filename.replace('.pdf', '').replace('.PDF', '')
@@ -110,6 +114,18 @@ def parse_date_from_filename(filename: str) -> Optional[datetime]:
     if m:
         try:
             return datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+        except ValueError:
+            pass
+
+    # 模式1b: 西元年緊湊格式 20260303
+    m = re.search(r'(20\d{2})(\d{2})(\d{2})', basename)
+    if m:
+        try:
+            year = int(m.group(1))
+            month = int(m.group(2))
+            day = int(m.group(3))
+            if 1 <= month <= 12 and 1 <= day <= 31:
+                return datetime(year, month, day)
         except ValueError:
             pass
 
@@ -719,29 +735,28 @@ def main():
     print(f"  已上傳: {len(state['uploaded_files'])} 個檔案")
     print(f"  錯誤記錄: {len(state['errors'])} 筆")
 
-    # 列出建案資料夾（使用智慧掃描和快取）
-    print(f"\n📁 列出建案資料夾（智慧掃描模式）...")
-    project_folders = list_project_folders(service, use_cache=True, state=state, days_ago=DAYS_AGO)
+    # 列出所有建案資料夾（完整掃描，因為過濾依據是檔名日期而非資料夾修改時間）
+    print(f"\n📁 列出所有建案資料夾...")
+    try:
+        query = "mimeType = 'application/vnd.google-apps.folder' and trashed = false"
+        results = service.files().list(
+            q=query,
+            corpora='drive',
+            driveId=SHARED_DRIVE_ID,
+            includeItemsFromAllDrives=True,
+            supportsAllDrives=True,
+            pageSize=1000,
+            fields='files(id, name, modifiedTime)'
+        ).execute()
+        project_folders = results.get('files', [])
+        print(f"✅ 找到 {len(project_folders)} 個資料夾")
+    except Exception as e:
+        print(f"❌ 掃描資料夾失敗: {e}")
+        sys.exit(0)
 
     if not project_folders:
-        print("⚠️  未找到最近修改的資料夾，嘗試完整掃描...")
-        # 回退：完整掃描（不使用時間過濾）
-        try:
-            query = "mimeType = 'application/vnd.google-apps.folder' and trashed = false"
-            results = service.files().list(
-                q=query,
-                corpora='drive',
-                driveId=SHARED_DRIVE_ID,
-                includeItemsFromAllDrives=True,
-                supportsAllDrives=True,
-                pageSize=1000,
-                fields='files(id, name, modifiedTime)'
-            ).execute()
-            project_folders = results.get('files', [])
-            print(f"✅ 完整掃描找到 {len(project_folders)} 個資料夾")
-        except Exception as e:
-            print(f"❌ 完整掃描失敗: {e}")
-            sys.exit(0)
+        print("⚠️  未找到任何資料夾")
+        sys.exit(0)
 
     # 收集 PDF（使用快取）
     print(f"\n📄 收集 PDF 檔案...")
@@ -759,7 +774,7 @@ def main():
 
     # 使用檔名日期過濾（農曆新年 2026-02-17 之後）
     cutoff_date = FILENAME_DATE_CUTOFF
-    print(f"\n🗓️  過濾檔名日期在 {cutoff_date.strftime('%Y-%m-%d')}（農曆新年）之後的 PDF...")
+    print(f"\n🗓️  過濾檔名日期在 {cutoff_date.strftime('%Y-%m-%d')}（農曆新年初一）之後的 PDF...")
 
     recent_pdfs = []
     no_date_count = 0
@@ -772,7 +787,7 @@ def main():
         if file_date is None:
             no_date_count += 1
             continue
-        if file_date >= cutoff_date:
+        if file_date > cutoff_date:
             pdf['_parsed_date'] = file_date
             recent_pdfs.append(pdf)
         else:
