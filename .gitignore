@@ -3,6 +3,8 @@ credentials.json
 
 # State files (may contain sensitive info)
 state/*.json
+state/*.lock
+state/*.tmp.*
 state/.sync_start_time
 
 # Python
