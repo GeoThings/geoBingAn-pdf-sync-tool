@@ -401,13 +401,13 @@ def list_all_pdfs_with_folder_info(service, folders: List[Dict], use_cache: bool
 
         except HttpError as e:
             print(f"  ❌ 批次掃描第 {page_count + 1} 頁失敗: {e}")
-            print(f"  ⚠️  改為逐資料夾掃描剩餘項目...")
-            # 找出已掃到的 folder_id 集合
-            scanned_folder_ids = {pdf['folder_id'] for pdf in all_pdfs}
-            remaining = [f for f in folders if f['id'] not in scanned_folder_ids]
-            for idx, folder in enumerate(remaining, 1):
+            print(f"  ⚠️  丟棄部分結果，改為逐資料夾完整掃描...")
+            # 批次掃描中斷，無法確定哪些資料夾完整掃到，
+            # 全部丟棄改用逐資料夾查詢確保完整性
+            all_pdfs = []
+            for idx, folder in enumerate(folders, 1):
                 if idx % 50 == 0:
-                    print(f"    回退進度: {idx}/{len(remaining)} 個資料夾...")
+                    print(f"    回退進度: {idx}/{len(folders)} 個資料夾...")
                 try:
                     fallback_query = (
                         f"'{folder['id']}' in parents and "

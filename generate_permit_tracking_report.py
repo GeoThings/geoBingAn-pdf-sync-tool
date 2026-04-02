@@ -166,11 +166,12 @@ def scan_google_drive(service) -> Dict[str, dict]:
                 break
         except HttpError as e:
             print(f"    ❌ PDF 掃描第 {page_count + 1} 頁失敗: {e}")
-            print(f"    ❌ 批次掃描中斷，改為逐資料夾掃描剩餘項目...")
-            # 回退：對尚未掃到的資料夾逐一查詢
+            print(f"    ❌ 丟棄部分結果，改為逐資料夾完整掃描...")
+            # 批次掃描中斷，無法確定哪些資料夾完整掃到，
+            # 全部丟棄改用逐資料夾查詢確保完整性
+            folder_names.clear()
+            folder_latest.clear()
             for permit, info in permit_folders.items():
-                if permit in folder_names:
-                    continue
                 try:
                     fallback = service.files().list(
                         q=f"'{info['folder_id']}' in parents and mimeType='application/pdf'",
