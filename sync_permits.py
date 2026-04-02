@@ -18,6 +18,8 @@ import time
 import io
 import sys
 import random
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
@@ -51,12 +53,18 @@ credentials = service_account.Credentials.from_service_account_file(
     SERVICE_ACCOUNT_FILE, scopes=SCOPES)
 drive_service = build('drive', 'v3', credentials=credentials)
 
+# 並行處理設定
+MAX_CONCURRENT_PERMITS = 5  # 同時處理的建案數（Google Drive API quota: 12,000 req/min）
+
+
 class PermitSync:
     def __init__(self):
         self.target_folders = {}
         self.permit_mapping = {}
         self.state = self.load_state()
         self.restricted_files = []
+        self._state_lock = threading.Lock()
+        self._print_lock = threading.Lock()
         # 效能快取：目標資料夾的檔案樹和子資料夾 ID
         self._target_file_cache = {}   # permit_no → set of "path/filename" or "filename"
         self._subfolder_cache = {}     # (parent_id, subfolder_name) → folder_id
@@ -73,8 +81,14 @@ class PermitSync:
     
     def save_state(self):
         os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
-        with open(STATE_FILE, 'w', encoding='utf-8') as f:
-            json.dump(self.state, indent=2, ensure_ascii=False, fp=f)
+        with self._state_lock:
+            with open(STATE_FILE, 'w', encoding='utf-8') as f:
+                json.dump(self.state, indent=2, ensure_ascii=False, fp=f)
+
+    def _print(self, msg: str):
+        """Thread-safe print"""
+        with self._print_lock:
+            print(msg, flush=True)
     
     def download_pdf_list(self) -> str:
         print("📥 下載建案列表 PDF...")
@@ -179,17 +193,6 @@ class PermitSync:
                 break
         return folders
     
-    def get_folder_modified_time(self, folder_id: str) -> str:
-        """取得資料夾的 modifiedTime（用於判斷來源是否有變動）"""
-        try:
-            result = drive_service.files().get(
-                fileId=folder_id, fields='modifiedTime',
-                supportsAllDrives=True
-            ).execute()
-            return result.get('modifiedTime', '')
-        except HttpError:
-            return ''  # 查詢失敗時回傳空字串，觸發完整掃描
-
     def extract_folder_id_from_url(self, url: str) -> str:
         # 支援 /folders/ID 和 /open?id=ID 兩種格式
         match = re.search(r'/folders/([a-zA-Z0-9_-]+)', url)
@@ -356,23 +359,17 @@ class PermitSync:
                 return None, None
 
     def sync_permit(self, permit_no: str, source_url: str, target_folder_id: str):
-        print(f"\n🔄 監測建案: {permit_no}")
+        self._print(f"\n🔄 監測建案: {permit_no}")
         source_folder_id = self.extract_folder_id_from_url(source_url)
         if not source_folder_id:
-            self.state['errors'].append({'permit': permit_no, 'error': 'Invalid URL ID'})
+            with self._state_lock:
+                self.state['errors'].append({'permit': permit_no, 'error': 'Invalid URL ID'})
             return
 
         try:
-            # 檢查來源資料夾是否有變動（1 次 API 呼叫）
-            last_synced = self.state['processed'].get(permit_no, '')
-            source_modified = self.get_folder_modified_time(source_folder_id)
-            if last_synced and source_modified and source_modified <= last_synced:
-                # 來源未變動，跳過
-                return
-
             files = self.list_files_recursive(source_folder_id)
             if not files:
-                print(f"  ⚠️ 來源無檔案")
+                self._print(f"  ⚠️ 來源無檔案")
                 return
 
             # 預載入目標資料夾的完整檔案樹（1 次遞迴 vs 逐檔 API 查詢）
@@ -385,35 +382,34 @@ class PermitSync:
 
                 if self.check_file_exists(target_folder_id, filename, path, permit_no):
                     continue
-                
+
                 result_id, final_folder_id = self.copy_file(file_id, target_folder_id, filename, path)
                 if result_id == 'restricted':
-                    print(f"    🔒 受限: {display_path} (建立捷徑)")
+                    self._print(f"    🔒 受限: {display_path} (建立捷徑)")
                     self.create_shortcut_file(final_folder_id, filename, web_link)
-                    self.restricted_files.append({'filename': filename, 'permit': permit_no})
-                    # 更新記憶體快取
+                    with self._state_lock:
+                        self.restricted_files.append({'filename': filename, 'permit': permit_no})
                     if permit_no in self._target_file_cache:
                         key = f"{path}/{filename}.url" if path else f"{filename}.url"
                         self._target_file_cache[permit_no].add(key)
                 elif result_id:
-                    print(f"    🆕 發現新檔並複製: {display_path}")
+                    self._print(f"    🆕 發現新檔並複製: {display_path}")
                     copied += 1
-                    # 更新記憶體快取
                     if permit_no in self._target_file_cache:
                         key = f"{path}/{filename}" if path else filename
                         self._target_file_cache[permit_no].add(key)
-                # Google Drive API quota: 12,000 req/min，不需要額外延遲
-            
-            if copied > 0:
-                print(f"  📊 更新完成: 新增 {copied} 個")
 
-            from datetime import datetime
-            self.state['processed'][permit_no] = datetime.utcnow().isoformat() + 'Z'
+            if copied > 0:
+                self._print(f"  📊 更新完成: 新增 {copied} 個")
+
+            with self._state_lock:
+                self.state['processed'][permit_no] = True
             self.save_state()
-            
+
         except Exception as e:
-            print(f"  ❌ 處理中斷: {e}")
-            self.state['errors'].append({'permit': permit_no, 'error': str(e)})
+            self._print(f"  ❌ 處理中斷: {e}")
+            with self._state_lock:
+                self.state['errors'].append({'permit': permit_no, 'error': str(e)})
             self.save_state()
     
     def run(self):
@@ -430,13 +426,22 @@ class PermitSync:
         # 隨機打亂，確保每次執行檢查不同建案
         random.shuffle(permit_list)
 
-        # 所有建案都進入處理流程，由 sync_permit 內部判斷來源是否有變動
-        # 已處理的建案只需 1 次 API 呼叫（查 modifiedTime）即可跳過
-        print(f"\n📋 監測目標: {len(permit_list)} 個建案")
-        print(f"✅ 已同步過: {sum(1 for p, _ in permit_list if p in self.state['processed'])} 個（將檢查來源是否有變動）")
-        print(f"🆕 首次處理: {sum(1 for p, _ in permit_list if p not in self.state['processed'])} 個")
-
+        # 過濾掉已處理且無錯誤的建案（增量同步）
+        unprocessed_permits = []
         for permit_no, source_url in permit_list:
+            if permit_no in self.state['processed']:
+                has_error = any(e.get('permit') == permit_no for e in self.state.get('errors', []))
+                if not has_error:
+                    continue
+            unprocessed_permits.append((permit_no, source_url))
+
+        print(f"\n📋 監測目標: {len(permit_list)} 個建案")
+        print(f"✅ 已處理: {len(permit_list) - len(unprocessed_permits)} 個")
+        print(f"🔄 待處理: {len(unprocessed_permits)} 個")
+
+        # 先確保所有建案都有目標資料夾（序列化，因為涉及建立資料夾）
+        permits_with_targets = []
+        for permit_no, source_url in unprocessed_permits:
             if permit_no in self.target_folders:
                 target_id = self.target_folders[permit_no]
             else:
@@ -446,8 +451,22 @@ class PermitSync:
                     self.target_folders[permit_no] = target_id
                 else:
                     continue
+            permits_with_targets.append((permit_no, source_url, target_id))
 
-            self.sync_permit(permit_no, source_url, target_id)
+        # 並行處理各建案（每個建案的來源/目標資料夾互相獨立）
+        if len(permits_with_targets) > 1:
+            print(f"\n⚡ 並行處理（{MAX_CONCURRENT_PERMITS} 執行緒）")
+        with ThreadPoolExecutor(max_workers=MAX_CONCURRENT_PERMITS) as executor:
+            futures = {
+                executor.submit(self.sync_permit, pn, url, tid): pn
+                for pn, url, tid in permits_with_targets
+            }
+            for future in as_completed(futures):
+                try:
+                    future.result()
+                except Exception as e:
+                    permit_no = futures[future]
+                    self._print(f"  ❌ {permit_no} 未預期錯誤: {e}")
 
 if __name__ == '__main__':
     try:
