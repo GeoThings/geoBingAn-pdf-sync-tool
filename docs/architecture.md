@@ -58,7 +58,12 @@ run_weekly_sync.sh（orchestrator）
     ▼ 比對 state/sync_permits_progress.json
 未處理建案
     │
-    ▼ 逐一掃描來源 Drive，複製新檔到 Shared Drive
+    ▼ 每個建案：預載入目標資料夾檔案樹到記憶體 set
+    │  （fail-closed：不完整掃描回退逐檔 API）
+    │
+    ▼ 來源檔案 vs 目標 set 比對（O(1) lookup，零 API）
+    │
+    ▼ 只複製新檔到 Shared Drive（子資料夾 ID 快取）
 state/sync_permits_progress.json 更新
 ```
 
