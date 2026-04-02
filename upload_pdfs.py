@@ -199,14 +199,25 @@ def load_state() -> dict:
 def save_state(state: dict):
     """儲存已上傳的 PDF 記錄（原子寫入）
 
-    先寫入暫存檔再 rename，避免 crash 時損壞狀態檔案。
+    使用唯一暫存檔（PID suffix）再 os.replace()，避免：
+    1. crash 時寫到一半損壞狀態檔案
+    2. 多個 process 重疊執行時互相覆蓋暫存檔
     注意：此函數不包含鎖，呼叫者需要自行管理 state_lock
     """
-    os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
-    tmp_file = STATE_FILE + '.tmp'
-    with open(tmp_file, 'w', encoding='utf-8') as f:
-        json.dump(state, indent=2, ensure_ascii=False, fp=f)
-    os.replace(tmp_file, STATE_FILE)
+    state_dir = os.path.dirname(STATE_FILE)
+    os.makedirs(state_dir, exist_ok=True)
+    tmp_file = f"{STATE_FILE}.tmp.{os.getpid()}"
+    try:
+        with open(tmp_file, 'w', encoding='utf-8') as f:
+            json.dump(state, indent=2, ensure_ascii=False, fp=f)
+        os.replace(tmp_file, STATE_FILE)
+    except Exception:
+        # 清理孤立暫存檔
+        try:
+            os.unlink(tmp_file)
+        except OSError:
+            pass
+        raise
 
 
 def get_drive_service():
