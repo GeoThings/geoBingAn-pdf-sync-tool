@@ -26,17 +26,20 @@
 - ✅ 依檔名日期過濾上傳（非 Google Drive 修改時間）
 - ✅ JWT Token 自動刷新（過期前 5 分鐘自動更新）
 - ✅ 智慧快取機制（自動偵測快取過期並重建）
+- ✅ 跨 process 安全的 state 管理（flock + read-merge-write + atomic replace）
+- ✅ 上傳重試機制（503 指數退避，502/504 不重試避免重複）
+- ✅ JWT Token 共用模組（jwt_auth.py，thread-safe）
+- ✅ Shell 級聯失敗保護（步驟失敗自動跳過下游）
 - ✅ 支援每日 cron job 自動執行
 - ✅ 線上追蹤報告自動更新
-- ✅ 環境變數管理（.env 檔案）
-- ✅ 執行狀態追蹤與歷史記錄
+- ✅ 環境變數管理（.env 檔案，向後相容 fallback）
 - ✅ 通知功能（LINE Notify / macOS）
-- ✅ 自動化測試（pytest, 21 cases）
+- ✅ 自動化測試（pytest, 41 cases）
 
 詳見文件：
 - [建照監測追蹤報告](https://htmlpreview.github.io/?https://github.com/GeoThings/geoBingAn-pdf-sync-tool/blob/main/docs/index.html) 📊 線上即時查看
 - [問題排解指南](docs/troubleshooting.md) 🔧 常見問題解決方案
-- [效能優化報告](docs/cache_optimization_report.md)
+- [系統架構設計](docs/architecture.md) 🏗️ 模組架構與設計決策
 
 ---
 
@@ -339,6 +342,7 @@ geoBingAn-pdf-sync-tool/
 │
 ├── config.py                    # 設定載入（從 .env 讀取）
 ├── filename_date_parser.py      # 檔名日期解析模組（獨立可測試）
+├── jwt_auth.py                  # JWT Token 管理模組（thread-safe）
 ├── notify.py                    # 通知模組（LINE / macOS）
 ├── sync_status.py               # 狀態追蹤模組
 ├── record_sync_result.py        # 執行結果記錄
@@ -361,19 +365,15 @@ geoBingAn-pdf-sync-tool/
 │   └── weekly_sync_*.log        # 週期執行日誌
 │
 ├── docs/                        # 技術文檔
+│   ├── architecture.md          # 系統架構設計文件
 │   ├── API.md                   # API 說明
-│   ├── automation_improvement_plan.md  # 自動化改善計劃
 │   ├── cron_setup_guide.md      # Cron 設定指南
 │   ├── troubleshooting.md       # 問題排解指南
 │   └── index.html               # 線上追蹤報告
 │
-├── tests/                       # 自動化測試
-│   └── test_parse_date_from_filename.py  # 日期解析測試 (21 cases)
-│
-└── archive/                     # 舊檔案備份（測試工具）
-    ├── check_upload_status.py   # 檢查上傳狀態工具
-    ├── test_cache_performance.py # 快取效能測試
-    └── ...
+└── tests/                       # 自動化測試
+    ├── test_parse_date_from_filename.py  # 日期解析測試 (21 cases)
+    └── test_jwt_auth.py                  # JWT 管理測試 (20 cases)
 ```
 
 ---
@@ -552,6 +552,17 @@ Service Account 只需要：
 ---
 
 ## 📝 版本歷史
+
+### v3.1.0 (2026-04-02)
+- ✅ 抽取 JWT Token 管理到 `jwt_auth.py` 共用模組（消除 175 行重複）
+- ✅ State 檔案跨 process 安全（flock + read-merge-write + atomic replace）
+- ✅ 上傳重試機制：503 指數退避（5s/15s/30s），502/504 不重試避免重複
+- ✅ Shell 級聯失敗保護：步驟 1/2 失敗自動跳過下游步驟
+- ✅ SHARED_DRIVE_ID 統一從 config.py 載入（含向後相容 fallback）
+- ✅ 移除已停用的 parallel upload 死碼（~30 行）
+- ✅ 修正 exit code：錯誤情境 exit(1)，正常情境 exit(0)
+- ✅ 新增 JWT 測試（20 cases），總計 41 tests
+- 📄 新增 `docs/architecture.md` 設計文件
 
 ### v3.0.0 (2026-04-02)
 - ✅ 上傳過濾改為依 PDF 檔名日期（非 Google Drive modifiedTime）
