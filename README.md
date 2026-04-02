@@ -2,17 +2,18 @@
 
 自動從台北市政府建管處同步建案 PDF，並上傳到 geoBingAn Backend API 建立監測報告。
 
-## 📊 最新同步結果（2026-03-16）
+## 📊 最新同步結果（2026-04-02）
 
-**每週同步：** ⚠️ 完成（部分警告）
+**每週同步：** ✅ 完成
 
 | 項目 | 狀態 | 數量 |
 |---------|------|--------|
-| 建案監測 | ✅ 已同步 | 292 個建案（247 已處理 / 45 本次檢查） |
-| Google Drive PDF | ✅ 掃描完成 | 12,630 個 |
+| 建案監測 | ✅ 已同步 | 292 個建案（234 已處理） |
+| Google Drive PDF | ✅ 掃描完成 | 11,624 個 |
 | 建照資料夾 | ✅ 掃描完成 | 1,000 個 |
-| 最近 7 天上傳 | ✅ 無新檔案 | 0 個（皆已上傳） |
-| JWT 自動刷新 | ⚠️ 失敗 (401) | 需更新 Refresh Token |
+| 農曆新年後上傳 | ✅ 完成 | 56 個 PDF 上傳至究平安 |
+| 究平安報告對應 | ✅ 成功 | 200 筆 API 報告 |
+| JWT 自動刷新 | ✅ 正常 | Token 過期自動更新 |
 
 ### 📋 線上追蹤報告
 
@@ -21,14 +22,16 @@
 報告包含：建案同步狀態、究平安對應情況、警戒值標記、可搜尋篩選
 
 **功能特色：**
+- ✅ 檔名日期智慧解析（支援民國年/西元年 7 種格式）
+- ✅ 依檔名日期過濾上傳（非 Google Drive 修改時間）
 - ✅ JWT Token 自動刷新（過期前 5 分鐘自動更新）
-- ✅ 死鎖問題已修復（threading.Lock 優化）
-- ✅ 智慧快取機制（99.5% 效能提升）
+- ✅ 智慧快取機制（自動偵測快取過期並重建）
 - ✅ 支援每日 cron job 自動執行
 - ✅ 線上追蹤報告自動更新
 - ✅ 環境變數管理（.env 檔案）
 - ✅ 執行狀態追蹤與歷史記錄
 - ✅ 通知功能（LINE Notify / macOS）
+- ✅ 自動化測試（pytest, 21 cases）
 
 詳見文件：
 - [建照監測追蹤報告](https://htmlpreview.github.io/?https://github.com/GeoThings/geoBingAn-pdf-sync-tool/blob/main/docs/index.html) 📊 線上即時查看
@@ -335,6 +338,7 @@ geoBingAn-pdf-sync-tool/
 ├── run_weekly_sync.sh                 # 核心：自動執行腳本
 │
 ├── config.py                    # 設定載入（從 .env 讀取）
+├── filename_date_parser.py      # 檔名日期解析模組（獨立可測試）
 ├── notify.py                    # 通知模組（LINE / macOS）
 ├── sync_status.py               # 狀態追蹤模組
 ├── record_sync_result.py        # 執行結果記錄
@@ -362,6 +366,9 @@ geoBingAn-pdf-sync-tool/
 │   ├── cron_setup_guide.md      # Cron 設定指南
 │   ├── troubleshooting.md       # 問題排解指南
 │   └── index.html               # 線上追蹤報告
+│
+├── tests/                       # 自動化測試
+│   └── test_parse_date_from_filename.py  # 日期解析測試 (21 cases)
 │
 └── archive/                     # 舊檔案備份（測試工具）
     ├── check_upload_status.py   # 檢查上傳狀態工具
@@ -546,6 +553,15 @@ Service Account 只需要：
 
 ## 📝 版本歷史
 
+### v3.0.0 (2026-04-02)
+- ✅ 上傳過濾改為依 PDF 檔名日期（非 Google Drive modifiedTime）
+- ✅ 新增 `filename_date_parser.py` 獨立模組，支援 7 種日期格式
+- ✅ 完整掃描所有資料夾（不再依賴 DAYS_AGO 截斷）
+- ✅ 智慧快取失效機制（偵測資料夾數量變化自動重建）
+- ✅ 新增 pytest 自動化測試（21 cases）
+- 🔧 修復 4 碼日期誤判問題（如 `1231觀測報告` 不再誤判為 2026-12-31）
+- 🔧 修復 `_parsed_date` datetime 物件導致 JSON 序列化失敗
+
 ### v2.3.0 (2026-03-09)
 - ✅ 新增環境變數管理（`.env` 檔案 + `python-dotenv`）
 - ✅ 新增通知模組（LINE Notify / macOS 系統通知）
@@ -613,4 +629,4 @@ MIT License
 ---
 
 **維護者**: geoBingAn Team
-**最後更新**: 2026-03-16
+**最後更新**: 2026-04-02
