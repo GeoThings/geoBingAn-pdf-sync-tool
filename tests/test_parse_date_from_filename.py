@@ -78,8 +78,13 @@ class TestShortDateWithContext:
     def test_with_year_in_path(self):
         assert parse_date_from_filename("建字123號/2026/全球人壽新總部大樓0303觀測報告.pdf") == datetime(2026, 3, 3)
 
-    def test_without_year_defaults_2026(self):
-        assert parse_date_from_filename("全球人壽新總部大樓0303觀測報告.pdf") == datetime(2026, 3, 3)
+    def test_without_year_returns_none(self):
+        """沒有路徑年份上下文時不猜測，避免誤判"""
+        assert parse_date_from_filename("全球人壽新總部大樓0303觀測報告.pdf") is None
+
+    def test_ambiguous_4digit_no_year_context(self):
+        """如「國土大將1231觀測報告」無年份上下文，不應誤判為 2026-12-31"""
+        assert parse_date_from_filename("國土大將1231觀測報告.pdf") is None
 
 
 class TestUnparseable:

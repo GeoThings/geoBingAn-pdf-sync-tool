@@ -706,6 +706,10 @@ def main():
     # 排序：按檔名解析日期降序（最新的在前面）
     recent_pdfs.sort(key=lambda x: x.get('_parsed_date', datetime.min), reverse=True)
 
+    # 移除暫存的 datetime 物件，避免 JSON 序列化失敗
+    for pdf in recent_pdfs:
+        pdf.pop('_parsed_date', None)
+
     # 過濾掉已上傳的和排除清單中的檔案，最多取 MAX_UPLOADS 筆
     pdfs_to_upload = []
     excluded_count = 0

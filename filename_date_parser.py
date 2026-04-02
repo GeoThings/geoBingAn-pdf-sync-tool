@@ -87,17 +87,17 @@ def parse_date_from_filename(filename: str) -> Optional[datetime]:
         except ValueError:
             pass
 
-    # 模式6: 4碼日期 + 觀測報告（如「0303觀測報告」），從路徑推斷年份
+    # 模式6: 4碼日期 + 觀測報告（如「0303觀測報告」），僅在路徑含明確年份時推斷
     m = re.search(r'(\d{2})(\d{2})觀測報告', basename)
     if m:
         try:
             month = int(m.group(1))
             day = int(m.group(2))
             if 1 <= month <= 12 and 1 <= day <= 31:
-                # 從路徑中找西元年
+                # 必須從路徑中找到明確的西元年才推斷，避免誤判
                 year_match = re.search(r'(20\d{2})', basename)
-                year = int(year_match.group(1)) if year_match else 2026
-                return datetime(year, month, day)
+                if year_match:
+                    return datetime(int(year_match.group(1)), month, day)
         except ValueError:
             pass
 
