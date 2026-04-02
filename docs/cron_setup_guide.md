@@ -67,8 +67,8 @@ crontab -e
 # 最新日誌
 ls -lt logs/weekly_sync_*.log | head -1
 
-# 查看日誌內容
-tail -50 logs/weekly_sync_$(ls -t logs/weekly_sync_*.log | head -1 | xargs basename)
+# 查看最新日誌內容
+tail -50 $(ls -t logs/weekly_sync_*.log | head -1)
 
 # macOS cron 系統日誌
 log show --predicate 'process == "cron"' --last 24h
