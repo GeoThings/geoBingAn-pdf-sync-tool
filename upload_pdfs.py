@@ -26,6 +26,8 @@ from googleapiclient.http import MediaIoBaseDownload
 from typing import Dict, List, Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
+import re
+from filename_date_parser import parse_date_from_filename, FILENAME_DATE_CUTOFF
 
 # 匯入配置檔案
 try:
@@ -637,33 +639,32 @@ def main():
     print(f"  已上傳: {len(state['uploaded_files'])} 個檔案")
     print(f"  錯誤記錄: {len(state['errors'])} 筆")
 
-    # 列出建案資料夾（使用智慧掃描和快取）
-    print(f"\n📁 列出建案資料夾（智慧掃描模式）...")
-    project_folders = list_project_folders(service, use_cache=True, state=state, days_ago=DAYS_AGO)
+    # 列出所有建案資料夾（完整掃描，因為過濾依據是檔名日期而非資料夾修改時間）
+    print(f"\n📁 列出所有建案資料夾...")
+    try:
+        query = "mimeType = 'application/vnd.google-apps.folder' and trashed = false"
+        results = service.files().list(
+            q=query,
+            corpora='drive',
+            driveId=SHARED_DRIVE_ID,
+            includeItemsFromAllDrives=True,
+            supportsAllDrives=True,
+            pageSize=1000,
+            fields='files(id, name, modifiedTime)'
+        ).execute()
+        project_folders = results.get('files', [])
+        print(f"✅ 找到 {len(project_folders)} 個資料夾")
+    except Exception as e:
+        print(f"❌ 掃描資料夾失敗: {e}")
+        sys.exit(0)
 
     if not project_folders:
-        print("⚠️  未找到最近修改的資料夾，嘗試完整掃描...")
-        # 回退：完整掃描（不使用時間過濾）
-        try:
-            query = "mimeType = 'application/vnd.google-apps.folder' and trashed = false"
-            results = service.files().list(
-                q=query,
-                corpora='drive',
-                driveId=SHARED_DRIVE_ID,
-                includeItemsFromAllDrives=True,
-                supportsAllDrives=True,
-                pageSize=1000,
-                fields='files(id, name, modifiedTime)'
-            ).execute()
-            project_folders = results.get('files', [])
-            print(f"✅ 完整掃描找到 {len(project_folders)} 個資料夾")
-        except Exception as e:
-            print(f"❌ 完整掃描失敗: {e}")
-            sys.exit(0)
+        print("⚠️  未找到任何資料夾")
+        sys.exit(0)
 
-    # 收集 PDF（使用快取）
+    # 收集 PDF（停用快取，確保完整掃描結果不被舊的截斷快取覆蓋）
     print(f"\n📄 收集 PDF 檔案...")
-    all_pdfs = list_all_pdfs_with_folder_info(service, project_folders, use_cache=True, state=state)
+    all_pdfs = list_all_pdfs_with_folder_info(service, project_folders, use_cache=False, state=state)
 
     if not all_pdfs:
         print("❌ 未找到任何 PDF 檔案")
@@ -675,23 +676,35 @@ def main():
 
     print(f"✅ 找到 {len(all_pdfs)} 個 PDF 檔案")
 
-    # 計算日期閾值（最近 N 天）
-    cutoff_date = datetime.now() - timedelta(days=DAYS_AGO)
-    cutoff_date_str = cutoff_date.isoformat() + 'Z'
+    # 使用檔名日期過濾（農曆新年 2026-02-17 之後）
+    cutoff_date = FILENAME_DATE_CUTOFF
+    print(f"\n🗓️  過濾檔名日期在 {cutoff_date.strftime('%Y-%m-%d')}（農曆新年初一）之後的 PDF...")
 
-    print(f"\n🗓️  過濾最近 {DAYS_AGO} 天更新的 PDF（{cutoff_date.strftime('%Y-%m-%d')} 之後）...")
-
-    # 過濾最近 N 天的 PDF
     recent_pdfs = []
+    no_date_count = 0
+    too_old_count = 0
     for pdf in all_pdfs:
-        # Google Drive 的 modifiedTime 格式: '2025-12-29T06:11:04.237Z'
-        if pdf['modifiedTime'] >= cutoff_date_str:
+        # 嘗試從檔名解析日期，若失敗則用 folder_name + 檔名組合再試
+        file_date = parse_date_from_filename(pdf['name'])
+        if file_date is None and pdf.get('folder_name'):
+            file_date = parse_date_from_filename(pdf['folder_name'] + '/' + pdf['name'])
+        if file_date is None:
+            no_date_count += 1
+            continue
+        if file_date > cutoff_date:
+            pdf['_parsed_date'] = file_date
             recent_pdfs.append(pdf)
+        else:
+            too_old_count += 1
 
-    print(f"✅ 找到 {len(recent_pdfs)} 個最近 {DAYS_AGO} 天更新的 PDF")
+    print(f"✅ 找到 {len(recent_pdfs)} 個農曆新年後的 PDF")
+    if no_date_count > 0:
+        print(f"⏭️  {no_date_count} 個無法從檔名解析日期（已跳過）")
+    if too_old_count > 0:
+        print(f"⏭️  {too_old_count} 個日期在農曆新年之前（已跳過）")
 
-    # 排序：按修改時間降序（最新的在前面）
-    recent_pdfs.sort(key=lambda x: x['modifiedTime'], reverse=True)
+    # 排序：按檔名解析日期降序（最新的在前面）
+    recent_pdfs.sort(key=lambda x: x.get('_parsed_date', datetime.min), reverse=True)
 
     # 過濾掉已上傳的和排除清單中的檔案，最多取 MAX_UPLOADS 筆
     pdfs_to_upload = []
