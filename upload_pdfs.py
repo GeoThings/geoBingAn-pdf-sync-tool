@@ -15,6 +15,7 @@ import os
 import sys
 import io
 import time
+import fcntl
 import requests
 from pathlib import Path
 from datetime import datetime, timedelta
@@ -196,28 +197,61 @@ def load_state() -> dict:
     }
 
 
-def save_state(state: dict):
-    """儲存已上傳的 PDF 記錄（原子寫入）
+STATE_LOCK_FILE = STATE_FILE + '.lock'
 
-    使用唯一暫存檔（PID suffix）再 os.replace()，避免：
-    1. crash 時寫到一半損壞狀態檔案
-    2. 多個 process 重疊執行時互相覆蓋暫存檔
-    注意：此函數不包含鎖，呼叫者需要自行管理 state_lock
+
+def save_state(state: dict):
+    """儲存已上傳的 PDF 記錄（跨 process 安全）
+
+    使用 flock 檔案鎖 + read-merge-write + atomic replace：
+    1. 取得檔案鎖（排他），阻擋其他 process 同時寫入
+    2. 重新讀取磁碟上的最新 state，合併本 process 的新增項
+    3. 寫入 PID 暫存檔再 os.replace()，防止寫到一半損壞
+    注意：此函數不包含 thread lock，呼叫者需要自行管理 state_lock
     """
     state_dir = os.path.dirname(STATE_FILE)
     os.makedirs(state_dir, exist_ok=True)
-    tmp_file = f"{STATE_FILE}.tmp.{os.getpid()}"
+
+    lock_fd = open(STATE_LOCK_FILE, 'w')
     try:
-        with open(tmp_file, 'w', encoding='utf-8') as f:
-            json.dump(state, indent=2, ensure_ascii=False, fp=f)
-        os.replace(tmp_file, STATE_FILE)
-    except Exception:
-        # 清理孤立暫存檔
+        fcntl.flock(lock_fd, fcntl.LOCK_EX)
+
+        # 讀取磁碟上的最新 state，合併本 process 的新增項
+        disk_state = None
+        if os.path.exists(STATE_FILE):
+            try:
+                with open(STATE_FILE, 'r', encoding='utf-8') as f:
+                    disk_state = json.load(f)
+            except (json.JSONDecodeError, IOError):
+                disk_state = None
+
+        if disk_state is not None:
+            # 合併 uploaded_files：取聯集
+            disk_uploaded = set(disk_state.get('uploaded_files', []))
+            mem_uploaded = set(state.get('uploaded_files', []))
+            state['uploaded_files'] = list(disk_uploaded | mem_uploaded)
+
+            # 合併 errors：以 (folder, file) 為 key 去重
+            disk_errors = {(e.get('folder'), e.get('file')): e for e in disk_state.get('errors', [])}
+            for e in state.get('errors', []):
+                disk_errors[(e.get('folder'), e.get('file'))] = e
+            state['errors'] = list(disk_errors.values())
+
+        # 原子寫入
+        tmp_file = f"{STATE_FILE}.tmp.{os.getpid()}"
         try:
-            os.unlink(tmp_file)
-        except OSError:
-            pass
-        raise
+            with open(tmp_file, 'w', encoding='utf-8') as f:
+                json.dump(state, indent=2, ensure_ascii=False, fp=f)
+            os.replace(tmp_file, STATE_FILE)
+        except Exception:
+            try:
+                os.unlink(tmp_file)
+            except OSError:
+                pass
+            raise
+    finally:
+        fcntl.flock(lock_fd, fcntl.LOCK_UN)
+        lock_fd.close()
 
 
 def get_drive_service():
