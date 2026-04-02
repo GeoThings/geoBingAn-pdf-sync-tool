@@ -400,7 +400,32 @@ def list_all_pdfs_with_folder_info(service, folders: List[Dict], use_cache: bool
                 break
 
         except HttpError as e:
-            print(f"  ❌ 掃描 PDF 失敗: {e}")
+            print(f"  ❌ 批次掃描第 {page_count + 1} 頁失敗: {e}")
+            print(f"  ⚠️  改為逐資料夾掃描剩餘項目...")
+            # 找出已掃到的 folder_id 集合
+            scanned_folder_ids = {pdf['folder_id'] for pdf in all_pdfs}
+            remaining = [f for f in folders if f['id'] not in scanned_folder_ids]
+            for idx, folder in enumerate(remaining, 1):
+                if idx % 50 == 0:
+                    print(f"    回退進度: {idx}/{len(remaining)} 個資料夾...")
+                try:
+                    fallback_query = (
+                        f"'{folder['id']}' in parents and "
+                        f"mimeType = 'application/pdf' and trashed = false"
+                    )
+                    fallback_results = service.files().list(
+                        q=fallback_query,
+                        pageSize=1000,
+                        includeItemsFromAllDrives=True,
+                        supportsAllDrives=True,
+                        fields='files(id, name, size, modifiedTime)'
+                    ).execute()
+                    for pdf in fallback_results.get('files', []):
+                        pdf['folder_id'] = folder['id']
+                        pdf['folder_name'] = folder['name']
+                        all_pdfs.append(pdf)
+                except HttpError:
+                    continue
             break
 
     # 更新快取

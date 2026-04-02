@@ -127,13 +127,12 @@ def scan_google_drive(service) -> Dict[str, dict]:
     print("  掃描所有 PDF 並統計...")
     folder_id_to_permit = {info['folder_id']: permit for permit, info in permit_folders.items()}
 
-    # 初始化所有資料夾的計數
-    for permit in permit_folders:
-        permit_folders[permit]['pdf_count'] = 0
-        permit_folders[permit]['latest_pdf'] = ''
+    # 收集每個資料夾的 unique 檔名和最新修改時間
+    folder_names = {}   # permit → set of unique filenames
+    folder_latest = {}  # permit → latest modifiedTime
 
     page_token = None
-    total_pdfs = 0
+    page_count = 0
     while True:
         try:
             results = service.files().list(
@@ -147,27 +146,61 @@ def scan_google_drive(service) -> Dict[str, dict]:
                 pageToken=page_token
             ).execute()
 
+            page_count += 1
             for f in results.get('files', []):
                 parents = f.get('parents', [])
                 if not parents:
                     continue
-                parent_id = parents[0]
-                permit = folder_id_to_permit.get(parent_id)
+                permit = folder_id_to_permit.get(parents[0])
                 if permit:
-                    permit_folders[permit]['pdf_count'] += 1
+                    if permit not in folder_names:
+                        folder_names[permit] = set()
+                        folder_latest[permit] = ''
+                    folder_names[permit].add(f.get('name', ''))
                     mod_time = f.get('modifiedTime', '')
-                    if mod_time > permit_folders[permit]['latest_pdf']:
-                        permit_folders[permit]['latest_pdf'] = mod_time
-                    total_pdfs += 1
+                    if mod_time > folder_latest[permit]:
+                        folder_latest[permit] = mod_time
 
             page_token = results.get('nextPageToken')
             if not page_token:
                 break
         except HttpError as e:
-            print(f"    ❌ PDF 掃描失敗: {e}")
+            print(f"    ❌ PDF 掃描第 {page_count + 1} 頁失敗: {e}")
+            print(f"    ❌ 批次掃描中斷，改為逐資料夾掃描剩餘項目...")
+            # 回退：對尚未掃到的資料夾逐一查詢
+            for permit, info in permit_folders.items():
+                if permit in folder_names:
+                    continue
+                try:
+                    fallback = service.files().list(
+                        q=f"'{info['folder_id']}' in parents and mimeType='application/pdf'",
+                        corpora='drive',
+                        driveId=SHARED_DRIVE_ID,
+                        includeItemsFromAllDrives=True,
+                        supportsAllDrives=True,
+                        fields='files(name, modifiedTime)',
+                        pageSize=1000
+                    ).execute()
+                    files = fallback.get('files', [])
+                    folder_names[permit] = set(f.get('name', '') for f in files)
+                    if files:
+                        folder_latest[permit] = max(f.get('modifiedTime', '') for f in files)
+                    else:
+                        folder_latest[permit] = ''
+                except HttpError:
+                    folder_names[permit] = set()
+                    folder_latest[permit] = ''
             break
 
-    print(f"    統計完成: {total_pdfs} 個 PDF 分布在 {len(permit_folders)} 個資料夾")
+    # 寫回 permit_folders
+    total_unique = 0
+    for permit in permit_folders:
+        unique_count = len(folder_names.get(permit, set()))
+        permit_folders[permit]['pdf_count'] = unique_count
+        permit_folders[permit]['latest_pdf'] = folder_latest.get(permit, '')
+        total_unique += unique_count
+
+    print(f"    統計完成: {total_unique} 個唯一 PDF 分布在 {len(permit_folders)} 個資料夾")
 
     return permit_folders
 
