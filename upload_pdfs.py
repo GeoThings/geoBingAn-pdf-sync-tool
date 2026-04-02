@@ -37,9 +37,12 @@ try:
         GROUP_ID,
         GEOBINGAN_API_URL,
         REFRESH_TOKEN,
-        GEOBINGAN_REFRESH_URL,
-        SHARED_DRIVE_ID
+        GEOBINGAN_REFRESH_URL
     )
+    try:
+        from config import SHARED_DRIVE_ID
+    except ImportError:
+        SHARED_DRIVE_ID = os.environ.get('SHARED_DRIVE_ID', '0AIvp1h-6BZ1oUk9PVA')
     print(f"✅ 已載入認證配置（用戶: {USER_EMAIL}）", flush=True)
 except ImportError as e:
     print("❌ 找不到 config.py 或缺少必要設定")
@@ -92,9 +95,10 @@ EXCLUDE_FILES = [
 # 全域鎖，用於並行上傳時保護狀態檔案
 state_lock = threading.Lock()
 
-# 批次寫入計數器：每 BATCH_SAVE_INTERVAL 次成功上傳才寫入一次狀態檔
+# 批次寫入計數器：錯誤記錄每 BATCH_SAVE_INTERVAL 次才寫入一次
+# 注意：成功上傳記錄（uploaded_files）立即寫入，確保 crash 後不會重複上傳
 BATCH_SAVE_INTERVAL = 10
-_pending_saves = 0  # 追蹤自上次寫入以來的變更數量
+_pending_error_saves = 0  # 追蹤錯誤記錄自上次寫入以來的變更數量
 
 
 # ================== JWT Token 管理 ==================
@@ -393,9 +397,10 @@ def upload_to_geobingan(pdf_content: bytes, file_name: str, project_code: str,
     使用 construction-reports/upload/ 端點（與網頁上傳相同）
     使用 JWT Bearer Token 認證
 
-    對於暫時性錯誤（502, 503, 504, timeout），會以指數退避重試最多 3 次。
-    注意：502/504 在首次嘗試時視為「後端處理中」（成功），
-    只有在重試邏輯中才會當作暫時性錯誤。
+    重試策略：
+    - 503 Service Unavailable：伺服器暫時不可用，安全重試
+    - 502/504 Gateway Timeout：PDF 可能已送達後端，不重試（避免重複上傳）
+    - Connection timeout：網路層逾時，安全重試（request body 未必送達）
     """
     # 確保檔名有 .pdf 副檔名（某些 Google Drive 檔案沒有副檔名）
     if not file_name.lower().endswith('.pdf'):
@@ -443,27 +448,26 @@ def upload_to_geobingan(pdf_content: bytes, file_name: str, project_code: str,
                 if result.get('message'):
                     print(f"     - {result.get('message')}", flush=True)
                 return result
-            elif response.status_code in [502, 503, 504]:
-                # 暫時性伺服器錯誤 - 重試
+            elif response.status_code in [502, 504]:
+                # 502/504: PDF 可能已送達後端，不重試避免重複上傳
+                print(f"  ⏳ 已送出，後端處理中（{response.status_code}）")
+                print(f"     PDF 可能已成功傳送到伺服器，AI 分析需要 2-5 分鐘")
+                return {
+                    'status': 'processing',
+                    'message': 'PDF uploaded, backend processing in background',
+                    'file_name': file_name,
+                    'project_code': project_code
+                }
+            elif response.status_code == 503:
+                # 503: 伺服器暫時不可用，安全重試
                 if attempt < max_retries - 1:
                     delay = retry_delays[attempt]
-                    print(f"  ⚠️  伺服器暫時性錯誤 ({response.status_code})，第 {attempt + 1}/{max_retries} 次重試，等待 {delay} 秒...", flush=True)
+                    print(f"  ⚠️  伺服器暫時不可用 (503)，第 {attempt + 1}/{max_retries} 次重試，等待 {delay} 秒...", flush=True)
                     time.sleep(delay)
                     continue
                 else:
-                    # 最後一次嘗試仍失敗，502/504 視為後端可能在處理中
-                    if response.status_code in [502, 504]:
-                        print(f"  ⏳ 已送出，後端處理中（{response.status_code}，已重試 {max_retries} 次）")
-                        print(f"     PDF 可能已成功傳送到伺服器，AI 分析需要 2-5 分鐘")
-                        return {
-                            'status': 'processing',
-                            'message': 'PDF uploaded, backend processing in background',
-                            'file_name': file_name,
-                            'project_code': project_code
-                        }
-                    else:
-                        print(f"  ❌ 伺服器錯誤 ({response.status_code})，已重試 {max_retries} 次")
-                        return None
+                    print(f"  ❌ 伺服器不可用 (503)，已重試 {max_retries} 次")
+                    return None
             elif response.status_code == 401:
                 # Token 過期，嘗試刷新並重試
                 print(f"  ⚠️  Token 已過期，嘗試刷新...")
@@ -531,7 +535,7 @@ def process_single_pdf(service, pdf: Dict, state: dict, idx: int, total: int) ->
     Returns:
         Dict with keys: success (bool), pdf (Dict), result (Optional[dict])
     """
-    global _pending_saves
+    global _pending_error_saves
 
     print(f"\n[{idx}/{total}] 處理: {pdf['folder_name']}/{pdf['name']}", flush=True)
 
@@ -547,10 +551,8 @@ def process_single_pdf(service, pdf: Dict, state: dict, idx: int, total: int) ->
         unique_id = f"{pdf['folder_name']}/{pdf['name']}"
         with state_lock:
             state['uploaded_files'].append(unique_id)
-            _pending_saves += 1
-            if _pending_saves >= BATCH_SAVE_INTERVAL:
-                save_state(state)
-                _pending_saves = 0
+            # 成功上傳立即寫入，確保 crash 後不會重複上傳
+            save_state(state)
         # 同時儲存到永久歷史記錄
         add_to_history(unique_id)
         return {'success': True, 'pdf': pdf, 'result': result}
@@ -561,20 +563,21 @@ def process_single_pdf(service, pdf: Dict, state: dict, idx: int, total: int) ->
                 'file': pdf['name'],
                 'file_id': pdf['id']
             })
-            _pending_saves += 1
-            if _pending_saves >= BATCH_SAVE_INTERVAL:
+            # 錯誤記錄批次寫入（遺失不影響冪等性）
+            _pending_error_saves += 1
+            if _pending_error_saves >= BATCH_SAVE_INTERVAL:
                 save_state(state)
-                _pending_saves = 0
+                _pending_error_saves = 0
         return {'success': False, 'pdf': pdf, 'result': None, 'error': 'upload_failed'}
 
 
 def flush_state(state: dict):
-    """寫入所有待處理的狀態變更（批次寫入的最終 flush）"""
-    global _pending_saves
+    """寫入所有待處理的錯誤記錄（批次寫入的最終 flush）"""
+    global _pending_error_saves
     with state_lock:
-        if _pending_saves > 0:
+        if _pending_error_saves > 0:
             save_state(state)
-            _pending_saves = 0
+            _pending_error_saves = 0
 
 
 def main():

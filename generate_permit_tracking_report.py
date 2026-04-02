@@ -35,9 +35,12 @@ try:
         USER_EMAIL,
         GROUP_ID,
         REFRESH_TOKEN,
-        GEOBINGAN_REFRESH_URL,
-        SHARED_DRIVE_ID
+        GEOBINGAN_REFRESH_URL
     )
+    try:
+        from config import SHARED_DRIVE_ID
+    except ImportError:
+        SHARED_DRIVE_ID = os.environ.get('SHARED_DRIVE_ID', '0AIvp1h-6BZ1oUk9PVA')
     print(f"✅ 已載入認證配置（用戶: {USER_EMAIL}）")
 except ImportError as e:
     print("❌ 找不到 config.py 或缺少必要設定")
