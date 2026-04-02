@@ -123,15 +123,22 @@ status.start_run()
 " 2>&1 | tee -a "$LOG_FILE"
 
 # 步驟 1: 同步 PDF 從台北市政府到 Google Drive
+STEP1_FAILED=0
 echo "" | tee -a "$LOG_FILE"
 echo "📥 步驟 1/4: 同步 PDF 從台北市政府網站..." | tee -a "$LOG_FILE"
 echo "----------------------------------------" | tee -a "$LOG_FILE"
 if ! python3 "$SCRIPT_DIR/sync_permits.py" 2>&1 | tee -a "$LOG_FILE"; then
     handle_error "步驟1" "同步 PDF 失敗"
+    STEP1_FAILED=1
 fi
 
 # 從日誌解析同步數量
 SYNCED_COUNT=$(grep -o "新增 [0-9]* 個 PDF" "$LOG_FILE" 2>/dev/null | tail -1 | grep -o "[0-9]*" || echo "0")
+
+# 如果步驟 1 失敗，跳過後續依賴步驟
+if [ $STEP1_FAILED -ne 0 ]; then
+    echo "⚠️  步驟 1 失敗，跳過步驟 2-3（依賴同步資料）" | tee -a "$LOG_FILE"
+else
 
 # 清除 PDF 快取（確保偵測到新同步的檔案）
 echo "" | tee -a "$LOG_FILE"
@@ -152,11 +159,13 @@ except Exception as e:
 " 2>&1 | tee -a "$LOG_FILE"
 
 # 步驟 2: 上傳最近 7 天的 PDF 到 geoBingAn Backend
+STEP2_FAILED=0
 echo "" | tee -a "$LOG_FILE"
 echo "📤 步驟 2/4: 上傳最近 7 天的 PDF 到 Backend..." | tee -a "$LOG_FILE"
 echo "----------------------------------------" | tee -a "$LOG_FILE"
 if ! python3 "$SCRIPT_DIR/upload_pdfs.py" 2>&1 | tee -a "$LOG_FILE"; then
     handle_error "步驟2" "上傳 PDF 失敗"
+    STEP2_FAILED=1
 fi
 
 # 從日誌解析上傳數量（確保只取單一數字）
@@ -167,12 +176,20 @@ FAILED_COUNT=$(grep -c "上傳失敗" "$LOG_FILE" 2>/dev/null | head -1 | tr -d 
 [[ "$FAILED_COUNT" =~ ^[0-9]+$ ]] || FAILED_COUNT=0
 
 # 步驟 3: 生成建照監測追蹤報告
+# 如果步驟 2 失敗，跳過報告生成（會使用不完整的資料）
+if [ $STEP2_FAILED -ne 0 ]; then
+    echo "" | tee -a "$LOG_FILE"
+    echo "⚠️  步驟 2 失敗，跳過步驟 3（報告會使用不完整的資料）" | tee -a "$LOG_FILE"
+else
 echo "" | tee -a "$LOG_FILE"
 echo "📊 步驟 3/4: 生成建照監測追蹤報告..." | tee -a "$LOG_FILE"
 echo "----------------------------------------" | tee -a "$LOG_FILE"
 if ! python3 "$SCRIPT_DIR/generate_permit_tracking_report.py" 2>&1 | tee -a "$LOG_FILE"; then
     handle_error "步驟3" "生成報告失敗"
 fi
+fi  # end STEP2_FAILED check
+
+fi  # end STEP1_FAILED check
 
 # 步驟 4: 更新線上報告到 GitHub
 echo "" | tee -a "$LOG_FILE"

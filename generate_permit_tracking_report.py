@@ -14,7 +14,6 @@ import os
 import re
 import sys
 import time
-import base64
 import requests
 import urllib3
 from datetime import datetime, timedelta
@@ -24,6 +23,7 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 import PyPDF2
+from jwt_auth import get_valid_token as _jwt_get_valid_token
 
 # 禁用 SSL 警告
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -35,7 +35,8 @@ try:
         USER_EMAIL,
         GROUP_ID,
         REFRESH_TOKEN,
-        GEOBINGAN_REFRESH_URL
+        GEOBINGAN_REFRESH_URL,
+        SHARED_DRIVE_ID
     )
     print(f"✅ 已載入認證配置（用戶: {USER_EMAIL}）")
 except ImportError as e:
@@ -48,7 +49,6 @@ SERVICE_ACCOUNT_FILE = os.environ.get(
     os.path.join(os.path.dirname(__file__), 'credentials.json')
 )
 SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
-SHARED_DRIVE_ID = '0AIvp1h-6BZ1oUk9PVA'
 PDF_LIST_URL = 'https://www-ws.gov.taipei/001/Upload/845/relfile/-1/845/03b35db7-a123-4b29-b881-1cb17fa9c4f2.pdf'
 
 # API 設定
@@ -67,61 +67,14 @@ ALERT_DATA_CSV = f'{STATE_DIR}/alert_data.csv'
 current_access_token = JWT_TOKEN
 
 
-def decode_jwt_payload(token: str) -> dict:
-    """解碼 JWT Token 的 payload"""
-    try:
-        parts = token.split('.')
-        if len(parts) != 3:
-            return {}
-        payload = parts[1]
-        padding = 4 - len(payload) % 4
-        if padding != 4:
-            payload += '=' * padding
-        decoded = base64.urlsafe_b64decode(payload)
-        return json.loads(decoded)
-    except Exception:
-        return {}
-
-
-def is_token_expired(token: str, buffer_seconds: int = 300) -> bool:
-    """檢查 Token 是否已過期"""
-    payload = decode_jwt_payload(token)
-    exp = payload.get('exp', 0)
-    return time.time() >= (exp - buffer_seconds)
-
-
-def refresh_access_token() -> Optional[str]:
-    """刷新 JWT Token"""
-    global current_access_token
-    try:
-        print("🔄 正在刷新 JWT Token...")
-        response = requests.post(
-            GEOBINGAN_REFRESH_URL,
-            json={'refresh_token': REFRESH_TOKEN},
-            headers={'Content-Type': 'application/json'},
-            timeout=30
-        )
-        if response.status_code == 200:
-            data = response.json()
-            new_token = data.get('access') or data.get('access_token')
-            if new_token:
-                current_access_token = new_token
-                print("✅ Token 刷新成功")
-                return new_token
-        print(f"❌ Token 刷新失敗: {response.status_code}")
-        return None
-    except Exception as e:
-        print(f"❌ Token 刷新錯誤: {e}")
-        return None
-
-
 def get_valid_token() -> str:
-    """取得有效的 Token"""
+    """取得有效的 Token（使用 jwt_auth 模組）"""
     global current_access_token
-    if is_token_expired(current_access_token):
-        new_token = refresh_access_token()
-        if new_token:
-            return new_token
+    valid_token, was_refreshed = _jwt_get_valid_token(
+        current_access_token, REFRESH_TOKEN, GEOBINGAN_REFRESH_URL
+    )
+    if was_refreshed:
+        current_access_token = valid_token
     return current_access_token
 
 
