@@ -76,7 +76,7 @@ DAYS_AGO = 7  # 上傳最近 7 天更新的 PDF
 MAX_UPLOADS = 100  # 每次上傳最新 100 筆 PDF
 
 # 速率控制：每次上傳之間的延遲（秒）
-DELAY_BETWEEN_UPLOADS = 2  # 加速：減少到 2 秒
+DELAY_BETWEEN_UPLOADS = 0.5  # 後端為非同步 AI 處理，不需長等待
 
 # 並行上傳設定
 
@@ -333,7 +333,11 @@ def list_project_folders(service, use_cache: bool = True, state: dict = None, da
 
 def list_all_pdfs_with_folder_info(service, folders: List[Dict], use_cache: bool = True, state: dict = None) -> List[Dict]:
     """
-    列出所有資料夾中的 PDF，並附加資料夾資訊（支援快取）
+    列出 Shared Drive 中所有 PDF，並附加資料夾資訊（支援快取）
+
+    使用單一 Drive 查詢掃描整個 Shared Drive 的 PDF（分頁），
+    再用 folder lookup table 對應資料夾名稱。
+    比逐資料夾查詢（1000 次 API 呼叫）快 10-20 倍。
 
     Returns:
         List of dict with keys: id, name, size, modifiedTime, folder_id, folder_name
@@ -351,42 +355,78 @@ def list_all_pdfs_with_folder_info(service, folders: List[Dict], use_cache: bool
                 print(f"✅ 使用快取的 PDF 列表（{len(cached_pdfs)} 個）")
                 return cached_pdfs
 
-    print(f"🔍 掃描 {len(folders)} 個資料夾中的 PDF...")
+    # 建立 folder_id → folder_name 的查找表
+    folder_lookup = {f['id']: f['name'] for f in folders}
+
+    # 單一查詢掃描整個 Shared Drive 的所有 PDF（分頁處理）
+    print(f"🔍 掃描 Shared Drive 中的所有 PDF...")
     all_pdfs = []
+    page_token = None
+    page_count = 0
 
-    for idx, folder in enumerate(folders, 1):
-        folder_id = folder['id']
-        folder_name = folder['name']
-
-        if idx % 10 == 0:
-            print(f"  進度: {idx}/{len(folders)} 個資料夾...")
-
+    while True:
         try:
-            query = (
-                f"'{folder_id}' in parents and "
-                f"mimeType = 'application/pdf' and "
-                f"trashed = false"
-            )
-
+            query = "mimeType = 'application/pdf' and trashed = false"
             results = service.files().list(
                 q=query,
-                pageSize=1000,
+                corpora='drive',
+                driveId=SHARED_DRIVE_ID,
                 includeItemsFromAllDrives=True,
                 supportsAllDrives=True,
-                fields='files(id, name, size, modifiedTime)'
+                pageSize=1000,
+                pageToken=page_token,
+                fields='nextPageToken, files(id, name, size, modifiedTime, parents)'
             ).execute()
 
             pdfs = results.get('files', [])
+            page_count += 1
+            print(f"  第 {page_count} 頁: {len(pdfs)} 個 PDF")
 
-            # 為每個 PDF 添加資料夾資訊
             for pdf in pdfs:
-                pdf['folder_id'] = folder_id
-                pdf['folder_name'] = folder_name
-                all_pdfs.append(pdf)
+                # 從 parents 找到對應的資料夾名稱
+                parents = pdf.get('parents', [])
+                folder_id = parents[0] if parents else None
+                folder_name = folder_lookup.get(folder_id, '')
+
+                if folder_name:
+                    pdf['folder_id'] = folder_id
+                    pdf['folder_name'] = folder_name
+                    # 移除 parents 欄位（不需要存入快取）
+                    pdf.pop('parents', None)
+                    all_pdfs.append(pdf)
+
+            page_token = results.get('nextPageToken')
+            if not page_token:
+                break
 
         except HttpError as e:
-            print(f"  ❌ 列出 {folder_name} 的 PDF 失敗: {e}")
-            continue
+            print(f"  ❌ 批次掃描第 {page_count + 1} 頁失敗: {e}")
+            print(f"  ⚠️  丟棄部分結果，改為逐資料夾完整掃描...")
+            # 批次掃描中斷，無法確定哪些資料夾完整掃到，
+            # 全部丟棄改用逐資料夾查詢確保完整性
+            all_pdfs = []
+            for idx, folder in enumerate(folders, 1):
+                if idx % 50 == 0:
+                    print(f"    回退進度: {idx}/{len(folders)} 個資料夾...")
+                try:
+                    fallback_query = (
+                        f"'{folder['id']}' in parents and "
+                        f"mimeType = 'application/pdf' and trashed = false"
+                    )
+                    fallback_results = service.files().list(
+                        q=fallback_query,
+                        pageSize=1000,
+                        includeItemsFromAllDrives=True,
+                        supportsAllDrives=True,
+                        fields='files(id, name, size, modifiedTime)'
+                    ).execute()
+                    for pdf in fallback_results.get('files', []):
+                        pdf['folder_id'] = folder['id']
+                        pdf['folder_name'] = folder['name']
+                        all_pdfs.append(pdf)
+                except HttpError:
+                    continue
+            break
 
     # 更新快取
     if state is not None:

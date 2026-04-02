@@ -312,7 +312,7 @@ class PermitSync:
                 elif result_id:
                     print(f"    🆕 發現新檔並複製: {display_path}")
                     copied += 1
-                time.sleep(0.1)  # 優化：從 0.5 秒減少到 0.1 秒
+                # Google Drive API quota: 12,000 req/min，不需要額外延遲
             
             if copied > 0:
                 print(f"  📊 更新完成: 新增 {copied} 個")
