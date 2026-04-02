@@ -662,9 +662,14 @@ def main():
         print("⚠️  未找到任何資料夾")
         sys.exit(0)
 
-    # 收集 PDF（停用快取，確保完整掃描結果不被舊的截斷快取覆蓋）
+    # 收集 PDF（使用快取加速，但若快取中的資料夾數量與本次掃描不符則重建）
     print(f"\n📄 收集 PDF 檔案...")
-    all_pdfs = list_all_pdfs_with_folder_info(service, project_folders, use_cache=False, state=state)
+    cached_folder_count = len(state.get('cache', {}).get('folders', []))
+    if cached_folder_count > 0 and cached_folder_count < len(project_folders):
+        print(f"⚠️  快取中只有 {cached_folder_count} 個資料夾的 PDF（本次掃描 {len(project_folders)} 個），清除快取重新掃描")
+        state['cache']['pdfs'] = []
+        state['cache']['last_scan'] = None
+    all_pdfs = list_all_pdfs_with_folder_info(service, project_folders, use_cache=True, state=state)
 
     if not all_pdfs:
         print("❌ 未找到任何 PDF 檔案")
