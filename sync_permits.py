@@ -54,9 +54,12 @@ drive_service = build('drive', 'v3', credentials=credentials)
 class PermitSync:
     def __init__(self):
         self.target_folders = {}
-        self.permit_mapping = {} 
+        self.permit_mapping = {}
         self.state = self.load_state()
         self.restricted_files = []
+        # 效能快取：目標資料夾的檔案樹和子資料夾 ID
+        self._target_file_cache = {}   # permit_no → set of "path/filename" or "filename"
+        self._subfolder_cache = {}     # (parent_id, subfolder_name) → folder_id
         
     def load_state(self) -> dict:
         if os.path.exists(STATE_FILE):
@@ -202,7 +205,47 @@ class PermitSync:
             pass 
         return files
     
-    def check_file_exists(self, folder_id: str, filename: str, path: str = "") -> bool:
+    def preload_target_files(self, folder_id: str, permit_no: str):
+        """一次遞迴載入目標資料夾的所有檔名到記憶體 set。
+        後續用 set lookup 取代逐檔 API 查詢。
+        """
+        file_set = set()
+        self._preload_recursive(folder_id, "", file_set)
+        self._target_file_cache[permit_no] = file_set
+
+    def _preload_recursive(self, folder_id: str, path: str, file_set: set):
+        """遞迴收集資料夾內所有檔案的 path/name"""
+        try:
+            page_token = None
+            while True:
+                results = drive_service.files().list(
+                    q=f"'{folder_id}' in parents and trashed=false",
+                    fields='nextPageToken, files(id, name, mimeType)',
+                    pageSize=1000, pageToken=page_token,
+                    supportsAllDrives=True, includeItemsFromAllDrives=True
+                ).execute()
+                for item in results.get('files', []):
+                    item_path = f"{path}/{item['name']}" if path else item['name']
+                    if item['mimeType'] == 'application/vnd.google-apps.folder':
+                        # 快取子資料夾 ID
+                        self._subfolder_cache[(folder_id, item['name'])] = item['id']
+                        self._preload_recursive(item['id'], item_path, file_set)
+                    else:
+                        file_set.add(item_path)
+                page_token = results.get('nextPageToken')
+                if not page_token:
+                    break
+        except HttpError:
+            pass
+
+    def check_file_exists(self, folder_id: str, filename: str, path: str = "", permit_no: str = "") -> bool:
+        """用預載入的 set 比對檔案是否存在（O(1) lookup，無 API 呼叫）"""
+        if permit_no and permit_no in self._target_file_cache:
+            key = f"{path}/{filename}" if path else filename
+            # 同時檢查 .url 捷徑
+            return key in self._target_file_cache[permit_no] or \
+                   f"{key}.url" in self._target_file_cache[permit_no]
+        # fallback：快取未載入時用 API 查詢
         target_folder_id = folder_id
         if path:
             target_folder_id = self.get_or_create_subfolder(folder_id, path)
@@ -229,6 +272,11 @@ class PermitSync:
         current_folder_id = parent_id
         for folder_name in path.split('/'):
             if not folder_name: continue
+            # 先查快取
+            cache_key = (current_folder_id, folder_name)
+            if cache_key in self._subfolder_cache:
+                current_folder_id = self._subfolder_cache[cache_key]
+                continue
             try:
                 query = f"'{current_folder_id}' in parents and name='{folder_name}' and mimeType='application/vnd.google-apps.folder' and trashed=false"
                 results = drive_service.files().list(q=query, fields='files(id)', supportsAllDrives=True, includeItemsFromAllDrives=True).execute()
@@ -239,6 +287,8 @@ class PermitSync:
                     file_metadata = {'name': folder_name, 'mimeType': 'application/vnd.google-apps.folder', 'parents': [current_folder_id]}
                     folder = drive_service.files().create(body=file_metadata, fields='id', supportsAllDrives=True).execute()
                     current_folder_id = folder['id']
+                # 寫入快取
+                self._subfolder_cache[cache_key] = current_folder_id
             except HttpError:
                 return None
         return current_folder_id
@@ -286,22 +336,24 @@ class PermitSync:
         print(f"\n🔄 監測建案: {permit_no}")
         source_folder_id = self.extract_folder_id_from_url(source_url)
         if not source_folder_id:
-            # 有連結但無法解析ID (例如不是資料夾連結)，記錄錯誤
             self.state['errors'].append({'permit': permit_no, 'error': 'Invalid URL ID'})
             return
-        
+
         try:
             files = self.list_files_recursive(source_folder_id)
             if not files:
                 print(f"  ⚠️ 來源無檔案")
                 return
-            
+
+            # 預載入目標資料夾的完整檔案樹（1 次遞迴 vs 逐檔 API 查詢）
+            self.preload_target_files(target_folder_id, permit_no)
+
             copied = 0
-            
+
             for file_id, filename, path, web_link in files:
                 display_path = f"{path}/{filename}" if path else filename
-                
-                if self.check_file_exists(target_folder_id, filename, path):
+
+                if self.check_file_exists(target_folder_id, filename, path, permit_no):
                     continue
                 
                 result_id, final_folder_id = self.copy_file(file_id, target_folder_id, filename, path)
@@ -309,9 +361,17 @@ class PermitSync:
                     print(f"    🔒 受限: {display_path} (建立捷徑)")
                     self.create_shortcut_file(final_folder_id, filename, web_link)
                     self.restricted_files.append({'filename': filename, 'permit': permit_no})
+                    # 更新記憶體快取
+                    if permit_no in self._target_file_cache:
+                        key = f"{path}/{filename}.url" if path else f"{filename}.url"
+                        self._target_file_cache[permit_no].add(key)
                 elif result_id:
                     print(f"    🆕 發現新檔並複製: {display_path}")
                     copied += 1
+                    # 更新記憶體快取
+                    if permit_no in self._target_file_cache:
+                        key = f"{path}/{filename}" if path else filename
+                        self._target_file_cache[permit_no].add(key)
                 # Google Drive API quota: 12,000 req/min，不需要額外延遲
             
             if copied > 0:
