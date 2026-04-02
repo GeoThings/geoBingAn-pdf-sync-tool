@@ -597,12 +597,17 @@ def load_alert_data() -> Tuple[Dict[str, dict], Dict[str, str]]:
 
 def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], alert_data: Dict[str, dict] = None, permit_names: Dict[str, str] = None):
     """生成 HTML 報告"""
+    import html as html_mod
     print("\n📊 生成 HTML 報告...")
 
     if alert_data is None:
         alert_data = {}
     if permit_names is None:
         permit_names = {}
+
+    def esc(s: str) -> str:
+        """Escape string for safe HTML insertion (text and attributes)"""
+        return html_mod.escape(str(s), quote=True) if s else ''
 
     now = datetime.now()
 
@@ -637,12 +642,12 @@ def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], a
     cloud_cards_html = ""
     for cloud, permits in cloud_groups.items():
         icon = cloud_icons.get(cloud, '🌐')
-        permits_html = ''.join([f'<li>{p}</li>' for p in permits[:20]])
+        permits_html = ''.join([f'<li>{esc(p)}</li>' for p in permits[:20]])
         if len(permits) > 20:
             permits_html += f'<li>...還有 {len(permits) - 20} 個</li>'
         cloud_cards_html += f'''
 <div class="cloud-card">
-<h4><span class="icon">{icon}</span> {cloud} ({len(permits)})</h4>
+<h4><span class="icon">{icon}</span> {esc(cloud)} ({len(permits)})</h4>
 <ul>{permits_html}</ul>
 </div>'''
 
@@ -685,11 +690,11 @@ def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], a
     # HTML for 需要關注 cards
     attention_alert_cards = ""
     for ap in alert_permits:
-        attention_alert_cards += f'<div class="attention-card attention-card-alert"><div class="ac-permit">{ap["permit"]}</div><div class="ac-name">{ap["name"] or "-"}</div><div class="ac-summary">{ap["summary"]}</div><div class="ac-date">最近警戒: {ap["latest_alert_date"]}</div></div>'
+        attention_alert_cards += f'<div class="attention-card attention-card-alert"><div class="ac-permit">{esc(ap["permit"])}</div><div class="ac-name">{esc(ap["name"] or "-")}</div><div class="ac-summary">{esc(ap["summary"])}</div><div class="ac-date">最近警戒: {esc(ap["latest_alert_date"])}</div></div>'
 
     attention_stale_rows = ""
     for sp in stale_permits:
-        attention_stale_rows += f'<tr><td><strong>{sp["permit"]}</strong></td><td>{sp["name"] or "-"}</td><td><span class="days days-old" data-date="{sp["latest"]}"></span></td></tr>'
+        attention_stale_rows += f'<tr><td><strong>{esc(sp["permit"])}</strong></td><td>{esc(sp["name"] or "-")}</td><td><span class="days days-old" data-date="{esc(sp["latest"])}"></span></td></tr>'
 
     has_attention = len(alert_permits) > 0 or len(stale_permits) > 0
     attention_open = 'open' if has_attention else ''
@@ -726,7 +731,7 @@ def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], a
         if cloud == 'Google Drive':
             cloud_badge = ''
         else:
-            cloud_badge = f'<span class="badge badge-orange">{cloud}</span>'
+            cloud_badge = f'<span class="badge badge-orange">{esc(cloud)}</span>'
 
         # 覆蓋率
         if drive_count > 0 and system_count > 0:
@@ -755,9 +760,9 @@ def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], a
         building_name = permit_names.get(permit, '')
         # 截斷過長的名稱
         if len(building_name) > 25:
-            name_html = f'<span title="{building_name}">{building_name[:25]}...</span>'
+            name_html = f'<span title="{esc(building_name)}">{esc(building_name[:25])}...</span>'
         else:
-            name_html = building_name if building_name else '-'
+            name_html = esc(building_name) if building_name else '-'
 
         # 警戒/行動值
         permit_alert = alert_data.get(permit, {})
@@ -793,18 +798,18 @@ def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], a
         row_class_str = ' '.join(row_classes)
 
         rows_html += f'''
-<tr data-status="{status}" data-cloud="{cloud}" data-alert-total="{alert_total}" data-latest-date="{latest_date_attr}" class="{row_class_str}">
+<tr data-status="{esc(status)}" data-cloud="{esc(cloud)}" data-alert-total="{alert_total}" data-latest-date="{esc(latest_date_attr)}" class="{row_class_str}">
 <td>{i}</td>
-<td><strong>{permit}</strong></td>
+<td><strong>{esc(permit)}</strong></td>
 <td class="name-cell">{name_html}</td>
 <td>{cloud_badge}</td>
 <td>{drive_link}</td>
 <td>{system_count}</td>
 <td>{coverage_html}</td>
 <td>{merged_alert_html}</td>
-<td>{latest_html}</td>
+<td>{esc(latest_html)}</td>
 <td>{days_html}</td>
-<td><span class="badge {badge_class}">{badge_text}</span></td>
+<td><span class="badge {badge_class}">{esc(badge_text)}</span></td>
 </tr>'''
 
     html = f'''<!DOCTYPE html>
