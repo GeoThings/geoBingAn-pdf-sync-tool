@@ -48,10 +48,25 @@ PDF_LIST_URL = 'https://www-ws.gov.taipei/001/Upload/845/relfile/-1/845/03b35db7
 STATE_FILE = './state/sync_permits_progress.json'
 # ============================================
 
-# 初始化 Google Drive API
+# Google Drive API 認證
+# credentials 是 thread-safe 的，但 httplib2.Http 不是。
+# 每個 thread 需要自己的 service instance。
+# https://googleapis.github.io/google-api-python-client/docs/thread_safety.html
 credentials = service_account.Credentials.from_service_account_file(
     SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+
+# 主執行緒的 service（用於 run() 中的非並行操作）
 drive_service = build('drive', 'v3', credentials=credentials)
+
+# Thread-local storage
+_thread_local = threading.local()
+
+
+def get_thread_drive_service():
+    """取得當前 thread 的獨立 Drive service instance"""
+    if not hasattr(_thread_local, 'service'):
+        _thread_local.service = build('drive', 'v3', credentials=credentials)
+    return _thread_local.service
 
 # 並行處理設定
 MAX_CONCURRENT_PERMITS = 5  # 同時處理的建案數（Google Drive API quota: 12,000 req/min）
@@ -207,7 +222,7 @@ class PermitSync:
         files = []
         try:
             query = f"'{folder_id}' in parents and trashed=false"
-            results = drive_service.files().list(
+            results = self._get_svc().files().list(
                 q=query, fields='files(id, name, mimeType, webViewLink)',
                 pageSize=1000, supportsAllDrives=True, includeItemsFromAllDrives=True
             ).execute()
@@ -243,7 +258,7 @@ class PermitSync:
         try:
             page_token = None
             while True:
-                results = drive_service.files().list(
+                results = self._get_svc().files().list(
                     q=f"'{folder_id}' in parents and trashed=false",
                     fields='nextPageToken, files(id, name, mimeType)',
                     pageSize=1000, pageToken=page_token,
@@ -278,7 +293,7 @@ class PermitSync:
             if not target_folder_id: return False
         try:
             query = f"'{target_folder_id}' in parents and (name='{filename}' or name='{filename}.url') and trashed=false"
-            results = drive_service.files().list(
+            results = self._get_svc().files().list(
                 q=query, fields='files(id)', supportsAllDrives=True, includeItemsFromAllDrives=True
             ).execute()
             return len(results.get('files', [])) > 0
@@ -305,13 +320,13 @@ class PermitSync:
                 continue
             try:
                 query = f"'{current_folder_id}' in parents and name='{folder_name}' and mimeType='application/vnd.google-apps.folder' and trashed=false"
-                results = drive_service.files().list(q=query, fields='files(id)', supportsAllDrives=True, includeItemsFromAllDrives=True).execute()
+                results = self._get_svc().files().list(q=query, fields='files(id)', supportsAllDrives=True, includeItemsFromAllDrives=True).execute()
                 items = results.get('files', [])
                 if items:
                     current_folder_id = items[0]['id']
                 else:
                     file_metadata = {'name': folder_name, 'mimeType': 'application/vnd.google-apps.folder', 'parents': [current_folder_id]}
-                    folder = drive_service.files().create(body=file_metadata, fields='id', supportsAllDrives=True).execute()
+                    folder = self._get_svc().files().create(body=file_metadata, fields='id', supportsAllDrives=True).execute()
                     current_folder_id = folder['id']
                 # 寫入快取
                 self._subfolder_cache[cache_key] = current_folder_id
@@ -325,7 +340,7 @@ class PermitSync:
             file_content = f"[InternetShortcut]\nURL={web_link}"
             file_metadata = {'name': link_filename, 'parents': [parent_id], 'mimeType': 'text/plain'}
             media = MediaIoBaseUpload(io.BytesIO(file_content.encode('utf-8')), mimetype='text/plain', resumable=True)
-            drive_service.files().create(body=file_metadata, media_body=media, fields='id', supportsAllDrives=True).execute()
+            self._get_svc().files().create(body=file_metadata, media_body=media, fields='id', supportsAllDrives=True).execute()
             return True
         except Exception:
             return False
@@ -335,21 +350,22 @@ class PermitSync:
         if path:
             final_folder_id = self.get_or_create_subfolder(target_folder_id, path)
             if not final_folder_id: return None, None
-        
+
+        svc = self._get_svc()
         try:
             file_metadata = {'name': filename, 'parents': [final_folder_id]}
-            copied_file = drive_service.files().copy(fileId=source_file_id, body=file_metadata, fields='id', supportsAllDrives=True).execute()
+            copied_file = svc.files().copy(fileId=source_file_id, body=file_metadata, fields='id', supportsAllDrives=True).execute()
             return copied_file['id'], final_folder_id
         except HttpError as e:
             try:
-                request = drive_service.files().get_media(fileId=source_file_id, supportsAllDrives=True)
+                request = svc.files().get_media(fileId=source_file_id, supportsAllDrives=True)
                 file_buffer = io.BytesIO()
                 downloader = MediaIoBaseDownload(file_buffer, request)
                 done = False
                 while not done: status, done = downloader.next_chunk()
                 file_buffer.seek(0)
                 media = MediaIoBaseUpload(file_buffer, mimetype='application/pdf', resumable=True)
-                uploaded_file = drive_service.files().create(
+                uploaded_file = svc.files().create(
                     body={'name': filename, 'parents': [final_folder_id], 'mimeType': 'application/pdf'},
                     media_body=media, fields='id', supportsAllDrives=True).execute()
                 return uploaded_file['id'], final_folder_id
@@ -357,6 +373,10 @@ class PermitSync:
                 if 'cannotDownloadFile' in str(download_error) or 'cannotCopyFile' in str(e):
                     return 'restricted', final_folder_id
                 return None, None
+
+    def _get_svc(self):
+        """取得當前 thread 的 Drive service（並行時用 thread-local，序列時用全域）"""
+        return get_thread_drive_service()
 
     def sync_permit(self, permit_no: str, source_url: str, target_folder_id: str):
         self._print(f"\n🔄 監測建案: {permit_no}")
