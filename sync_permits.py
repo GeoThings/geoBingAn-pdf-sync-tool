@@ -64,8 +64,12 @@ class PermitSync:
     def load_state(self) -> dict:
         if os.path.exists(STATE_FILE):
             with open(STATE_FILE, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        return {'processed': [], 'skipped': [], 'errors': [], 'restricted': []}
+                state = json.load(f)
+            # 向後相容：舊版 processed 是 list，新版是 dict
+            if isinstance(state.get('processed'), list):
+                state['processed'] = {p: '' for p in state['processed']}
+            return state
+        return {'processed': {}, 'skipped': [], 'errors': [], 'restricted': []}
     
     def save_state(self):
         os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
@@ -175,6 +179,17 @@ class PermitSync:
                 break
         return folders
     
+    def get_folder_modified_time(self, folder_id: str) -> str:
+        """取得資料夾的 modifiedTime（用於判斷來源是否有變動）"""
+        try:
+            result = drive_service.files().get(
+                fileId=folder_id, fields='modifiedTime',
+                supportsAllDrives=True
+            ).execute()
+            return result.get('modifiedTime', '')
+        except HttpError:
+            return ''  # 查詢失敗時回傳空字串，觸發完整掃描
+
     def extract_folder_id_from_url(self, url: str) -> str:
         # 支援 /folders/ID 和 /open?id=ID 兩種格式
         match = re.search(r'/folders/([a-zA-Z0-9_-]+)', url)
@@ -348,6 +363,13 @@ class PermitSync:
             return
 
         try:
+            # 檢查來源資料夾是否有變動（1 次 API 呼叫）
+            last_synced = self.state['processed'].get(permit_no, '')
+            source_modified = self.get_folder_modified_time(source_folder_id)
+            if last_synced and source_modified and source_modified <= last_synced:
+                # 來源未變動，跳過
+                return
+
             files = self.list_files_recursive(source_folder_id)
             if not files:
                 print(f"  ⚠️ 來源無檔案")
@@ -385,8 +407,8 @@ class PermitSync:
             if copied > 0:
                 print(f"  📊 更新完成: 新增 {copied} 個")
 
-            if permit_no not in self.state['processed']:
-                self.state['processed'].append(permit_no)
+            from datetime import datetime
+            self.state['processed'][permit_no] = datetime.utcnow().isoformat() + 'Z'
             self.save_state()
             
         except Exception as e:
@@ -408,22 +430,13 @@ class PermitSync:
         # 隨機打亂，確保每次執行檢查不同建案
         random.shuffle(permit_list)
 
-        # 優化：過濾掉已處理且無錯誤的建案（增量同步）
-        unprocessed_permits = []
-        for permit_no, source_url in permit_list:
-            # 如果建案已成功處理過，跳過
-            if permit_no in self.state['processed']:
-                # 檢查是否有錯誤記錄，如有則重新處理
-                has_error = any(e.get('permit') == permit_no for e in self.state.get('errors', []))
-                if not has_error:
-                    continue
-            unprocessed_permits.append((permit_no, source_url))
-
+        # 所有建案都進入處理流程，由 sync_permit 內部判斷來源是否有變動
+        # 已處理的建案只需 1 次 API 呼叫（查 modifiedTime）即可跳過
         print(f"\n📋 監測目標: {len(permit_list)} 個建案")
-        print(f"✅ 已處理: {len(permit_list) - len(unprocessed_permits)} 個")
-        print(f"🔄 待處理: {len(unprocessed_permits)} 個")
+        print(f"✅ 已同步過: {sum(1 for p, _ in permit_list if p in self.state['processed'])} 個（將檢查來源是否有變動）")
+        print(f"🆕 首次處理: {sum(1 for p, _ in permit_list if p not in self.state['processed'])} 個")
 
-        for permit_no, source_url in unprocessed_permits:
+        for permit_no, source_url in permit_list:
             if permit_no in self.target_folders:
                 target_id = self.target_folders[permit_no]
             else:
