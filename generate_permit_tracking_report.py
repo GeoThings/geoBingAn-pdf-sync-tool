@@ -597,12 +597,17 @@ def load_alert_data() -> Tuple[Dict[str, dict], Dict[str, str]]:
 
 def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], alert_data: Dict[str, dict] = None, permit_names: Dict[str, str] = None):
     """生成 HTML 報告"""
+    import html as html_mod
     print("\n📊 生成 HTML 報告...")
 
     if alert_data is None:
         alert_data = {}
     if permit_names is None:
         permit_names = {}
+
+    def esc(s: str) -> str:
+        """Escape string for safe HTML insertion (text and attributes)"""
+        return html_mod.escape(str(s), quote=True) if s else ''
 
     now = datetime.now()
 
@@ -637,17 +642,62 @@ def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], a
     cloud_cards_html = ""
     for cloud, permits in cloud_groups.items():
         icon = cloud_icons.get(cloud, '🌐')
-        permits_html = ''.join([f'<li>{p}</li>' for p in permits[:20]])
+        permits_html = ''.join([f'<li>{esc(p)}</li>' for p in permits[:20]])
         if len(permits) > 20:
             permits_html += f'<li>...還有 {len(permits) - 20} 個</li>'
         cloud_cards_html += f'''
 <div class="cloud-card">
-<h4><span class="icon">{icon}</span> {cloud} ({len(permits)})</h4>
+<h4><span class="icon">{icon}</span> {esc(cloud)} ({len(permits)})</h4>
 <ul>{permits_html}</ul>
 </div>'''
 
     # 建立非 Google 查詢表
     non_google_set = {item['permit']: item['cloud'] for item in non_google}
+
+    # 需要關注：有警戒值的建案
+    alert_permits = []
+    for permit_key, pdata in permit_data.items():
+        pa = alert_data.get(permit_key, {})
+        wc = pa.get('warning_count', 0)
+        ac = pa.get('action_count', 0)
+        alc = pa.get('alert_count', 0)
+        if wc > 0 or ac > 0 or alc > 0:
+            parts = []
+            if wc > 0: parts.append(f'⚠️{wc}')
+            if ac > 0: parts.append(f'🚨{ac}')
+            if alc > 0: parts.append(f'🔴{alc}')
+            lad = pa.get('latest_alert_date', '')
+            alert_permits.append({
+                'permit': permit_key,
+                'name': permit_names.get(permit_key, ''),
+                'summary': ' '.join(parts),
+                'latest_alert_date': lad[:10] if lad else '-',
+            })
+
+    # 需要關注：報告過期的建案 (days_since_update > 30 and status != 'no_reports')
+    stale_permits = []
+    for permit_key, pdata in permit_data.items():
+        ds = pdata.get('days_since_update', '')
+        st = pdata.get('status', '')
+        if ds != '' and ds is not None and int(ds) > 30 and st != 'no_reports':
+            stale_permits.append({
+                'permit': permit_key,
+                'name': permit_names.get(permit_key, ''),
+                'days': int(ds),
+                'latest': pdata.get('latest_report', '')[:10] if pdata.get('latest_report') else '-',
+            })
+
+    # HTML for 需要關注 cards
+    attention_alert_cards = ""
+    for ap in alert_permits:
+        attention_alert_cards += f'<div class="attention-card attention-card-alert"><div class="ac-permit">{esc(ap["permit"])}</div><div class="ac-name">{esc(ap["name"] or "-")}</div><div class="ac-summary">{esc(ap["summary"])}</div><div class="ac-date">最近警戒: {esc(ap["latest_alert_date"])}</div></div>'
+
+    attention_stale_rows = ""
+    for sp in stale_permits:
+        attention_stale_rows += f'<tr><td><strong>{esc(sp["permit"])}</strong></td><td>{esc(sp["name"] or "-")}</td><td><span class="days days-old" data-date="{esc(sp["latest"])}"></span></td></tr>'
+
+    has_attention = len(alert_permits) > 0 or len(stale_permits) > 0
+    attention_open = 'open' if has_attention else ''
 
     # 排序建照 (按號碼)
     sorted_permits = sorted(permit_data.keys(), key=lambda x: (
@@ -681,7 +731,7 @@ def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], a
         if cloud == 'Google Drive':
             cloud_badge = ''
         else:
-            cloud_badge = f'<span class="badge badge-orange">{cloud}</span>'
+            cloud_badge = f'<span class="badge badge-orange">{esc(cloud)}</span>'
 
         # 覆蓋率
         if drive_count > 0 and system_count > 0:
@@ -691,10 +741,9 @@ def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], a
         else:
             coverage_html = '-'
 
-        # 天數
-        if days != '' and days is not None:
-            days_class = 'days-old' if int(days) > 30 else 'days-recent' if int(days) <= 7 else ''
-            days_html = f'<span class="days {days_class}">{days} 天</span>'
+        # 天數 - use data-date for dynamic JS calculation
+        if latest:
+            days_html = f'<span class="days" data-date="{latest[:10]}"></span>'
         else:
             days_html = '-'
 
@@ -711,9 +760,9 @@ def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], a
         building_name = permit_names.get(permit, '')
         # 截斷過長的名稱
         if len(building_name) > 25:
-            name_html = f'<span title="{building_name}">{building_name[:25]}...</span>'
+            name_html = f'<span title="{esc(building_name)}">{esc(building_name[:25])}...</span>'
         else:
-            name_html = building_name if building_name else '-'
+            name_html = esc(building_name) if building_name else '-'
 
         # 警戒/行動值
         permit_alert = alert_data.get(permit, {})
@@ -722,44 +771,45 @@ def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], a
         alert_count = permit_alert.get('alert_count', 0)
         latest_alert_date = permit_alert.get('latest_alert_date', '')
 
-        # 警戒值顯示（有則顯示數字，無則顯示 -）
+        # 警戒值合併顯示
+        alert_total = warning_count + action_count + alert_count
+        alert_parts = []
         if warning_count > 0:
-            warning_html = f'<span class="alert-warning">{warning_count}</span>'
-        else:
-            warning_html = '-'
-
+            alert_parts.append(f'⚠️{warning_count}')
         if action_count > 0:
-            action_html = f'<span class="alert-action">{action_count}</span>'
-        else:
-            action_html = '-'
-
+            alert_parts.append(f'🚨{action_count}')
         if alert_count > 0:
-            alert_html = f'<span class="alert-critical">{alert_count}</span>'
-        else:
-            alert_html = '-'
+            alert_parts.append(f'🔴{alert_count}')
 
-        # 最近警戒日期
-        if latest_alert_date and (warning_count > 0 or action_count > 0 or alert_count > 0):
-            alert_date_html = latest_alert_date[:10]
+        if alert_parts:
+            alert_date_str = latest_alert_date[:10] if latest_alert_date else ''
+            tooltip = f'最近警戒: {alert_date_str}' if alert_date_str else ''
+            merged_alert_html = f'<span class="alert-merged" title="{tooltip}">{" ".join(alert_parts)}</span>'
         else:
-            alert_date_html = '-'
+            merged_alert_html = '-'
+
+        # row CSS classes
+        row_classes = []
+        if alert_total > 0:
+            row_classes.append('row-alert')
+        # stale check done in JS via data-latest-date; add Python-side too for no_reports exclusion
+        latest_date_attr = latest[:10] if latest else ''
+
+        row_class_str = ' '.join(row_classes)
 
         rows_html += f'''
-<tr data-status="{status}" data-cloud="{cloud}">
+<tr data-status="{esc(status)}" data-cloud="{esc(cloud)}" data-alert-total="{alert_total}" data-latest-date="{esc(latest_date_attr)}" class="{row_class_str}">
 <td>{i}</td>
-<td><strong>{permit}</strong></td>
+<td><strong>{esc(permit)}</strong></td>
 <td class="name-cell">{name_html}</td>
 <td>{cloud_badge}</td>
 <td>{drive_link}</td>
 <td>{system_count}</td>
 <td>{coverage_html}</td>
-<td>{warning_html}</td>
-<td>{action_html}</td>
-<td>{alert_html}</td>
-<td>{alert_date_html}</td>
-<td>{latest_html}</td>
+<td>{merged_alert_html}</td>
+<td>{esc(latest_html)}</td>
 <td>{days_html}</td>
-<td><span class="badge {badge_class}">{badge_text}</span></td>
+<td><span class="badge {badge_class}">{esc(badge_text)}</span></td>
 </tr>'''
 
     html = f'''<!DOCTYPE html>
@@ -779,6 +829,27 @@ body{{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft JhengHe
 .stat{{background:white;padding:12px;border-radius:8px;border-left:4px solid #dc2626;text-align:center}}
 .stat .label{{font-size:10px;color:#666}}
 .stat .value{{font-size:20px;font-weight:700;color:#dc2626}}
+/* 需要關注 section */
+.attention-section{{background:#fff7ed;border-top:3px solid #dc2626;padding:0}}
+.attention-toggle{{width:100%;background:none;border:none;padding:12px 15px;text-align:left;cursor:pointer;font-size:13px;font-weight:700;color:#991b1b;display:flex;align-items:center;gap:8px}}
+.attention-toggle:hover{{background:#fee2e2}}
+.attention-toggle .toggle-arrow{{transition:transform 0.2s;display:inline-block;font-style:normal}}
+.attention-section.open .toggle-arrow{{transform:rotate(90deg)}}
+.attention-body{{display:none;padding:12px 15px 15px}}
+.attention-section.open .attention-body{{display:block}}
+.attention-group{{margin-bottom:12px}}
+.attention-group h4{{font-size:12px;color:#92400e;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid #fcd34d}}
+.attention-cards{{display:flex;flex-wrap:wrap;gap:8px}}
+.attention-card{{background:white;border-radius:6px;padding:8px 10px;min-width:160px;max-width:220px;border-left:3px solid #dc2626;box-shadow:0 1px 3px rgba(0,0,0,0.08)}}
+.attention-card-alert{{border-left-color:#dc2626}}
+.ac-permit{{font-size:10px;font-weight:700;color:#991b1b}}
+.ac-name{{font-size:10px;color:#666;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
+.ac-summary{{font-size:12px;margin-top:4px}}
+.ac-date{{font-size:9px;color:#999;margin-top:2px}}
+.stale-table{{width:100%;border-collapse:collapse;font-size:11px}}
+.stale-table th{{background:#fef3c7;padding:5px 8px;text-align:left;font-size:10px;color:#92400e}}
+.stale-table td{{padding:4px 8px;border-bottom:1px solid #fef9e7}}
+/* non-google */
 .non-google{{background:#fef3c7;padding:15px;margin:0}}
 .non-google h3{{font-size:14px;color:#92400e;margin-bottom:10px}}
 .cloud-grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px}}
@@ -794,13 +865,18 @@ body{{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft JhengHe
 .btn{{padding:4px 8px;border:1px solid #e5e5e5;border-radius:4px;background:white;cursor:pointer;font-size:10px}}
 .btn:hover{{border-color:#dc2626}}
 .btn.active{{background:#dc2626;color:white;border-color:#dc2626}}
-.table-wrap{{overflow-x:auto;border-radius:6px;border:1px solid #e5e5e5;max-height:600px}}
+.table-wrap{{overflow-x:auto;border-radius:6px;border:1px solid #e5e5e5;max-height:800px}}
 table{{width:100%;border-collapse:collapse;font-size:11px}}
 thead{{background:#dc2626;color:white;position:sticky;top:0;z-index:10}}
 th{{padding:8px 5px;text-align:left;font-size:10px;cursor:pointer;white-space:nowrap}}
 th:hover{{background:#b91c1c}}
 td{{padding:6px 5px;border-bottom:1px solid #f0f0f0;vertical-align:top}}
 tr:hover{{background:#fafafa}}
+tr.row-alert{{background:#fff1f2}}
+tr.row-alert:hover{{background:#ffe4e6}}
+tr.row-stale{{background:#fefce8}}
+tr.row-stale:hover{{background:#fef9c3}}
+tr.row-alert.row-stale{{background:#fff1f2}}
 .badge{{display:inline-block;padding:2px 6px;border-radius:3px;font-size:9px;font-weight:600;white-space:nowrap}}
 .badge-success{{background:#dcfce7;color:#166534}}
 .badge-info{{background:#dbeafe;color:#1e40af}}
@@ -814,10 +890,12 @@ a{{color:#dc2626;text-decoration:none}}
 .days{{font-size:10px}}
 .days-old{{color:#dc2626;font-weight:600}}
 .days-recent{{color:#22c55e}}
-.alert-warning{{color:#f59e0b;font-weight:600}}
-.alert-action{{color:#dc2626;font-weight:600}}
-.alert-critical{{color:#7c2d12;font-weight:700;background:#fee2e2;padding:2px 6px;border-radius:3px}}
+.alert-merged{{font-size:11px;white-space:nowrap;cursor:help}}
 .name-cell{{max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:#666}}
+@media (max-width:768px) {{
+  .search{{width:100%}}
+  .col-cloud,.col-coverage{{display:none}}
+}}
 </style>
 </head>
 <body>
@@ -836,6 +914,25 @@ a{{color:#dc2626;text-decoration:none}}
 <div class="stat"><div class="label">錯誤</div><div class="value" style="color:#dc2626">{errors}</div></div>
 </div>
 
+<div class="attention-section {attention_open}" id="attentionSection">
+<button class="attention-toggle" onclick="toggleAttention()">
+<i class="toggle-arrow">▶</i> 需要關注 ({len(alert_permits)} 個警戒值建案 / {len(stale_permits)} 個報告過期建案)
+</button>
+<div class="attention-body">
+<div class="attention-group">
+<h4>有警戒值的建案 ({len(alert_permits)} 個)</h4>
+<div class="attention-cards">{attention_alert_cards if attention_alert_cards else '<span style="font-size:11px;color:#999">無</span>'}</div>
+</div>
+<div class="attention-group">
+<h4>報告過期的建案 (超過 30 天未更新, {len(stale_permits)} 個)</h4>
+<table class="stale-table">
+<thead><tr><th>建照字號</th><th>建案名稱</th><th>距今</th></tr></thead>
+<tbody>{attention_stale_rows if attention_stale_rows else '<tr><td colspan="3" style="color:#999;font-size:11px;padding:6px">無</td></tr>'}</tbody>
+</table>
+</div>
+</div>
+</div>
+
 <div class="non-google">
 <h3>⚠️ 使用非 Google Drive 的建照 ({other_cloud} 個)</h3>
 <div class="cloud-grid">{cloud_cards_html}</div>
@@ -843,12 +940,13 @@ a{{color:#dc2626;text-decoration:none}}
 
 <div class="content">
 <div class="controls">
-<input type="text" class="search" id="search" placeholder="搜尋建照號碼..." onkeyup="filterTable()">
-<button class="btn active" onclick="filterStatus('')">全部</button>
-<button class="btn" onclick="filterStatus('completed')">完成</button>
-<button class="btn" onclick="filterStatus('in_progress')">處理中</button>
-<button class="btn" onclick="filterStatus('not_uploaded')">未上傳</button>
-<button class="btn" onclick="filterStatus('other_cloud')">其他雲端</button>
+<input type="text" class="search" id="search" placeholder="搜尋建照號碼或建案名稱..." onkeyup="filterTable()">
+<button class="btn active" onclick="filterStatus(this,'')">全部</button>
+<button class="btn" onclick="filterStatus(this,'completed')">完成</button>
+<button class="btn" onclick="filterStatus(this,'in_progress')">處理中</button>
+<button class="btn" onclick="filterStatus(this,'not_uploaded')">未上傳</button>
+<button class="btn" onclick="filterStatus(this,'other_cloud')">其他雲端</button>
+<button class="btn" onclick="filterStatus(this,'needs_attention')">需要關注</button>
 </div>
 <div class="table-wrap">
 <table id="dataTable">
@@ -857,17 +955,14 @@ a{{color:#dc2626;text-decoration:none}}
 <th onclick="sortTable(0)">#</th>
 <th onclick="sortTable(1)">建照字號</th>
 <th onclick="sortTable(2)">建案名稱</th>
-<th onclick="sortTable(3)">雲端</th>
+<th onclick="sortTable(3)" class="col-cloud">雲端</th>
 <th onclick="sortTable(4)">Drive PDF</th>
 <th onclick="sortTable(5)">系統 PDF</th>
-<th onclick="sortTable(6)">覆蓋率</th>
-<th onclick="sortTable(7)">警戒</th>
-<th onclick="sortTable(8)">行動</th>
-<th onclick="sortTable(9)">Alert</th>
-<th onclick="sortTable(10)">最近警戒</th>
-<th onclick="sortTable(11)">最新報告</th>
-<th onclick="sortTable(12)">距今</th>
-<th onclick="sortTable(13)">狀態</th>
+<th onclick="sortTable(6)" class="col-coverage">覆蓋率</th>
+<th onclick="sortTable(7)">警戒值</th>
+<th onclick="sortTable(8)">最新報告</th>
+<th onclick="sortTable(9)">距今</th>
+<th onclick="sortTable(10)">狀態</th>
 </tr>
 </thead>
 <tbody>{rows_html}</tbody>
@@ -877,24 +972,77 @@ a{{color:#dc2626;text-decoration:none}}
 </div>
 
 <script>
+(function() {{
+  // Dynamic date calculation
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  document.querySelectorAll('.days[data-date]').forEach(function(el) {{
+    const raw = el.getAttribute('data-date');
+    if (!raw || raw === '-') {{ el.textContent = '-'; return; }}
+    const parts = raw.split('-');
+    if (parts.length !== 3) {{ el.textContent = raw; return; }}
+    const d = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+    const diff = Math.floor((today - d) / 86400000);
+    el.textContent = diff + ' 天';
+    if (diff > 30) {{
+      el.classList.add('days-old');
+    }} else if (diff <= 7) {{
+      el.classList.add('days-recent');
+    }}
+  }});
+
+  // Mark stale rows dynamically
+  document.querySelectorAll('#dataTable tbody tr').forEach(function(row) {{
+    const latestDate = row.getAttribute('data-latest-date');
+    const status = row.getAttribute('data-status');
+    if (latestDate && latestDate !== '-' && status !== 'no_reports') {{
+      const parts = latestDate.split('-');
+      if (parts.length === 3) {{
+        const d = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+        const diff = Math.floor((today - d) / 86400000);
+        if (diff > 30) row.classList.add('row-stale');
+      }}
+    }}
+  }});
+}})();
+
 let currentFilter = '';
 function filterTable() {{
   const search = document.getElementById('search').value.toLowerCase();
   const rows = document.querySelectorAll('#dataTable tbody tr');
-  rows.forEach(row => {{
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  rows.forEach(function(row) {{
     const permit = row.cells[1].textContent.toLowerCase();
+    const name = row.cells[2].textContent.toLowerCase();
     const status = row.dataset.status;
     const cloud = row.dataset.cloud;
-    const matchSearch = permit.includes(search);
-    const matchStatus = !currentFilter ||
-      (currentFilter === 'other_cloud' ? cloud !== 'Google Drive' : status === currentFilter);
+    const alertTotal = parseInt(row.dataset.alertTotal || '0');
+    const matchSearch = permit.includes(search) || name.includes(search);
+    let matchStatus = true;
+    if (currentFilter === 'other_cloud') {{
+      matchStatus = cloud !== 'Google Drive';
+    }} else if (currentFilter === 'needs_attention') {{
+      let isStale = false;
+      const ld = row.getAttribute('data-latest-date');
+      if (ld && ld !== '-' && status !== 'no_reports') {{
+        const parts = ld.split('-');
+        if (parts.length === 3) {{
+          const d = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+          isStale = Math.floor((today - d) / 86400000) > 30;
+        }}
+      }}
+      matchStatus = alertTotal > 0 || isStale;
+    }} else if (currentFilter) {{
+      matchStatus = status === currentFilter;
+    }}
     row.style.display = matchSearch && matchStatus ? '' : 'none';
   }});
 }}
-function filterStatus(status) {{
+function filterStatus(btn, status) {{
   currentFilter = status;
-  document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
-  event.target.classList.add('active');
+  document.querySelectorAll('.btn').forEach(function(b) {{ b.classList.remove('active'); }});
+  btn.classList.add('active');
   filterTable();
 }}
 function sortTable(n) {{
@@ -902,7 +1050,7 @@ function sortTable(n) {{
   const rows = Array.from(table.rows).slice(1);
   const dir = table.dataset.sortDir === 'asc' ? -1 : 1;
   table.dataset.sortDir = dir === 1 ? 'asc' : 'desc';
-  rows.sort((a, b) => {{
+  rows.sort(function(a, b) {{
     let x = a.cells[n].textContent;
     let y = b.cells[n].textContent;
     if (!isNaN(parseFloat(x)) && !isNaN(parseFloat(y))) {{
@@ -910,7 +1058,11 @@ function sortTable(n) {{
     }}
     return x.localeCompare(y, 'zh-TW') * dir;
   }});
-  rows.forEach(row => table.tBodies[0].appendChild(row));
+  rows.forEach(function(row) {{ table.tBodies[0].appendChild(row); }});
+}}
+function toggleAttention() {{
+  const sec = document.getElementById('attentionSection');
+  sec.classList.toggle('open');
 }}
 </script>
 </body>
