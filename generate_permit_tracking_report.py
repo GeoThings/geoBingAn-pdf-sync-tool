@@ -123,37 +123,51 @@ def scan_google_drive(service) -> Dict[str, dict]:
 
     print(f"  找到 {len(permit_folders)} 個建照資料夾")
 
-    # 取得每個資料夾的 PDF 數量
-    print("  統計各資料夾 PDF 數量...")
-    for i, (permit, info) in enumerate(permit_folders.items()):
+    # 用單一查詢掃描所有 PDF，再按資料夾分組統計（取代逐資料夾查詢）
+    print("  掃描所有 PDF 並統計...")
+    folder_id_to_permit = {info['folder_id']: permit for permit, info in permit_folders.items()}
+
+    # 初始化所有資料夾的計數
+    for permit in permit_folders:
+        permit_folders[permit]['pdf_count'] = 0
+        permit_folders[permit]['latest_pdf'] = ''
+
+    page_token = None
+    total_pdfs = 0
+    while True:
         try:
             results = service.files().list(
-                q=f"'{info['folder_id']}' in parents and mimeType='application/pdf'",
+                q="mimeType='application/pdf' and trashed=false",
                 corpora='drive',
                 driveId=SHARED_DRIVE_ID,
                 includeItemsFromAllDrives=True,
                 supportsAllDrives=True,
-                fields='files(id, name, modifiedTime)',
-                pageSize=1000
+                fields='nextPageToken, files(name, modifiedTime, parents)',
+                pageSize=1000,
+                pageToken=page_token
             ).execute()
 
-            files = results.get('files', [])
-            # 計算唯一檔名數量（排除重複）
-            unique_names = set(f.get('name', '') for f in files)
-            permit_folders[permit]['pdf_count'] = len(unique_names)
+            for f in results.get('files', []):
+                parents = f.get('parents', [])
+                if not parents:
+                    continue
+                parent_id = parents[0]
+                permit = folder_id_to_permit.get(parent_id)
+                if permit:
+                    permit_folders[permit]['pdf_count'] += 1
+                    mod_time = f.get('modifiedTime', '')
+                    if mod_time > permit_folders[permit]['latest_pdf']:
+                        permit_folders[permit]['latest_pdf'] = mod_time
+                    total_pdfs += 1
 
-            if files:
-                latest = max(files, key=lambda x: x.get('modifiedTime', ''))
-                permit_folders[permit]['latest_pdf'] = latest.get('modifiedTime', '')
-            else:
-                permit_folders[permit]['latest_pdf'] = ''
+            page_token = results.get('nextPageToken')
+            if not page_token:
+                break
+        except HttpError as e:
+            print(f"    ❌ PDF 掃描失敗: {e}")
+            break
 
-        except HttpError:
-            permit_folders[permit]['pdf_count'] = 0
-            permit_folders[permit]['latest_pdf'] = ''
-
-        if (i + 1) % 50 == 0:
-            print(f"    已處理 {i + 1}/{len(permit_folders)} 個資料夾")
+    print(f"    統計完成: {total_pdfs} 個 PDF 分布在 {len(permit_folders)} 個資料夾")
 
     return permit_folders
 
