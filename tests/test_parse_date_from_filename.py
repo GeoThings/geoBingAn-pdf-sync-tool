@@ -1,11 +1,14 @@
-"""Tests for parse_date_from_filename()."""
+"""Tests for parse_date_from_filename().
+
+Imports from filename_date_parser (standalone module) so tests run
+without config.py, credentials, or any Google API dependencies.
+"""
 import sys
 import os
 from datetime import datetime
 
-# Add project root to path so we can import upload_pdfs
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from upload_pdfs import parse_date_from_filename, FILENAME_DATE_CUTOFF
+from filename_date_parser import parse_date_from_filename, FILENAME_DATE_CUTOFF
 
 
 class TestROCYear7Digits:
