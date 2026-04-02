@@ -26,6 +26,7 @@ from googleapiclient.http import MediaIoBaseDownload
 from typing import Dict, List, Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
+import re
 
 # 匯入配置檔案
 try:
@@ -90,6 +91,87 @@ EXCLUDE_FILES = [
 
 # 全域鎖，用於並行上傳時保護狀態檔案
 state_lock = threading.Lock()
+
+# 檔名日期過濾：2026 農曆新年（正月初一）= 2026-02-17
+FILENAME_DATE_CUTOFF = datetime(2026, 2, 17)
+
+
+def parse_date_from_filename(filename: str) -> Optional[datetime]:
+    """從 PDF 檔名中解析日期。支援多種格式：
+    - 民國年: 1150311, 115.03.24, 115年03月09日, 1150311
+    - 西元年: 2026-02-23, 20260303, 0303 (當年)
+    - 混合: 1131028 (民國113年10月28日)
+    回傳 datetime 或 None（無法解析時）
+    """
+    basename = filename.replace('.pdf', '').replace('.PDF', '')
+
+    # 模式1: 西元年完整格式 2026-02-23 或 2026-03-01
+    m = re.search(r'(20\d{2})-(\d{2})-(\d{2})', basename)
+    if m:
+        try:
+            return datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+        except ValueError:
+            pass
+
+    # 模式2: 民國年「115年03月09日」或「115年3月9日」
+    m = re.search(r'(\d{2,3})年(\d{1,2})月(\d{1,2})日', basename)
+    if m:
+        try:
+            roc_year = int(m.group(1))
+            return datetime(roc_year + 1911, int(m.group(2)), int(m.group(3)))
+        except ValueError:
+            pass
+
+    # 模式3: 民國年點分隔 115.03.24 或 115.3.24
+    m = re.search(r'(\d{3})\.(\d{1,2})\.(\d{1,2})', basename)
+    if m:
+        try:
+            roc_year = int(m.group(1))
+            if 100 <= roc_year <= 120:
+                return datetime(roc_year + 1911, int(m.group(2)), int(m.group(3)))
+        except ValueError:
+            pass
+
+    # 模式4: 民國年7碼 1150311 (位於檔名開頭或底線/連字號後)
+    m = re.search(r'(?:^|[_\-\s])(\d{3})(\d{2})(\d{2})(?:[_\-\s.]|$)', basename)
+    if m:
+        try:
+            roc_year = int(m.group(1))
+            month = int(m.group(2))
+            day = int(m.group(3))
+            if 100 <= roc_year <= 120 and 1 <= month <= 12 and 1 <= day <= 31:
+                return datetime(roc_year + 1911, month, day)
+        except ValueError:
+            pass
+
+    # 模式5: 民國年7碼（嵌在文字中，如「連雲玥恒1150331報告」）
+    m = re.search(r'(\d{7})', basename)
+    if m:
+        try:
+            digits = m.group(1)
+            roc_year = int(digits[:3])
+            month = int(digits[3:5])
+            day = int(digits[5:7])
+            if 100 <= roc_year <= 120 and 1 <= month <= 12 and 1 <= day <= 31:
+                return datetime(roc_year + 1911, month, day)
+        except ValueError:
+            pass
+
+    # 模式6: 4碼日期 + 觀測報告（如「0303觀測報告」），從路徑推斷年份
+    m = re.search(r'(\d{2})(\d{2})觀測報告', basename)
+    if m:
+        try:
+            month = int(m.group(1))
+            day = int(m.group(2))
+            if 1 <= month <= 12 and 1 <= day <= 31:
+                # 從路徑中找西元年
+                year_match = re.search(r'(20\d{2})', basename)
+                year = int(year_match.group(1)) if year_match else 2026
+                return datetime(year, month, day)
+        except ValueError:
+            pass
+
+    return None
 
 
 # ================== JWT Token 管理 ==================
@@ -675,23 +757,35 @@ def main():
 
     print(f"✅ 找到 {len(all_pdfs)} 個 PDF 檔案")
 
-    # 計算日期閾值（最近 N 天）
-    cutoff_date = datetime.now() - timedelta(days=DAYS_AGO)
-    cutoff_date_str = cutoff_date.isoformat() + 'Z'
+    # 使用檔名日期過濾（農曆新年 2026-02-17 之後）
+    cutoff_date = FILENAME_DATE_CUTOFF
+    print(f"\n🗓️  過濾檔名日期在 {cutoff_date.strftime('%Y-%m-%d')}（農曆新年）之後的 PDF...")
 
-    print(f"\n🗓️  過濾最近 {DAYS_AGO} 天更新的 PDF（{cutoff_date.strftime('%Y-%m-%d')} 之後）...")
-
-    # 過濾最近 N 天的 PDF
     recent_pdfs = []
+    no_date_count = 0
+    too_old_count = 0
     for pdf in all_pdfs:
-        # Google Drive 的 modifiedTime 格式: '2025-12-29T06:11:04.237Z'
-        if pdf['modifiedTime'] >= cutoff_date_str:
+        # 嘗試從檔名解析日期，若失敗則用 folder_name + 檔名組合再試
+        file_date = parse_date_from_filename(pdf['name'])
+        if file_date is None and pdf.get('folder_name'):
+            file_date = parse_date_from_filename(pdf['folder_name'] + '/' + pdf['name'])
+        if file_date is None:
+            no_date_count += 1
+            continue
+        if file_date >= cutoff_date:
+            pdf['_parsed_date'] = file_date
             recent_pdfs.append(pdf)
+        else:
+            too_old_count += 1
 
-    print(f"✅ 找到 {len(recent_pdfs)} 個最近 {DAYS_AGO} 天更新的 PDF")
+    print(f"✅ 找到 {len(recent_pdfs)} 個農曆新年後的 PDF")
+    if no_date_count > 0:
+        print(f"⏭️  {no_date_count} 個無法從檔名解析日期（已跳過）")
+    if too_old_count > 0:
+        print(f"⏭️  {too_old_count} 個日期在農曆新年之前（已跳過）")
 
-    # 排序：按修改時間降序（最新的在前面）
-    recent_pdfs.sort(key=lambda x: x['modifiedTime'], reverse=True)
+    # 排序：按檔名解析日期降序（最新的在前面）
+    recent_pdfs.sort(key=lambda x: x.get('_parsed_date', datetime.min), reverse=True)
 
     # 過濾掉已上傳的和排除清單中的檔案，最多取 MAX_UPLOADS 筆
     pdfs_to_upload = []
