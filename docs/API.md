@@ -17,16 +17,7 @@
 
 **Content-Type**: `multipart/form-data`
 
-**Authentication**: `Bearer Token` (JWT)
-
----
-
-## Request Headers
-
-| Header | 必填 | 說明 |
-|--------|------|------|
-| `Authorization` | ✅ | `Bearer <JWT_TOKEN>` |
-| `Content-Type` | ✅ | `multipart/form-data` |
+**Authentication**: `Bearer Token` (JWT，由 `jwt_auth.py` 模組自動管理刷新)
 
 ---
 
@@ -36,6 +27,8 @@
 |------|------|------|------|
 | `file` | File | ✅ | PDF 檔案 |
 | `group_id` | String | ✅ | 群組 ID |
+| `report_type` | String | ✅ | 報告類型（`weekly`, `daily`, `monthly`, `incident`, `inspection`） |
+| `primary_language` | String | ✅ | 語言（`zh-TW`） |
 
 ---
 
@@ -61,10 +54,12 @@ headers = {
 }
 files = {'file': ('example.pdf', open('example.pdf', 'rb'), 'application/pdf')}
 data = {
-    'group_id': 'your-group-id'
+    'group_id': 'your-group-id',
+    'report_type': 'weekly',
+    'primary_language': 'zh-TW'
 }
 
-response = requests.post(url, headers=headers, files=files, data=data, timeout=120)
+response = requests.post(url, headers=headers, files=files, data=data, timeout=600)
 print(response.json())
 ```
 
@@ -107,14 +102,14 @@ print(response.json())
 
 ## Error Codes
 
-| HTTP Status | 錯誤原因 |
-|-------------|----------|
-| `400 Bad Request` | 參數錯誤或檔案格式不正確 |
-| `401 Unauthorized` | JWT Token 過期或無效 |
-| `403 Forbidden` | 無權限或檔案已存在 |
-| `413 Payload Too Large` | 檔案過大 |
-| `500 Internal Server Error` | Backend 內部錯誤 |
-| `504 Gateway Timeout` | AI 處理超時 |
+| HTTP Status | 錯誤原因 | 工具行為 |
+|-------------|----------|----------|
+| `400 Bad Request` | 參數錯誤或檔案格式不正確 | 不重試 |
+| `401 Unauthorized` | JWT Token 過期或無效 | 自動刷新 Token 後重試一次 |
+| `403 Forbidden` | 無權限或檔案已存在 | 不重試 |
+| `502 Bad Gateway` | 閘道器錯誤，PDF 可能已送達 | 不重試（視為 processing） |
+| `503 Service Unavailable` | 伺服器暫時不可用 | 指數退避重試（5s/15s/30s） |
+| `504 Gateway Timeout` | AI 處理超時，PDF 可能已送達 | 不重試（視為 processing） |
 
 ---
 
@@ -153,33 +148,17 @@ if response.status_code == 200:
 
 ## Rate Limiting
 
-建議在上傳時加入延遲避免觸發 rate limit：
-
-```python
-import time
-
-for pdf in pdfs:
-    upload_pdf(pdf)
-    time.sleep(2)  # 每次上傳間隔 2 秒
-```
-
----
-
-## Timeout Settings
-
-建議設定較長的 timeout：
-
-```python
-response = requests.post(url, files=files, data=data, timeout=120)  # 2 分鐘
-```
+上傳間隔 0.5 秒（後端為非同步 AI 處理，不需長等待）。
+Timeout 建議設為 600 秒（10 分鐘），大型 PDF 的 AI 分析需要較長時間。
 
 ---
 
 ## 相關文檔
 
-- [Backend Repository](https://github.com/GeoThings/geoBingAn_v2_backend)
+- [系統架構設計](architecture.md)
 - [問題排解指南](troubleshooting.md)
+- [Backend Repository](https://github.com/GeoThings/geoBingAn_v2_backend)
 
 ---
 
-**最後更新**: 2026-03-09
+**最後更新**: 2026-04-02

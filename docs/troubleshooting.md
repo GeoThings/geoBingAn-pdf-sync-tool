@@ -13,92 +13,29 @@
 
 ---
 
-## 1. 腳本執行卡住（死鎖問題）
+## 1. 腳本執行卡住
 
 ### 症狀
-- 腳本在成功上傳一個 PDF 後就卡住不動
-- 沒有錯誤訊息，程式無回應
-- CPU 使用率低但程式不繼續執行
-
-### 原因
-`save_state()` 函數內部使用了 `with state_lock:`，而呼叫它的 `process_single_pdf()` 函數也使用了 `with state_lock:`，造成同一個執行緒嘗試重複取得同一個鎖，導致死鎖。
-
-```python
-# 錯誤的程式碼結構
-def save_state(state):
-    with state_lock:  # 第二次取得鎖 -> 死鎖！
-        with open(STATE_FILE, 'w') as f:
-            json.dump(state, f)
-
-def process_single_pdf(...):
-    with state_lock:  # 第一次取得鎖
-        save_state(state)  # 嘗試再次取得同一個鎖
-```
+- 腳本無回應，CPU 使用率低
 
 ### 解決方案
-移除 `save_state()` 內部的鎖，由呼叫者負責管理鎖：
-
-```python
-def save_state(state: dict):
-    """儲存已上傳的 PDF 記錄
-
-    注意：此函數不包含鎖，呼叫者需要自行管理 state_lock
-    """
-    os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
-    with open(STATE_FILE, 'w', encoding='utf-8') as f:
-        json.dump(state, indent=2, ensure_ascii=False, fp=f)
-```
+v3.1+ 已修復死鎖問題。`save_state()` 現在使用 `flock` + read-merge-write + atomic replace，不再有 thread-level 死鎖風險。如仍卡住，可能是網路逾時 — 檢查 Google Drive API 連線。
 
 ---
 
 ## 2. JWT Token 過期
 
 ### 症狀
-- API 回傳 401 Unauthorized 錯誤
-- 錯誤訊息：`Token has expired` 或 `Invalid token`
-- 腳本在執行一段時間後開始失敗
-
-### 原因
-- Access Token 有效期約 1 小時
-- 每次手動更新 Token 不切實際
+- API 回傳 401 Unauthorized
 
 ### 解決方案
-實作 JWT Token 自動刷新機制：
+v3.1+ 的 `jwt_auth.py` 模組自動處理 Token 刷新（過期前 5 分鐘觸發）。
 
-1. **檢查 Token 是否過期**：
-```python
-def is_token_expired(token: str, buffer_seconds: int = 300) -> bool:
-    """檢查 Token 是否已過期或即將過期（預設 5 分鐘緩衝）"""
-    payload = decode_jwt_payload(token)
-    exp = payload.get('exp')
-    if not exp:
-        return True
-    return time.time() >= (exp - buffer_seconds)
-```
-
-2. **自動刷新 Token**：
-```python
-def refresh_access_token() -> Optional[str]:
-    """使用 refresh_token 取得新的 access_token"""
-    response = requests.post(
-        GEOBINGAN_REFRESH_URL,
-        json={'refresh_token': REFRESH_TOKEN},
-        headers={'Content-Type': 'application/json'}
-    )
-    if response.status_code == 200:
-        data = response.json()
-        return data.get('access') or data.get('access_token')
-    return None
-```
-
-3. **.env 需要的設定**：
-```bash
-# Refresh Token（有效期 7 天）
-REFRESH_TOKEN=your_refresh_token_here
-
-# Token 刷新 API
-GEOBINGAN_REFRESH_URL = 'https://riskmap.today/api/auth/auth/refresh_token/'
-```
+**如果 Refresh Token 也過期（7 天有效期）：**
+1. 登入 riskmap.today
+2. F12 → Application → Local Storage
+3. 複製 `access_token` 和 `refresh_token`
+4. 更新 `.env` 中的 `JWT_TOKEN` 和 `REFRESH_TOKEN`
 
 ---
 
@@ -296,12 +233,6 @@ print(response.json())
 
 ---
 
-## 更新記錄
+---
 
-| 日期 | 問題 | 解決方案 |
-|------|------|----------|
-| 2026-01-09 | PDF 缺少副檔名 | 自動補上 .pdf 副檔名 |
-| 2026-01-09 | 死鎖問題 | 移除 save_state() 內部鎖 |
-| 2026-01-09 | JWT 過期 | 實作自動刷新機制 |
-| 2026-01-08 | API 端點錯誤 | 改用 construction-reports/upload/ |
-| 2026-01-08 | 202 狀態碼 | 加入成功狀態碼列表 |
+**最後更新**: 2026-04-02
