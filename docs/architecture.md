@@ -58,14 +58,24 @@ run_weekly_sync.sh（orchestrator）
     ▼ 比對 state/sync_permits_progress.json
 未處理建案
     │
-    ▼ 每個建案：預載入目標資料夾檔案樹到記憶體 set
-    │  （fail-closed：不完整掃描回退逐檔 API）
+    ▼ ThreadPoolExecutor（5 並行，thread-local Drive service）
     │
-    ▼ 來源檔案 vs 目標 set 比對（O(1) lookup，零 API）
+    ├── 每個建案：預載入目標檔案樹到記憶體 set
+    │   （fail-closed：不完整掃描回退逐檔 API）
     │
-    ▼ 只複製新檔到 Shared Drive（子資料夾 ID 快取）
-state/sync_permits_progress.json 更新
+    ├── 來源檔案 vs 目標 set 比對（O(1) lookup，零 API）
+    │
+    └── 只複製新檔（子資料夾 ID 快取）
+    │
+state/sync_permits_progress.json 更新（thread-safe _state_lock）
 ```
+
+**Thread safety 設計：**
+- `credentials`：共用（thread-safe）
+- `httplib2.Http`：每 thread 獨立（`threading.local()` + `get_thread_drive_service()`）
+- `state` 寫入：`_state_lock` 保護
+- 輸出：`_print_lock` 保護
+- 快取：`_target_file_cache` 每建案獨立 key，`_subfolder_cache` 跨建案共享但寫入不衝突（不同路徑）
 
 ### 步驟 2：upload_pdfs.py
 

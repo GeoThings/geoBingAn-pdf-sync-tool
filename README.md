@@ -553,6 +553,12 @@ Service Account 只需要：
 
 ## 📝 版本歷史
 
+### v3.4.0 (2026-04-02)
+- ⚡ sync_permits 並行處理（5 thread ThreadPoolExecutor）
+- ⚡ Thread-local Drive service（httplib2 非 thread-safe，每 thread 獨立 instance）
+- ⚡ 174 建案同步時間：7 分 19 秒 → 2 分 37 秒
+- ⚡ State 格式升級為 dict（向後相容舊 list 格式自動轉換）
+
 ### v3.3.0 (2026-04-02)
 - ⚡ sync_permits 預載入目標檔案樹（逐檔 API 查詢 → 記憶體 set lookup）
 - ⚡ 子資料夾 ID 快取（避免重複查詢同一路徑）
