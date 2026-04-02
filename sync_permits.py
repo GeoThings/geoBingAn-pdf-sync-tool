@@ -18,6 +18,8 @@ import time
 import io
 import sys
 import random
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
@@ -46,10 +48,29 @@ PDF_LIST_URL = 'https://www-ws.gov.taipei/001/Upload/845/relfile/-1/845/03b35db7
 STATE_FILE = './state/sync_permits_progress.json'
 # ============================================
 
-# 初始化 Google Drive API
+# Google Drive API 認證
+# credentials 是 thread-safe 的，但 httplib2.Http 不是。
+# 每個 thread 需要自己的 service instance。
+# https://googleapis.github.io/google-api-python-client/docs/thread_safety.html
 credentials = service_account.Credentials.from_service_account_file(
     SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+
+# 主執行緒的 service（用於 run() 中的非並行操作）
 drive_service = build('drive', 'v3', credentials=credentials)
+
+# Thread-local storage
+_thread_local = threading.local()
+
+
+def get_thread_drive_service():
+    """取得當前 thread 的獨立 Drive service instance"""
+    if not hasattr(_thread_local, 'service'):
+        _thread_local.service = build('drive', 'v3', credentials=credentials)
+    return _thread_local.service
+
+# 並行處理設定
+MAX_CONCURRENT_PERMITS = 5  # 同時處理的建案數（Google Drive API quota: 12,000 req/min）
+
 
 class PermitSync:
     def __init__(self):
@@ -57,6 +78,8 @@ class PermitSync:
         self.permit_mapping = {}
         self.state = self.load_state()
         self.restricted_files = []
+        self._state_lock = threading.Lock()
+        self._print_lock = threading.Lock()
         # 效能快取：目標資料夾的檔案樹和子資料夾 ID
         self._target_file_cache = {}   # permit_no → set of "path/filename" or "filename"
         self._subfolder_cache = {}     # (parent_id, subfolder_name) → folder_id
@@ -64,13 +87,23 @@ class PermitSync:
     def load_state(self) -> dict:
         if os.path.exists(STATE_FILE):
             with open(STATE_FILE, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        return {'processed': [], 'skipped': [], 'errors': [], 'restricted': []}
+                state = json.load(f)
+            # 向後相容：舊版 processed 是 list，新版是 dict
+            if isinstance(state.get('processed'), list):
+                state['processed'] = {p: '' for p in state['processed']}
+            return state
+        return {'processed': {}, 'skipped': [], 'errors': [], 'restricted': []}
     
     def save_state(self):
         os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
-        with open(STATE_FILE, 'w', encoding='utf-8') as f:
-            json.dump(self.state, indent=2, ensure_ascii=False, fp=f)
+        with self._state_lock:
+            with open(STATE_FILE, 'w', encoding='utf-8') as f:
+                json.dump(self.state, indent=2, ensure_ascii=False, fp=f)
+
+    def _print(self, msg: str):
+        """Thread-safe print"""
+        with self._print_lock:
+            print(msg, flush=True)
     
     def download_pdf_list(self) -> str:
         print("📥 下載建案列表 PDF...")
@@ -189,7 +222,7 @@ class PermitSync:
         files = []
         try:
             query = f"'{folder_id}' in parents and trashed=false"
-            results = drive_service.files().list(
+            results = self._get_svc().files().list(
                 q=query, fields='files(id, name, mimeType, webViewLink)',
                 pageSize=1000, supportsAllDrives=True, includeItemsFromAllDrives=True
             ).execute()
@@ -225,7 +258,7 @@ class PermitSync:
         try:
             page_token = None
             while True:
-                results = drive_service.files().list(
+                results = self._get_svc().files().list(
                     q=f"'{folder_id}' in parents and trashed=false",
                     fields='nextPageToken, files(id, name, mimeType)',
                     pageSize=1000, pageToken=page_token,
@@ -260,7 +293,7 @@ class PermitSync:
             if not target_folder_id: return False
         try:
             query = f"'{target_folder_id}' in parents and (name='{filename}' or name='{filename}.url') and trashed=false"
-            results = drive_service.files().list(
+            results = self._get_svc().files().list(
                 q=query, fields='files(id)', supportsAllDrives=True, includeItemsFromAllDrives=True
             ).execute()
             return len(results.get('files', [])) > 0
@@ -287,13 +320,13 @@ class PermitSync:
                 continue
             try:
                 query = f"'{current_folder_id}' in parents and name='{folder_name}' and mimeType='application/vnd.google-apps.folder' and trashed=false"
-                results = drive_service.files().list(q=query, fields='files(id)', supportsAllDrives=True, includeItemsFromAllDrives=True).execute()
+                results = self._get_svc().files().list(q=query, fields='files(id)', supportsAllDrives=True, includeItemsFromAllDrives=True).execute()
                 items = results.get('files', [])
                 if items:
                     current_folder_id = items[0]['id']
                 else:
                     file_metadata = {'name': folder_name, 'mimeType': 'application/vnd.google-apps.folder', 'parents': [current_folder_id]}
-                    folder = drive_service.files().create(body=file_metadata, fields='id', supportsAllDrives=True).execute()
+                    folder = self._get_svc().files().create(body=file_metadata, fields='id', supportsAllDrives=True).execute()
                     current_folder_id = folder['id']
                 # 寫入快取
                 self._subfolder_cache[cache_key] = current_folder_id
@@ -307,7 +340,7 @@ class PermitSync:
             file_content = f"[InternetShortcut]\nURL={web_link}"
             file_metadata = {'name': link_filename, 'parents': [parent_id], 'mimeType': 'text/plain'}
             media = MediaIoBaseUpload(io.BytesIO(file_content.encode('utf-8')), mimetype='text/plain', resumable=True)
-            drive_service.files().create(body=file_metadata, media_body=media, fields='id', supportsAllDrives=True).execute()
+            self._get_svc().files().create(body=file_metadata, media_body=media, fields='id', supportsAllDrives=True).execute()
             return True
         except Exception:
             return False
@@ -317,21 +350,22 @@ class PermitSync:
         if path:
             final_folder_id = self.get_or_create_subfolder(target_folder_id, path)
             if not final_folder_id: return None, None
-        
+
+        svc = self._get_svc()
         try:
             file_metadata = {'name': filename, 'parents': [final_folder_id]}
-            copied_file = drive_service.files().copy(fileId=source_file_id, body=file_metadata, fields='id', supportsAllDrives=True).execute()
+            copied_file = svc.files().copy(fileId=source_file_id, body=file_metadata, fields='id', supportsAllDrives=True).execute()
             return copied_file['id'], final_folder_id
         except HttpError as e:
             try:
-                request = drive_service.files().get_media(fileId=source_file_id, supportsAllDrives=True)
+                request = svc.files().get_media(fileId=source_file_id, supportsAllDrives=True)
                 file_buffer = io.BytesIO()
                 downloader = MediaIoBaseDownload(file_buffer, request)
                 done = False
                 while not done: status, done = downloader.next_chunk()
                 file_buffer.seek(0)
                 media = MediaIoBaseUpload(file_buffer, mimetype='application/pdf', resumable=True)
-                uploaded_file = drive_service.files().create(
+                uploaded_file = svc.files().create(
                     body={'name': filename, 'parents': [final_folder_id], 'mimeType': 'application/pdf'},
                     media_body=media, fields='id', supportsAllDrives=True).execute()
                 return uploaded_file['id'], final_folder_id
@@ -340,17 +374,22 @@ class PermitSync:
                     return 'restricted', final_folder_id
                 return None, None
 
+    def _get_svc(self):
+        """取得當前 thread 的 Drive service（並行時用 thread-local，序列時用全域）"""
+        return get_thread_drive_service()
+
     def sync_permit(self, permit_no: str, source_url: str, target_folder_id: str):
-        print(f"\n🔄 監測建案: {permit_no}")
+        self._print(f"\n🔄 監測建案: {permit_no}")
         source_folder_id = self.extract_folder_id_from_url(source_url)
         if not source_folder_id:
-            self.state['errors'].append({'permit': permit_no, 'error': 'Invalid URL ID'})
+            with self._state_lock:
+                self.state['errors'].append({'permit': permit_no, 'error': 'Invalid URL ID'})
             return
 
         try:
             files = self.list_files_recursive(source_folder_id)
             if not files:
-                print(f"  ⚠️ 來源無檔案")
+                self._print(f"  ⚠️ 來源無檔案")
                 return
 
             # 預載入目標資料夾的完整檔案樹（1 次遞迴 vs 逐檔 API 查詢）
@@ -363,35 +402,34 @@ class PermitSync:
 
                 if self.check_file_exists(target_folder_id, filename, path, permit_no):
                     continue
-                
+
                 result_id, final_folder_id = self.copy_file(file_id, target_folder_id, filename, path)
                 if result_id == 'restricted':
-                    print(f"    🔒 受限: {display_path} (建立捷徑)")
+                    self._print(f"    🔒 受限: {display_path} (建立捷徑)")
                     self.create_shortcut_file(final_folder_id, filename, web_link)
-                    self.restricted_files.append({'filename': filename, 'permit': permit_no})
-                    # 更新記憶體快取
+                    with self._state_lock:
+                        self.restricted_files.append({'filename': filename, 'permit': permit_no})
                     if permit_no in self._target_file_cache:
                         key = f"{path}/{filename}.url" if path else f"{filename}.url"
                         self._target_file_cache[permit_no].add(key)
                 elif result_id:
-                    print(f"    🆕 發現新檔並複製: {display_path}")
+                    self._print(f"    🆕 發現新檔並複製: {display_path}")
                     copied += 1
-                    # 更新記憶體快取
                     if permit_no in self._target_file_cache:
                         key = f"{path}/{filename}" if path else filename
                         self._target_file_cache[permit_no].add(key)
-                # Google Drive API quota: 12,000 req/min，不需要額外延遲
-            
-            if copied > 0:
-                print(f"  📊 更新完成: 新增 {copied} 個")
 
-            if permit_no not in self.state['processed']:
-                self.state['processed'].append(permit_no)
+            if copied > 0:
+                self._print(f"  📊 更新完成: 新增 {copied} 個")
+
+            with self._state_lock:
+                self.state['processed'][permit_no] = True
             self.save_state()
-            
+
         except Exception as e:
-            print(f"  ❌ 處理中斷: {e}")
-            self.state['errors'].append({'permit': permit_no, 'error': str(e)})
+            self._print(f"  ❌ 處理中斷: {e}")
+            with self._state_lock:
+                self.state['errors'].append({'permit': permit_no, 'error': str(e)})
             self.save_state()
     
     def run(self):
@@ -408,12 +446,10 @@ class PermitSync:
         # 隨機打亂，確保每次執行檢查不同建案
         random.shuffle(permit_list)
 
-        # 優化：過濾掉已處理且無錯誤的建案（增量同步）
+        # 過濾掉已處理且無錯誤的建案（增量同步）
         unprocessed_permits = []
         for permit_no, source_url in permit_list:
-            # 如果建案已成功處理過，跳過
             if permit_no in self.state['processed']:
-                # 檢查是否有錯誤記錄，如有則重新處理
                 has_error = any(e.get('permit') == permit_no for e in self.state.get('errors', []))
                 if not has_error:
                     continue
@@ -423,6 +459,8 @@ class PermitSync:
         print(f"✅ 已處理: {len(permit_list) - len(unprocessed_permits)} 個")
         print(f"🔄 待處理: {len(unprocessed_permits)} 個")
 
+        # 先確保所有建案都有目標資料夾（序列化，因為涉及建立資料夾）
+        permits_with_targets = []
         for permit_no, source_url in unprocessed_permits:
             if permit_no in self.target_folders:
                 target_id = self.target_folders[permit_no]
@@ -433,8 +471,22 @@ class PermitSync:
                     self.target_folders[permit_no] = target_id
                 else:
                     continue
+            permits_with_targets.append((permit_no, source_url, target_id))
 
-            self.sync_permit(permit_no, source_url, target_id)
+        # 並行處理各建案（每個建案的來源/目標資料夾互相獨立）
+        if len(permits_with_targets) > 1:
+            print(f"\n⚡ 並行處理（{MAX_CONCURRENT_PERMITS} 執行緒）")
+        with ThreadPoolExecutor(max_workers=MAX_CONCURRENT_PERMITS) as executor:
+            futures = {
+                executor.submit(self.sync_permit, pn, url, tid): pn
+                for pn, url, tid in permits_with_targets
+            }
+            for future in as_completed(futures):
+                try:
+                    future.result()
+                except Exception as e:
+                    permit_no = futures[future]
+                    self._print(f"  ❌ {permit_no} 未預期錯誤: {e}")
 
 if __name__ == '__main__':
     try:
