@@ -553,6 +553,14 @@ Service Account 只需要：
 
 ## 📝 版本歷史
 
+### v3.2.0 (2026-04-02)
+- ⚡ PDF 掃描改為批次 Drive 查詢（1000 次 API → ~12 次分頁，掃描時間 ~15 分鐘 → ~1 分鐘）
+- ⚡ 報告生成 PDF 統計同樣改為批次查詢（497 次 → ~12 次）
+- ⚡ 上傳間隔從 2 秒降到 0.5 秒（後端非同步處理）
+- ⚡ 移除 sync_permits.py 中不必要的 0.1 秒延遲
+- 🔧 批次掃描中斷時完整回退到逐資料夾掃描（不使用部分結果）
+- 🔧 報告 PDF 統計保留 unique filename 去重（與舊版語意一致）
+
 ### v3.1.0 (2026-04-02)
 - ✅ 抽取 JWT Token 管理到 `jwt_auth.py` 共用模組（消除 175 行重複）
 - ✅ State 檔案跨 process 安全（flock + read-merge-write + atomic replace）

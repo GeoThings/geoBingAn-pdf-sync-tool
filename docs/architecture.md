@@ -65,9 +65,10 @@ state/sync_permits_progress.json 更新
 ### 步驟 2：upload_pdfs.py
 
 ```
-Shared Drive 全部 1000 個資料夾
+Shared Drive（批次查詢，~12 次分頁 API 呼叫）
     │
-    ▼ 掃描所有 PDF（~11,000 個）
+    ▼ 一次取得所有 PDF（~11,000 個）+ folder lookup table 對應資料夾
+    │  （失敗時回退到逐資料夾查詢，丟棄部分結果確保完整性）
     │
     ▼ filename_date_parser 解析檔名日期
     │
@@ -76,7 +77,7 @@ Shared Drive 全部 1000 個資料夾
     │
     ▼ 排除已上傳（state/uploaded_to_geobingan_7days.json）
     │
-    ▼ 逐一下載 + 上傳到 riskmap.today API
+    ▼ 逐一下載 + 上傳到 riskmap.today API（0.5 秒間隔）
     │
     ▼ 成功立即寫入 state（flock + merge）
 ```
@@ -84,7 +85,7 @@ Shared Drive 全部 1000 個資料夾
 ### 步驟 3：generate_permit_tracking_report.py
 
 ```
-Google Drive 資料夾 + riskmap.today API + 台北市政府 PDF
+Google Drive（批次查詢 + unique filename 去重）+ riskmap.today API + 台北市政府 PDF
     │
     ▼ 合併三方資料
     │
