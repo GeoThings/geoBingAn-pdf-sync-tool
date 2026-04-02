@@ -208,13 +208,20 @@ class PermitSync:
     def preload_target_files(self, folder_id: str, permit_no: str):
         """一次遞迴載入目標資料夾的所有檔名到記憶體 set。
         後續用 set lookup 取代逐檔 API 查詢。
+        如果遞迴過程中任何一層失敗，不寫入快取，
+        check_file_exists 會回退到逐檔 API 查詢。
         """
         file_set = set()
-        self._preload_recursive(folder_id, "", file_set)
-        self._target_file_cache[permit_no] = file_set
+        if self._preload_recursive(folder_id, "", file_set):
+            self._target_file_cache[permit_no] = file_set
+        else:
+            # 預載入不完整，不使用快取，強制走 API fallback
+            self._target_file_cache.pop(permit_no, None)
 
-    def _preload_recursive(self, folder_id: str, path: str, file_set: set):
-        """遞迴收集資料夾內所有檔案的 path/name"""
+    def _preload_recursive(self, folder_id: str, path: str, file_set: set) -> bool:
+        """遞迴收集資料夾內所有檔案的 path/name。
+        回傳 True 表示完整掃描成功，False 表示任一層失敗。
+        """
         try:
             page_token = None
             while True:
@@ -227,16 +234,17 @@ class PermitSync:
                 for item in results.get('files', []):
                     item_path = f"{path}/{item['name']}" if path else item['name']
                     if item['mimeType'] == 'application/vnd.google-apps.folder':
-                        # 快取子資料夾 ID
                         self._subfolder_cache[(folder_id, item['name'])] = item['id']
-                        self._preload_recursive(item['id'], item_path, file_set)
+                        if not self._preload_recursive(item['id'], item_path, file_set):
+                            return False  # 子資料夾失敗，整體失敗
                     else:
                         file_set.add(item_path)
                 page_token = results.get('nextPageToken')
                 if not page_token:
                     break
+            return True
         except HttpError:
-            pass
+            return False
 
     def check_file_exists(self, folder_id: str, filename: str, path: str = "", permit_no: str = "") -> bool:
         """用預載入的 set 比對檔案是否存在（O(1) lookup，無 API 呼叫）"""
