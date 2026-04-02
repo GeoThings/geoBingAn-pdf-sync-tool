@@ -23,7 +23,6 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaIoBaseDownload
 from typing import Dict, List, Optional
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
 import re
 from filename_date_parser import parse_date_from_filename, FILENAME_DATE_CUTOFF
@@ -79,8 +78,6 @@ MAX_UPLOADS = 100  # 每次上傳最新 100 筆 PDF
 DELAY_BETWEEN_UPLOADS = 2  # 加速：減少到 2 秒
 
 # 並行上傳設定
-ENABLE_PARALLEL_UPLOAD = False  # 設為 True 啟用並行上傳（實驗性功能）
-MAX_WORKERS = 3  # 並行上傳的最大執行緒數
 
 # 自動確認（測試模式）
 AUTO_CONFIRM = True  # 啟用自動確認進行批次上傳
@@ -200,13 +197,16 @@ def load_state() -> dict:
 
 
 def save_state(state: dict):
-    """儲存已上傳的 PDF 記錄
+    """儲存已上傳的 PDF 記錄（原子寫入）
 
+    先寫入暫存檔再 rename，避免 crash 時損壞狀態檔案。
     注意：此函數不包含鎖，呼叫者需要自行管理 state_lock
     """
     os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
-    with open(STATE_FILE, 'w', encoding='utf-8') as f:
+    tmp_file = STATE_FILE + '.tmp'
+    with open(tmp_file, 'w', encoding='utf-8') as f:
         json.dump(state, indent=2, ensure_ascii=False, fp=f)
+    os.replace(tmp_file, STATE_FILE)
 
 
 def get_drive_service():
@@ -583,9 +583,7 @@ def flush_state(state: dict):
 def main():
     """主程式"""
     print("\n" + "=" * 60)
-    print("🚀 上傳最新 5 筆 PDF 到 geoBingAn（效能優化版）")
-    if ENABLE_PARALLEL_UPLOAD:
-        print(f"   ⚡ 並行上傳模式（{MAX_WORKERS} 執行緒）")
+    print("🚀 上傳最新 PDF 到 geoBingAn")
     print("=" * 60)
 
     # 初始化
@@ -613,11 +611,11 @@ def main():
         print(f"✅ 找到 {len(project_folders)} 個資料夾")
     except Exception as e:
         print(f"❌ 掃描資料夾失敗: {e}")
-        sys.exit(0)
+        sys.exit(1)
 
     if not project_folders:
         print("⚠️  未找到任何資料夾")
-        sys.exit(0)
+        sys.exit(1)
 
     # 收集 PDF（使用快取加速，但若快取中的資料夾數量與本次掃描不符則重建）
     print(f"\n📄 收集 PDF 檔案...")
@@ -630,7 +628,7 @@ def main():
 
     if not all_pdfs:
         print("❌ 未找到任何 PDF 檔案")
-        sys.exit(0)
+        sys.exit(1)
 
     # 儲存快取（在開始過濾之前）
     with state_lock:
@@ -718,42 +716,18 @@ def main():
     success_count = 0
     error_count = 0
 
-    if ENABLE_PARALLEL_UPLOAD:
-        # 並行上傳模式
-        print(f"⚡ 使用並行上傳（{MAX_WORKERS} 執行緒）")
+    for idx, pdf in enumerate(pdfs_to_upload, 1):
+        result = process_single_pdf(service, pdf, state, idx, len(pdfs_to_upload))
 
-        with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-            # 提交所有任務
-            future_to_pdf = {
-                executor.submit(process_single_pdf, service, pdf, state, idx, len(pdfs_to_upload)): pdf
-                for idx, pdf in enumerate(pdfs_to_upload, 1)
-            }
+        if result['success']:
+            success_count += 1
+        else:
+            error_count += 1
 
-            # 處理完成的任務
-            for future in as_completed(future_to_pdf):
-                result = future.result()
-                if result['success']:
-                    success_count += 1
-                else:
-                    error_count += 1
-
-                # 速率控制：每個任務完成後稍作延遲
-                time.sleep(DELAY_BETWEEN_UPLOADS / MAX_WORKERS)
-
-    else:
-        # 序列上傳模式（原有邏輯）
-        for idx, pdf in enumerate(pdfs_to_upload, 1):
-            result = process_single_pdf(service, pdf, state, idx, len(pdfs_to_upload))
-
-            if result['success']:
-                success_count += 1
-            else:
-                error_count += 1
-
-            # 速率控制：等待避免觸發 API 限制（除了最後一個）
-            if idx < len(pdfs_to_upload):
-                print(f"  ⏳ 等待 {DELAY_BETWEEN_UPLOADS} 秒（避免 API 速率限制）...", flush=True)
-                time.sleep(DELAY_BETWEEN_UPLOADS)
+        # 速率控制：等待避免觸發 API 限制（除了最後一個）
+        if idx < len(pdfs_to_upload):
+            print(f"  ⏳ 等待 {DELAY_BETWEEN_UPLOADS} 秒（避免 API 速率限制）...", flush=True)
+            time.sleep(DELAY_BETWEEN_UPLOADS)
 
     # 寫入所有剩餘的狀態變更
     flush_state(state)
