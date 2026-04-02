@@ -553,6 +553,15 @@ Service Account 只需要：
 
 ## 📝 版本歷史
 
+### v3.5.0 (2026-04-02)
+- ✅ 報告重新設計：「需要關注」儀表板（警戒值 + 過期報告）
+- ✅ 動態日期計算（瀏覽器端即時計算，報告永不過期）
+- ✅ 搜尋強化（同時搜尋建照號碼和建案名稱）
+- ✅ 欄位精簡（14 欄 → 10 欄，合併警戒欄位）
+- ✅ 行色彩標記（警戒紅底、過期黃底）
+- ✅ 響應式設計（手機隱藏次要欄位）
+- 🔒 HTML escaping 防止外部資料污染 DOM
+
 ### v3.4.0 (2026-04-02)
 - ⚡ sync_permits 並行處理（5 thread ThreadPoolExecutor）
 - ⚡ Thread-local Drive service（httplib2 非 thread-safe，每 thread 獨立 instance）

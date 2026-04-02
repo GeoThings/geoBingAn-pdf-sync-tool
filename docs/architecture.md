@@ -102,11 +102,17 @@ Shared Drive（批次查詢，~12 次分頁 API 呼叫）
 ```
 Google Drive（批次查詢 + unique filename 去重）+ riskmap.today API + 台北市政府 PDF
     │
-    ▼ 合併三方資料
+    ▼ 合併三方資料 + html.escape() 所有外部字串
     │
     ▼ 產出 HTML 互動式報告 + CSV
-state/permit_tracking_report.html
-state/permit_tracking.csv
+    │
+    報告功能：
+    ├── 「需要關注」儀表板（警戒值建案 + 過期報告）
+    ├── 動態日期計算（瀏覽器端 JS，永不過期）
+    ├── 搜尋（建照號碼 + 建案名稱）
+    ├── 過濾（全部/完成/處理中/未上傳/需要關注）
+    ├── 排序（點選欄位標題）
+    └── 響應式（手機隱藏次要欄位）
 ```
 
 ## State 管理
