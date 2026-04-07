@@ -719,11 +719,11 @@ def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], a
 
         # 狀態 badge
         status_badges = {
-            'completed': ('✓ 完成', 'badge-success'),
-            'in_progress': ('處理中', 'badge-info'),
-            'not_uploaded': ('未上傳', 'badge-warning'),
-            'no_reports': ('無報告', 'badge-gray'),
-            'error': ('錯誤', 'badge-danger')
+            'completed': ('已完成', 'badge-success'),
+            'in_progress': ('分析中', 'badge-info'),
+            'not_uploaded': ('待上傳', 'badge-warning'),
+            'no_reports': ('無資料', 'badge-gray'),
+            'error': ('異常', 'badge-danger')
         }
         badge_text, badge_class = status_badges.get(status, ('未知', 'badge-gray'))
 
@@ -829,6 +829,21 @@ body{{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft JhengHe
 .stat{{background:white;padding:12px;border-radius:8px;border-left:4px solid #dc2626;text-align:center}}
 .stat .label{{font-size:10px;color:#666}}
 .stat .value{{font-size:20px;font-weight:700;color:#dc2626}}
+/* 圖例說明 section */
+.legend-section{{background:#f0f7ff;border-top:3px solid #60a5fa;padding:0}}
+.legend-toggle{{width:100%;background:none;border:none;padding:10px 15px;text-align:left;cursor:pointer;font-size:12px;font-weight:700;color:#1e40af;display:flex;align-items:center;gap:8px}}
+.legend-toggle:hover{{background:#dbeafe}}
+.toggle-arrow-legend{{transition:transform 0.2s;display:inline-block;font-style:normal}}
+.legend-section.open .toggle-arrow-legend{{transform:rotate(90deg)}}
+.legend-body{{display:none;padding:12px 15px 15px}}
+.legend-section.open .legend-body{{display:block}}
+.legend-grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}}
+.legend-block{{background:white;border-radius:6px;padding:10px;border:1px solid #bfdbfe}}
+.legend-block-title{{font-size:11px;font-weight:700;color:#1e40af;margin-bottom:7px;padding-bottom:4px;border-bottom:1px solid #dbeafe}}
+.legend-table{{width:100%;border-collapse:collapse;font-size:11px}}
+.legend-table td{{padding:3px 5px;vertical-align:middle;color:#374151}}
+.legend-color-cell{{width:16px;border-radius:2px}}
+.legend-col-name{{font-weight:600;color:#1e40af;white-space:nowrap;padding-right:8px}}
 /* 需要關注 section */
 .attention-section{{background:#fff7ed;border-top:3px solid #dc2626;padding:0}}
 .attention-toggle{{width:100%;background:none;border:none;padding:12px 15px;text-align:left;cursor:pointer;font-size:13px;font-weight:700;color:#991b1b;display:flex;align-items:center;gap:8px}}
@@ -905,18 +920,55 @@ a{{color:#dc2626;text-decoration:none}}
 <div class="meta">{now.strftime('%Y年%m月%d日 %H:%M')} | 自動生成</div>
 </div>
 <div class="stats">
-<div class="stat"><div class="label">總建照</div><div class="value">{total}</div></div>
-<div class="stat"><div class="label">✓ 完成</div><div class="value" style="color:#22c55e">{completed}</div></div>
-<div class="stat"><div class="label">處理中</div><div class="value" style="color:#3b82f6">{in_progress}</div></div>
-<div class="stat"><div class="label">未上傳</div><div class="value" style="color:#f59e0b">{not_uploaded}</div></div>
-<div class="stat"><div class="label">無報告</div><div class="value" style="color:#6b7280">{no_reports}</div></div>
-<div class="stat"><div class="label">其他雲端</div><div class="value" style="color:#c2410c">{other_cloud}</div></div>
-<div class="stat"><div class="label">錯誤</div><div class="value" style="color:#dc2626">{errors}</div></div>
+<div class="stat" title="台北市政府列管的建案監測數量"><div class="label">監測建案總數</div><div class="value">{total}</div></div>
+<div class="stat" title="所有報告都已上傳到究平安系統完成分析"><div class="label">已完成上傳</div><div class="value" style="color:#22c55e">{completed}</div></div>
+<div class="stat" title="報告已上傳，AI 正在分析處理中"><div class="label">正在分析中</div><div class="value" style="color:#3b82f6">{in_progress}</div></div>
+<div class="stat" title="雲端有報告但尚未上傳到究平安系統"><div class="label">尚未上傳</div><div class="value" style="color:#f59e0b">{not_uploaded}</div></div>
+<div class="stat" title="雲端資料夾中沒有任何 PDF 報告"><div class="label">尚無監測資料</div><div class="value" style="color:#6b7280">{no_reports}</div></div>
+<div class="stat" title="使用 SharePoint、Dropbox 等其他雲端服務"><div class="label">非 Google Drive</div><div class="value" style="color:#c2410c">{other_cloud}</div></div>
+<div class="stat" title="同步或上傳過程中發生錯誤"><div class="label">異常</div><div class="value" style="color:#dc2626">{errors}</div></div>
+</div>
+
+<div class="legend-section" id="legendSection">
+<button class="legend-toggle" onclick="toggleLegend()">
+<i class="toggle-arrow-legend">▶</i> 📖 圖例說明
+</button>
+<div class="legend-body" id="legendBody">
+<div class="legend-grid">
+<div class="legend-block">
+<div class="legend-block-title">同步狀態說明</div>
+<table class="legend-table">
+<tr><td><span class="badge badge-success">已完成</span></td><td>所有雲端報告皆已上傳並完成分析</td></tr>
+<tr><td><span class="badge badge-info">分析中</span></td><td>報告已上傳，AI 正在分析處理中，請稍候</td></tr>
+<tr><td><span class="badge badge-warning">待上傳</span></td><td>雲端有新報告，尚未上傳至究平安系統，需盡快處理</td></tr>
+<tr><td><span class="badge badge-gray">無資料</span></td><td>雲端資料夾目前沒有任何 PDF 報告</td></tr>
+<tr><td><span class="badge badge-danger">異常</span></td><td>同步或上傳過程中發生錯誤，請聯絡技術人員</td></tr>
+</table>
+</div>
+<div class="legend-block">
+<div class="legend-block-title">列顏色說明</div>
+<table class="legend-table">
+<tr><td class="legend-color-cell" style="background:#fff1f2;border-left:3px solid #dc2626;">&nbsp;&nbsp;&nbsp;&nbsp;</td><td><strong>紅色底</strong>：該工地有警戒值或行動值，需優先關注</td></tr>
+<tr><td class="legend-color-cell" style="background:#fefce8;border-left:3px solid #f59e0b;">&nbsp;&nbsp;&nbsp;&nbsp;</td><td><strong>黃色底</strong>：報告超過 30 天未更新，請確認現場狀況</td></tr>
+</table>
+</div>
+<div class="legend-block">
+<div class="legend-block-title">欄位說明</div>
+<table class="legend-table">
+<tr><td class="legend-col-name">雲端報告數</td><td>Google Drive 上該工地的 PDF 報告總數（可點擊開啟資料夾）</td></tr>
+<tr><td class="legend-col-name">已分析數</td><td>已上傳至究平安系統並完成 AI 分析的報告數量</td></tr>
+<tr><td class="legend-col-name">分析進度</td><td>已分析數 ÷ 雲端報告數，進度條顯示完成比例</td></tr>
+<tr><td class="legend-col-name">警戒紀錄</td><td>⚠️ 警戒值 / 🚨 行動值 / 🔴 超越行動值的觸發次數</td></tr>
+<tr><td class="legend-col-name">更新間隔</td><td>最近一份報告距今天數，超過 30 天會以紅字標示</td></tr>
+</table>
+</div>
+</div>
+</div>
 </div>
 
 <div class="attention-section {attention_open}" id="attentionSection">
 <button class="attention-toggle" onclick="toggleAttention()">
-<i class="toggle-arrow">▶</i> 需要關注 ({len(alert_permits)} 個警戒值建案 / {len(stale_permits)} 個報告過期建案)
+<i class="toggle-arrow">▶</i> ⚠️ 需要處理 — {len(alert_permits)} 個工地有警戒值，{len(stale_permits)} 個工地報告超過 30 天未更新
 </button>
 <div class="attention-body">
 <div class="attention-group">
@@ -953,16 +1005,16 @@ a{{color:#dc2626;text-decoration:none}}
 <thead>
 <tr>
 <th onclick="sortTable(0)">#</th>
-<th onclick="sortTable(1)">建照字號</th>
-<th onclick="sortTable(2)">建案名稱</th>
-<th onclick="sortTable(3)" class="col-cloud">雲端</th>
-<th onclick="sortTable(4)">Drive PDF</th>
-<th onclick="sortTable(5)">系統 PDF</th>
-<th onclick="sortTable(6)" class="col-coverage">覆蓋率</th>
-<th onclick="sortTable(7)">警戒值</th>
-<th onclick="sortTable(8)">最新報告</th>
-<th onclick="sortTable(9)">距今</th>
-<th onclick="sortTable(10)">狀態</th>
+<th onclick="sortTable(1)">建照號碼</th>
+<th onclick="sortTable(2)">工地名稱</th>
+<th onclick="sortTable(3)" class="col-cloud">資料來源</th>
+<th onclick="sortTable(4)">雲端報告數</th>
+<th onclick="sortTable(5)">已分析數</th>
+<th onclick="sortTable(6)" class="col-coverage">分析進度</th>
+<th onclick="sortTable(7)">警戒紀錄</th>
+<th onclick="sortTable(8)">最近更新</th>
+<th onclick="sortTable(9)">更新間隔</th>
+<th onclick="sortTable(10)">同步狀態</th>
 </tr>
 </thead>
 <tbody>{rows_html}</tbody>
@@ -1062,6 +1114,10 @@ function sortTable(n) {{
 }}
 function toggleAttention() {{
   const sec = document.getElementById('attentionSection');
+  sec.classList.toggle('open');
+}}
+function toggleLegend() {{
+  const sec = document.getElementById('legendSection');
   sec.classList.toggle('open');
 }}
 </script>
