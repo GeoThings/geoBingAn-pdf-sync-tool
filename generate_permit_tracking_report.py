@@ -994,11 +994,11 @@ a{{color:#dc2626;text-decoration:none}}
 <div class="controls">
 <input type="text" class="search" id="search" placeholder="搜尋建照號碼或建案名稱..." onkeyup="filterTable()">
 <button class="btn active" onclick="filterStatus(this,'')">全部</button>
-<button class="btn" onclick="filterStatus(this,'completed')">完成</button>
-<button class="btn" onclick="filterStatus(this,'in_progress')">處理中</button>
-<button class="btn" onclick="filterStatus(this,'not_uploaded')">未上傳</button>
-<button class="btn" onclick="filterStatus(this,'other_cloud')">其他雲端</button>
-<button class="btn" onclick="filterStatus(this,'needs_attention')">需要關注</button>
+<button class="btn" onclick="filterStatus(this,'completed')">已完成</button>
+<button class="btn" onclick="filterStatus(this,'in_progress')">分析中</button>
+<button class="btn" onclick="filterStatus(this,'not_uploaded')">待上傳</button>
+<button class="btn" onclick="filterStatus(this,'other_cloud')">非 Google Drive</button>
+<button class="btn" onclick="filterStatus(this,'needs_attention')">需要處理</button>
 </div>
 <div class="table-wrap">
 <table id="dataTable">
