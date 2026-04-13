@@ -203,6 +203,24 @@ def scan_google_drive(service) -> Dict[str, dict]:
 
     print(f"    統計完成: {total_unique} 個唯一 PDF 分布在 {len(permit_folders)} 個資料夾")
 
+    # 從 PDF 檔名提取建案名稱
+    drive_names = {}  # permit → {name: count}
+    for permit, filenames in folder_names.items():
+        for filename in filenames:
+            name = extract_name_from_filename(filename)
+            if name:
+                if permit not in drive_names:
+                    drive_names[permit] = {}
+                drive_names[permit][name] = drive_names[permit].get(name, 0) + 1
+
+    # 選出每個建案最常出現的名稱
+    permit_folders['_drive_names'] = {}
+    for permit, counts in drive_names.items():
+        best = max(counts.items(), key=lambda x: x[1])[0]
+        permit_folders['_drive_names'][permit] = best
+
+    print(f"    從 PDF 檔名提取 {len(drive_names)} 個建案名稱")
+
     return permit_folders
 
 
@@ -300,7 +318,8 @@ def extract_name_from_filename(filename: str) -> str:
     name = re.sub(r'1\d{6}', '', name)  # 嵌入式民國年7碼
     name = re.sub(r'\d{2}月\d{2}日', '', name)  # 03月09日
     # 去除通用後綴
-    name = re.sub(r'[-_\s]*(觀測報告|觀測結果|監測報告|安全監測系統報告|量測報告|監測週報|監測月報|日報告|週報|月報|安全觀測報告書|安全觀測系統\d*月報告書).*$', '', name)
+    name = re.sub(r'[-_\s]*(觀測報告|觀測結果|監測報告|安全監測系統報告|量測報告|監測週報|監測月報|日報告|週報|月報|安全觀測報告書|安全觀測系統\d*月?報告書?).*$', '', name)
+    name = re.sub(r'[-_\s]*連續壁?初值$', '', name)  # 去除「初值」後綴
     name = re.sub(r'[-_\s]*(上傳|公告|更正|報告書|報告|觀測報告)$', '', name)
     name = re.sub(r'[-_\s]*NO\.\d+$', '', name)
     name = re.sub(r'[-_\s]*\d+$', '', name)  # 結尾數字
@@ -326,14 +345,24 @@ def extract_name_from_filename(filename: str) -> str:
                '觀測儀器配置圖', '量測報表', '報表', '安全觀測', '專案區間報告書',
                '基地', '匝道', '捷運', '觀測月報', '觀測', '監測報表', '工地',
                '新建工程', '集合住宅', '住宅大樓', '商業大樓', '',
-               '觀測圖示及觀測紀錄', '專案區間'}
-    # 過濾殘留日期片段（如「月3日」「12月」等）
-    if re.match(r'^[\d月日年]+$', name):
+               '觀測圖示及觀測紀錄', '專案區間', '安全', '初值', '安全觀測系統報告書',
+               '連續壁完整性試驗'}
+    # 過濾殘留日期片段（如「月3日」「12月」「114.」等）
+    if re.match(r'^[\d月日年.]+$', name):
+        return ''
+    # 過濾殘留的建照號碼片段（如「鍵字第0348號」）
+    if re.match(r'^鍵字第', name):
         return ''
     if name in generic or len(name) < 2:
         return ''
     # 如果名稱仍然以建照號碼開頭，放棄
     if re.match(r'^\d{2,3}建字第', name):
+        return ''
+    # 過濾以句點開頭或含「該網站」等非名稱內容
+    if name.startswith('.') or '該網站' in name or '自行維護' in name:
+        return ''
+    # 過濾「安全觀測系統NNN年」等殘留
+    if re.match(r'^安全觀測系統', name):
         return ''
     return name
 
@@ -663,6 +692,7 @@ def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], a
     in_progress = sum(1 for p in permit_data.values() if p.get('status') == 'in_progress')
     not_uploaded = sum(1 for p in permit_data.values() if p.get('status') == 'not_uploaded')
     no_reports = sum(1 for p in permit_data.values() if p.get('status') == 'no_reports')
+    completed_project = sum(1 for p in permit_data.values() if p.get('status') == 'completed_project')
     other_cloud = len(non_google)
     errors = sum(1 for p in permit_data.values() if p.get('status') == 'error')
 
@@ -777,6 +807,7 @@ def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], a
             'in_progress': ('⏳ AI 處理中', 'badge-info'),
             'not_uploaded': ('⬆ 等待同步', 'badge-warning'),
             'no_reports': ('── 無資料', 'badge-gray'),
+            'completed_project': ('🏁 已結案', 'badge-gray'),
             'error': ('✖ 異常', 'badge-danger')
         }
         badge_text, badge_class = status_badges.get(status, ('未知', 'badge-gray'))
@@ -989,6 +1020,7 @@ a:hover{{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}}
 <div class="stat" title="報告已上傳，AI 正在讀取 PDF 內容"><div class="label">AI 處理中</div><div class="value" style="color:#3b82f6">{in_progress}</div></div>
 <div class="stat" title="雲端有報告，系統排隊等待自動同步中"><div class="label">等待同步</div><div class="value" style="color:#f59e0b">{not_uploaded}</div></div>
 <div class="stat" title="雲端資料夾中沒有任何 PDF 報告"><div class="label">尚無監測資料</div><div class="value" style="color:#6b7280">{no_reports}</div></div>
+<div class="stat" title="最後更新超過一年，建案可能已完工"><div class="label">已結案</div><div class="value" style="color:#9ca3af">{completed_project}</div></div>
 <div class="stat" title="使用 SharePoint、Dropbox 等其他雲端服務"><div class="label">非 Google Drive</div><div class="value" style="color:#c2410c">{other_cloud}</div></div>
 <div class="stat" title="同步或上傳過程中發生錯誤"><div class="label">異常</div><div class="value" style="color:#dc2626">{errors}</div></div>
 </div>
@@ -1367,6 +1399,65 @@ def main():
             api_names_added += 1
     if api_names_added > 0:
         print(f"  從 API 報告補充 {api_names_added} 個建案名稱（總計 {len(permit_names)} 個）")
+
+    # 5c. 從 Google Drive PDF 檔名補充建案名稱（覆蓋面最廣）
+    drive_names = drive_data.pop('_drive_names', {})
+    drive_names_added = 0
+    for permit, name in drive_names.items():
+        if permit not in permit_names or not permit_names[permit]:
+            permit_names[permit] = name
+            drive_names_added += 1
+    if drive_names_added > 0:
+        print(f"  從 Drive PDF 檔名補充 {drive_names_added} 個建案名稱（總計 {len(permit_names)} 個）")
+
+    # 5d. 從來源資料夾名稱補充建案名稱（政府 PDF 中的 Google Drive 連結）
+    print("  查詢來源資料夾名稱...")
+    from sync_permits import PermitSync
+    ps = PermitSync()
+    gov_pdf_path = ps.download_pdf_list()
+    ps.permit_mapping = ps.parse_pdf_list(gov_pdf_path)
+    source_names_added = 0
+    for permit, url in ps.permit_mapping.items():
+        if permit in permit_names and permit_names[permit]:
+            continue  # 已有名稱，跳過
+        folder_id = ps.extract_folder_id_from_url(url)
+        if not folder_id:
+            continue
+        try:
+            folder = drive_service.files().get(
+                fileId=folder_id, fields='name', supportsAllDrives=True
+            ).execute()
+            raw_name = folder.get('name', '')
+            # 清理來源資料夾名稱（去除建照號碼、通用描述等）
+            clean = re.sub(r'\d{2,3}建字第\d{3,5}號', '', raw_name)
+            clean = re.sub(r'[-_\s]*(工地)?監測(數據|資料)?(雲端)?(資料庫)?', '', clean)
+            clean = re.sub(r'[（(]本網站由.*$', '', clean)
+            clean = re.sub(r'[（(]該網址?由.*$', '', clean)
+            clean = re.sub(r'[（(]資料庫係由.*$', '', clean)
+            clean = re.sub(r'安全觀測$', '', clean)
+            clean = re.sub(r'監測日報$', '', clean)
+            clean = clean.strip(' -_/()')
+            if clean and len(clean) >= 2:
+                permit_names[permit] = clean
+                source_names_added += 1
+        except Exception:
+            continue
+    if source_names_added > 0:
+        print(f"  從來源資料夾補充 {source_names_added} 個建案名稱（總計 {len(permit_names)} 個）")
+
+    # 5e. 已完工建案標記：建照年份在 110 年（2021）前且無系統報告的視為已結案
+    completed_count = 0
+    for permit, data in permit_data.items():
+        year_match = re.search(r'^(\d{2,3})建字第', permit)
+        if year_match:
+            roc_year = int(year_match.group(1))
+            # 110 年前（含）的建照且沒有系統報告 → 很可能已完工
+            if roc_year <= 110 and data.get('system_count', 0) == 0:
+                if data.get('status') in ('not_uploaded', 'no_reports'):
+                    data['status'] = 'completed_project'
+                    completed_count += 1
+    if completed_count > 0:
+        print(f"  標記 {completed_count} 個建案為已結案（建照年份 ≤ 110 年且無系統報告）")
 
     # 6. 儲存資料
     with open(MAPPING_JSON, 'w', encoding='utf-8') as f:
