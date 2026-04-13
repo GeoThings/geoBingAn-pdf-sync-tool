@@ -207,12 +207,12 @@ else
     echo "⚠️ 找不到報告檔案，跳過複製" | tee -a "$LOG_FILE"
 fi
 
-# 提交並推送到 GitHub
+# 提交並推送到 GitHub（檢查報告或上傳歷史是否有變更）
 cd "$SCRIPT_DIR"
-if git diff --quiet docs/index.html 2>/dev/null; then
-    echo "ℹ️  報告無變更，跳過推送" | tee -a "$LOG_FILE"
+git add docs/index.html state/permit_tracking_report.html state/permit_tracking.csv state/upload_history_all.json 2>/dev/null || true
+if git diff --cached --quiet 2>/dev/null; then
+    echo "ℹ️  無任何變更，跳過推送" | tee -a "$LOG_FILE"
 else
-    git add docs/index.html state/permit_tracking_report.html state/permit_tracking.csv 2>/dev/null || true
     if git commit -m "Weekly sync report update ($(date +%Y-%m-%d))" 2>&1 | tee -a "$LOG_FILE"; then
         if git push origin main 2>&1 | tee -a "$LOG_FILE"; then
             echo "✅ 已推送到 GitHub" | tee -a "$LOG_FILE"

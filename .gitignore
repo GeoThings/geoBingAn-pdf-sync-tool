@@ -7,6 +7,9 @@ state/*.lock
 state/*.tmp.*
 state/.sync_start_time
 
+# But keep upload history (needs to persist across clones)
+!state/upload_history_all.json
+
 # Python
 __pycache__/
 *.py[cod]
@@ -21,9 +24,6 @@ build/
 *.log
 logs/*.log
 logs/weekly_sync_*
-
-# But keep upload history
-!logs/upload_history.md
 
 # IDE
 .vscode/
