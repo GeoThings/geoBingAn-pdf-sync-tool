@@ -737,7 +737,7 @@ def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], a
         if drive_count > 0 and system_count > 0:
             coverage = min(100, int(system_count / drive_count * 100))
             bar_color = '#22c55e' if coverage >= 80 else '#f59e0b' if coverage >= 50 else '#dc2626'
-            coverage_html = f'{coverage}% <span class="bar"><span class="bar-fill" style="width:{coverage}%;background:{bar_color}"></span></span>'
+            coverage_html = f'<div class="progress-wrapper"><div class="progress-text">{coverage}%</div><div class="bar"><div class="bar-fill" style="width:{coverage}%;background:{bar_color}"></div></div></div>'
         else:
             coverage_html = '<span class="empty-val">-</span>'
 
@@ -885,18 +885,18 @@ body{{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft JhengHe
 .btn.active{{background:#dc2626;color:white;border-color:#dc2626}}
 .table-wrap{{overflow-x:auto;border-radius:6px;border:1px solid #e5e5e5;max-height:800px}}
 table{{width:100%;border-collapse:collapse;font-size:13px}}
-thead{{background:#dc2626;color:white;position:sticky;top:0;z-index:10;box-shadow:0 2px 4px rgba(0,0,0,0.15)}}
+thead{{background:#dc2626;color:white;position:sticky;top:0;z-index:10;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1)}}
 th{{padding:10px 8px;text-align:left;font-size:11px;cursor:pointer;white-space:nowrap}}
 th:hover{{background:#b91c1c}}
+th:nth-child(1){{width:35px}}
+th:nth-child(11){{min-width:75px}}
 td{{padding:10px 8px;border-bottom:1px solid #f0f0f0;vertical-align:top}}
 td.col-num,th.col-num{{text-align:right}}
 .empty-val{{color:#d1d5db}}
 tr:hover{{background:#fafafa}}
-tr.row-alert{{background:#fff1f2}}
-tr.row-alert:hover{{background:#ffe4e6}}
-tr.row-stale{{background:#fefce8}}
-tr.row-stale:hover{{background:#fef9c3}}
-tr.row-alert.row-stale{{background:#fff1f2}}
+tr.row-alert td:first-child{{border-left:3px solid #ef4444}}
+tr.row-stale td:first-child{{border-left:3px solid #fbbf24}}
+tr.row-alert.row-stale td:first-child{{border-left:3px solid #ef4444}}
 .badge{{display:inline-block;padding:2px 6px;border-radius:3px;font-size:9px;font-weight:600;white-space:nowrap}}
 .badge-success{{background:#dcfce7;color:#166534}}
 .badge-info{{background:#dbeafe;color:#1e40af}}
@@ -904,7 +904,9 @@ tr.row-alert.row-stale{{background:#fff1f2}}
 .badge-danger{{background:#fee2e2;color:#991b1b}}
 .badge-gray{{background:#f3f4f6;color:#6b7280}}
 .badge-orange{{background:#ffedd5;color:#c2410c}}
-.bar{{width:40px;height:4px;background:#e5e5e5;border-radius:2px;display:inline-block;vertical-align:middle}}
+.progress-wrapper{{display:flex;align-items:center;gap:6px;min-width:90px}}
+.progress-text{{width:30px;text-align:right;font-size:11px;color:#4b5563;font-weight:600}}
+.bar{{flex-grow:1;height:6px;background:#e5e7eb;border-radius:3px;overflow:hidden}}
 .bar-fill{{height:100%;border-radius:2px}}
 a{{color:#dc2626;text-decoration:none;white-space:nowrap}}
 a:hover{{text-decoration:underline}}
@@ -1027,7 +1029,9 @@ a:hover{{text-decoration:underline}}
 <th onclick="sortTable(10)">同步狀態</th>
 </tr>
 </thead>
-<tbody>{rows_html}</tbody>
+<tbody>{rows_html}
+<tr id="emptyStateRow" style="display:none"><td colspan="11" style="text-align:center;padding:40px;color:#9ca3af"><div style="font-size:24px;margin-bottom:8px">🔍</div>找不到符合條件的建案紀錄</td></tr>
+</tbody>
 </table>
 </div>
 </div>
@@ -1071,9 +1075,10 @@ a:hover{{text-decoration:underline}}
 let currentFilter = '';
 function filterTable() {{
   const search = document.getElementById('search').value.toLowerCase();
-  const rows = document.querySelectorAll('#dataTable tbody tr');
+  const rows = document.querySelectorAll('#dataTable tbody tr:not(#emptyStateRow)');
   const today = new Date();
   today.setHours(0,0,0,0);
+  let visibleCount = 0;
   rows.forEach(function(row) {{
     const permit = row.cells[1].textContent.toLowerCase();
     const name = row.cells[2].textContent.toLowerCase();
@@ -1098,8 +1103,11 @@ function filterTable() {{
     }} else if (currentFilter) {{
       matchStatus = status === currentFilter;
     }}
-    row.style.display = matchSearch && matchStatus ? '' : 'none';
+    const visible = matchSearch && matchStatus;
+    row.style.display = visible ? '' : 'none';
+    if (visible) visibleCount++;
   }});
+  const esr = document.getElementById('emptyStateRow'); if(esr) esr.style.display = visibleCount === 0 ? 'table-row' : 'none';
 }}
 function filterStatus(btn, status) {{
   currentFilter = status;
