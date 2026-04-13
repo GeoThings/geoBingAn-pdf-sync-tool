@@ -122,6 +122,50 @@ status = SyncStatus()
 status.start_run()
 " 2>&1 | tee -a "$LOG_FILE"
 
+# 檢查 Refresh Token 有效期
+echo "" | tee -a "$LOG_FILE"
+echo "🔑 檢查 Token 有效期..." | tee -a "$LOG_FILE"
+TOKEN_CHECK=$(python3 -c "
+from jwt_auth import decode_jwt_payload
+from config import REFRESH_TOKEN
+import time, sys
+payload = decode_jwt_payload(REFRESH_TOKEN)
+exp = payload.get('exp', 0)
+days_left = (exp - time.time()) / 86400
+if days_left < 0:
+    print(f'EXPIRED:{-days_left:.1f}')
+    sys.exit(2)
+elif days_left < 2:
+    print(f'WARNING:{days_left:.1f}')
+    sys.exit(1)
+else:
+    print(f'OK:{days_left:.1f}')
+    sys.exit(0)
+" 2>&1)
+TOKEN_EXIT=$?
+
+if [ $TOKEN_EXIT -eq 2 ]; then
+    DAYS=$(echo "$TOKEN_CHECK" | grep -o '[0-9.]*')
+    echo "❌ Refresh Token 已過期 ${DAYS} 天，請登入 riskmap.today 更新" | tee -a "$LOG_FILE"
+    python3 -c "
+from notify import send_notification
+send_notification('❌ geoBingAn Token 已過期', 'Refresh Token 已過期，請登入 riskmap.today 取得新 Token 並更新 .env')
+" 2>&1 | tee -a "$LOG_FILE" || true
+    handle_error "Token 檢查" "Refresh Token 已過期"
+    exit 1
+elif [ $TOKEN_EXIT -eq 1 ]; then
+    DAYS=$(echo "$TOKEN_CHECK" | grep -o '[0-9.]*')
+    echo "⚠️  Refresh Token 將在 ${DAYS} 天後過期，請儘快更新" | tee -a "$LOG_FILE"
+    python3 -c "
+from notify import send_notification
+send_notification('⚠️ geoBingAn Token 即將過期', 'Refresh Token 將在 ${DAYS} 天後過期，請登入 riskmap.today 更新 .env 中的 Token')
+" 2>&1 | tee -a "$LOG_FILE" || true
+    echo "   繼續執行同步流程..." | tee -a "$LOG_FILE"
+else
+    DAYS=$(echo "$TOKEN_CHECK" | grep -o '[0-9.]*')
+    echo "✅ Refresh Token 有效期剩餘 ${DAYS} 天" | tee -a "$LOG_FILE"
+fi
+
 # 步驟 1: 同步 PDF 從台北市政府到 Google Drive
 STEP1_FAILED=0
 echo "" | tee -a "$LOG_FILE"
