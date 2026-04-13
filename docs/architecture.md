@@ -107,11 +107,14 @@ Google Drive（批次查詢 + unique filename 去重）+ riskmap.today API + 台
     ▼ 產出 HTML 互動式報告 + CSV
     │
     報告功能：
-    ├── 「需要關注」儀表板（警戒值建案 + 過期報告）
+    ├── 「需要處理」儀表板（預設折疊，過期表格可捲動 300px）
     ├── 動態日期計算（瀏覽器端 JS，永不過期）
-    ├── 搜尋（建照號碼 + 建案名稱）
-    ├── 過濾（全部/完成/處理中/未上傳/需要關注）
+    ├── 搜尋（建照號碼 + 工地名稱）
+    ├── Segmented Control 篩選（全部/已完成/分析中/待上傳/需要處理）
     ├── 排序（點選欄位標題）
+    ├── 狀態 badge 圖示（✔⏳⬆──✖，形狀+顏色雙重辨識）
+    ├── 數字欄右對齊、空值淡化、Drive 外連 ↗ 圖示
+    ├── 圖例說明（可收合，狀態/顏色/欄位說明）
     └── 響應式（手機隱藏次要欄位）
 ```
 
@@ -119,12 +122,22 @@ Google Drive（批次查詢 + unique filename 去重）+ riskmap.today API + 台
 
 ### 狀態檔案
 
-| 檔案 | 用途 | 寫入頻率 |
-|------|------|----------|
-| `sync_permits_progress.json` | 已處理建案清單 | 每個建案 |
-| `uploaded_to_geobingan_7days.json` | 已上傳 PDF + 快取 | 每次成功上傳 |
-| `upload_history_all.json` | 永久上傳歷史 | 每次成功上傳 |
-| `sync_status.json` | 執行狀態與歷史 | 每次執行 |
+| 檔案 | 用途 | 寫入頻率 | Git 追蹤 |
+|------|------|----------|----------|
+| `upload_history_all.json` | 永久上傳歷史（防重複上傳） | 每次成功上傳 | ✅ 是 |
+| `sync_permits_progress.json` | 已處理建案清單 | 每個建案 | 否 |
+| `uploaded_to_geobingan_7days.json` | 已上傳 PDF + 快取 | 每次成功上傳 | 否 |
+| `sync_status.json` | 執行狀態與歷史 | 每次執行 | 否 |
+
+### 上傳歷史持久化（v3.7+）
+
+`upload_history_all.json` 提交到 git，`load_state()` 啟動時自動合併：
+```
+load_state()
+    ├── 讀取本地 state（uploaded_to_geobingan_7days.json，可能不存在）
+    ├── 讀取 git 追蹤歷史（upload_history_all.json，始終存在）
+    └── uploaded_files = 本地 ∪ 歷史（set union，不重複上傳）
+```
 
 ### 跨 Process 安全寫入（v3.1+）
 
