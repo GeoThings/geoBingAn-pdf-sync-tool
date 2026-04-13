@@ -6,112 +6,114 @@
 <title>建照監測追蹤報告</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft JhengHei",sans-serif;background:#f5f5f5;padding:15px;color:#333;line-height:1.4;font-size:13px}
-.container{max-width:1600px;margin:0 auto;background:white;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
-.header{background:linear-gradient(135deg,#dc2626,#991b1b);color:white;padding:25px;text-align:center}
-.header h1{font-size:24px;margin-bottom:6px}
-.header .meta{font-size:12px;opacity:0.9}
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;padding:15px;background:#fafafa}
-.stat{background:white;padding:12px;border-radius:8px;border-left:4px solid #dc2626;text-align:center}
-.stat .label{font-size:10px;color:#666}
-.stat .value{font-size:20px;font-weight:700;color:#dc2626}
-/* 圖例說明 section */
-.legend-section{background:#f0f7ff;border-top:3px solid #60a5fa;padding:0}
-.legend-toggle{width:100%;background:none;border:none;padding:10px 15px;text-align:left;cursor:pointer;font-size:12px;font-weight:700;color:#1e40af;display:flex;align-items:center;gap:8px}
-.legend-toggle:hover{background:#dbeafe}
-.toggle-arrow-legend{transition:transform 0.2s;display:inline-block;font-style:normal}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft JhengHei",sans-serif;background:#f3f4f6;padding:20px;color:#111827;line-height:1.5;font-size:13px;font-variant-numeric:tabular-nums}
+.container{max-width:1600px;margin:0 auto;background:white;border-radius:12px;box-shadow:0 10px 25px -5px rgba(0,0,0,0.1),0 8px 10px -6px rgba(0,0,0,0.1);overflow:hidden}
+.header{background:#0a0a0a;padding:24px 30px;display:flex;justify-content:space-between;align-items:center;border-top:4px solid #dc2626}
+.header h1{font-size:22px;font-weight:900;color:#ffffff;letter-spacing:0.05em;display:flex;align-items:center;gap:12px}
+.header h1::before{content:'';display:block;width:8px;height:24px;background:#dc2626;border-radius:2px}
+.header .meta{font-size:12px;color:#9ca3af;font-weight:500;letter-spacing:0.05em}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;padding:20px 30px;background:#ffffff;border-bottom:1px solid #e5e7eb}
+.stat{background:#f9fafb;padding:16px;border-radius:10px;border:1px solid #f3f4f6;transition:transform 0.2s,box-shadow 0.2s}
+.stat:hover{transform:translateY(-2px);box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);background:white}
+.stat .label{font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px}
+.stat .value{font-size:26px;font-weight:900;color:#111827}
+.legend-section{background:white;border-bottom:1px solid #e5e7eb}
+.legend-toggle{width:100%;background:none;border:none;padding:14px 30px;text-align:left;cursor:pointer;font-size:13px;font-weight:700;color:#111827;display:flex;align-items:center;gap:8px;transition:background 0.2s}
+.legend-toggle:hover{background:#f9fafb;color:#dc2626}
+.toggle-arrow-legend{transition:transform 0.2s;display:inline-block;font-size:10px;color:#9ca3af}
 .legend-section.open .toggle-arrow-legend{transform:rotate(90deg)}
-.legend-body{display:none;padding:12px 15px 15px}
+.legend-body{display:none;padding:0 30px 20px}
 .legend-section.open .legend-body{display:block}
-.legend-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
-.legend-block{background:white;border-radius:6px;padding:10px;border:1px solid #bfdbfe}
-.legend-block-title{font-size:11px;font-weight:700;color:#1e40af;margin-bottom:7px;padding-bottom:4px;border-bottom:1px solid #dbeafe}
-.legend-table{width:100%;border-collapse:collapse;font-size:11px}
-.legend-table td{padding:3px 5px;vertical-align:middle;color:#374151}
-.legend-color-cell{width:16px;border-radius:2px}
-.legend-col-name{font-weight:600;color:#1e40af;white-space:nowrap;padding-right:8px}
-/* 需要關注 section */
-.attention-section{background:#fff7ed;border-top:3px solid #dc2626;padding:0}
-.attention-toggle{width:100%;background:none;border:none;padding:12px 15px;text-align:left;cursor:pointer;font-size:13px;font-weight:700;color:#991b1b;display:flex;align-items:center;gap:8px}
-.attention-toggle:hover{background:#fee2e2}
-.attention-toggle .toggle-arrow{transition:transform 0.2s;display:inline-block;font-style:normal}
+.legend-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-top:10px}
+.legend-block{background:#f9fafb;border-radius:8px;padding:16px;border:1px solid #e5e7eb}
+.legend-block-title{font-size:12px;font-weight:700;color:#111827;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #e5e7eb}
+.legend-table{width:100%;border-collapse:collapse;font-size:12px}
+.legend-table td{padding:6px 0;vertical-align:top;color:#4b5563}
+.legend-col-name{font-weight:700;color:#111827;width:100px}
+.attention-section{background:white;border-bottom:1px solid #e5e7eb}
+.attention-toggle{width:100%;background:#fff1f2;border:none;padding:14px 30px;text-align:left;cursor:pointer;font-size:13px;font-weight:700;color:#b91c1c;display:flex;align-items:center;gap:8px;transition:background 0.2s}
+.attention-toggle:hover{background:#ffe4e6}
+.attention-toggle .toggle-arrow{transition:transform 0.2s;display:inline-block;font-size:10px;color:#ef4444}
 .attention-section.open .toggle-arrow{transform:rotate(90deg)}
-.attention-body{display:none;padding:12px 15px 15px}
+.attention-body{display:none;padding:16px 30px 24px;background:#fff1f2}
 .attention-section.open .attention-body{display:block}
-.attention-group{margin-bottom:12px}
-.attention-group h4{font-size:12px;color:#92400e;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid #fcd34d}
-.attention-cards{display:flex;flex-wrap:wrap;gap:8px}
-.attention-card{background:white;border-radius:6px;padding:8px 10px;min-width:160px;max-width:220px;border-left:3px solid #dc2626;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
-.attention-card-alert{border-left-color:#dc2626}
-.ac-permit{font-size:10px;font-weight:700;color:#991b1b}
-.ac-name{font-size:10px;color:#666;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ac-summary{font-size:12px;margin-top:4px}
-.ac-date{font-size:9px;color:#999;margin-top:2px}
-.stale-table{width:100%;border-collapse:collapse;font-size:11px}
-.stale-table th{background:#fef3c7;padding:5px 8px;text-align:left;font-size:10px;color:#92400e}
-.stale-table td{padding:4px 8px;border-bottom:1px solid #fef9e7}
-/* non-google */
-.non-google{background:#fef3c7;padding:15px;margin:0}
-.non-google h3{font-size:14px;color:#92400e;margin-bottom:10px}
-.cloud-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px}
-.cloud-card{background:white;padding:10px;border-radius:6px;border:1px solid #fcd34d}
-.cloud-card h4{font-size:12px;color:#92400e;margin-bottom:6px;display:flex;align-items:center;gap:5px}
+.attention-group{margin-bottom:16px}
+.attention-group h4{font-size:13px;color:#991b1b;margin-bottom:12px;font-weight:800}
+.attention-cards{display:flex;flex-wrap:wrap;gap:10px}
+.attention-card{background:white;border-radius:8px;padding:12px;min-width:180px;max-width:240px;border:1px solid #fecdd3;border-left:4px solid #ef4444;box-shadow:0 2px 4px rgba(220,38,38,0.05)}
+.ac-permit{font-size:11px;font-weight:800;color:#b91c1c}
+.ac-name{font-size:11px;color:#4b5563;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.ac-summary{font-size:13px;margin-top:8px;font-weight:700}
+.ac-date{font-size:10px;color:#9ca3af;margin-top:6px;font-weight:600}
+.stale-table{width:100%;border-collapse:collapse;font-size:12px;background:white;border-radius:8px;overflow:hidden;border:1px solid #fecdd3}
+.stale-table th{background:#ffe4e6;padding:10px 12px;text-align:left;font-size:11px;color:#991b1b;font-weight:700}
+.stale-table td{padding:10px 12px;border-bottom:1px solid #fecdd3;color:#4b5563;font-weight:500}
+.non-google{background:#fffbeb;padding:20px 30px;border-bottom:1px solid #e5e7eb}
+.non-google h3{font-size:14px;color:#b45309;margin-bottom:16px;font-weight:800}
+.cloud-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.cloud-card{background:white;padding:16px;border-radius:8px;border:1px solid #fde68a;box-shadow:0 1px 2px rgba(0,0,0,0.02)}
+.cloud-card h4{font-size:13px;color:#b45309;margin-bottom:10px;display:flex;align-items:center;gap:6px;border-bottom:1px solid #fef3c7;padding-bottom:8px;font-weight:800}
 .cloud-card .icon{font-size:16px}
-.cloud-card ul{font-size:10px;color:#666;list-style:none;max-height:80px;overflow-y:auto}
-.cloud-card li{padding:2px 0;border-bottom:1px solid #f5f5f5}
-.content{padding:15px}
-.controls{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:15px;align-items:center;justify-content:space-between}
-.filter-group{display:flex;gap:0;border:1px solid #e5e5e5;border-radius:8px;overflow:hidden}
-.filter-group .btn{border:none;border-right:1px solid #e5e5e5;border-radius:0;padding:6px 12px;font-size:11px}
-.filter-group .btn:last-child{border-right:none}
-.search{padding:8px 12px;width:220px;border:2px solid #e5e5e5;border-radius:8px;font-size:13px}
-.search:focus{outline:none;border-color:#dc2626}
-.btn{padding:4px 8px;border:1px solid #e5e5e5;border-radius:4px;background:white;cursor:pointer;font-size:10px}
-.btn:hover{border-color:#dc2626}
-.btn.active{background:#dc2626;color:white;border-color:#dc2626}
-.table-wrap{overflow-x:auto;border-radius:6px;border:1px solid #e5e5e5;max-height:800px}
+.cloud-card ul{font-size:11px;color:#4b5563;list-style:none;max-height:100px;overflow-y:auto;font-weight:500}
+.cloud-card li{padding:4px 0;border-bottom:1px solid #f9fafb}
+.cloud-card li:last-child{border-bottom:none}
+.content{padding:24px 30px}
+.controls{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:20px;align-items:center;justify-content:space-between}
+.filter-group{display:flex;background:#f3f4f6;padding:4px;border-radius:8px;border:1px solid #e5e7eb}
+.filter-group .btn{border:none;background:transparent;padding:8px 16px;font-size:12px;font-weight:600;color:#4b5563;border-radius:6px;cursor:pointer;transition:all 0.2s}
+.filter-group .btn:hover{color:#111827;background:#e5e7eb}
+.filter-group .btn.active{background:#dc2626;color:white;box-shadow:0 2px 8px rgba(220,38,38,0.3)}
+.search{padding:10px 16px;width:300px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;background:#f9fafb;transition:all 0.2s;font-weight:500}
+.search:focus{outline:none;border-color:#111827;background:white;box-shadow:0 0 0 3px rgba(17,24,39,0.1)}
+.table-wrap{overflow-x:auto;border-radius:8px;max-height:800px;background:white}
 table{width:100%;border-collapse:collapse;font-size:13px}
-thead{background:#dc2626;color:white;position:sticky;top:0;z-index:10;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1)}
-th{padding:10px 8px;text-align:left;font-size:11px;cursor:pointer;white-space:nowrap}
-th:hover{background:#b91c1c}
-th:nth-child(1){width:35px}
-th:nth-child(11){min-width:75px}
-td{padding:10px 8px;border-bottom:1px solid #f0f0f0;vertical-align:top}
+thead th{background:#ffffff;color:#111827;font-weight:800;font-size:12px;position:sticky;top:0;z-index:10;border-bottom:2px solid #111827;padding:16px 12px;cursor:pointer;user-select:none;white-space:nowrap;transition:background 0.2s}
+thead th:hover{background:#f9fafb;color:#dc2626}
+th.sort-asc::after{content:' ↑';color:#dc2626;font-weight:900}
+th.sort-desc::after{content:' ↓';color:#dc2626;font-weight:900}
+th:nth-child(1){width:40px}
+td{padding:14px 12px;border-bottom:1px solid #f3f4f6;vertical-align:middle;color:#374151;font-weight:500}
 td.col-num,th.col-num{text-align:right}
-.empty-val{color:#d1d5db}
-tr:hover{background:#fafafa}
-tr.row-alert td:first-child{border-left:3px solid #ef4444}
-tr.row-stale td:first-child{border-left:3px solid #fbbf24}
-tr.row-alert.row-stale td:first-child{border-left:3px solid #ef4444}
-.badge{display:inline-block;padding:2px 6px;border-radius:3px;font-size:9px;font-weight:600;white-space:nowrap}
-.badge-success{background:#dcfce7;color:#166534}
-.badge-info{background:#dbeafe;color:#1e40af}
-.badge-warning{background:#fef3c7;color:#92400e}
-.badge-danger{background:#fee2e2;color:#991b1b}
-.badge-gray{background:#f3f4f6;color:#6b7280}
-.badge-orange{background:#ffedd5;color:#c2410c}
-.progress-wrapper{display:flex;align-items:center;gap:6px;min-width:90px}
-.progress-text{width:36px;text-align:right;font-size:11px;color:#4b5563;font-weight:600}
-.bar{flex-grow:1;height:6px;background:#e5e7eb;border-radius:3px;overflow:hidden}
-.bar-fill{height:100%;border-radius:2px}
-a{color:#dc2626;text-decoration:none;white-space:nowrap}
-a:hover{text-decoration:underline}
-.days{font-size:10px}
-.days-old{color:#dc2626;font-weight:600}
-.days-recent{color:#22c55e}
-.alert-merged{font-size:11px;white-space:nowrap;cursor:help}
-.name-cell{max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:#666}
-@media (max-width:768px) {
-  .search{width:100%}
-  .col-cloud,.col-coverage{display:none}
+.empty-val{color:#d1d5db;font-weight:400}
+tr:hover td{background:#f9fafb}
+tr{transition:background 0.2s}
+tr.row-alert td:first-child{border-left:4px solid #dc2626}
+tr.row-stale td:first-child{border-left:4px solid #f59e0b}
+tr.row-alert.row-stale td:first-child{border-left:4px solid #dc2626}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:6px;font-size:11px;font-weight:700;white-space:nowrap;border:1px solid transparent}
+.badge-success{background:#ecfdf5;color:#15803d;border-color:#a7f3d0}
+.badge-info{background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe}
+.badge-warning{background:#fffbeb;color:#b45309;border-color:#fde68a}
+.badge-danger{background:#fef2f2;color:#b91c1c;border-color:#fecdd3}
+.badge-gray{background:#f9fafb;color:#6b7280;border-color:#e5e7eb}
+.badge-orange{background:#fff7ed;color:#c2410c;border-color:#ffedd5}
+.progress-wrapper{display:flex;align-items:center;gap:8px;min-width:100px}
+.progress-text{width:36px;text-align:right;font-size:12px;color:#111827;font-weight:700}
+.bar{flex-grow:1;height:6px;background:#e5e7eb;border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width 0.5s ease-in-out}
+a{color:#111827;text-decoration:none;font-weight:700;border-bottom:1px dashed #d1d5db;padding-bottom:1px;white-space:nowrap}
+a:hover{color:#dc2626;border-bottom-color:#dc2626}
+.days{font-size:12px}
+.days-old{color:#ffffff;font-weight:700;background:#ef4444;padding:2px 6px;border-radius:4px;box-shadow:0 1px 2px rgba(239,68,68,0.3)}
+.days-recent{color:#10b981;font-weight:600}
+.alert-merged{font-size:12px;white-space:nowrap;cursor:help;padding:2px 6px;background:#fff1f2;color:#b91c1c;border-radius:4px;border:1px solid #fecdd3;display:inline-block;font-weight:700}
+.name-cell{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:#111827;font-weight:600}
+@media (max-width:768px){
+.header{flex-direction:column;align-items:flex-start;gap:10px;padding:15px}
+.stats{grid-template-columns:1fr 1fr;padding:15px}
+.content{padding:15px}
+.controls{flex-direction:column;align-items:stretch}
+.search{width:100%}
+.filter-group{overflow-x:auto;flex-wrap:nowrap}
+.col-cloud,.col-coverage{display:none}
 }
 </style>
 </head>
 <body>
 <div class="container">
 <div class="header">
-<h1>建照監測追蹤報告</h1>
-<div class="meta">2026年04月13日 12:15 | 自動生成</div>
+<div><h1>建照監測追蹤報告</h1></div>
+<div class="meta">2026年04月13日 13:07 | 自動生成</div>
 </div>
 <div class="stats">
 <div class="stat" title="台北市政府列管的建案監測數量"><div class="label">監測建案總數</div><div class="value">503</div></div>
@@ -6847,6 +6849,10 @@ a:hover{text-decoration:underline}
       }
     }
   });
+  // 初始化排序指標
+  document.querySelectorAll('#dataTable thead th').forEach(function(th) {
+    if(th.hasAttribute('onclick')) th.classList.add('sortable');
+  });
 })();
 
 let currentFilter = '';
@@ -6897,8 +6903,12 @@ function sortTable(n) {
   const tbody = table.tBodies[0];
   const rows = Array.from(tbody.querySelectorAll('tr:not(#emptyStateRow)'));
   const emptyRow = document.getElementById('emptyStateRow');
-  const dir = table.dataset.sortDir === 'asc' ? -1 : 1;
-  table.dataset.sortDir = dir === 1 ? 'asc' : 'desc';
+  const ths = table.querySelectorAll('thead th');
+  const targetTh = ths[n];
+  const isAsc = targetTh.classList.contains('sort-asc');
+  const dir = isAsc ? -1 : 1;
+  ths.forEach(function(th) { th.classList.remove('sort-asc', 'sort-desc'); });
+  targetTh.classList.add(dir === 1 ? 'sort-asc' : 'sort-desc');
   rows.sort(function(a, b) {
     let xText = a.cells[n].textContent.trim();
     let yText = b.cells[n].textContent.trim();
