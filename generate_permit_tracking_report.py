@@ -885,11 +885,11 @@ body{{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft JhengHe
 .btn.active{{background:#dc2626;color:white;border-color:#dc2626}}
 .table-wrap{{overflow-x:auto;border-radius:6px;border:1px solid #e5e5e5;max-height:800px}}
 table{{width:100%;border-collapse:collapse;font-size:13px}}
-thead{{background:#dc2626;color:white;position:sticky;top:0;z-index:10}}
+thead{{background:#dc2626;color:white;position:sticky;top:0;z-index:10;box-shadow:0 2px 4px rgba(0,0,0,0.15)}}
 th{{padding:10px 8px;text-align:left;font-size:11px;cursor:pointer;white-space:nowrap}}
 th:hover{{background:#b91c1c}}
 td{{padding:10px 8px;border-bottom:1px solid #f0f0f0;vertical-align:top}}
-.col-num{{text-align:right}}
+td.col-num,th.col-num{{text-align:right}}
 .empty-val{{color:#d1d5db}}
 tr:hover{{background:#fafafa}}
 tr.row-alert{{background:#fff1f2}}
