@@ -905,7 +905,7 @@ tr.row-alert.row-stale td:first-child{{border-left:3px solid #ef4444}}
 .badge-gray{{background:#f3f4f6;color:#6b7280}}
 .badge-orange{{background:#ffedd5;color:#c2410c}}
 .progress-wrapper{{display:flex;align-items:center;gap:6px;min-width:90px}}
-.progress-text{{width:30px;text-align:right;font-size:11px;color:#4b5563;font-weight:600}}
+.progress-text{{width:36px;text-align:right;font-size:11px;color:#4b5563;font-weight:600}}
 .bar{{flex-grow:1;height:6px;background:#e5e7eb;border-radius:3px;overflow:hidden}}
 .bar-fill{{height:100%;border-radius:2px}}
 a{{color:#dc2626;text-decoration:none;white-space:nowrap}}
@@ -1058,7 +1058,7 @@ a:hover{{text-decoration:underline}}
   }});
 
   // Mark stale rows dynamically
-  document.querySelectorAll('#dataTable tbody tr').forEach(function(row) {{
+  document.querySelectorAll('#dataTable tbody tr:not(#emptyStateRow)').forEach(function(row) {{
     const latestDate = row.getAttribute('data-latest-date');
     const status = row.getAttribute('data-status');
     if (latestDate && latestDate !== '-' && status !== 'no_reports') {{
@@ -1117,18 +1117,25 @@ function filterStatus(btn, status) {{
 }}
 function sortTable(n) {{
   const table = document.getElementById('dataTable');
-  const rows = Array.from(table.rows).slice(1);
+  const tbody = table.tBodies[0];
+  const rows = Array.from(tbody.querySelectorAll('tr:not(#emptyStateRow)'));
+  const emptyRow = document.getElementById('emptyStateRow');
   const dir = table.dataset.sortDir === 'asc' ? -1 : 1;
   table.dataset.sortDir = dir === 1 ? 'asc' : 'desc';
   rows.sort(function(a, b) {{
-    let x = a.cells[n].textContent;
-    let y = b.cells[n].textContent;
-    if (!isNaN(parseFloat(x)) && !isNaN(parseFloat(y))) {{
-      return (parseFloat(x) - parseFloat(y)) * dir;
+    let xText = a.cells[n].textContent.trim();
+    let yText = b.cells[n].textContent.trim();
+    if (xText === '-' || xText === '') xText = dir === 1 ? '999999999' : '-999999999';
+    if (yText === '-' || yText === '') yText = dir === 1 ? '999999999' : '-999999999';
+    let xNum = parseFloat(xText.replace(/[^0-9.\\-]/g, ''));
+    let yNum = parseFloat(yText.replace(/[^0-9.\\-]/g, ''));
+    if (!isNaN(xNum) && !isNaN(yNum) && /[0-9]/.test(xText) && /[0-9]/.test(yText)) {{
+      return (xNum - yNum) * dir;
     }}
-    return x.localeCompare(y, 'zh-TW') * dir;
+    return xText.localeCompare(yText, 'zh-TW') * dir;
   }});
-  rows.forEach(function(row) {{ table.tBodies[0].appendChild(row); }});
+  rows.forEach(function(row) {{ tbody.appendChild(row); }});
+  if (emptyRow) tbody.appendChild(emptyRow);
 }}
 function toggleAttention() {{
   const sec = document.getElementById('attentionSection');
