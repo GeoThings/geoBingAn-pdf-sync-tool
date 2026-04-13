@@ -720,8 +720,8 @@ def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], a
         # 狀態 badge
         status_badges = {
             'completed': ('✔ 已完成', 'badge-success'),
-            'in_progress': ('⏳ 分析中', 'badge-info'),
-            'not_uploaded': ('⬆ 待上傳', 'badge-warning'),
+            'in_progress': ('⏳ AI 處理中', 'badge-info'),
+            'not_uploaded': ('⬆ 等待同步', 'badge-warning'),
             'no_reports': ('── 無資料', 'badge-gray'),
             'error': ('✖ 異常', 'badge-danger')
         }
@@ -775,11 +775,11 @@ def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], a
         alert_total = warning_count + action_count + alert_count
         alert_parts = []
         if warning_count > 0:
-            alert_parts.append(f'⚠️{warning_count}')
+            alert_parts.append(f'⚠️{warning_count}次')
         if action_count > 0:
-            alert_parts.append(f'🚨{action_count}')
+            alert_parts.append(f'🚨{action_count}次')
         if alert_count > 0:
-            alert_parts.append(f'🔴{alert_count}')
+            alert_parts.append(f'🔴{alert_count}次')
 
         if alert_parts:
             alert_date_str = latest_alert_date[:10] if latest_alert_date else ''
@@ -930,8 +930,8 @@ a:hover{{text-decoration:underline}}
 <div class="stats">
 <div class="stat" title="台北市政府列管的建案監測數量"><div class="label">監測建案總數</div><div class="value">{total}</div></div>
 <div class="stat" title="所有報告都已上傳到究平安系統完成分析"><div class="label">已完成上傳</div><div class="value" style="color:#22c55e">{completed}</div></div>
-<div class="stat" title="報告已上傳，AI 正在分析處理中"><div class="label">正在分析中</div><div class="value" style="color:#3b82f6">{in_progress}</div></div>
-<div class="stat" title="雲端有報告但尚未上傳到究平安系統"><div class="label">尚未上傳</div><div class="value" style="color:#f59e0b">{not_uploaded}</div></div>
+<div class="stat" title="報告已上傳，AI 正在讀取 PDF 內容"><div class="label">AI 處理中</div><div class="value" style="color:#3b82f6">{in_progress}</div></div>
+<div class="stat" title="雲端有報告，系統排隊等待自動同步中"><div class="label">等待同步</div><div class="value" style="color:#f59e0b">{not_uploaded}</div></div>
 <div class="stat" title="雲端資料夾中沒有任何 PDF 報告"><div class="label">尚無監測資料</div><div class="value" style="color:#6b7280">{no_reports}</div></div>
 <div class="stat" title="使用 SharePoint、Dropbox 等其他雲端服務"><div class="label">非 Google Drive</div><div class="value" style="color:#c2410c">{other_cloud}</div></div>
 <div class="stat" title="同步或上傳過程中發生錯誤"><div class="label">異常</div><div class="value" style="color:#dc2626">{errors}</div></div>
@@ -947,8 +947,8 @@ a:hover{{text-decoration:underline}}
 <div class="legend-block-title">同步狀態說明</div>
 <table class="legend-table">
 <tr><td><span class="badge badge-success">已完成</span></td><td>所有雲端報告皆已上傳並完成分析</td></tr>
-<tr><td><span class="badge badge-info">分析中</span></td><td>報告已上傳，AI 正在分析處理中，請稍候</td></tr>
-<tr><td><span class="badge badge-warning">待上傳</span></td><td>雲端有新報告，尚未上傳至究平安系統，需盡快處理</td></tr>
+<tr><td><span class="badge badge-info">AI 處理中</span></td><td>報告已上傳，AI 正在自動讀取 PDF 內容，無需操作</td></tr>
+<tr><td><span class="badge badge-warning">等待同步</span></td><td>雲端有報告，系統排隊等待自動同步，無需手動操作</td></tr>
 <tr><td><span class="badge badge-gray">無資料</span></td><td>雲端資料夾目前沒有任何 PDF 報告</td></tr>
 <tr><td><span class="badge badge-danger">異常</span></td><td>同步或上傳過程中發生錯誤，請聯絡技術人員</td></tr>
 </table>
@@ -964,9 +964,9 @@ a:hover{{text-decoration:underline}}
 <div class="legend-block-title">欄位說明</div>
 <table class="legend-table">
 <tr><td class="legend-col-name">雲端報告數</td><td>Google Drive 上該工地的 PDF 報告總數（可點擊開啟資料夾）</td></tr>
-<tr><td class="legend-col-name">已分析數</td><td>已上傳至究平安系統並完成 AI 分析的報告數量</td></tr>
-<tr><td class="legend-col-name">分析進度</td><td>已分析數 ÷ 雲端報告數，進度條顯示完成比例</td></tr>
-<tr><td class="legend-col-name">警戒紀錄</td><td>⚠️ 警戒值 / 🚨 行動值 / 🔴 超越行動值的觸發次數</td></tr>
+<tr><td class="legend-col-name">AI 辨識數</td><td>已完成 AI 自動讀取 PDF 內容的報告數量</td></tr>
+<tr><td class="legend-col-name">系統處理進度</td><td>AI 辨識數 ÷ 雲端報告數，進度條顯示處理比例</td></tr>
+<tr><td class="legend-col-name">異常紀錄</td><td>⚠️ 警戒值（次）/ 🚨 行動值（次）/ 🔴 超越行動值（次）</td></tr>
 <tr><td class="legend-col-name">更新間隔</td><td>最近一份報告距今天數，超過 30 天會以紅字標示</td></tr>
 </table>
 </div>
@@ -996,7 +996,7 @@ a:hover{{text-decoration:underline}}
 </div>
 
 <div class="non-google">
-<h3>⚠️ 使用非 Google Drive 的建照 ({other_cloud} 個)</h3>
+<h3>⚠️ 需手動處理的建照（未使用 Google Drive，系統無法自動抓取，共 {other_cloud} 個）</h3>
 <div class="cloud-grid">{cloud_cards_html}</div>
 </div>
 
@@ -1006,9 +1006,9 @@ a:hover{{text-decoration:underline}}
 <div class="filter-group">
 <button class="btn active" onclick="filterStatus(this,'')">全部</button>
 <button class="btn" onclick="filterStatus(this,'completed')">已完成</button>
-<button class="btn" onclick="filterStatus(this,'in_progress')">分析中</button>
-<button class="btn" onclick="filterStatus(this,'not_uploaded')">待上傳</button>
-<button class="btn" onclick="filterStatus(this,'other_cloud')">非 Google Drive</button>
+<button class="btn" onclick="filterStatus(this,'in_progress')">AI 處理中</button>
+<button class="btn" onclick="filterStatus(this,'not_uploaded')">等待同步</button>
+<button class="btn" onclick="filterStatus(this,'other_cloud')">需手動處理</button>
 <button class="btn" onclick="filterStatus(this,'needs_attention')">需要處理</button>
 </div>
 </div>
@@ -1021,9 +1021,9 @@ a:hover{{text-decoration:underline}}
 <th onclick="sortTable(2)">工地名稱</th>
 <th onclick="sortTable(3)" class="col-cloud">資料來源</th>
 <th onclick="sortTable(4)" class="col-num">雲端報告數</th>
-<th onclick="sortTable(5)" class="col-num">已分析數</th>
-<th onclick="sortTable(6)" class="col-coverage">分析進度</th>
-<th onclick="sortTable(7)">警戒紀錄</th>
+<th onclick="sortTable(5)" class="col-num" title="已完成 AI 內容讀取的報告數量">AI 辨識數</th>
+<th onclick="sortTable(6)" class="col-coverage" title="AI 辨識數 ÷ 雲端報告數">系統處理進度</th>
+<th onclick="sortTable(7)" title="⚠️警戒值 / 🚨行動值 / 🔴超越行動值 的發生次數">異常紀錄 ℹ️</th>
 <th onclick="sortTable(8)">最近更新</th>
 <th onclick="sortTable(9)" class="col-num">更新間隔</th>
 <th onclick="sortTable(10)">同步狀態</th>
