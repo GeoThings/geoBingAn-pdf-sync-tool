@@ -71,18 +71,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft JhengHei
 .btn.active{background:#dc2626;color:white;border-color:#dc2626}
 .table-wrap{overflow-x:auto;border-radius:6px;border:1px solid #e5e5e5;max-height:800px}
 table{width:100%;border-collapse:collapse;font-size:13px}
-thead{background:#dc2626;color:white;position:sticky;top:0;z-index:10}
+thead{background:#dc2626;color:white;position:sticky;top:0;z-index:10;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1)}
 th{padding:10px 8px;text-align:left;font-size:11px;cursor:pointer;white-space:nowrap}
 th:hover{background:#b91c1c}
+th:nth-child(1){width:35px}
+th:nth-child(11){min-width:75px}
 td{padding:10px 8px;border-bottom:1px solid #f0f0f0;vertical-align:top}
-.col-num{text-align:right}
+td.col-num,th.col-num{text-align:right}
 .empty-val{color:#d1d5db}
 tr:hover{background:#fafafa}
-tr.row-alert{background:#fff1f2}
-tr.row-alert:hover{background:#ffe4e6}
-tr.row-stale{background:#fefce8}
-tr.row-stale:hover{background:#fef9c3}
-tr.row-alert.row-stale{background:#fff1f2}
+tr.row-alert td:first-child{border-left:3px solid #ef4444}
+tr.row-stale td:first-child{border-left:3px solid #fbbf24}
+tr.row-alert.row-stale td:first-child{border-left:3px solid #ef4444}
 .badge{display:inline-block;padding:2px 6px;border-radius:3px;font-size:9px;font-weight:600;white-space:nowrap}
 .badge-success{background:#dcfce7;color:#166534}
 .badge-info{background:#dbeafe;color:#1e40af}
@@ -90,7 +90,9 @@ tr.row-alert.row-stale{background:#fff1f2}
 .badge-danger{background:#fee2e2;color:#991b1b}
 .badge-gray{background:#f3f4f6;color:#6b7280}
 .badge-orange{background:#ffedd5;color:#c2410c}
-.bar{width:40px;height:4px;background:#e5e5e5;border-radius:2px;display:inline-block;vertical-align:middle}
+.progress-wrapper{display:flex;align-items:center;gap:6px;min-width:90px}
+.progress-text{width:30px;text-align:right;font-size:11px;color:#4b5563;font-weight:600}
+.bar{flex-grow:1;height:6px;background:#e5e7eb;border-radius:3px;overflow:hidden}
 .bar-fill{height:100%;border-radius:2px}
 a{color:#dc2626;text-decoration:none;white-space:nowrap}
 a:hover{text-decoration:underline}
@@ -109,7 +111,7 @@ a:hover{text-decoration:underline}
 <div class="container">
 <div class="header">
 <h1>建照監測追蹤報告</h1>
-<div class="meta">2026年04月13日 10:39 | 自動生成</div>
+<div class="meta">2026年04月13日 11:35 | 自動生成</div>
 </div>
 <div class="stats">
 <div class="stat" title="台北市政府列管的建案監測數量"><div class="label">監測建案總數</div><div class="value">503</div></div>
@@ -1248,7 +1250,7 @@ a:hover{text-decoration:underline}
 <td></td>
 <td class="col-num"><a href="https://drive.google.com/drive/folders/182evAqRIKhpARg5vWXU7HTBBS_9jWtFz" target="_blank" title="開啟 Google Drive 資料夾">1 ↗</a></td>
 <td class="col-num">8</td>
-<td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><div class="progress-wrapper"><div class="progress-text">100%</div><div class="bar"><div class="bar-fill" style="width:100%;background:#22c55e"></div></div></div></td>
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
@@ -1300,7 +1302,7 @@ a:hover{text-decoration:underline}
 <td></td>
 <td class="col-num"><a href="https://drive.google.com/drive/folders/1ekfnDCwgzZo3-VA_WMgEUlDJiNWsOsSp" target="_blank" title="開啟 Google Drive 資料夾">36 ↗</a></td>
 <td class="col-num">1</td>
-<td>2% <span class="bar"><span class="bar-fill" style="width:2%;background:#dc2626"></span></span></td>
+<td><div class="progress-wrapper"><div class="progress-text">2%</div><div class="bar"><div class="bar-fill" style="width:2%;background:#dc2626"></div></div></div></td>
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
@@ -1365,7 +1367,7 @@ a:hover{text-decoration:underline}
 <td></td>
 <td class="col-num"><a href="https://drive.google.com/drive/folders/14hVTYuEOq91-skwM7m3sdiLQESG_j6Jh" target="_blank" title="開啟 Google Drive 資料夾">19 ↗</a></td>
 <td class="col-num">85</td>
-<td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><div class="progress-wrapper"><div class="progress-text">100%</div><div class="bar"><div class="bar-fill" style="width:100%;background:#22c55e"></div></div></div></td>
 <td><span class="alert-merged" title="最近警戒: 2026-01-12">⚠️17 🚨30 🔴3</span></td>
 <td>2026-04-13</td>
 <td class="col-num"><span class="days" data-date="2026-04-13"></span></td>
@@ -1729,7 +1731,7 @@ a:hover{text-decoration:underline}
 <td></td>
 <td class="col-num"><a href="https://drive.google.com/drive/folders/1fLrvg0jYh3OMCkdMOkwMAMmIRbCo23EA" target="_blank" title="開啟 Google Drive 資料夾">4 ↗</a></td>
 <td class="col-num">3</td>
-<td>75% <span class="bar"><span class="bar-fill" style="width:75%;background:#f59e0b"></span></span></td>
+<td><div class="progress-wrapper"><div class="progress-text">75%</div><div class="bar"><div class="bar-fill" style="width:75%;background:#f59e0b"></div></div></div></td>
 <td><span class="alert-merged" title="最近警戒: 2026-01-13">⚠️1</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
@@ -1859,7 +1861,7 @@ a:hover{text-decoration:underline}
 <td></td>
 <td class="col-num"><a href="https://drive.google.com/drive/folders/1p6VOGhCJj4_lr4bPwgZldkZ2ViLxgIrU" target="_blank" title="開啟 Google Drive 資料夾">48 ↗</a></td>
 <td class="col-num">2</td>
-<td>4% <span class="bar"><span class="bar-fill" style="width:4%;background:#dc2626"></span></span></td>
+<td><div class="progress-wrapper"><div class="progress-text">4%</div><div class="bar"><div class="bar-fill" style="width:4%;background:#dc2626"></div></div></div></td>
 <td><span class="alert-merged" title="最近警戒: 2026-01-14">⚠️20 🚨9</span></td>
 <td>2026-04-02</td>
 <td class="col-num"><span class="days" data-date="2026-04-02"></span></td>
@@ -1885,7 +1887,7 @@ a:hover{text-decoration:underline}
 <td></td>
 <td class="col-num"><a href="https://drive.google.com/drive/folders/1jmM1dVJutb8yMOC6kbsq4KlR8pzCsEfg" target="_blank" title="開啟 Google Drive 資料夾">58 ↗</a></td>
 <td class="col-num">58</td>
-<td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><div class="progress-wrapper"><div class="progress-text">100%</div><div class="bar"><div class="bar-fill" style="width:100%;background:#22c55e"></div></div></div></td>
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
@@ -1963,7 +1965,7 @@ a:hover{text-decoration:underline}
 <td></td>
 <td class="col-num"><a href="https://drive.google.com/drive/folders/1kktZcR3OAns4ebEVHWdLbnqz8Xw_6TiB" target="_blank" title="開啟 Google Drive 資料夾">351 ↗</a></td>
 <td class="col-num">1</td>
-<td>0% <span class="bar"><span class="bar-fill" style="width:0%;background:#dc2626"></span></span></td>
+<td><div class="progress-wrapper"><div class="progress-text">0%</div><div class="bar"><div class="bar-fill" style="width:0%;background:#dc2626"></div></div></div></td>
 <td><span class="alert-merged" title="最近警戒: 2026-01-14">⚠️21 🚨18 🔴2</span></td>
 <td>2026-04-01</td>
 <td class="col-num"><span class="days" data-date="2026-04-01"></span></td>
@@ -1976,7 +1978,7 @@ a:hover{text-decoration:underline}
 <td></td>
 <td class="col-num"><a href="https://drive.google.com/drive/folders/1xtWEaGtON3YTembXOvGYh0fiOXYl0xn0" target="_blank" title="開啟 Google Drive 資料夾">39 ↗</a></td>
 <td class="col-num">38</td>
-<td>97% <span class="bar"><span class="bar-fill" style="width:97%;background:#22c55e"></span></span></td>
+<td><div class="progress-wrapper"><div class="progress-text">97%</div><div class="bar"><div class="bar-fill" style="width:97%;background:#22c55e"></div></div></div></td>
 <td><span class="alert-merged" title="最近警戒: 2026-01-13">⚠️4 🚨4</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
@@ -2119,7 +2121,7 @@ a:hover{text-decoration:underline}
 <td></td>
 <td class="col-num"><a href="https://drive.google.com/drive/folders/1aPIvTgP8e8rhBWp22cT2gZJCLzWVS-J1" target="_blank" title="開啟 Google Drive 資料夾">67 ↗</a></td>
 <td class="col-num">65</td>
-<td>97% <span class="bar"><span class="bar-fill" style="width:97%;background:#22c55e"></span></span></td>
+<td><div class="progress-wrapper"><div class="progress-text">97%</div><div class="bar"><div class="bar-fill" style="width:97%;background:#22c55e"></div></div></div></td>
 <td><span class="alert-merged" title="最近警戒: 2026-01-19">⚠️11 🚨17</span></td>
 <td>2025-12-15</td>
 <td class="col-num"><span class="days" data-date="2025-12-15"></span></td>
@@ -2210,7 +2212,7 @@ a:hover{text-decoration:underline}
 <td></td>
 <td class="col-num"><a href="https://drive.google.com/drive/folders/1fH4uV2xAMxmmUWk6Wv6vAn2U-jCIW6Ml" target="_blank" title="開啟 Google Drive 資料夾">24 ↗</a></td>
 <td class="col-num">67</td>
-<td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><div class="progress-wrapper"><div class="progress-text">100%</div><div class="bar"><div class="bar-fill" style="width:100%;background:#22c55e"></div></div></div></td>
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
@@ -2327,7 +2329,7 @@ a:hover{text-decoration:underline}
 <td></td>
 <td class="col-num"><a href="https://drive.google.com/drive/folders/1aTFkbUS0bi-IzIxdyhXMPZjqdVIsEQTV" target="_blank" title="開啟 Google Drive 資料夾">48 ↗</a></td>
 <td class="col-num">36</td>
-<td>75% <span class="bar"><span class="bar-fill" style="width:75%;background:#f59e0b"></span></span></td>
+<td><div class="progress-wrapper"><div class="progress-text">75%</div><div class="bar"><div class="bar-fill" style="width:75%;background:#f59e0b"></div></div></div></td>
 <td><span class="empty-val">-</span></td>
 <td>2026-04-13</td>
 <td class="col-num"><span class="days" data-date="2026-04-13"></span></td>
@@ -2444,7 +2446,7 @@ a:hover{text-decoration:underline}
 <td></td>
 <td class="col-num"><a href="https://drive.google.com/drive/folders/16WdPHzXTxkQVEcRPE-OeDFvxFXVv7Ydz" target="_blank" title="開啟 Google Drive 資料夾">56 ↗</a></td>
 <td class="col-num">56</td>
-<td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><div class="progress-wrapper"><div class="progress-text">100%</div><div class="bar"><div class="bar-fill" style="width:100%;background:#22c55e"></div></div></div></td>
 <td><span class="empty-val">-</span></td>
 <td>2025-12-29</td>
 <td class="col-num"><span class="days" data-date="2025-12-29"></span></td>
@@ -2743,7 +2745,7 @@ a:hover{text-decoration:underline}
 <td></td>
 <td class="col-num"><a href="https://drive.google.com/drive/folders/1zxLfxbevxkpw3rXwJkDvwyVGH855dNtH" target="_blank" title="開啟 Google Drive 資料夾">94 ↗</a></td>
 <td class="col-num">11</td>
-<td>11% <span class="bar"><span class="bar-fill" style="width:11%;background:#dc2626"></span></span></td>
+<td><div class="progress-wrapper"><div class="progress-text">11%</div><div class="bar"><div class="bar-fill" style="width:11%;background:#dc2626"></div></div></div></td>
 <td><span class="empty-val">-</span></td>
 <td>2026-04-13</td>
 <td class="col-num"><span class="days" data-date="2026-04-13"></span></td>
@@ -2847,7 +2849,7 @@ a:hover{text-decoration:underline}
 <td></td>
 <td class="col-num"><a href="https://drive.google.com/drive/folders/14sEIGmXcF1UzyAQsFWJE-qrTJG-pbCsp" target="_blank" title="開啟 Google Drive 資料夾">82 ↗</a></td>
 <td class="col-num">1</td>
-<td>1% <span class="bar"><span class="bar-fill" style="width:1%;background:#dc2626"></span></span></td>
+<td><div class="progress-wrapper"><div class="progress-text">1%</div><div class="bar"><div class="bar-fill" style="width:1%;background:#dc2626"></div></div></div></td>
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
@@ -3601,7 +3603,7 @@ a:hover{text-decoration:underline}
 <td></td>
 <td class="col-num"><a href="https://drive.google.com/drive/folders/1xTD9gIGb_mfJuokG-V1HmLCPJm3Ddkom" target="_blank" title="開啟 Google Drive 資料夾">16 ↗</a></td>
 <td class="col-num">16</td>
-<td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><div class="progress-wrapper"><div class="progress-text">100%</div><div class="bar"><div class="bar-fill" style="width:100%;background:#22c55e"></div></div></div></td>
 <td><span class="alert-merged" title="最近警戒: 2026-01-13">🚨1</span></td>
 <td>2025-12-09</td>
 <td class="col-num"><span class="days" data-date="2025-12-09"></span></td>
@@ -4277,7 +4279,7 @@ a:hover{text-decoration:underline}
 <td></td>
 <td class="col-num"><a href="https://drive.google.com/drive/folders/1-R88R46juuEaTAlDIDSHPxfVgfGcZFKz" target="_blank" title="開啟 Google Drive 資料夾">28 ↗</a></td>
 <td class="col-num">28</td>
-<td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><div class="progress-wrapper"><div class="progress-text">100%</div><div class="bar"><div class="bar-fill" style="width:100%;background:#22c55e"></div></div></div></td>
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
@@ -4966,7 +4968,7 @@ a:hover{text-decoration:underline}
 <td></td>
 <td class="col-num"><a href="https://drive.google.com/drive/folders/1MzC27Koyxz9bBiEO3-APCsTEV64Xbqqg" target="_blank" title="開啟 Google Drive 資料夾">39 ↗</a></td>
 <td class="col-num">39</td>
-<td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><div class="progress-wrapper"><div class="progress-text">100%</div><div class="bar"><div class="bar-fill" style="width:100%;background:#22c55e"></div></div></div></td>
 <td><span class="alert-merged" title="最近警戒: 2026-01-13">⚠️37 🚨23</span></td>
 <td>2025-12-09</td>
 <td class="col-num"><span class="days" data-date="2025-12-09"></span></td>
@@ -5226,7 +5228,7 @@ a:hover{text-decoration:underline}
 <td></td>
 <td class="col-num"><a href="https://drive.google.com/drive/folders/1MfeSGz7euR-O9B1t25XMaFh0Lkbjmhq8" target="_blank" title="開啟 Google Drive 資料夾">168 ↗</a></td>
 <td class="col-num">7</td>
-<td>4% <span class="bar"><span class="bar-fill" style="width:4%;background:#dc2626"></span></span></td>
+<td><div class="progress-wrapper"><div class="progress-text">4%</div><div class="bar"><div class="bar-fill" style="width:4%;background:#dc2626"></div></div></div></td>
 <td><span class="empty-val">-</span></td>
 <td>2026-04-13</td>
 <td class="col-num"><span class="days" data-date="2026-04-13"></span></td>
@@ -5382,7 +5384,7 @@ a:hover{text-decoration:underline}
 <td></td>
 <td class="col-num"><a href="https://drive.google.com/drive/folders/12lZTM4XrTsy-FnqcRA9n3eJTJ_7GG2T-" target="_blank" title="開啟 Google Drive 資料夾">77 ↗</a></td>
 <td class="col-num">77</td>
-<td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><div class="progress-wrapper"><div class="progress-text">100%</div><div class="bar"><div class="bar-fill" style="width:100%;background:#22c55e"></div></div></div></td>
 <td><span class="alert-merged" title="最近警戒: 2026-01-19">⚠️14</span></td>
 <td>2025-12-15</td>
 <td class="col-num"><span class="days" data-date="2025-12-15"></span></td>
@@ -5980,7 +5982,7 @@ a:hover{text-decoration:underline}
 <td></td>
 <td class="col-num"><a href="https://drive.google.com/drive/folders/15Oxl44jElySv2KDloieI4FceuLyvBP-7" target="_blank" title="開啟 Google Drive 資料夾">6 ↗</a></td>
 <td class="col-num">6</td>
-<td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><div class="progress-wrapper"><div class="progress-text">100%</div><div class="bar"><div class="bar-fill" style="width:100%;background:#22c55e"></div></div></div></td>
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
@@ -6357,7 +6359,7 @@ a:hover{text-decoration:underline}
 <td></td>
 <td class="col-num"><a href="https://drive.google.com/drive/folders/1o7oOS56v_N7rUPOSVD-yjW22Ov4zJ_zk" target="_blank" title="開啟 Google Drive 資料夾">14 ↗</a></td>
 <td class="col-num">7</td>
-<td>50% <span class="bar"><span class="bar-fill" style="width:50%;background:#f59e0b"></span></span></td>
+<td><div class="progress-wrapper"><div class="progress-text">50%</div><div class="bar"><div class="bar-fill" style="width:50%;background:#f59e0b"></div></div></div></td>
 <td><span class="empty-val">-</span></td>
 <td>2026-04-01</td>
 <td class="col-num"><span class="days" data-date="2026-04-01"></span></td>
@@ -6552,7 +6554,7 @@ a:hover{text-decoration:underline}
 <td></td>
 <td class="col-num"><a href="https://drive.google.com/drive/folders/1oH6nNJVL1FwVP529zGhBIg6t7nyHHOA9" target="_blank" title="開啟 Google Drive 資料夾">291 ↗</a></td>
 <td class="col-num">291</td>
-<td>100% <span class="bar"><span class="bar-fill" style="width:100%;background:#22c55e"></span></span></td>
+<td><div class="progress-wrapper"><div class="progress-text">100%</div><div class="bar"><div class="bar-fill" style="width:100%;background:#22c55e"></div></div></div></td>
 <td><span class="empty-val">-</span></td>
 <td>2025-12-05</td>
 <td class="col-num"><span class="days" data-date="2025-12-05"></span></td>
@@ -6804,7 +6806,9 @@ a:hover{text-decoration:underline}
 <td>2025-11-24</td>
 <td class="col-num"><span class="days" data-date="2025-11-24"></span></td>
 <td><span class="badge badge-warning">⬆ 待上傳</span></td>
-</tr></tbody>
+</tr>
+<tr id="emptyStateRow" style="display:none"><td colspan="11" style="text-align:center;padding:40px;color:#9ca3af"><div style="font-size:24px;margin-bottom:8px">🔍</div>找不到符合條件的建案紀錄</td></tr>
+</tbody>
 </table>
 </div>
 </div>
@@ -6848,9 +6852,10 @@ a:hover{text-decoration:underline}
 let currentFilter = '';
 function filterTable() {
   const search = document.getElementById('search').value.toLowerCase();
-  const rows = document.querySelectorAll('#dataTable tbody tr');
+  const rows = document.querySelectorAll('#dataTable tbody tr:not(#emptyStateRow)');
   const today = new Date();
   today.setHours(0,0,0,0);
+  let visibleCount = 0;
   rows.forEach(function(row) {
     const permit = row.cells[1].textContent.toLowerCase();
     const name = row.cells[2].textContent.toLowerCase();
@@ -6875,8 +6880,11 @@ function filterTable() {
     } else if (currentFilter) {
       matchStatus = status === currentFilter;
     }
-    row.style.display = matchSearch && matchStatus ? '' : 'none';
+    const visible = matchSearch && matchStatus;
+    row.style.display = visible ? '' : 'none';
+    if (visible) visibleCount++;
   });
+  const esr = document.getElementById('emptyStateRow'); if(esr) esr.style.display = visibleCount === 0 ? 'table-row' : 'none';
 }
 function filterStatus(btn, status) {
   currentFilter = status;
