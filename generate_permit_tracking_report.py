@@ -887,9 +887,9 @@ thead th:hover{{background:#f9fafb;color:#dc2626}}
 th.sort-asc::after{{content:' ↑';color:#dc2626;font-weight:900}}
 th.sort-desc::after{{content:' ↓';color:#dc2626;font-weight:900}}
 th:nth-child(1){{width:40px}}
-td{{padding:14px 12px;border-bottom:1px solid #f3f4f6;vertical-align:middle;color:#374151;font-weight:500}}
+td{{padding:14px 12px;border-bottom:1px solid #f3f4f6;vertical-align:middle;color:#374151;font-weight:500;white-space:nowrap}}
 td.col-num,th.col-num{{text-align:right}}
-.empty-val{{color:#d1d5db;font-weight:400}}
+.empty-val{{color:#d1d5db;font-weight:400;display:inline-block;text-align:center;width:100%}}
 tr:hover td{{background:#f9fafb}}
 tr{{transition:background 0.2s}}
 tr.row-alert td:first-child{{border-left:4px solid #dc2626}}
@@ -909,7 +909,7 @@ tr.row-alert.row-stale td:first-child{{border-left:4px solid #dc2626}}
 a{{color:#111827;text-decoration:none;font-weight:700;border-bottom:1px dashed #d1d5db;padding-bottom:1px;white-space:nowrap}}
 a:hover{{color:#dc2626;border-bottom-color:#dc2626}}
 .days{{font-size:12px}}
-.days-old{{color:#ffffff;font-weight:700;background:#ef4444;padding:2px 6px;border-radius:4px;box-shadow:0 1px 2px rgba(239,68,68,0.3)}}
+.days-old{{color:#ffffff;font-weight:700;background:#ef4444;padding:4px 8px;border-radius:6px;box-shadow:0 1px 2px rgba(239,68,68,0.3);display:inline-block;white-space:nowrap;min-width:50px;text-align:center}}
 .days-recent{{color:#10b981;font-weight:600}}
 .alert-merged{{font-size:12px;white-space:nowrap;cursor:help;padding:2px 6px;background:#fff1f2;color:#b91c1c;border-radius:4px;border:1px solid #fecdd3;display:inline-block;font-weight:700}}
 .name-cell{{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:#111827;font-weight:600}}
