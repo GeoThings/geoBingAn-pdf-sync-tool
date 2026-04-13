@@ -212,7 +212,7 @@ cd "$SCRIPT_DIR"
 if git diff --quiet docs/index.html 2>/dev/null; then
     echo "ℹ️  報告無變更，跳過推送" | tee -a "$LOG_FILE"
 else
-    git add docs/index.html state/permit_tracking_report.html state/permit_tracking.csv 2>/dev/null || true
+    git add docs/index.html state/permit_tracking_report.html state/permit_tracking.csv state/upload_history_all.json 2>/dev/null || true
     if git commit -m "Weekly sync report update ($(date +%Y-%m-%d))" 2>&1 | tee -a "$LOG_FILE"; then
         if git push origin main 2>&1 | tee -a "$LOG_FILE"; then
             echo "✅ 已推送到 GitHub" | tee -a "$LOG_FILE"

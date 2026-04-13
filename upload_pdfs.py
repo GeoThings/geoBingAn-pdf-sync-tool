@@ -174,7 +174,11 @@ def add_to_history(filepath: str):
 
 
 def load_state() -> dict:
-    """載入已上傳的 PDF 記錄（包含快取）"""
+    """載入已上傳的 PDF 記錄（包含快取）
+
+    自動合併 upload_history_all.json（git 追蹤）的上傳記錄，
+    確保 fresh clone 後不會重複上傳已處理的檔案。
+    """
     if os.path.exists(STATE_FILE):
         with open(STATE_FILE, 'r', encoding='utf-8') as f:
             state = json.load(f)
@@ -185,16 +189,25 @@ def load_state() -> dict:
                     'pdfs': [],
                     'last_scan': None
                 }
-            return state
-    return {
-        'uploaded_files': [],
-        'errors': [],
-        'cache': {
-            'folders': [],
-            'pdfs': [],
-            'last_scan': None
+    else:
+        state = {
+            'uploaded_files': [],
+            'errors': [],
+            'cache': {
+                'folders': [],
+                'pdfs': [],
+                'last_scan': None
+            }
         }
-    }
+
+    # 合併 git 追蹤的上傳歷史（確保 fresh clone 不重複上傳）
+    history = load_history()
+    history_files = set(history.get('uploaded_files', []))
+    state_files = set(state.get('uploaded_files', []))
+    merged = state_files | history_files
+    if len(merged) > len(state_files):
+        state['uploaded_files'] = list(merged)
+        print(f"📂 已合併上傳歷史: {len(history_files)} 筆（本地 {len(state_files)} + 歷史 {len(history_files)} → {len(merged)} 筆）", flush=True)
 
 
 STATE_LOCK_FILE = STATE_FILE + '.lock'
