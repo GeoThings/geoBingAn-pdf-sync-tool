@@ -719,11 +719,11 @@ def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], a
 
         # 狀態 badge
         status_badges = {
-            'completed': ('已完成', 'badge-success'),
-            'in_progress': ('分析中', 'badge-info'),
-            'not_uploaded': ('待上傳', 'badge-warning'),
-            'no_reports': ('無資料', 'badge-gray'),
-            'error': ('異常', 'badge-danger')
+            'completed': ('✔ 已完成', 'badge-success'),
+            'in_progress': ('⏳ 分析中', 'badge-info'),
+            'not_uploaded': ('⬆ 待上傳', 'badge-warning'),
+            'no_reports': ('── 無資料', 'badge-gray'),
+            'error': ('✖ 異常', 'badge-danger')
         }
         badge_text, badge_class = status_badges.get(status, ('未知', 'badge-gray'))
 
@@ -739,22 +739,22 @@ def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], a
             bar_color = '#22c55e' if coverage >= 80 else '#f59e0b' if coverage >= 50 else '#dc2626'
             coverage_html = f'{coverage}% <span class="bar"><span class="bar-fill" style="width:{coverage}%;background:{bar_color}"></span></span>'
         else:
-            coverage_html = '-'
+            coverage_html = '<span class="empty-val">-</span>'
 
         # 天數 - use data-date for dynamic JS calculation
         if latest:
             days_html = f'<span class="days" data-date="{latest[:10]}"></span>'
         else:
-            days_html = '-'
+            days_html = '<span class="empty-val">-</span>'
 
         # 連結
         if folder_id:
-            drive_link = f'<a href="https://drive.google.com/drive/folders/{folder_id}" target="_blank">{drive_count}</a>'
+            drive_link = f'<a href="https://drive.google.com/drive/folders/{folder_id}" target="_blank" title="開啟 Google Drive 資料夾">{drive_count} ↗</a>'
         else:
             drive_link = str(drive_count)
 
         # 最新報告日期
-        latest_html = latest[:10] if latest else '-'
+        latest_html = latest[:10] if latest else '<span class="empty-val">-</span>'
 
         # 建案名稱
         building_name = permit_names.get(permit, '')
@@ -762,7 +762,7 @@ def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], a
         if len(building_name) > 25:
             name_html = f'<span title="{esc(building_name)}">{esc(building_name[:25])}...</span>'
         else:
-            name_html = esc(building_name) if building_name else '-'
+            name_html = esc(building_name) if building_name else '<span class="empty-val">-</span>'
 
         # 警戒/行動值
         permit_alert = alert_data.get(permit, {})
@@ -786,7 +786,7 @@ def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], a
             tooltip = f'最近警戒: {alert_date_str}' if alert_date_str else ''
             merged_alert_html = f'<span class="alert-merged" title="{tooltip}">{" ".join(alert_parts)}</span>'
         else:
-            merged_alert_html = '-'
+            merged_alert_html = '<span class="empty-val">-</span>'
 
         # row CSS classes
         row_classes = []
@@ -803,12 +803,12 @@ def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], a
 <td><strong>{esc(permit)}</strong></td>
 <td class="name-cell">{name_html}</td>
 <td>{cloud_badge}</td>
-<td>{drive_link}</td>
-<td>{system_count}</td>
+<td class="col-num">{drive_link}</td>
+<td class="col-num">{system_count}</td>
 <td>{coverage_html}</td>
 <td>{merged_alert_html}</td>
-<td>{esc(latest_html)}</td>
-<td>{days_html}</td>
+<td>{latest_html}</td>
+<td class="col-num">{days_html}</td>
 <td><span class="badge {badge_class}">{esc(badge_text)}</span></td>
 </tr>'''
 
@@ -874,18 +874,23 @@ body{{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft JhengHe
 .cloud-card ul{{font-size:10px;color:#666;list-style:none;max-height:80px;overflow-y:auto}}
 .cloud-card li{{padding:2px 0;border-bottom:1px solid #f5f5f5}}
 .content{{padding:15px}}
-.controls{{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;align-items:center}}
-.search{{padding:6px 10px;width:180px;border:2px solid #e5e5e5;border-radius:5px;font-size:12px}}
+.controls{{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:15px;align-items:center;justify-content:space-between}}
+.filter-group{{display:flex;gap:0;border:1px solid #e5e5e5;border-radius:8px;overflow:hidden}}
+.filter-group .btn{{border:none;border-right:1px solid #e5e5e5;border-radius:0;padding:6px 12px;font-size:11px}}
+.filter-group .btn:last-child{{border-right:none}}
+.search{{padding:8px 12px;width:220px;border:2px solid #e5e5e5;border-radius:8px;font-size:13px}}
 .search:focus{{outline:none;border-color:#dc2626}}
 .btn{{padding:4px 8px;border:1px solid #e5e5e5;border-radius:4px;background:white;cursor:pointer;font-size:10px}}
 .btn:hover{{border-color:#dc2626}}
 .btn.active{{background:#dc2626;color:white;border-color:#dc2626}}
 .table-wrap{{overflow-x:auto;border-radius:6px;border:1px solid #e5e5e5;max-height:800px}}
-table{{width:100%;border-collapse:collapse;font-size:11px}}
+table{{width:100%;border-collapse:collapse;font-size:13px}}
 thead{{background:#dc2626;color:white;position:sticky;top:0;z-index:10}}
-th{{padding:8px 5px;text-align:left;font-size:10px;cursor:pointer;white-space:nowrap}}
+th{{padding:10px 8px;text-align:left;font-size:11px;cursor:pointer;white-space:nowrap}}
 th:hover{{background:#b91c1c}}
-td{{padding:6px 5px;border-bottom:1px solid #f0f0f0;vertical-align:top}}
+td{{padding:10px 8px;border-bottom:1px solid #f0f0f0;vertical-align:top}}
+.col-num{{text-align:right}}
+.empty-val{{color:#d1d5db}}
 tr:hover{{background:#fafafa}}
 tr.row-alert{{background:#fff1f2}}
 tr.row-alert:hover{{background:#ffe4e6}}
@@ -901,7 +906,8 @@ tr.row-alert.row-stale{{background:#fff1f2}}
 .badge-orange{{background:#ffedd5;color:#c2410c}}
 .bar{{width:40px;height:4px;background:#e5e5e5;border-radius:2px;display:inline-block;vertical-align:middle}}
 .bar-fill{{height:100%;border-radius:2px}}
-a{{color:#dc2626;text-decoration:none}}
+a{{color:#dc2626;text-decoration:none;white-space:nowrap}}
+a:hover{{text-decoration:underline}}
 .days{{font-size:10px}}
 .days-old{{color:#dc2626;font-weight:600}}
 .days-recent{{color:#22c55e}}
@@ -966,7 +972,7 @@ a{{color:#dc2626;text-decoration:none}}
 </div>
 </div>
 
-<div class="attention-section {attention_open}" id="attentionSection">
+<div class="attention-section" id="attentionSection">
 <button class="attention-toggle" onclick="toggleAttention()">
 <i class="toggle-arrow">▶</i> ⚠️ 需要處理 — {len(alert_permits)} 個工地有警戒值，{len(stale_permits)} 個工地報告超過 30 天未更新
 </button>
@@ -977,10 +983,12 @@ a{{color:#dc2626;text-decoration:none}}
 </div>
 <div class="attention-group">
 <h4>報告過期的建案 (超過 30 天未更新, {len(stale_permits)} 個)</h4>
+<div style="max-height:300px;overflow-y:auto">
 <table class="stale-table">
 <thead><tr><th>建照字號</th><th>建案名稱</th><th>距今</th></tr></thead>
 <tbody>{attention_stale_rows if attention_stale_rows else '<tr><td colspan="3" style="color:#999;font-size:11px;padding:6px">無</td></tr>'}</tbody>
 </table>
+</div>
 </div>
 </div>
 </div>
@@ -993,12 +1001,14 @@ a{{color:#dc2626;text-decoration:none}}
 <div class="content">
 <div class="controls">
 <input type="text" class="search" id="search" placeholder="搜尋建照號碼或建案名稱..." onkeyup="filterTable()">
+<div class="filter-group">
 <button class="btn active" onclick="filterStatus(this,'')">全部</button>
 <button class="btn" onclick="filterStatus(this,'completed')">已完成</button>
 <button class="btn" onclick="filterStatus(this,'in_progress')">分析中</button>
 <button class="btn" onclick="filterStatus(this,'not_uploaded')">待上傳</button>
 <button class="btn" onclick="filterStatus(this,'other_cloud')">非 Google Drive</button>
 <button class="btn" onclick="filterStatus(this,'needs_attention')">需要處理</button>
+</div>
 </div>
 <div class="table-wrap">
 <table id="dataTable">
@@ -1008,12 +1018,12 @@ a{{color:#dc2626;text-decoration:none}}
 <th onclick="sortTable(1)">建照號碼</th>
 <th onclick="sortTable(2)">工地名稱</th>
 <th onclick="sortTable(3)" class="col-cloud">資料來源</th>
-<th onclick="sortTable(4)">雲端報告數</th>
-<th onclick="sortTable(5)">已分析數</th>
+<th onclick="sortTable(4)" class="col-num">雲端報告數</th>
+<th onclick="sortTable(5)" class="col-num">已分析數</th>
 <th onclick="sortTable(6)" class="col-coverage">分析進度</th>
 <th onclick="sortTable(7)">警戒紀錄</th>
 <th onclick="sortTable(8)">最近更新</th>
-<th onclick="sortTable(9)">更新間隔</th>
+<th onclick="sortTable(9)" class="col-num">更新間隔</th>
 <th onclick="sortTable(10)">同步狀態</th>
 </tr>
 </thead>
