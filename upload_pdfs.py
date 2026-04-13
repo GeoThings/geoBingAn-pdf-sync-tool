@@ -209,6 +209,8 @@ def load_state() -> dict:
         state['uploaded_files'] = list(merged)
         print(f"📂 已合併上傳歷史: {len(history_files)} 筆（本地 {len(state_files)} + 歷史 {len(history_files)} → {len(merged)} 筆）", flush=True)
 
+    return state
+
 
 STATE_LOCK_FILE = STATE_FILE + '.lock'
 
