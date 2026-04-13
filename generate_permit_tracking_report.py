@@ -284,6 +284,60 @@ def load_upload_history_by_permit() -> Dict[str, set]:
     return permit_files
 
 
+def extract_name_from_filename(filename: str) -> str:
+    """從 PDF 檔名提取建案名稱（去除日期、副檔名、建照號碼、通用詞）"""
+    name = filename
+    name = re.sub(r'\.pdf$', '', name, flags=re.IGNORECASE)
+    # 去除建照號碼及相關文字
+    name = re.sub(r'\d{2,3}建字第\d{3,5}號', '', name)
+    name = re.sub(r'建照字號', '', name)
+    # 去除各種日期格式
+    name = re.sub(r'^\d{7}[_\s]*', '', name)  # 民國年7碼開頭
+    name = re.sub(r'\d{4}-\d{2}-\d{2}[^)]*', '', name)  # 西元年日期
+    name = re.sub(r'\d{3}\.\d{2}\.\d{2}', '', name)  # 115.03.24
+    name = re.sub(r'\d{2,3}年\d{1,2}月\d{1,2}日', '', name)  # 115年03月09日
+    name = re.sub(r'\d{4}觀測報告$', '', name)  # 0303觀測報告
+    name = re.sub(r'1\d{6}', '', name)  # 嵌入式民國年7碼
+    name = re.sub(r'\d{2}月\d{2}日', '', name)  # 03月09日
+    # 去除通用後綴
+    name = re.sub(r'[-_\s]*(觀測報告|觀測結果|監測報告|安全監測系統報告|量測報告|監測週報|監測月報|日報告|週報|月報|安全觀測報告書|安全觀測系統\d*月報告書).*$', '', name)
+    name = re.sub(r'[-_\s]*(上傳|公告|更正|報告書|報告|觀測報告)$', '', name)
+    name = re.sub(r'[-_\s]*NO\.\d+$', '', name)
+    name = re.sub(r'[-_\s]*\d+$', '', name)  # 結尾數字
+    name = re.sub(r'^\d+[-_\s]*', '', name)  # 開頭數字
+    name = name.strip(' -_()（）/\\')
+    # 去除殘留的括號內容和不完整括號
+    name = re.sub(r'^[()（）\s]+', '', name)
+    name = re.sub(r'[（(][^）)]*$', '', name)  # 未閉合的括號到結尾
+    name = re.sub(r'^[^（(]*[）)]', '', name)  # 開頭到未開啟的閉括號
+    name = re.sub(r'^\(基地\)', '', name)  # 特定前綴
+    name = re.sub(r'-專案區間報告書$', '', name)  # 特定後綴
+    # 如果名稱中有重複片段（如「忠孝勤靜_忠孝勤靜大樓...」），取第一個
+    parts = name.split('_')
+    if len(parts) >= 2 and parts[0] in parts[1]:
+        name = parts[1]
+
+    # 最後清理：去除殘留的日期片段
+    name = re.sub(r'\d{1,2}月\d{1,2}日$', '', name).strip(' -_')
+    name = re.sub(r'\d{7,}', '', name).strip(' -_')  # 長數字串
+
+    # 過濾太短或通用的名稱
+    generic = {'觀測紀錄', '監測數據', '安全觀測系統', '初始值', '整體進度',
+               '觀測儀器配置圖', '量測報表', '報表', '安全觀測', '專案區間報告書',
+               '基地', '匝道', '捷運', '觀測月報', '觀測', '監測報表', '工地',
+               '新建工程', '集合住宅', '住宅大樓', '商業大樓', '',
+               '觀測圖示及觀測紀錄', '專案區間'}
+    # 過濾殘留日期片段（如「月3日」「12月」等）
+    if re.match(r'^[\d月日年]+$', name):
+        return ''
+    if name in generic or len(name) < 2:
+        return ''
+    # 如果名稱仍然以建照號碼開頭，放棄
+    if re.match(r'^\d{2,3}建字第', name):
+        return ''
+    return name
+
+
 def fetch_api_reports() -> Dict[str, List[dict]]:
     """從 geoBingAn API 取得所有報告，並結合上傳記錄"""
     print("\n📡 從 geoBingAn API 取得報告資料...")
@@ -495,21 +549,12 @@ def load_alert_data() -> Tuple[Dict[str, dict], Dict[str, str]]:
                     permit = parts[0]
                     filename = parts[1]
 
-                    # 從檔名提取建案名稱（去除日期和副檔名）
-                    name = re.sub(r'^\d{7}', '', filename)  # 去除開頭日期
-                    name = re.sub(r'\.pdf$', '', name, flags=re.IGNORECASE)  # 去除 .pdf
-                    name = re.sub(r'_\d+$', '', name)  # 去除結尾數字
-                    name = re.sub(r'報告$', '', name)  # 去除「報告」
-                    name = re.sub(r'-\d{4}-\d{2}-\d{2}.*$', '', name)  # 去除日期格式
-                    name = re.sub(r' NO\.\d+$', '', name)  # 去除 NO.xx
-                    name = re.sub(r'-\d+$', '', name)  # 去除結尾數字
-                    name = name.strip(' -_')
+                    # 只接受合法的建照號碼格式
+                    if not re.match(r'\d{2,3}建字第\d{3,5}號', permit):
+                        continue
 
-                    # 過濾通用名稱
-                    generic_names = {'觀測紀錄', '監測數據', '安全觀測系統', '初始值', '整體進度',
-                                     '觀測儀器配置圖', '量測報表', '報表', '日報告', '周報告', '月報告',
-                                     '安全觀測', '監測報告', '工地監測報告', '專案區間報告書'}
-                    if name and permit and len(name) >= 3 and name not in generic_names:
+                    name = extract_name_from_filename(filename)
+                    if name and permit:
                         name_to_permit[name] = permit
                         # 統計每個名稱出現次數
                         if permit not in permit_name_counts:
@@ -583,9 +628,10 @@ def load_alert_data() -> Tuple[Dict[str, dict], Dict[str, str]]:
                             'report_count': report_count,
                             'latest_alert_date': latest_alert_date
                         }
-                    # 更新建案名稱（優先使用 CSV 中的名稱）
-                    if building_name:
-                        permit_to_name[permit] = building_name
+                    # 更新建案名稱（用 extract 清理後再存入）
+                    clean_name = extract_name_from_filename(building_name)
+                    if clean_name:
+                        permit_to_name[permit] = clean_name
 
         print(f"  已載入 {len(alert_data)} 個建照的警戒資料")
         print(f"  已載入 {len(permit_to_name)} 個建案名稱")
@@ -699,11 +745,19 @@ def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], a
     has_attention = len(alert_permits) > 0 or len(stale_permits) > 0
     attention_open = 'open' if has_attention else ''
 
-    # 排序建照 (按號碼)
-    sorted_permits = sorted(permit_data.keys(), key=lambda x: (
-        int(re.search(r'(\d{2,3})建字', x).group(1)) if re.search(r'(\d{2,3})建字', x) else 0,
-        int(re.search(r'第(\d+)號', x).group(1)) if re.search(r'第(\d+)號', x) else 0
-    ), reverse=True)
+    # 排序：有更新的優先（最近更新日期降序），無更新的按建照號碼排
+    def sort_key(permit):
+        data = permit_data[permit]
+        latest = data.get('latest_report', '') or ''
+        # 有更新日期的排前面（日期越新越前）
+        has_update = 1 if latest else 0
+        # 建照號碼作為次要排序
+        year = int(re.search(r'(\d{2,3})建字', permit).group(1)) if re.search(r'(\d{2,3})建字', permit) else 0
+        num = int(re.search(r'第(\d+)號', permit).group(1)) if re.search(r'第(\d+)號', permit) else 0
+        return (-has_update, latest if latest else '', -year, -num)
+    sorted_permits = sorted(permit_data.keys(), key=sort_key, reverse=False)
+    # 有更新的按日期降序（最新在前）
+    sorted_permits.sort(key=lambda x: permit_data[x].get('latest_report', '') or '', reverse=True)
 
     # 生成表格行
     rows_html = ""
@@ -1184,10 +1238,7 @@ def generate_csv_report(permit_data: Dict[str, dict], non_google: List[dict], al
 
     non_google_set = {item['permit']: item['cloud'] for item in non_google}
 
-    sorted_permits = sorted(permit_data.keys(), key=lambda x: (
-        int(re.search(r'(\d{2,3})建字', x).group(1)) if re.search(r'(\d{2,3})建字', x) else 0,
-        int(re.search(r'第(\d+)號', x).group(1)) if re.search(r'第(\d+)號', x) else 0
-    ), reverse=True)
+    sorted_permits = sorted(permit_data.keys(), key=lambda x: permit_data[x].get('latest_report', '') or '', reverse=True)
 
     lines = ['序號,建照字號,建案名稱,雲端服務,Drive PDF,系統 PDF,覆蓋率,警戒次數,行動次數,Alert次數,最近警戒日期,最新報告,距今天數,狀態']
 
@@ -1297,6 +1348,25 @@ def main():
 
     # 5. 載入警戒資料和建案名稱
     alert_data, permit_names = load_alert_data()
+
+    # 5b. 從 API 報告的 file_name 補充建案名稱
+    name_counts = {}  # permit → {name: count}
+    for permit, reports in api_reports.items():
+        for report in reports:
+            name = extract_name_from_filename(report.get('filename', ''))
+            if name:
+                if permit not in name_counts:
+                    name_counts[permit] = {}
+                name_counts[permit][name] = name_counts[permit].get(name, 0) + 1
+    # 選出每個建案最常出現的名稱（不覆蓋已有的名稱）
+    api_names_added = 0
+    for permit, counts in name_counts.items():
+        if permit not in permit_names or not permit_names[permit]:
+            best_name = max(counts.items(), key=lambda x: x[1])[0]
+            permit_names[permit] = best_name
+            api_names_added += 1
+    if api_names_added > 0:
+        print(f"  從 API 報告補充 {api_names_added} 個建案名稱（總計 {len(permit_names)} 個）")
 
     # 6. 儲存資料
     with open(MAPPING_JSON, 'w', encoding='utf-8') as f:
