@@ -553,6 +553,12 @@ Service Account 只需要：
 
 ## 📝 版本歷史
 
+### v3.9.0 (2026-04-13)
+- ✅ Refresh Token 過期預警（run_weekly_sync.sh 開頭檢查）
+- ✅ 剩餘 < 2 天：LINE Notify 警告，繼續執行
+- ✅ 已過期：LINE Notify 警報，中止流程
+- ✅ 零網路開銷（直接解碼 JWT payload）
+
 ### v3.8.0 (2026-04-13)
 - ✅ 報告 UX 改善：表格行高加大、字體放大、數字欄右對齊
 - ✅ 狀態 badge 加入圖示（✔⏳⬆──✖，形狀+顏色雙重辨識）
