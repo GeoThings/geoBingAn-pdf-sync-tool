@@ -125,6 +125,8 @@ status.start_run()
 # 檢查 Refresh Token 有效期
 echo "" | tee -a "$LOG_FILE"
 echo "🔑 檢查 Token 有效期..." | tee -a "$LOG_FILE"
+# 暫時關閉 errexit 以取得 Python exit code（非零不代表腳本錯誤）
+set +e
 TOKEN_CHECK=$(python3 -c "
 from jwt_auth import decode_jwt_payload
 from config import REFRESH_TOKEN
@@ -143,6 +145,7 @@ else:
     sys.exit(0)
 " 2>&1)
 TOKEN_EXIT=$?
+set -e
 
 if [ $TOKEN_EXIT -eq 2 ]; then
     DAYS=$(echo "$TOKEN_CHECK" | grep -o '[0-9.]*')
