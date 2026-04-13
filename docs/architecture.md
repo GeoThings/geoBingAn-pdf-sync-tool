@@ -100,23 +100,38 @@ Shared Drive（批次查詢，~12 次分頁 API 呼叫）
 ### 步驟 3：generate_permit_tracking_report.py
 
 ```
-Google Drive（批次查詢 + unique filename 去重）+ riskmap.today API + 台北市政府 PDF
+資料來源（4 路合併）：
+├── Google Drive（批次查詢 + unique filename 去重）
+├── riskmap.today API（18,900+ 筆報告）
+├── 台北市政府 PDF（建照清單 + 來源資料夾名稱）
+└── alert_data.csv（警戒值資料）
     │
-    ▼ 合併三方資料 + html.escape() 所有外部字串
+    ▼ 合併 + html.escape() + 名稱提取（4 來源，69% 覆蓋）
     │
-    ▼ 產出 HTML 互動式報告 + CSV
+    ▼ 已結案標記（建照年份 ≤ 110 年且無系統報告）
     │
-    報告功能：
-    ├── 「需要處理」儀表板（預設折疊，過期表格可捲動 300px）
-    ├── 動態日期計算（瀏覽器端 JS，永不過期）
-    ├── 搜尋（建照號碼 + 工地名稱）
-    ├── Segmented Control 篩選（全部/已完成/分析中/待上傳/需要處理）
-    ├── 排序（點選欄位標題）
-    ├── 狀態 badge 圖示（✔⏳⬆──✖，形狀+顏色雙重辨識）
-    ├── 數字欄右對齊、空值淡化、Drive 外連 ↗ 圖示
-    ├── 圖例說明（可收合，狀態/顏色/欄位說明）
-    └── 響應式（手機隱藏次要欄位）
+    ▼ 預設排序：最近更新排前面
+    │
+    ▼ 產出究心黑紅品牌 HTML 報告 + CSV
+
+建案名稱提取優先順序：
+  1. alert_data.csv 中的建案名稱（清理後）
+  2. API 報告的 file_name
+  3. Drive PDF 檔名（最大來源）
+  4. 來源 Drive 資料夾名稱
+
+報告功能：
+├── 「需要處理」儀表板（預設折疊，可捲動）
+├── 動態日期計算（瀏覽器端 JS）
+├── 搜尋（建照號碼 + 工地名稱，250ms debounce）
+├── Segmented Control 篩選 + aria-pressed 無障礙
+├── 排序箭頭（↑↓ 紅色指示器）
+├── 狀態 badge 圖示（✔⏳⬆🏁──✖）
+├── 擴大觸控熱區、nowrap 防斷行、空狀態提示
+└── 水平捲動（手機不隱藏欄位）
 ```
+
+**待開發：** 後端 API 建案名稱 — AI 解析出的 `projectMetadata.projectName` 存在後端 DB（ConstructionSite.name），但目前無 API 端點可查詢。需請後端在 construction-reports metadata 加入 project_name，或開放 `/api/sites/` 端點。
 
 ## State 管理
 
