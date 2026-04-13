@@ -875,8 +875,9 @@ body{{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft JhengHe
 .controls{{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:20px;align-items:center;justify-content:space-between}}
 .filter-group{{display:flex;background:#f3f4f6;padding:4px;border-radius:8px;border:1px solid #e5e7eb}}
 .filter-group .btn{{border:none;background:transparent;padding:8px 16px;font-size:12px;font-weight:600;color:#4b5563;border-radius:6px;cursor:pointer;transition:all 0.2s}}
-.filter-group .btn:hover{{color:#111827;background:#e5e7eb}}
+.filter-group .btn:not(.active):hover{{color:#111827;background:#e5e7eb}}
 .filter-group .btn.active{{background:#dc2626;color:white;box-shadow:0 2px 8px rgba(220,38,38,0.3)}}
+.filter-group .btn.active:hover{{background:#b91c1c}}
 .search{{padding:10px 16px;width:300px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;background:#f9fafb;transition:all 0.2s;font-weight:500}}
 .search:focus{{outline:none;border-color:#111827;background:white;box-shadow:0 0 0 3px rgba(17,24,39,0.1)}}
 .table-wrap{{overflow-x:auto;border-radius:8px;max-height:800px;background:white}}
