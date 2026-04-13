@@ -872,7 +872,7 @@ body{{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft JhengHe
 .cloud-card li{{padding:4px 0;border-bottom:1px solid #f9fafb}}
 .cloud-card li:last-child{{border-bottom:none}}
 .content{{padding:24px 30px}}
-.controls{{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:20px;align-items:center;justify-content:space-between}}
+.controls{{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:20px;align-items:center;justify-content:flex-start}}
 .filter-group{{display:flex;background:#f3f4f6;padding:4px;border-radius:8px;border:1px solid #e5e7eb}}
 .filter-group .btn{{border:none;background:transparent;padding:8px 16px;font-size:12px;font-weight:600;color:#4b5563;border-radius:6px;cursor:pointer;transition:all 0.2s}}
 .filter-group .btn:not(.active):hover{{color:#111827;background:#e5e7eb}}
@@ -906,8 +906,8 @@ tr.row-alert.row-stale td:first-child{{border-left:4px solid #dc2626}}
 .progress-text{{width:36px;text-align:right;font-size:12px;color:#111827;font-weight:700}}
 .bar{{flex-grow:1;height:6px;background:#e5e7eb;border-radius:4px;overflow:hidden}}
 .bar-fill{{height:100%;border-radius:4px;transition:width 0.5s ease-in-out}}
-a{{color:#111827;text-decoration:none;font-weight:700;border-bottom:1px dashed #d1d5db;padding-bottom:1px;white-space:nowrap}}
-a:hover{{color:#dc2626;border-bottom-color:#dc2626}}
+a{{color:#111827;text-decoration:none;font-weight:700;border-bottom:1px dashed #d1d5db;white-space:nowrap;display:inline-block;padding:6px;margin:-6px;border-radius:4px;transition:color 0.2s}}
+a:hover{{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}}
 .days{{font-size:12px}}
 .days-old{{color:#ffffff;font-weight:700;background:#ef4444;padding:4px 8px;border-radius:6px;box-shadow:0 1px 2px rgba(239,68,68,0.3);display:inline-block;white-space:nowrap;min-width:50px;text-align:center}}
 .days-recent{{color:#10b981;font-weight:600}}
@@ -920,7 +920,6 @@ a:hover{{color:#dc2626;border-bottom-color:#dc2626}}
 .controls{{flex-direction:column;align-items:stretch}}
 .search{{width:100%}}
 .filter-group{{overflow-x:auto;flex-wrap:nowrap}}
-.col-cloud,.col-coverage{{display:none}}
 }}
 </style>
 </head>
@@ -1005,7 +1004,7 @@ a:hover{{color:#dc2626;border-bottom-color:#dc2626}}
 
 <div class="content">
 <div class="controls">
-<input type="text" class="search" id="search" placeholder="搜尋建照號碼或建案名稱..." onkeyup="filterTable()">
+<input type="text" class="search" id="search" placeholder="搜尋建照號碼或建案名稱...">
 <div class="filter-group">
 <button class="btn active" onclick="filterStatus(this,'')">全部</button>
 <button class="btn" onclick="filterStatus(this,'completed')">已完成</button>
@@ -1077,6 +1076,13 @@ a:hover{{color:#dc2626;border-bottom-color:#dc2626}}
   document.querySelectorAll('#dataTable thead th').forEach(function(th) {{
     if(th.hasAttribute('onclick')) th.classList.add('sortable');
   }});
+
+  // 搜尋防抖（250ms），避免每個按鍵都觸發 500+ 列重算
+  let searchTimeout;
+  document.getElementById('search').addEventListener('input', function() {{
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(function() {{ filterTable(); }}, 250);
+  }});
 }})();
 
 let currentFilter = '';
@@ -1118,8 +1124,9 @@ function filterTable() {{
 }}
 function filterStatus(btn, status) {{
   currentFilter = status;
-  document.querySelectorAll('.btn').forEach(function(b) {{ b.classList.remove('active'); }});
+  document.querySelectorAll('.filter-group .btn').forEach(function(b) {{ b.classList.remove('active'); b.setAttribute('aria-pressed','false'); }});
   btn.classList.add('active');
+  btn.setAttribute('aria-pressed','true');
   filterTable();
 }}
 function sortTable(n) {{
