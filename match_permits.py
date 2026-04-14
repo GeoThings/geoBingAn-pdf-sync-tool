@@ -271,32 +271,49 @@ def fetch_api_report_categories() -> Dict[str, str]:
     return permit_from_reports
 
 
-# ==================== 來源 6: alert_data.csv ====================
-def fetch_alert_data() -> Dict[str, dict]:
-    """從警戒資料取得建案資訊"""
-    print("⚠️  來源 6: alert_data.csv...")
-    if not os.path.exists(ALERT_CSV):
-        print("  找不到")
+# ==================== 來源 6: API construction-alerts（即時） ====================
+def fetch_live_alerts() -> Dict[str, list]:
+    """從 API 取得即時警示資料（取代靜態 alert_data.csv）"""
+    print("🚨 來源 6: API construction-alerts（即時）...")
+    token = get_api_token()
+    headers = {'Authorization': f'Bearer {token}', 'X-Current-Group': GROUP_ID}
+
+    try:
+        r = requests.get(
+            f'https://riskmap.today/api/groups/{GROUP_ID}/construction-alerts/',
+            headers=headers, timeout=15
+        )
+        if r.status_code != 200:
+            print(f"  API 錯誤: {r.status_code}")
+            return {}
+
+        data = r.json()
+        summary = data.get('summary', {})
+        alerts = data.get('alerts', [])
+
+        print(f"  危險: {summary.get('danger', 0)}, 警戒: {summary.get('warning', 0)}")
+        print(f"  共 {len(alerts)} 筆警示")
+
+        # 按 project 分組
+        by_project = {}  # project_name → [alerts]
+        for alert in alerts:
+            project = alert.get('project', '')
+            if project:
+                if project not in by_project:
+                    by_project[project] = []
+                by_project[project].append({
+                    'level': alert.get('level', ''),
+                    'tone': alert.get('tone', ''),
+                    'detail': alert.get('detail', ''),
+                    'date': alert.get('updatedAt', ''),
+                    'sensor': alert.get('sensor', ''),
+                })
+
+        return by_project
+
+    except Exception as e:
+        print(f"  錯誤: {e}")
         return {}
-
-    results = {}
-    with open(ALERT_CSV, 'r', encoding='utf-8-sig') as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            name = row.get('建案名稱', '').strip()
-            example = row.get('原始檔名範例', '')
-            m = re.search(r'(\d{2,3}建字第\d{3,5}號)', example)
-            if m:
-                permit = normalize_permit(m.group(1))
-                if permit:
-                    results[permit] = {
-                        'alert_name': name,
-                        'warning': int(row.get('警戒次數', 0) or 0),
-                        'action': int(row.get('行動次數', 0) or 0),
-                    }
-
-    print(f"  {len(results)} 個有警戒")
-    return results
 
 
 # ==================== 主程式：交叉比對 ====================
@@ -320,7 +337,7 @@ def build_registry():
     drive_names = fetch_drive_pdf_names(drive_service)
     api_projects = fetch_api_projects()
     report_permits = fetch_api_report_categories()
-    alert_data = fetch_alert_data()
+    live_alerts = fetch_live_alerts()
 
     # 建立 API project 關鍵字索引（用於模糊匹配）
     api_project_index = {}  # keyword → project info
@@ -354,14 +371,6 @@ def build_registry():
 
         # 優先順序合併名稱
         if not entry.get('name'):
-            # 來源 6: alert
-            if permit in alert_data:
-                n = extract_name_from_text(alert_data[permit].get('alert_name', ''))
-                if n:
-                    entry['name'] = n
-                    entry['name_source'] = 'alert_csv'
-                    changed = True
-
             # 來源 3: Drive PDF 檔名
             if not entry.get('name') and permit in drive_names:
                 entry['name'] = drive_names[permit]['name']
@@ -412,10 +421,26 @@ def build_registry():
                     changed = True
                     break
 
-        # 合併警戒資料
-        if permit in alert_data:
-            entry['warning_count'] = alert_data[permit].get('warning', 0)
-            entry['action_count'] = alert_data[permit].get('action', 0)
+        # 合併即時警示資料（用名稱匹配）
+        if entry.get('name'):
+            for alert_project, alert_list in live_alerts.items():
+                # 用建案名稱匹配 API 的 project 名稱
+                entry_name = entry.get('name', '')
+                if (len(entry_name) >= 3 and entry_name in alert_project) or \
+                   (len(alert_project) >= 3 and alert_project in entry_name):
+                    danger = sum(1 for a in alert_list if a['tone'] == 'danger')
+                    warning = sum(1 for a in alert_list if a['tone'] == 'warning')
+                    latest_date = max((a['date'] for a in alert_list if a['date']), default='')
+                    entry['live_alerts'] = {
+                        'danger': danger,
+                        'warning': warning,
+                        'total': len(alert_list),
+                        'latest_date': latest_date,
+                        'details': [a['detail'] for a in alert_list[:3]],
+                    }
+                    if not changed:
+                        changed = True
+                    break
 
         # 合併來源 URL
         if permit in gov_data:
