@@ -2,7 +2,7 @@
 
 自動從台北市政府建管處同步建案 PDF，並上傳到 geoBingAn Backend API 建立監測報告。
 
-## 📊 最新同步結果（2026-04-13）
+## 📊 最新同步結果（2026-04-14）
 
 **每週同步：** ✅ 完成
 
@@ -12,6 +12,8 @@
 | Google Drive PDF | ✅ 掃描完成 | 11,700+ 個 |
 | 農曆新年後上傳 | ✅ 完成 | 100 個 PDF 上傳至究平安 |
 | 究平安報告對應 | ✅ 成功 | 18,901+ 筆 API 報告 |
+| 建案名稱覆蓋 | ✅ 91% | 362/396 筆（6 來源交叉比對 + 31 筆手動確認） |
+| 即時警戒值 | ✅ 16 筆 | 從 construction-alerts API 即時取得 |
 | JWT 自動刷新 | ✅ 正常 | Token 過期自動更新 |
 | 執行時間 | ⚡ ~12 分鐘 | 同步 5m45s + 上傳 1m + 報告 7m |
 
@@ -19,7 +21,7 @@
 
 👉 **[建照監測追蹤報告](https://htmlpreview.github.io/?https://github.com/GeoThings/geoBingAn-pdf-sync-tool/blob/main/docs/index.html)** 👈
 
-報告包含：建案同步狀態、究平安對應情況、警戒值標記、可搜尋篩選
+報告包含：建案同步狀態、究平安對應情況、即時警戒值標記、建案名稱（91% 覆蓋）、可搜尋篩選
 
 **功能特色：**
 - ✅ 檔名日期智慧解析（支援民國年/西元年 7 種格式）
@@ -215,6 +217,27 @@ Body (multipart/form-data):
 
 ---
 
+### `match_permits.py`
+建案名稱交叉比對工具，整合 6 個資料來源匹配建照號碼與建案名稱
+
+**功能：**
+- 從台北市政府 PDF、Google Drive、riskmap.today API 等 6 個來源交叉比對
+- 即時從 construction-alerts API 取得警戒值和建案名稱
+- 支援手動確認名稱（覆寫自動匹配結果）
+- 產出 `state/permit_registry.json`（git 追蹤，供報告生成使用）
+
+**執行：**
+```bash
+python3 match_permits.py
+```
+
+**輸出：**
+```
+state/permit_registry.json    # 396 筆建案，362 筆有名稱（91%）
+```
+
+---
+
 ### `generate_permit_tracking_report.py`
 生成建案追蹤報告，整合台北市政府建案清單與究平安系統資料
 
@@ -337,6 +360,7 @@ ENABLE_MACOS_NOTIFY=false
 geoBingAn-pdf-sync-tool/
 ├── sync_permits.py                    # 核心：同步 PDF from 台北市政府
 ├── upload_pdfs.py                     # 核心：上傳 PDF to Backend API
+├── match_permits.py                   # 核心：建案名稱 6 來源交叉比對
 ├── generate_permit_tracking_report.py # 核心：生成建案追蹤報告
 ├── run_weekly_sync.sh                 # 核心：自動執行腳本
 │
@@ -355,6 +379,8 @@ geoBingAn-pdf-sync-tool/
 ├── .gitignore                   # Git 忽略清單
 │
 ├── state/                       # 狀態追蹤
+│   ├── permit_registry.json             # 建案名稱交叉比對結果（git 追蹤）
+│   ├── upload_history_all.json          # 永久上傳歷史（git 追蹤）
 │   ├── sync_permits_progress.json       # 同步進度
 │   ├── uploaded_to_geobingan_7days.json # 上傳記錄
 │   ├── sync_status.json                 # 執行狀態與歷史
@@ -553,6 +579,14 @@ Service Account 只需要：
 
 ## 📝 版本歷史
 
+### v4.1.0 (2026-04-14)
+- ✅ 新增 `match_permits.py`：6 來源交叉比對建案名稱（政府 PDF、Drive 資料夾、Drive PDF 檔名、API projects、API reports、API alerts）
+- ✅ 建案名稱覆蓋率 69% → 91%（362/396 筆）
+- ✅ 31 筆建案名稱手動確認
+- ✅ 即時警戒值改用 construction-alerts API（取代靜態 alert_data.csv）
+- ✅ 報告改從 `permit_registry.json` 載入名稱（取代即時多來源提取）
+- ✅ 建立 ClickUp task 請後端加入 `report_category_name` 欄位（[#86ex8c82c](https://app.clickup.com/t/86ex8c82c)）
+
 ### v4.0.0 (2026-04-13)
 - ✅ 建案名稱自動提取（4 來源：alert CSV + API 檔名 + Drive PDF 檔名 + 來源資料夾），覆蓋 69%（350/504）
 - ✅ 已結案建案標記（🏁 建照年份 ≤ 110 年且無系統報告，193 個）
@@ -694,4 +728,4 @@ MIT License
 ---
 
 **維護者**: geoBingAn Team
-**最後更新**: 2026-04-02
+**最後更新**: 2026-04-14

@@ -1,6 +1,6 @@
 # 系統架構設計文件
 
-> geoBingAn PDF 同步上傳工具 v3.1 架構說明
+> geoBingAn PDF 同步上傳工具 v4.1 架構說明
 
 ## 系統概覽
 
@@ -31,9 +31,14 @@ run_weekly_sync.sh（orchestrator）
 │   ├── jwt_auth.py          ← 共用 JWT 管理
 │   └── filename_date_parser.py  ← 共用日期解析
 │
+├── match_permits.py              ← 建案名稱交叉比對（6 來源）
+│   ├── config.py → .env
+│   └── jwt_auth.py          ← 共用 JWT 管理
+│
 └── generate_permit_tracking_report.py
     ├── config.py → .env
-    └── jwt_auth.py          ← 共用 JWT 管理
+    ├── jwt_auth.py          ← 共用 JWT 管理
+    └── state/permit_registry.json  ← 從 match_permits.py 產出
 ```
 
 ### 獨立可測試模組
@@ -97,6 +102,27 @@ Shared Drive（批次查詢，~12 次分頁 API 呼叫）
     ▼ 成功立即寫入 state（flock + merge）
 ```
 
+### 步驟 2.5：match_permits.py（建案名稱交叉比對）
+
+```
+6 個資料來源交叉比對：
+├── 1. 台北市政府 PDF（建照清單 + 來源資料夾名稱）
+├── 2. Google Drive 來源資料夾名稱
+├── 3. Google Drive PDF 檔名（最大來源，288 筆）
+├── 4. riskmap.today API construction-projects
+├── 5. riskmap.today API construction-reports
+└── 6. riskmap.today API construction-alerts（即時警戒值）
+    │
+    ▼ 名稱清理（extract_name_from_filename）
+    │
+    ▼ 優先順序合併（手動確認 > alert > api > drive_pdf > source_folder）
+    │
+    ▼ 產出 state/permit_registry.json
+        396 筆建案，362 筆有名稱（91%），16 筆有即時警戒
+
+手動確認：31 筆建案名稱已由使用者逐一確認
+```
+
 ### 步驟 3：generate_permit_tracking_report.py
 
 ```
@@ -104,9 +130,9 @@ Shared Drive（批次查詢，~12 次分頁 API 呼叫）
 ├── Google Drive（批次查詢 + unique filename 去重）
 ├── riskmap.today API（18,900+ 筆報告）
 ├── 台北市政府 PDF（建照清單 + 來源資料夾名稱）
-└── alert_data.csv（警戒值資料）
+└── state/permit_registry.json（建案名稱 + 即時警戒值）
     │
-    ▼ 合併 + html.escape() + 名稱提取（4 來源，69% 覆蓋）
+    ▼ 合併 + html.escape() + 名稱載入（6 來源交叉比對，91% 覆蓋）
     │
     ▼ 已結案標記（建照年份 ≤ 110 年且無系統報告）
     │
@@ -114,11 +140,12 @@ Shared Drive（批次查詢，~12 次分頁 API 呼叫）
     │
     ▼ 產出究心黑紅品牌 HTML 報告 + CSV
 
-建案名稱提取優先順序：
-  1. alert_data.csv 中的建案名稱（清理後）
-  2. API 報告的 file_name
-  3. Drive PDF 檔名（最大來源）
-  4. 來源 Drive 資料夾名稱
+建案名稱來源（permit_registry.json 優先順序）：
+  1. 手動確認（31 筆）
+  2. construction-alerts API（即時警戒值，16 筆）
+  3. construction-projects / construction-reports API
+  4. Drive PDF 檔名（最大來源，288 筆）
+  5. 來源 Drive 資料夾名稱（65 筆）
 
 報告功能：
 ├── 「需要處理」儀表板（預設折疊，可捲動）
@@ -131,7 +158,7 @@ Shared Drive（批次查詢，~12 次分頁 API 呼叫）
 └── 水平捲動（手機不隱藏欄位）
 ```
 
-**待開發：** 後端 API 建案名稱 — AI 解析出的 `projectMetadata.projectName` 存在後端 DB（ConstructionSite.name），但目前無 API 端點可查詢。需請後端在 construction-reports metadata 加入 project_name，或開放 `/api/sites/` 端點。
+**待開發：** 後端 API `report_category_name` 欄位 — AI 解析出的 `projectMetadata.projectName` 存在後端 DB（ConstructionSite.name），但 construction-reports API 未回傳此欄位。已建立 ClickUp task（[#86ex8c82c](https://app.clickup.com/t/86ex8c82c)），待後端在 `ConstructionReportListSerializer` 加入 `report_category_name`，即可實現 100% 自動化名稱覆蓋。
 
 ## State 管理
 
@@ -140,6 +167,7 @@ Shared Drive（批次查詢，~12 次分頁 API 呼叫）
 | 檔案 | 用途 | 寫入頻率 | Git 追蹤 |
 |------|------|----------|----------|
 | `upload_history_all.json` | 永久上傳歷史（防重複上傳） | 每次成功上傳 | ✅ 是 |
+| `permit_registry.json` | 建案名稱交叉比對結果（6 來源） | match_permits.py 執行時 | ✅ 是 |
 | `sync_permits_progress.json` | 已處理建案清單 | 每個建案 | 否 |
 | `uploaded_to_geobingan_7days.json` | 已上傳 PDF + 快取 | 每次成功上傳 | 否 |
 | `sync_status.json` | 執行狀態與歷史 | 每次執行 | 否 |
