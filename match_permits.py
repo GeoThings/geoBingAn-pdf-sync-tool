@@ -480,7 +480,14 @@ def build_registry():
                 entry['alert_message'] = api_info['alert_message']
                 entry['alert_date'] = api_info['alert_date']
                 entry['api_match'] = api_name
-                if not entry.get('name') or entry.get('name_source') == 'drive_pdf':
+                # API 名稱優先於 drive_pdf 和 source_folder（除非手動確認或 alert_csv）
+                generic_name = re.compile(r'^(監測報告|監測報表|安全觀測報告書?|安全監測系統|觀測報告|觀測數據|工地監測數據)')
+                should_replace = (
+                    not entry.get('name') or
+                    entry.get('name_source') in ('drive_pdf', 'source_folder') or
+                    generic_name.match(entry.get('name', ''))
+                )
+                if should_replace:
                     api_clean = extract_name_from_text(api_name)
                     if api_clean:
                         entry['name'] = api_clean
@@ -539,6 +546,33 @@ def build_registry():
 
         entry['updated_at'] = datetime.now().isoformat()
         registry[permit] = entry
+
+    # 名稱優化：有 api_match 的建案，用 API 名稱取代通用/較差的名稱
+    generic_name_pat = re.compile(r'^(監測報告|監測報表|安全觀測報告書?|安全監測系統|觀測報告|觀測數據|工地監測數據)')
+    name_upgraded = 0
+    for permit, entry in registry.items():
+        api_match = entry.get('api_match', '')
+        if not api_match:
+            continue
+        current_name = entry.get('name', '')
+        current_source = entry.get('name_source', '')
+        # 手動確認和 alert_csv 的名稱不覆蓋
+        if current_source in ('manual', 'alert_csv'):
+            continue
+        # 以下情況用 API 名稱覆蓋
+        should_upgrade = (
+            not current_name or
+            generic_name_pat.match(current_name) or
+            current_source in ('drive_pdf', 'source_folder')
+        )
+        if should_upgrade:
+            api_clean = extract_name_from_text(api_match)
+            if api_clean and api_clean != current_name:
+                entry['name'] = api_clean
+                entry['name_source'] = 'api_match'
+                name_upgraded += 1
+    if name_upgraded:
+        print(f"  名稱優化: {name_upgraded} 個建案改用 API 名稱")
 
     # 統計
     has_name = sum(1 for e in registry.values() if e.get('name'))
