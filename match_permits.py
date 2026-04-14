@@ -413,6 +413,7 @@ def build_registry():
     print(f"🔄 開始交叉比對 {len(all_permits)} 個建照...")
     print(f"{'=' * 60}\n")
 
+    generic_name_pat = re.compile(r'^(監測報告?|監測報表?|監測$|安全觀測報告書?|安全監測系統|觀測報告|觀測數據|工地監測數據)')
     updated = 0
     for permit in sorted(all_permits):
         entry = registry.get(permit, {})
@@ -422,15 +423,27 @@ def build_registry():
             del entry['live_alerts']
             changed = True
 
-        # 優先順序合併名稱
-        if not entry.get('name'):
-            # 來源 3: Drive PDF 檔名
-            if not entry.get('name') and permit in drive_names:
-                entry['name'] = drive_names[permit]['name']
-                entry['name_source'] = 'drive_pdf'
-                changed = True
+        # 優先順序合併名稱（短名稱/通用名稱也可被更好的名稱覆蓋）
+        current_name = entry.get('name', '')
+        current_source = entry.get('name_source', '')
+        is_poor_name = (
+            not current_name or
+            len(current_name) <= 3 or
+            generic_name_pat.match(current_name) if current_name else True
+        )
+        # 手動確認和 alert_csv 不覆蓋
+        is_protected = current_source in ('manual', 'alert_csv')
 
-            # 來源 2: 來源資料夾
+        if not is_protected:
+            # 來源 3: Drive PDF 檔名（優先於 source_folder）
+            if permit in drive_names:
+                drive_name = drive_names[permit]['name']
+                if is_poor_name or (current_source == 'source_folder' and len(drive_name) > len(current_name)):
+                    entry['name'] = drive_name
+                    entry['name_source'] = 'drive_pdf'
+                    changed = True
+
+            # 來源 2: 來源資料夾（補充用）
             if not entry.get('name') and permit in source_names:
                 entry['name'] = source_names[permit]
                 entry['name_source'] = 'source_folder'

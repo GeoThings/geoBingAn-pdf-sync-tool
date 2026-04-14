@@ -349,6 +349,14 @@ def extract_name_from_filename(filename: str) -> str:
     """從 PDF 檔名提取建案名稱（去除日期、副檔名、建照號碼、通用詞）"""
     name = filename
     name = re.sub(r'\.pdf$', '', name, flags=re.IGNORECASE)
+    # 先檢查括號開頭的名稱模式：(嘉鎷)115.01監測月報 → 嘉鎷
+    paren_match = re.match(r'^[（(]([^\u0000-\u007F]{2,})[）)]', name)
+    if paren_match:
+        candidate = paren_match.group(1)
+        # 如果括號後面是日期或通用詞，括號內就是建案名稱
+        rest = name[paren_match.end():]
+        if re.match(r'[\d\s._\-]*(監測|觀測|報告|月報|週報|日報)', rest):
+            return candidate
     # 去除建照號碼及相關文字
     name = re.sub(r'\d{2,3}建字第\d{3,5}號', '', name)
     name = re.sub(r'建照字號', '', name)
