@@ -1381,69 +1381,24 @@ def main():
     # 5. 載入警戒資料和建案名稱
     alert_data, permit_names = load_alert_data()
 
-    # 5b. 從 API 報告的 file_name 補充建案名稱
-    name_counts = {}  # permit → {name: count}
-    for permit, reports in api_reports.items():
-        for report in reports:
-            name = extract_name_from_filename(report.get('filename', ''))
-            if name:
-                if permit not in name_counts:
-                    name_counts[permit] = {}
-                name_counts[permit][name] = name_counts[permit].get(name, 0) + 1
-    # 選出每個建案最常出現的名稱（不覆蓋已有的名稱）
-    api_names_added = 0
-    for permit, counts in name_counts.items():
-        if permit not in permit_names or not permit_names[permit]:
-            best_name = max(counts.items(), key=lambda x: x[1])[0]
-            permit_names[permit] = best_name
-            api_names_added += 1
-    if api_names_added > 0:
-        print(f"  從 API 報告補充 {api_names_added} 個建案名稱（總計 {len(permit_names)} 個）")
+    # 5b. 從 permit_registry.json 載入交叉比對結果（由 match_permits.py 產生）
+    registry_file = './state/permit_registry.json'
+    if os.path.exists(registry_file):
+        with open(registry_file, 'r', encoding='utf-8') as f:
+            registry = json.load(f)
+        registry_names = 0
+        for permit, info in registry.items():
+            reg_name = info.get('name', '')
+            if reg_name and (permit not in permit_names or not permit_names[permit]):
+                permit_names[permit] = reg_name
+                registry_names += 1
+        print(f"  從 permit_registry 載入 {registry_names} 個建案名稱（總計 {len(permit_names)} 個）")
+    else:
+        print("  ⚠️ permit_registry.json 不存在，請先執行 python3 match_permits.py")
+        registry = {}
 
-    # 5c. 從 Google Drive PDF 檔名補充建案名稱（覆蓋面最廣）
-    drive_names = drive_data.pop('_drive_names', {})
-    drive_names_added = 0
-    for permit, name in drive_names.items():
-        if permit not in permit_names or not permit_names[permit]:
-            permit_names[permit] = name
-            drive_names_added += 1
-    if drive_names_added > 0:
-        print(f"  從 Drive PDF 檔名補充 {drive_names_added} 個建案名稱（總計 {len(permit_names)} 個）")
-
-    # 5d. 從來源資料夾名稱補充建案名稱（政府 PDF 中的 Google Drive 連結）
-    print("  查詢來源資料夾名稱...")
-    from sync_permits import PermitSync
-    ps = PermitSync()
-    gov_pdf_path = ps.download_pdf_list()
-    ps.permit_mapping = ps.parse_pdf_list(gov_pdf_path)
-    source_names_added = 0
-    for permit, url in ps.permit_mapping.items():
-        if permit in permit_names and permit_names[permit]:
-            continue  # 已有名稱，跳過
-        folder_id = ps.extract_folder_id_from_url(url)
-        if not folder_id:
-            continue
-        try:
-            folder = drive_service.files().get(
-                fileId=folder_id, fields='name', supportsAllDrives=True
-            ).execute()
-            raw_name = folder.get('name', '')
-            # 清理來源資料夾名稱（去除建照號碼、通用描述等）
-            clean = re.sub(r'\d{2,3}建字第\d{3,5}號', '', raw_name)
-            clean = re.sub(r'[-_\s]*(工地)?監測(數據|資料)?(雲端)?(資料庫)?', '', clean)
-            clean = re.sub(r'[（(]本網站由.*$', '', clean)
-            clean = re.sub(r'[（(]該網址?由.*$', '', clean)
-            clean = re.sub(r'[（(]資料庫係由.*$', '', clean)
-            clean = re.sub(r'安全觀測$', '', clean)
-            clean = re.sub(r'監測日報$', '', clean)
-            clean = clean.strip(' -_/()')
-            if clean and len(clean) >= 2:
-                permit_names[permit] = clean
-                source_names_added += 1
-        except Exception:
-            continue
-    if source_names_added > 0:
-        print(f"  從來源資料夾補充 {source_names_added} 個建案名稱（總計 {len(permit_names)} 個）")
+    # 5c. 移除 _drive_names（掃描時產生的暫存資料）
+    drive_data.pop('_drive_names', None)
 
     # 5e. 已完工建案標記：建照年份在 110 年（2021）前且無系統報告的視為已結案
     completed_count = 0

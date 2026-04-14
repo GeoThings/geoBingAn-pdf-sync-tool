@@ -9,6 +9,7 @@ state/.sync_start_time
 
 # But keep upload history (needs to persist across clones)
 !state/upload_history_all.json
+!state/permit_registry.json
 
 # Python
 __pycache__/

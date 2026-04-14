@@ -1,0 +1,460 @@
+#!/usr/bin/env python3
+"""
+建案交叉比對工具 — 從 6 個來源匹配建照號碼與建案名稱/地址/階段
+
+來源：
+1. 政府 PDF（建照號碼 + 承造人）
+2. Drive 來源資料夾名稱
+3. Drive PDF 檔名
+4. API construction-projects（580 筆，含地址/階段/感測器）
+5. API construction-reports（file_name → 建照號碼橋樑）
+6. alert_data.csv
+
+產出：state/permit_registry.json
+"""
+import json
+import os
+import re
+import sys
+import csv
+import requests
+from datetime import datetime
+from typing import Dict, Optional
+from collections import Counter
+
+# 載入設定
+try:
+    from config import (JWT_TOKEN, REFRESH_TOKEN, GEOBINGAN_REFRESH_URL,
+                        GROUP_ID, SHARED_DRIVE_ID)
+except ImportError:
+    print("❌ 需要 config.py")
+    sys.exit(1)
+
+from jwt_auth import get_valid_token
+from filename_date_parser import parse_date_from_filename
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+
+REGISTRY_FILE = './state/permit_registry.json'
+ALERT_CSV = './state/alert_data.csv'
+SERVICE_ACCOUNT_FILE = os.environ.get('GOOGLE_CREDENTIALS', './credentials.json')
+
+
+def get_api_token():
+    token, _ = get_valid_token(JWT_TOKEN, REFRESH_TOKEN, GEOBINGAN_REFRESH_URL)
+    return token
+
+
+def load_existing_registry() -> dict:
+    if os.path.exists(REGISTRY_FILE):
+        with open(REGISTRY_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    return {}
+
+
+def normalize_permit(raw: str) -> Optional[str]:
+    """標準化建照號碼格式"""
+    m = re.search(r'(\d{2,3})\s*建\s*字?\s*第?\s*0*(\d{3,5})\s*號?', raw)
+    if m:
+        year = m.group(1)
+        num = m.group(2).zfill(4)
+        return f'{year}建字第{num}號'
+    return None
+
+
+def extract_name_from_text(text: str) -> str:
+    """從文字中提取建案名稱（清理通用詞）"""
+    name = text
+    name = re.sub(r'\d{2,3}\s*建\s*字?\s*第?\s*\d{3,5}\s*號?\s*', '', name)
+    name = re.sub(r'建照字號', '', name)
+    name = re.sub(r'(新建工程|建案|工程|監測案|監測數據|雲端資料庫)\s*$', '', name)
+    name = re.sub(r'[（(]本網站由.*$', '', name)
+    name = re.sub(r'[（(]該網址?由.*$', '', name)
+    name = re.sub(r'[（(]資料庫係由.*$', '', name)
+    name = re.sub(r'安全觀測$', '', name)
+    name = name.strip(' -_/()')
+    if len(name) < 2:
+        return ''
+    return name
+
+
+# ==================== 來源 1: 政府 PDF ====================
+def fetch_gov_pdf_data() -> Dict[str, dict]:
+    """從政府 PDF 取得建照號碼 + 承造人/監造人"""
+    print("📄 來源 1: 政府 PDF...")
+    from sync_permits import PermitSync
+    ps = PermitSync()
+    pdf_path = ps.download_pdf_list()
+    mapping = ps.parse_pdf_list(pdf_path)
+
+    # 從 PDF 原文解析承造人
+    import PyPDF2
+    with open(pdf_path, 'rb') as f:
+        reader = PyPDF2.PdfReader(f)
+        all_text = ''.join(p.extract_text() or '' for p in reader.pages)
+
+    results = {}
+    for permit in mapping:
+        norm = normalize_permit(permit)
+        if norm:
+            results[norm] = {
+                'source_url': mapping[permit],
+                'source_folder_id': ps.extract_folder_id_from_url(mapping[permit]),
+            }
+
+    print(f"  {len(results)} 個建照")
+    return results
+
+
+# ==================== 來源 2: Drive 來源資料夾名稱 ====================
+def fetch_source_folder_names(gov_data: dict, drive_service) -> Dict[str, str]:
+    """從來源 Google Drive 資料夾名稱提取建案名稱"""
+    print("📂 來源 2: Drive 來源資料夾名稱...")
+    names = {}
+    for permit, info in gov_data.items():
+        fid = info.get('source_folder_id')
+        if not fid:
+            continue
+        try:
+            folder = drive_service.files().get(
+                fileId=fid, fields='name', supportsAllDrives=True
+            ).execute()
+            raw_name = folder.get('name', '')
+            clean = extract_name_from_text(raw_name)
+            if clean:
+                names[permit] = clean
+        except Exception:
+            continue
+
+    print(f"  {len(names)} 個有名稱")
+    return names
+
+
+# ==================== 來源 3: Drive PDF 檔名 ====================
+def fetch_drive_pdf_names(drive_service) -> Dict[str, dict]:
+    """批次掃描 Shared Drive 所有 PDF，提取建案名稱"""
+    print("📁 來源 3: Drive PDF 檔名...")
+
+    # 先取資料夾 ID → 建照號碼 對應
+    folders = {}
+    page_token = None
+    while True:
+        results = drive_service.files().list(
+            q=f"'{SHARED_DRIVE_ID}' in parents and mimeType='application/vnd.google-apps.folder'",
+            fields='nextPageToken, files(id, name)',
+            pageSize=1000, pageToken=page_token,
+            supportsAllDrives=True, includeItemsFromAllDrives=True,
+            corpora='drive', driveId=SHARED_DRIVE_ID
+        ).execute()
+        for f in results.get('files', []):
+            norm = normalize_permit(f['name'])
+            if norm:
+                folders[f['id']] = norm
+        page_token = results.get('nextPageToken')
+        if not page_token:
+            break
+
+    # 批次掃描所有 PDF
+    permit_files = {}  # permit → [filenames]
+    page_token = None
+    while True:
+        try:
+            results = drive_service.files().list(
+                q="mimeType='application/pdf' and trashed=false",
+                corpora='drive', driveId=SHARED_DRIVE_ID,
+                includeItemsFromAllDrives=True, supportsAllDrives=True,
+                fields='nextPageToken, files(name, parents)',
+                pageSize=1000, pageToken=page_token
+            ).execute()
+            for f in results.get('files', []):
+                parents = f.get('parents', [])
+                if parents:
+                    permit = folders.get(parents[0])
+                    if permit:
+                        if permit not in permit_files:
+                            permit_files[permit] = []
+                        permit_files[permit].append(f['name'])
+            page_token = results.get('nextPageToken')
+            if not page_token:
+                break
+        except Exception:
+            break
+
+    # 從檔名提取名稱（投票制：最常出現的名稱）
+    from generate_permit_tracking_report import extract_name_from_filename
+    names = {}
+    for permit, files in permit_files.items():
+        counts = Counter()
+        for fn in files:
+            name = extract_name_from_filename(fn)
+            if name:
+                counts[name] += 1
+        if counts:
+            names[permit] = {
+                'name': counts.most_common(1)[0][0],
+                'pdf_count': len(files),
+            }
+
+    print(f"  {len(names)} 個有名稱（共 {len(permit_files)} 個建照）")
+    return names
+
+
+# ==================== 來源 4: API construction-projects ====================
+def fetch_api_projects() -> list:
+    """從 API 取得所有 construction-projects"""
+    print("🌐 來源 4: API construction-projects...")
+    token = get_api_token()
+    headers = {'Authorization': f'Bearer {token}', 'X-Current-Group': GROUP_ID}
+
+    all_projects = []
+    page = 1
+    while True:
+        r = requests.get(
+            f'https://riskmap.today/api/groups/{GROUP_ID}/construction-projects/?page={page}&page_size=100',
+            headers=headers, timeout=15
+        )
+        if r.status_code != 200:
+            break
+        data = r.json()
+        all_projects.extend(data.get('results', []))
+        if not data.get('next'):
+            break
+        page += 1
+
+    print(f"  {len(all_projects)} 筆")
+    return all_projects
+
+
+# ==================== 來源 5: API reports (橋樑) ====================
+def fetch_api_report_categories() -> Dict[str, str]:
+    """從 API reports 的 file_name 建立 category → permit 的橋樑"""
+    print("📡 來源 5: API construction-reports（建立橋樑）...")
+    token = get_api_token()
+    headers = {'Authorization': f'Bearer {token}'}
+
+    # 分頁取得所有 reports
+    all_reports = []
+    page = 1
+    while True:
+        r = requests.get(
+            f'https://riskmap.today/api/reports/construction-reports/?group_id={GROUP_ID}&page={page}&page_size=100',
+            headers=headers, timeout=30
+        )
+        if r.status_code == 401:
+            token = get_api_token()
+            headers = {'Authorization': f'Bearer {token}'}
+            continue
+        if r.status_code != 200:
+            break
+        data = r.json()
+        results = data.get('results', [])
+        if not results:
+            break
+        all_reports.extend(results)
+        if not data.get('next'):
+            break
+        page += 1
+        if page % 50 == 0:
+            print(f"    第 {page} 頁...")
+
+    print(f"  {len(all_reports)} 筆報告")
+
+    # 從 file_name 提取建照號碼
+    permit_from_reports = {}  # file_name → permit
+    for report in all_reports:
+        fn = report.get('file_name') or ''
+        m = re.search(r'(\d{2,3}建字第\d{3,5}號)', fn)
+        if m:
+            permit_from_reports[fn] = normalize_permit(m.group(1))
+
+    print(f"  {len(permit_from_reports)} 個可對應建照")
+    return permit_from_reports
+
+
+# ==================== 來源 6: alert_data.csv ====================
+def fetch_alert_data() -> Dict[str, dict]:
+    """從警戒資料取得建案資訊"""
+    print("⚠️  來源 6: alert_data.csv...")
+    if not os.path.exists(ALERT_CSV):
+        print("  找不到")
+        return {}
+
+    results = {}
+    with open(ALERT_CSV, 'r', encoding='utf-8-sig') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            name = row.get('建案名稱', '').strip()
+            example = row.get('原始檔名範例', '')
+            m = re.search(r'(\d{2,3}建字第\d{3,5}號)', example)
+            if m:
+                permit = normalize_permit(m.group(1))
+                if permit:
+                    results[permit] = {
+                        'alert_name': name,
+                        'warning': int(row.get('警戒次數', 0) or 0),
+                        'action': int(row.get('行動次數', 0) or 0),
+                    }
+
+    print(f"  {len(results)} 個有警戒")
+    return results
+
+
+# ==================== 主程式：交叉比對 ====================
+def build_registry():
+    print("=" * 60)
+    print("🔍 建案交叉比對工具")
+    print("=" * 60)
+
+    # 初始化 Drive
+    creds = service_account.Credentials.from_service_account_file(
+        SERVICE_ACCOUNT_FILE, scopes=['https://www.googleapis.com/auth/drive.readonly'])
+    drive_service = build('drive', 'v3', credentials=creds)
+
+    # 載入現有 registry
+    registry = load_existing_registry()
+    print(f"現有 registry: {len(registry)} 筆\n")
+
+    # 取得所有來源
+    gov_data = fetch_gov_pdf_data()
+    source_names = fetch_source_folder_names(gov_data, drive_service)
+    drive_names = fetch_drive_pdf_names(drive_service)
+    api_projects = fetch_api_projects()
+    report_permits = fetch_api_report_categories()
+    alert_data = fetch_alert_data()
+
+    # 建立 API project 關鍵字索引（用於模糊匹配）
+    api_project_index = {}  # keyword → project info
+    for p in api_projects:
+        name = p.get('project_name', '')
+        alert = p.get('alert_status', {})
+        api_project_index[name] = {
+            'address': p.get('location_address', ''),
+            'stage': p.get('stage', ''),
+            'sensors': p.get('sensor_count', 0),
+            'coordinates': p.get('construction_coordinates'),
+            'alert_label': alert.get('label', '') if isinstance(alert, dict) else '',
+            'alert_tone': alert.get('tone', '') if isinstance(alert, dict) else '',
+            'alert_message': alert.get('message', '') if isinstance(alert, dict) else '',
+            'alert_date': alert.get('report_date', '') if isinstance(alert, dict) else '',
+        }
+
+    # 所有已知的建照號碼
+    all_permits = set(gov_data.keys())
+    for permit in drive_names:
+        all_permits.add(permit)
+
+    print(f"\n{'=' * 60}")
+    print(f"🔄 開始交叉比對 {len(all_permits)} 個建照...")
+    print(f"{'=' * 60}\n")
+
+    updated = 0
+    for permit in sorted(all_permits):
+        entry = registry.get(permit, {})
+        changed = False
+
+        # 優先順序合併名稱
+        if not entry.get('name'):
+            # 來源 6: alert
+            if permit in alert_data:
+                n = extract_name_from_text(alert_data[permit].get('alert_name', ''))
+                if n:
+                    entry['name'] = n
+                    entry['name_source'] = 'alert_csv'
+                    changed = True
+
+            # 來源 3: Drive PDF 檔名
+            if not entry.get('name') and permit in drive_names:
+                entry['name'] = drive_names[permit]['name']
+                entry['name_source'] = 'drive_pdf'
+                changed = True
+
+            # 來源 2: 來源資料夾
+            if not entry.get('name') and permit in source_names:
+                entry['name'] = source_names[permit]
+                entry['name_source'] = 'source_folder'
+                changed = True
+
+        # 合併 Drive 資料
+        if permit in drive_names:
+            entry['pdf_count'] = drive_names[permit].get('pdf_count', 0)
+
+        # 合併 API 資料（用檔名關鍵字匹配）
+        if not entry.get('address') and permit in drive_names:
+            # 用 Drive PDF 的名稱在 API projects 中搜尋
+            drive_name = drive_names[permit]['name']
+            for api_name, api_info in api_project_index.items():
+                # 模糊匹配：Drive 名稱出現在 API project name 中
+                if len(drive_name) >= 4 and drive_name in api_name:
+                    entry['address'] = api_info['address']
+                    entry['stage'] = api_info['stage']
+                    entry['sensors'] = api_info['sensors']
+                    entry['alert_label'] = api_info['alert_label']
+                    entry['alert_tone'] = api_info['alert_tone']
+                    entry['alert_message'] = api_info['alert_message']
+                    entry['alert_date'] = api_info['alert_date']
+                    entry['api_match'] = api_name
+                    changed = True
+                    break
+                # 反向：API name 出現在 Drive 名稱中
+                api_clean = extract_name_from_text(api_name)
+                if len(api_clean) >= 4 and api_clean in drive_name:
+                    entry['address'] = api_info['address']
+                    entry['stage'] = api_info['stage']
+                    entry['sensors'] = api_info['sensors']
+                    entry['alert_label'] = api_info['alert_label']
+                    entry['alert_tone'] = api_info['alert_tone']
+                    entry['alert_message'] = api_info['alert_message']
+                    entry['alert_date'] = api_info['alert_date']
+                    entry['api_match'] = api_name
+                    if not entry.get('name'):
+                        entry['name'] = api_clean
+                        entry['name_source'] = 'api_match'
+                    changed = True
+                    break
+
+        # 合併警戒資料
+        if permit in alert_data:
+            entry['warning_count'] = alert_data[permit].get('warning', 0)
+            entry['action_count'] = alert_data[permit].get('action', 0)
+
+        # 合併來源 URL
+        if permit in gov_data:
+            entry['source_url'] = gov_data[permit].get('source_url', '')
+
+        if changed:
+            updated += 1
+
+        entry['updated_at'] = datetime.now().isoformat()
+        registry[permit] = entry
+
+    # 統計
+    has_name = sum(1 for e in registry.values() if e.get('name'))
+    has_address = sum(1 for e in registry.values() if e.get('address'))
+    has_stage = sum(1 for e in registry.values() if e.get('stage'))
+    has_api = sum(1 for e in registry.values() if e.get('api_match'))
+
+    print(f"\n{'=' * 60}")
+    print(f"📊 比對結果")
+    print(f"{'=' * 60}")
+    print(f"  總建照數: {len(registry)}")
+    print(f"  有名稱: {has_name} ({has_name * 100 // len(registry)}%)")
+    print(f"  有地址: {has_address}")
+    print(f"  有施工階段: {has_stage}")
+    print(f"  有 API 匹配: {has_api}")
+    print(f"  本次更新: {updated}")
+
+    # 名稱來源分布
+    source_counts = Counter(e.get('name_source', 'none') for e in registry.values())
+    print(f"\n  名稱來源分布:")
+    for src, count in source_counts.most_common():
+        print(f"    {src}: {count}")
+
+    # 儲存
+    os.makedirs(os.path.dirname(REGISTRY_FILE), exist_ok=True)
+    with open(REGISTRY_FILE, 'w', encoding='utf-8') as f:
+        json.dump(registry, f, indent=2, ensure_ascii=False)
+    print(f"\n✅ 已儲存到 {REGISTRY_FILE}")
+
+
+if __name__ == '__main__':
+    build_registry()
