@@ -8,7 +8,9 @@
   },
   "104建字第0225號": {
     "source_url": "https://drive.google.com/drive/folders/1Ph1Hno7Cpf4CNot3n7mWTeZCGjzo796l",
-    "updated_at": "2026-04-14T11:54:54.664261"
+    "updated_at": "2026-04-14T11:54:54.664261",
+    "name": "博物館3期新建工程",
+    "name_source": "manual"
   },
   "105建字第0172號": {
     "name": "助群營造台北市北投區石牌市場新建工程10月",
@@ -236,8 +238,8 @@
     "updated_at": "2026-04-14T11:54:54.708509"
   },
   "109建字第0139號": {
-    "name": "松江路",
-    "name_source": "drive_pdf",
+    "name": "台北市松江路段108巷20號旁住宅大樓",
+    "name_source": "manual",
     "pdf_count": 71,
     "updated_at": "2026-04-14T11:54:54.709979"
   },
@@ -263,8 +265,8 @@
     "updated_at": "2026-04-14T11:54:54.714452"
   },
   "109建字第0170號": {
-    "name": "6月份",
-    "name_source": "drive_pdf",
+    "name": "臺北市立大安高級工業職業學校新建綜合教學大樓工程",
+    "name_source": "manual",
     "pdf_count": 18,
     "source_url": "https://drive.google.com/drive/folders/13WxNni7jwo00orW2Wm7BLx4nR3C2wPKW?usp=drive_link",
     "updated_at": "2026-04-14T11:54:54.715864"
@@ -299,8 +301,8 @@
     "updated_at": "2026-04-14T11:54:54.717349"
   },
   "109建字第0233號": {
-    "name": "加測",
-    "name_source": "drive_pdf",
+    "name": "璞真合和案住宅大樓新建工程",
+    "name_source": "manual",
     "pdf_count": 84,
     "source_url": "https://drive.google.com/drive/mobile/folders/1ntp8_mDWKNYQ4sRAYeSHiMzQZ9DmvUE9?usp=drive_link",
     "updated_at": "2026-04-14T11:54:54.718746"
@@ -329,15 +331,15 @@
     "updated_at": "2026-04-14T11:54:54.720145"
   },
   "109建字第0256號": {
-    "name": "耀達廠",
-    "name_source": "drive_pdf",
+    "name": "耀達金矽谷廠辦新建工程",
+    "name_source": "manual",
     "pdf_count": 5,
     "source_url": "https://drive.google.com/drive/folders/1okkOAjedWbF6JJ2A4hste4iqYwX82FmR?usp=sharing",
     "updated_at": "2026-04-14T11:54:54.721486"
   },
   "109建字第0262號": {
-    "name": "TI",
-    "name_source": "drive_pdf",
+    "name": "市府二小段商住新建工程",
+    "name_source": "manual",
     "pdf_count": 177,
     "source_url": "https://drive.google.com/drive/folders/1CQIz8QAS93bJTV20U2oyglSmmVzLTl00?usp=sharing",
     "updated_at": "2026-04-14T11:54:54.722823"
@@ -350,8 +352,8 @@
     "updated_at": "2026-04-14T11:54:54.724183"
   },
   "109建字第0269號": {
-    "name": "三合段",
-    "name_source": "drive_pdf",
+    "name": "北投區三合段新建工程監測案",
+    "name_source": "manual",
     "pdf_count": 36,
     "source_url": "https://drive.google.com/drive/folders/1u-7WB2vCcGqVJEnTZPgUx0eVPF4Bqjmf?usp=drive_link",
     "updated_at": "2026-04-14T11:54:54.725493"
@@ -431,8 +433,8 @@
     "updated_at": "2026-04-14T11:54:54.735863"
   },
   "110建字第0052號": {
-    "name": "龍雲寺",
-    "name_source": "drive_pdf",
+    "name": "台北市大同區龍雲寺重建工程",
+    "name_source": "manual",
     "pdf_count": 30,
     "source_url": "https://drive.google.com/drive/folders/19OjPyfD4RWtS813phXbMp6FqEXXT3-1v?usp=drive_link",
     "updated_at": "2026-04-14T11:54:54.737087"
@@ -534,8 +536,8 @@
     "updated_at": "2026-04-14T11:54:54.749325"
   },
   "110建字第0116號": {
-    "name": "雙園段",
-    "name_source": "drive_pdf",
+    "name": "峰禾建設萬華區雙園段三小段",
+    "name_source": "manual",
     "pdf_count": 40,
     "source_url": "https://drive.google.com/drive/folders/1CKPo-JA6NnkR30Y_3CVSYVZ0Ps6iVJVY?usp=drive_link",
     "updated_at": "2026-04-14T11:54:54.750558",
@@ -565,8 +567,8 @@
     "updated_at": "2026-04-14T11:54:54.751769"
   },
   "110建字第0125號": {
-    "name": "北投",
-    "name_source": "drive_pdf",
+    "name": "台北市北投區新民段二小段468地號住宅新建工程",
+    "name_source": "manual",
     "pdf_count": 33,
     "source_url": "https://drive.google.com/drive/folders/1Jla8U5GQYnR6VpheTSJbuWslxxR_J-aE",
     "updated_at": "2026-04-14T11:54:54.752941"
@@ -701,8 +703,8 @@
     "updated_at": "2026-04-14T11:54:54.763930"
   },
   "110建字第0196號": {
-    "name": "金源",
-    "name_source": "drive_pdf",
+    "name": "台北市大同區雙連三小段號新建工程",
+    "name_source": "manual",
     "pdf_count": 141,
     "source_url": "https://drive.google.com/drive/folders/1GtwhCCVZb3dzPJOqMbVWL60I-Vez05a2?usp=sharing",
     "updated_at": "2026-04-14T11:54:54.765123"
@@ -725,8 +727,8 @@
     "updated_at": "2026-04-14T11:54:54.765142"
   },
   "110建字第0212號": {
-    "name": "安全觀測-B4版構築",
-    "name_source": "drive_pdf",
+    "name": "光里蘊住宅新建工程",
+    "name_source": "manual",
     "pdf_count": 58,
     "source_url": "https://drive.google.com/drive/folders/1O6bCfQLsgi_1buw-R7nBgX2poC8Zi1d1",
     "updated_at": "2026-04-14T11:54:54.766355"
@@ -745,8 +747,8 @@
     "updated_at": "2026-04-14T11:54:54.768810"
   },
   "110建字第0221號": {
-    "name": "君隆",
-    "name_source": "drive_pdf",
+    "name": "楊昇建設臺北市松山區西松段一小段74等地號都更住宅新建工程",
+    "name_source": "manual",
     "pdf_count": 141,
     "source_url": "https://drive.google.com/drive/folders/14ICk37tx6zdP1WYGr575rGiSd2Q_HcAZ?usp=sharing",
     "updated_at": "2026-04-14T11:54:54.770003"
@@ -882,8 +884,8 @@
     "updated_at": "2026-04-14T11:54:54.782227"
   },
   "110建字第0266號": {
-    "name": "光華段",
-    "name_source": "drive_pdf",
+    "name": "士林光華段集合住宅",
+    "name_source": "manual",
     "pdf_count": 9,
     "source_url": "https://drive.google.com/drive/folders/1fY9RsYAPAn8pEwH-_K126hncCObH3oeG",
     "updated_at": "2026-04-14T11:54:54.783431"
@@ -1213,8 +1215,8 @@
     "updated_at": "2026-04-14T11:54:54.815066"
   },
   "111建字第0057號": {
-    "name": "B區",
-    "name_source": "drive_pdf",
+    "name": "將捷木柵甲區段B主體工程新建工程",
+    "name_source": "manual",
     "pdf_count": 3,
     "source_url": "https://drive.google.com/drive/folders/1lMtd86DCf_6PpINo-9iT_b0W41AuMc8-?usp=sharing17/30",
     "updated_at": "2026-04-14T11:54:54.816262"
@@ -1244,15 +1246,15 @@
     "updated_at": "2026-04-14T11:54:54.818697"
   },
   "111建字第0062號": {
-    "name": "觀測初始值",
-    "name_source": "drive_pdf",
+    "name": "大昕建設天山段住宅新建工程",
+    "name_source": "manual",
     "pdf_count": 68,
     "source_url": "https://drive.google.com/drive/folders/1VEIob64PV2asTHy2gEEAi--ok0V4kXt2?usp=sharing",
     "updated_at": "2026-04-14T11:54:54.819906"
   },
   "111建字第0065號": {
-    "name": "南基地",
-    "name_source": "drive_pdf",
+    "name": "元大人壽松江大樓新建工程(南基地)",
+    "name_source": "manual",
     "pdf_count": 43,
     "source_url": "https://drive.google.com/drive/folders/1KuS4SLBnM984gq_uCWU82qOCwVS37xZ-",
     "updated_at": "2026-04-14T11:54:54.821101"
@@ -1571,21 +1573,21 @@
     "updated_at": "2026-04-14T11:54:54.850391"
   },
   "111建字第0166號": {
-    "name": "牯嶺街",
-    "name_source": "drive_pdf",
+    "name": "炎洲晴集合住宅新建工程",
+    "name_source": "manual",
     "pdf_count": 31,
     "source_url": "https://drive.google.com/drive/folders/1_CSvVcrGmYJSuKmRbfGGLXh5hch7iLaH?usp=drive_link",
     "updated_at": "2026-04-14T11:54:54.851580"
   },
   "111建字第0167號": {
-    "name": "總表",
-    "name_source": "drive_pdf",
+    "name": "安家秀新建工程",
+    "name_source": "manual",
     "pdf_count": 108,
     "updated_at": "2026-04-14T11:54:54.852771"
   },
   "111建字第0175號": {
-    "name": "北市",
-    "name_source": "drive_pdf",
+    "name": "地藏悲願基金會文林北路大樓新建工程監測案",
+    "name_source": "manual",
     "pdf_count": 87,
     "updated_at": "2026-04-14T11:54:54.853963"
   },
@@ -1877,7 +1879,10 @@
   },
   "111建字第0311號": {
     "source_url": "https://drive.google.com/drive/folders/1GvGZrO5Aa39lMzPAnV3oRwcKvmct8prH",
-    "updated_at": "2026-04-14T11:54:54.880730"
+    "updated_at": "2026-04-14T11:54:54.880730",
+    "name": "台北市南港區南港段二小段671-6等52筆地號新建工程",
+    "name_source": "api_match",
+    "address": "台北市南港區南港段二小段671-6等52筆地號"
   },
   "111建字第0312號": {
     "name": "高福-芝玉路觀測日報表",
@@ -1918,15 +1923,15 @@
     "updated_at": "2026-04-14T11:54:54.883165"
   },
   "111建字第0318號": {
-    "name": "安全觀測初值",
-    "name_source": "drive_pdf",
+    "name": "宸泓建設中山區吉林段一小段290,291,292,281地號等4筆土地集合住宅新建工程",
+    "name_source": "manual",
     "pdf_count": 61,
     "source_url": "https://drive.google.com/drive/folders/1_N09uewYRllQW_e3yVg3KMadamLeHYnE?usp=drive_link",
     "updated_at": "2026-04-14T11:54:54.884375"
   },
   "111建字第0329號": {
-    "name": "平陽街",
-    "name_source": "drive_pdf",
+    "name": "振家實業大同區平陽街傳承大樓",
+    "name_source": "manual",
     "pdf_count": 86,
     "updated_at": "2026-04-14T11:54:54.885562"
   },
@@ -2082,8 +2087,8 @@
     "updated_at": "2026-04-14T11:54:54.902618"
   },
   "112建字第0052號": {
-    "name": "上承",
-    "name_source": "drive_pdf",
+    "name": "台北市復興段危老案住宅新建工程",
+    "name_source": "manual",
     "pdf_count": 49,
     "updated_at": "2026-04-14T11:54:54.903808"
   },
@@ -2228,8 +2233,8 @@
     "updated_at": "2026-04-14T11:54:54.916049"
   },
   "112建字第0117號": {
-    "name": "初值報告",
-    "name_source": "drive_pdf",
+    "name": "國泰承真新建工程",
+    "name_source": "manual",
     "pdf_count": 1,
     "updated_at": "2026-04-14T11:54:54.917266"
   },
@@ -2323,12 +2328,16 @@
     "updated_at": "2026-04-14T11:54:54.928193"
   },
   "112建字第0177號": {
-    "name": "12月11日",
-    "name_source": "alert_csv",
+    "name": "台北市大同區雙連段三小段99等22筆地號新建工程",
+    "name_source": "manual",
     "warning_count": 1,
     "action_count": 3,
     "source_url": "https://drive.google.com/drive/folders/1kSHes6escvpssMDPOFSfUyTaH-EtbDJj?usp=drive_link",
-    "updated_at": "2026-04-14T11:54:54.928207"
+    "updated_at": "2026-04-14T11:54:54.928207",
+    "address": "台北市大同區雙連段三小段99等22筆地號",
+    "stage": "鋼構施作",
+    "sensors": 152,
+    "contractor": "盛德營造"
   },
   "112建字第0178號": {
     "name": "內湖區石潭段四小段新建工程-專案",
@@ -2432,20 +2441,20 @@
     "updated_at": "2026-04-14T11:54:54.941801"
   },
   "112建字第0235號": {
-    "name": "福順一",
-    "name_source": "drive_pdf",
+    "name": "士林區福順段一小段集合住宅新建工程",
+    "name_source": "manual",
     "pdf_count": 19,
     "updated_at": "2026-04-14T11:54:54.943025"
   },
   "112建字第0238號": {
-    "name": "日報表",
-    "name_source": "drive_pdf",
+    "name": "璞真宇見新建工程",
+    "name_source": "manual",
     "pdf_count": 60,
     "updated_at": "2026-04-14T11:54:54.944241"
   },
   "112建字第0243號": {
-    "name": "觀測日報-揚潤北投",
-    "name_source": "drive_pdf",
+    "name": "新潤建設北投區軟橋段66.67.68等地號集合住宅新建工程",
+    "name_source": "manual",
     "pdf_count": 40,
     "source_url": "https://drive.google.com/drive/folders/15Hf21ENWke_9PLv5osa4LM46En-Md_9z?usp=sharing",
     "updated_at": "2026-04-14T11:54:54.945464"
@@ -2476,8 +2485,8 @@
     "updated_at": "2026-04-14T11:54:54.950444"
   },
   "112建字第0268號": {
-    "name": "至善路",
-    "name_source": "drive_pdf",
+    "name": "至善路案(璞真上善)安全觀測系統工程",
+    "name_source": "manual",
     "pdf_count": 57,
     "updated_at": "2026-04-14T11:54:54.951658"
   },
@@ -2534,8 +2543,8 @@
     "updated_at": "2026-04-14T11:54:54.957854"
   },
   "113建字第0026號": {
-    "name": "民生東",
-    "name_source": "drive_pdf",
+    "name": "佳元開發民生東路當代美術館新建工程",
+    "name_source": "manual",
     "pdf_count": 57,
     "updated_at": "2026-04-14T11:54:54.959065"
   },
@@ -2811,8 +2820,8 @@
     "updated_at": "2026-04-14T11:54:54.981742"
   },
   "114建字第0022號": {
-    "name": "連續壁階段",
-    "name_source": "drive_pdf",
+    "name": "AR1 軟橋段(20F/B5)住宅新建工程",
+    "name_source": "manual",
     "pdf_count": 12,
     "address": "台北市松山區或內湖區 (推斷)",
     "stage": "連續壁施作",
