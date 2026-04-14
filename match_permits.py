@@ -496,7 +496,7 @@ def build_registry():
 
         # 合併即時警示資料（用名稱匹配，含 api_match）
         # 通用名稱不可用於警示匹配（會造成誤配）
-        generic_alert = re.compile(r'^(監測報告|監測報表|安全觀測報告書?|安全監測系統|觀測報告|觀測數據|工地監測數據)')
+        generic_alert = re.compile(r'^(監測報告?|監測報表?|監測$|安全觀測報告書?|安全監測系統|觀測報告|觀測數據|工地監測數據)')
         if entry.get('name') or entry.get('api_match'):
             names_to_try = [n for n in [entry.get('api_match', ''), entry.get('name', '')] if n and not generic_alert.match(n)]
             for alert_project, alert_list in live_alerts.items():
@@ -548,7 +548,7 @@ def build_registry():
         registry[permit] = entry
 
     # 名稱優化：有 api_match 的建案，用 API 名稱取代通用/較差的名稱
-    generic_name_pat = re.compile(r'^(監測報告|監測報表|安全觀測報告書?|安全監測系統|觀測報告|觀測數據|工地監測數據)')
+    generic_name_pat = re.compile(r'^(監測報告?|監測報表?|監測$|安全觀測報告書?|安全監測系統|觀測報告|觀測數據|工地監測數據)')
     name_upgraded = 0
     for permit, entry in registry.items():
         api_match = entry.get('api_match', '')
@@ -562,6 +562,7 @@ def build_registry():
         # 以下情況用 API 名稱覆蓋
         should_upgrade = (
             not current_name or
+            len(current_name) <= 3 or
             generic_name_pat.match(current_name) or
             current_source in ('drive_pdf', 'source_folder')
         )

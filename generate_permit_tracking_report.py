@@ -476,11 +476,11 @@ def fetch_api_reports() -> Dict[str, List[dict]]:
             registry = json.load(f)
         # 收集所有名稱片段（用於去重）
         fragment_permits = {}  # fragment → set of permits
-        # 通用名稱不可用於模糊匹配（會造成大量誤配）
-        generic_patterns = re.compile(r'^(監測報告|監測報表|安全觀測報告書?|安全監測系統|觀測報告|觀測數據|工地監測數據)')
+        # 通用名稱和太短的名稱不可用於模糊匹配（會造成大量誤配）
+        generic_patterns = re.compile(r'^(監測報告?|監測報表|安全觀測報告書?|安全監測系統|觀測報告|觀測數據|工地監測數據)')
         for permit, info in registry.items():
             name = info.get('name', '')
-            if name and len(name) >= 2 and not generic_patterns.match(name):
+            if name and len(name) >= 3 and not generic_patterns.match(name):
                 name_to_permit_fuzzy[name] = permit
                 # 提取 3~6 字的滑動視窗片段（≥3字避免公司名/地名誤匹配）
                 clean = re.sub(r'(安全觀測|監測報表?|觀測報告|觀測數據|新建工程|工程|報告|報表|數據)', '', name)
