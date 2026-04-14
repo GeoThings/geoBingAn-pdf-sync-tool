@@ -123,9 +123,52 @@ def scan_google_drive(service) -> Dict[str, dict]:
 
     print(f"  找到 {len(permit_folders)} 個建照資料夾")
 
+    # 建立資料夾 ID → 建照號碼的完整對應（含子資料夾）
+    print("  掃描子資料夾結構...")
+    folder_id_to_permit = {info['folder_id']: permit for permit, info in permit_folders.items()}
+
+    # 掃描 Shared Drive 中所有資料夾，建立 parent→child 關係
+    all_folders = {}  # folder_id → parent_id
+    page_token = None
+    while True:
+        results = service.files().list(
+            q="mimeType='application/vnd.google-apps.folder' and trashed=false",
+            corpora='drive',
+            driveId=SHARED_DRIVE_ID,
+            includeItemsFromAllDrives=True,
+            supportsAllDrives=True,
+            fields='nextPageToken, files(id, parents)',
+            pageSize=1000,
+            pageToken=page_token
+        ).execute()
+        for f in results.get('files', []):
+            parents = f.get('parents', [])
+            if parents:
+                all_folders[f['id']] = parents[0]
+        page_token = results.get('nextPageToken')
+        if not page_token:
+            break
+
+    # 遞迴解析：任何子資料夾都對應到最上層的建案資料夾
+    def resolve_permit(folder_id, depth=0):
+        if folder_id in folder_id_to_permit:
+            return folder_id_to_permit[folder_id]
+        if depth > 5 or folder_id not in all_folders:
+            return None
+        parent = all_folders[folder_id]
+        result = resolve_permit(parent, depth + 1)
+        if result:
+            folder_id_to_permit[folder_id] = result  # 快取
+        return result
+
+    # 預先解析所有子資料夾
+    for fid in list(all_folders.keys()):
+        resolve_permit(fid)
+    subfolder_count = len(folder_id_to_permit) - len(permit_folders)
+    print(f"    已建立 {len(permit_folders)} 個建案資料夾 + {subfolder_count} 個子資料夾的對應")
+
     # 用單一查詢掃描所有 PDF，再按資料夾分組統計（取代逐資料夾查詢）
     print("  掃描所有 PDF 並統計...")
-    folder_id_to_permit = {info['folder_id']: permit for permit, info in permit_folders.items()}
 
     # 收集每個資料夾的 unique 檔名和最新修改時間
     folder_names = {}   # permit → set of unique filenames
@@ -424,10 +467,46 @@ def fetch_api_reports() -> Dict[str, List[dict]]:
 
     print(f"  共取得 {len(all_reports)} 筆報告")
 
+    # 從 permit_registry.json + construction-projects API 建立名稱對應
+    name_to_permit_fuzzy = {}  # 完整名稱 → permit
+    fragment_to_permit = {}    # 名稱片段（≥3字） → permit（唯一對應才使用）
+    registry_file = './state/permit_registry.json'
+    if os.path.exists(registry_file):
+        with open(registry_file, 'r', encoding='utf-8') as f:
+            registry = json.load(f)
+        # 收集所有名稱片段（用於去重）
+        fragment_permits = {}  # fragment → set of permits
+        # 通用名稱不可用於模糊匹配（會造成大量誤配）
+        generic_patterns = re.compile(r'^(監測報告|監測報表|安全觀測報告書?|安全監測系統|觀測報告|觀測數據|工地監測數據)')
+        for permit, info in registry.items():
+            name = info.get('name', '')
+            if name and len(name) >= 2 and not generic_patterns.match(name):
+                name_to_permit_fuzzy[name] = permit
+                # 提取 3~6 字的滑動視窗片段（≥3字避免公司名/地名誤匹配）
+                clean = re.sub(r'(安全觀測|監測報表?|觀測報告|觀測數據|新建工程|工程|報告|報表|數據)', '', name)
+                # 只保留中文字元片段
+                cjk_parts = re.findall(r'[\u4e00-\u9fff]+', clean)
+                for part in cjk_parts:
+                    for flen in range(3, min(7, len(part) + 1)):
+                        for start in range(len(part) - flen + 1):
+                            frag = part[start:start + flen]
+                            if frag not in fragment_permits:
+                                fragment_permits[frag] = set()
+                            fragment_permits[frag].add(permit)
+            # 也用 api_match 的名稱
+            api_name = info.get('api_match', '')
+            if api_name:
+                name_to_permit_fuzzy[api_name] = permit
+        # 只保留唯一對應的片段（避免歧義）
+        for frag, permits in fragment_permits.items():
+            if len(permits) == 1:
+                fragment_to_permit[frag] = next(iter(permits))
+
     # 按建照號碼分組（結合 API 報告和上傳記錄）
     permit_reports = {}
     matched = 0
     unmatched = 0
+    fuzzy_matched = 0
 
     # 先從上傳記錄建立基礎計數
     for permit, files in upload_history.items():
@@ -447,6 +526,46 @@ def fetch_api_reports() -> Dict[str, List[dict]]:
             # 方法 2: 從上傳記錄對應
             permit = filename_to_permit.get(filename)
 
+        # 方法 3: 用 permit_registry 名稱模糊匹配
+        if not permit and name_to_permit_fuzzy:
+            best_match = None
+            best_len = 0
+            # 3a: 完整名稱在檔名中
+            for name, p in name_to_permit_fuzzy.items():
+                if name in filename and len(name) > best_len:
+                    best_match = p
+                    best_len = len(name)
+            # 3b: 名稱片段匹配（最長唯一片段優先）
+            if not best_match and fragment_to_permit:
+                # 從檔名中去除日期、常見字詞和標點後嘗試匹配
+                fn_clean = re.sub(r'\d{7,8}|\d{4}[-/.]\d{2}[-/.]\d{2}|\.pdf$|監測報告|觀測報告|報告|報表|[^\u4e00-\u9fff]', '', filename)
+                for frag, p in sorted(fragment_to_permit.items(), key=lambda x: -len(x[0])):
+                    if frag in fn_clean:
+                        best_match = p
+                        best_len = len(frag)
+                        break
+            # 3c: 反向匹配 — 從檔名提取 2~5 字子片段，在 registry 名稱中搜尋（唯一匹配才採用）
+            if not best_match and name_to_permit_fuzzy:
+                fn_clean = re.sub(r'\d{7,8}|\d{4}[-/.]\d{2}[-/.]\d{2}|\.pdf$|監測報告|觀測報告|觀測數據|報告|報表|[^\u4e00-\u9fff]', '', filename)
+                cjk_text = ''.join(re.findall(r'[\u4e00-\u9fff]+', fn_clean))
+                # 從長到短嘗試，找到唯一匹配就停
+                for flen in range(min(5, len(cjk_text)), 1, -1):
+                    found = False
+                    for start in range(len(cjk_text) - flen + 1):
+                        sub = cjk_text[start:start + flen]
+                        matches = [p for name, p in name_to_permit_fuzzy.items() if sub in name]
+                        unique_permits = set(matches)
+                        if len(unique_permits) == 1:
+                            best_match = next(iter(unique_permits))
+                            fuzzy_matched += 1
+                            found = True
+                            break
+                    if found:
+                        break
+            if best_match:
+                permit = best_match
+                fuzzy_matched += 1
+
         if permit:
             matched += 1
             # 只有當檔案不在上傳記錄中時才加入（避免重複）
@@ -464,7 +583,7 @@ def fetch_api_reports() -> Dict[str, List[dict]]:
         else:
             unmatched += 1
 
-    print(f"  對應成功: {matched}, 未對應: {unmatched}")
+    print(f"  對應成功: {matched}（含名稱匹配 {fuzzy_matched}）, 未對應: {unmatched}")
     return permit_reports
 
 
@@ -734,20 +853,19 @@ def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], a
     alert_permits = []
     for permit_key, pdata in permit_data.items():
         pa = alert_data.get(permit_key, {})
-        wc = pa.get('warning_count', 0)
-        ac = pa.get('action_count', 0)
-        alc = pa.get('alert_count', 0)
-        if wc > 0 or ac > 0 or alc > 0:
+        if pa.get('total', 0) > 0:
+            wc = pa.get('warning_count', 0)
+            dc = pa.get('danger_count', 0)
             parts = []
-            if wc > 0: parts.append(f'⚠️{wc}')
-            if ac > 0: parts.append(f'🚨{ac}')
-            if alc > 0: parts.append(f'🔴{alc}')
+            if wc > 0: parts.append(f'⚠️警戒值{wc}項')
+            if dc > 0: parts.append(f'🔴行動值{dc}項')
             lad = pa.get('latest_alert_date', '')
             alert_permits.append({
                 'permit': permit_key,
                 'name': permit_names.get(permit_key, ''),
                 'summary': ' '.join(parts),
                 'latest_alert_date': lad[:10] if lad else '-',
+                'details': pa.get('details', []),
             })
 
     # 需要關注：報告過期的建案 (days_since_update > 30 and status != 'no_reports')
@@ -766,7 +884,8 @@ def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], a
     # HTML for 需要關注 cards
     attention_alert_cards = ""
     for ap in alert_permits:
-        attention_alert_cards += f'<div class="attention-card attention-card-alert"><div class="ac-permit">{esc(ap["permit"])}</div><div class="ac-name">{esc(ap["name"] or "-")}</div><div class="ac-summary">{esc(ap["summary"])}</div><div class="ac-date">最近警戒: {esc(ap["latest_alert_date"])}</div></div>'
+        detail_text = ' / '.join(ap.get('details', [])) if ap.get('details') else ap['summary']
+        attention_alert_cards += f'<div class="attention-card attention-card-alert"><div class="ac-permit">{esc(ap["permit"])}</div><div class="ac-name">{esc(ap["name"] or "-")}</div><div class="ac-summary">{esc(ap["summary"])}</div><div class="ac-detail">{esc(detail_text)}</div><div class="ac-date">最近觸發: {esc(ap["latest_alert_date"])}</div></div>'
 
     attention_stale_rows = ""
     for sp in stale_permits:
@@ -849,27 +968,34 @@ def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], a
         else:
             name_html = esc(building_name) if building_name else '<span class="empty-val">-</span>'
 
-        # 警戒/行動值
+        # 即時監測狀態（來自 construction-alerts API）
         permit_alert = alert_data.get(permit, {})
+        alert_total = permit_alert.get('total', 0)
         warning_count = permit_alert.get('warning_count', 0)
-        action_count = permit_alert.get('action_count', 0)
-        alert_count = permit_alert.get('alert_count', 0)
+        danger_count = permit_alert.get('danger_count', 0)
         latest_alert_date = permit_alert.get('latest_alert_date', '')
+        alert_details = permit_alert.get('details', [])
 
-        # 警戒值合併顯示
-        alert_total = warning_count + action_count + alert_count
-        alert_parts = []
-        if warning_count > 0:
-            alert_parts.append(f'⚠️{warning_count}次')
-        if action_count > 0:
-            alert_parts.append(f'🚨{action_count}次')
-        if alert_count > 0:
-            alert_parts.append(f'🔴{alert_count}次')
+        if alert_total > 0:
+            # 顯示狀態 + 最近日期，讓使用者知道這是什麼時候的狀態
+            alert_date_short = ''
+            if latest_alert_date:
+                # 顯示為 M/D 格式
+                try:
+                    parts = latest_alert_date[:10].split('-')
+                    alert_date_short = f'{int(parts[1])}/{int(parts[2])}'
+                except (IndexError, ValueError):
+                    alert_date_short = latest_alert_date[:10]
 
-        if alert_parts:
-            alert_date_str = latest_alert_date[:10] if latest_alert_date else ''
-            tooltip = f'最近警戒: {alert_date_str}' if alert_date_str else ''
-            merged_alert_html = f'<span class="alert-merged" title="{tooltip}">{" ".join(alert_parts)}</span>'
+            detail_tooltip = esc(' / '.join(alert_details)) if alert_details else ''
+            status_parts = []
+            if danger_count > 0:
+                status_parts.append(f'🔴 行動值{danger_count}項')
+            if warning_count > 0:
+                status_parts.append(f'⚠️ 警戒值{warning_count}項')
+            status_text = ' '.join(status_parts)
+            date_label = f'<span class="alert-date">{alert_date_short}</span>' if alert_date_short else ''
+            merged_alert_html = f'<span class="alert-merged" title="{detail_tooltip}">{status_text}{date_label}</span>'
         else:
             merged_alert_html = '<span class="empty-val">-</span>'
 
@@ -943,6 +1069,7 @@ body{{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft JhengHe
 .ac-permit{{font-size:11px;font-weight:800;color:#b91c1c}}
 .ac-name{{font-size:11px;color:#4b5563;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}}
 .ac-summary{{font-size:13px;margin-top:8px;font-weight:700}}
+.ac-detail{{font-size:11px;color:#6b7280;margin-top:4px}}
 .ac-date{{font-size:10px;color:#9ca3af;margin-top:6px;font-weight:600}}
 .stale-table{{width:100%;border-collapse:collapse;font-size:12px;background:white;border-radius:8px;overflow:hidden;border:1px solid #fecdd3}}
 .stale-table th{{background:#ffe4e6;padding:10px 12px;text-align:left;font-size:11px;color:#991b1b;font-weight:700}}
@@ -996,7 +1123,8 @@ a:hover{{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}}
 .days{{font-size:12px}}
 .days-old{{color:#ffffff;font-weight:700;background:#ef4444;padding:4px 8px;border-radius:6px;box-shadow:0 1px 2px rgba(239,68,68,0.3);display:inline-block;white-space:nowrap;min-width:50px;text-align:center}}
 .days-recent{{color:#10b981;font-weight:600}}
-.alert-merged{{font-size:12px;white-space:nowrap;cursor:help;padding:2px 6px;background:#fff1f2;color:#b91c1c;border-radius:4px;border:1px solid #fecdd3;display:inline-block;font-weight:700}}
+.alert-merged{{font-size:12px;white-space:nowrap;cursor:help;padding:2px 6px;background:#fff1f2;color:#b91c1c;border-radius:4px;border:1px solid #fecdd3;display:inline-flex;align-items:center;gap:6px;font-weight:700}}
+.alert-date{{font-size:11px;color:#6b7280;font-weight:400;border-left:1px solid #fecdd3;padding-left:6px}}
 .name-cell{{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:#111827;font-weight:600}}
 @media (max-width:768px){{
 .header{{flex-direction:column;align-items:flex-start;gap:10px;padding:15px}}
@@ -1044,7 +1172,7 @@ a:hover{{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}}
 <div class="legend-block">
 <div class="legend-block-title">列顏色說明</div>
 <table class="legend-table">
-<tr><td class="legend-color-cell" style="background:#fff1f2;border-left:3px solid #dc2626;">&nbsp;&nbsp;&nbsp;&nbsp;</td><td><strong>紅色底</strong>：該工地有警戒值或行動值，需優先關注</td></tr>
+<tr><td class="legend-color-cell" style="background:#fff1f2;border-left:3px solid #dc2626;">&nbsp;&nbsp;&nbsp;&nbsp;</td><td><strong>紅色底</strong>：該工地目前有監測警戒，需優先關注</td></tr>
 <tr><td class="legend-color-cell" style="background:#fefce8;border-left:3px solid #f59e0b;">&nbsp;&nbsp;&nbsp;&nbsp;</td><td><strong>黃色底</strong>：報告超過 30 天未更新，請確認現場狀況</td></tr>
 </table>
 </div>
@@ -1054,7 +1182,7 @@ a:hover{{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}}
 <tr><td class="legend-col-name">雲端報告數</td><td>Google Drive 上該工地的 PDF 報告總數（可點擊開啟資料夾）</td></tr>
 <tr><td class="legend-col-name">AI 辨識數</td><td>已完成 AI 自動讀取 PDF 內容的報告數量</td></tr>
 <tr><td class="legend-col-name">系統處理進度</td><td>AI 辨識數 ÷ 雲端報告數，進度條顯示處理比例</td></tr>
-<tr><td class="legend-col-name">異常紀錄</td><td>⚠️ 警戒值（次）/ 🚨 行動值（次）/ 🔴 超越行動值（次）</td></tr>
+<tr><td class="legend-col-name">監測警戒</td><td>即時監測狀態：⚠️ 警戒值（感測器超過警戒值）/ 🔴 行動值（超過行動值，需立即處理）。日期為最近一次觸發時間</td></tr>
 <tr><td class="legend-col-name">更新間隔</td><td>最近一份報告距今天數，超過 30 天會以紅字標示</td></tr>
 </table>
 </div>
@@ -1064,11 +1192,11 @@ a:hover{{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}}
 
 <div class="attention-section" id="attentionSection">
 <button class="attention-toggle" onclick="toggleAttention()">
-<i class="toggle-arrow">▶</i> ⚠️ 需要處理 — {len(alert_permits)} 個工地有警戒值，{len(stale_permits)} 個工地報告超過 30 天未更新
+<i class="toggle-arrow">▶</i> ⚠️ 需要處理 — {len(alert_permits)} 個工地有監測警戒，{len(stale_permits)} 個工地報告超過 30 天未更新
 </button>
 <div class="attention-body">
 <div class="attention-group">
-<h4>有警戒值的建案 ({len(alert_permits)} 個)</h4>
+<h4>目前有監測警戒的建案 ({len(alert_permits)} 個)</h4>
 <div class="attention-cards">{attention_alert_cards if attention_alert_cards else '<span style="font-size:11px;color:#999">無</span>'}</div>
 </div>
 <div class="attention-group">
@@ -1111,7 +1239,7 @@ a:hover{{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}}
 <th onclick="sortTable(4)" class="col-num">雲端報告數</th>
 <th onclick="sortTable(5)" class="col-num" title="已完成 AI 內容讀取的報告數量">AI 辨識數</th>
 <th onclick="sortTable(6)" class="col-coverage" title="AI 辨識數 ÷ 雲端報告數">系統處理進度</th>
-<th onclick="sortTable(7)" title="⚠️警戒值 / 🚨行動值 / 🔴超越行動值 的發生次數">異常紀錄 ℹ️</th>
+<th onclick="sortTable(7)" title="即時監測警戒狀態（來自系統 API），日期為最近一次警戒觸發時間">監測警戒 ℹ️</th>
 <th onclick="sortTable(8)">最近更新</th>
 <th onclick="sortTable(9)" class="col-num">更新間隔</th>
 <th onclick="sortTable(10)">同步狀態</th>
@@ -1272,7 +1400,7 @@ def generate_csv_report(permit_data: Dict[str, dict], non_google: List[dict], al
 
     sorted_permits = sorted(permit_data.keys(), key=lambda x: permit_data[x].get('latest_report', '') or '', reverse=True)
 
-    lines = ['序號,建照字號,建案名稱,雲端服務,Drive PDF,系統 PDF,覆蓋率,警戒次數,行動次數,Alert次數,最近警戒日期,最新報告,距今天數,狀態']
+    lines = ['序號,建照字號,建案名稱,雲端服務,Drive PDF,系統 PDF,覆蓋率,警戒值項數,行動值項數,最近警戒日期,最新報告,距今天數,狀態']
 
     for i, permit in enumerate(sorted_permits, 1):
         data = permit_data[permit]
@@ -1287,14 +1415,13 @@ def generate_csv_report(permit_data: Dict[str, dict], non_google: List[dict], al
         # 建案名稱
         building_name = permit_names.get(permit, '')
 
-        # 警戒值
+        # 即時警戒值
         permit_alert = alert_data.get(permit, {})
         warning = permit_alert.get('warning_count', 0)
-        action = permit_alert.get('action_count', 0)
-        alert = permit_alert.get('alert_count', 0)
+        danger = permit_alert.get('danger_count', 0)
         latest_alert = permit_alert.get('latest_alert_date', '')[:10] if permit_alert.get('latest_alert_date') else ''
 
-        lines.append(f'{i},"{permit}","{building_name}","{cloud}",{drive},{system},{coverage},{warning},{action},{alert},{latest_alert},{latest},{days},{status}')
+        lines.append(f'{i},"{permit}","{building_name}","{cloud}",{drive},{system},{coverage},{warning},{danger},{latest_alert},{latest},{days},{status}')
 
     with open(OUTPUT_CSV, 'w', encoding='utf-8-sig') as f:
         f.write('\n'.join(lines))
@@ -1333,8 +1460,12 @@ def main():
         system_count = len(system_reports)
         drive_count = info.get('pdf_count', 0)
 
-        # 計算最新報告日期（使用 Google Drive 的修改時間）
+        # 計算最新報告日期（取 Drive 時間和 API 報告時間中較新的）
         latest_report = info.get('latest_pdf', '')
+        for sr in system_reports:
+            api_date = sr.get('created_at', '')
+            if api_date and api_date > latest_report:
+                latest_report = api_date
 
         # 計算天數
         days_since = ''
@@ -1378,24 +1509,37 @@ def main():
                 'cloud_service': item['cloud']
             }
 
-    # 5. 載入警戒資料和建案名稱
-    alert_data, permit_names = load_alert_data()
-
-    # 5b. 從 permit_registry.json 載入交叉比對結果（由 match_permits.py 產生）
+    # 5. 從 permit_registry.json 載入建案名稱和即時警戒值（由 match_permits.py 產生）
     registry_file = './state/permit_registry.json'
+    permit_names = {}
+    alert_data = {}
     if os.path.exists(registry_file):
         with open(registry_file, 'r', encoding='utf-8') as f:
             registry = json.load(f)
-        registry_names = 0
         for permit, info in registry.items():
             reg_name = info.get('name', '')
-            if reg_name and (permit not in permit_names or not permit_names[permit]):
+            if reg_name:
                 permit_names[permit] = reg_name
-                registry_names += 1
-        print(f"  從 permit_registry 載入 {registry_names} 個建案名稱（總計 {len(permit_names)} 個）")
+            # 從 live_alerts 載入即時警戒值
+            la = info.get('live_alerts', {})
+            if la and la.get('total', 0) > 0:
+                alert_data[permit] = {
+                    'warning_count': la.get('warning', 0),
+                    'danger_count': la.get('danger', 0),
+                    'total': la.get('total', 0),
+                    'latest_alert_date': la.get('latest_date', ''),
+                    'details': la.get('details', []),
+                }
+        print(f"  從 permit_registry 載入 {len(permit_names)} 個建案名稱，{len(alert_data)} 個有即時警戒值")
     else:
         print("  ⚠️ permit_registry.json 不存在，請先執行 python3 match_permits.py")
         registry = {}
+
+    # 5b. 補充：從 upload_history 提取名稱（permit_registry 沒涵蓋的）
+    _, history_names = load_alert_data()
+    for permit, name in history_names.items():
+        if name and permit not in permit_names:
+            permit_names[permit] = name
 
     # 5c. 移除 _drive_names（掃描時產生的暫存資料）
     drive_data.pop('_drive_names', None)

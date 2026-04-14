@@ -154,6 +154,39 @@ def fetch_drive_pdf_names(drive_service) -> Dict[str, dict]:
         if not page_token:
             break
 
+    # 掃描所有子資料夾，建立子資料夾 → 建案的遞迴對應
+    all_subfolders = {}  # folder_id → parent_id
+    page_token = None
+    while True:
+        results = drive_service.files().list(
+            q="mimeType='application/vnd.google-apps.folder' and trashed=false",
+            corpora='drive', driveId=SHARED_DRIVE_ID,
+            includeItemsFromAllDrives=True, supportsAllDrives=True,
+            fields='nextPageToken, files(id, parents)',
+            pageSize=1000, pageToken=page_token
+        ).execute()
+        for f in results.get('files', []):
+            parents = f.get('parents', [])
+            if parents:
+                all_subfolders[f['id']] = parents[0]
+        page_token = results.get('nextPageToken')
+        if not page_token:
+            break
+
+    def resolve_permit(folder_id, depth=0):
+        if folder_id in folders:
+            return folders[folder_id]
+        if depth > 5 or folder_id not in all_subfolders:
+            return None
+        result = resolve_permit(all_subfolders[folder_id], depth + 1)
+        if result:
+            folders[folder_id] = result
+        return result
+
+    for fid in list(all_subfolders.keys()):
+        resolve_permit(fid)
+    print(f"  含子資料夾共 {len(folders)} 個資料夾對應")
+
     # 批次掃描所有 PDF
     permit_files = {}  # permit → [filenames]
     page_token = None
@@ -339,10 +372,25 @@ def build_registry():
     report_permits = fetch_api_report_categories()
     live_alerts = fetch_live_alerts()
 
-    # 建立 API project 關鍵字索引（用於模糊匹配）
+    # 建立 API project 關鍵字索引（用於模糊匹配，去重相似名稱）
     api_project_index = {}  # keyword → project info
     for p in api_projects:
         name = p.get('project_name', '')
+        if not name:
+            continue
+        # 去重：如果已有名稱是此名稱的子字串（或反過來），跳過較短的
+        skip = False
+        to_remove = []
+        for existing_name in api_project_index:
+            if name in existing_name:
+                skip = True  # 已有更完整的名稱
+                break
+            if existing_name in name:
+                to_remove.append(existing_name)  # 新名稱更完整，移除舊的
+        for rm in to_remove:
+            del api_project_index[rm]
+        if skip:
+            continue
         alert = p.get('alert_status', {})
         api_project_index[name] = {
             'address': p.get('location_address', ''),
@@ -354,6 +402,7 @@ def build_registry():
             'alert_message': alert.get('message', '') if isinstance(alert, dict) else '',
             'alert_date': alert.get('report_date', '') if isinstance(alert, dict) else '',
         }
+    print(f"  去重後 {len(api_project_index)} 個唯一 project")
 
     # 所有已知的建照號碼
     all_permits = set(gov_data.keys())
@@ -368,6 +417,10 @@ def build_registry():
     for permit in sorted(all_permits):
         entry = registry.get(permit, {})
         changed = False
+        # 每次重新比對時清除舊的 live_alerts（避免殘留錯誤匹配）
+        if 'live_alerts' in entry:
+            del entry['live_alerts']
+            changed = True
 
         # 優先順序合併名稱
         if not entry.get('name'):
@@ -389,45 +442,80 @@ def build_registry():
 
         # 合併 API 資料（用檔名關鍵字匹配）
         if not entry.get('address') and permit in drive_names:
-            # 用 Drive PDF 的名稱在 API projects 中搜尋
             drive_name = drive_names[permit]['name']
+            matched_api = None
+
             for api_name, api_info in api_project_index.items():
-                # 模糊匹配：Drive 名稱出現在 API project name 中
+                # 方法 1: 完整子字串匹配（4+ 字）
                 if len(drive_name) >= 4 and drive_name in api_name:
-                    entry['address'] = api_info['address']
-                    entry['stage'] = api_info['stage']
-                    entry['sensors'] = api_info['sensors']
-                    entry['alert_label'] = api_info['alert_label']
-                    entry['alert_tone'] = api_info['alert_tone']
-                    entry['alert_message'] = api_info['alert_message']
-                    entry['alert_date'] = api_info['alert_date']
-                    entry['api_match'] = api_name
-                    changed = True
+                    matched_api = (api_name, api_info)
                     break
-                # 反向：API name 出現在 Drive 名稱中
                 api_clean = extract_name_from_text(api_name)
                 if len(api_clean) >= 4 and api_clean in drive_name:
-                    entry['address'] = api_info['address']
-                    entry['stage'] = api_info['stage']
-                    entry['sensors'] = api_info['sensors']
-                    entry['alert_label'] = api_info['alert_label']
-                    entry['alert_tone'] = api_info['alert_tone']
-                    entry['alert_message'] = api_info['alert_message']
-                    entry['alert_date'] = api_info['alert_date']
-                    entry['api_match'] = api_name
-                    if not entry.get('name'):
-                        entry['name'] = api_clean
-                        entry['name_source'] = 'api_match'
-                    changed = True
+                    matched_api = (api_name, api_info)
                     break
 
-        # 合併即時警示資料（用名稱匹配）
-        if entry.get('name'):
+            # 方法 2: 滑動視窗匹配（3+ 字，唯一匹配）
+            if not matched_api:
+                drive_cjk = re.sub(r'[^\u4e00-\u9fff]', '', re.sub(r'(安全觀測|監測報表?|觀測報告|觀測數據|報告|報表|數據)', '', drive_name))
+                for flen in range(min(6, len(drive_cjk)), 2, -1):
+                    found = False
+                    for start in range(len(drive_cjk) - flen + 1):
+                        sub = drive_cjk[start:start + flen]
+                        matches = [(n, i) for n, i in api_project_index.items() if sub in n]
+                        if len(matches) == 1:
+                            matched_api = matches[0]
+                            found = True
+                            break
+                    if found:
+                        break
+
+            if matched_api:
+                api_name, api_info = matched_api
+                entry['address'] = api_info['address']
+                entry['stage'] = api_info['stage']
+                entry['sensors'] = api_info['sensors']
+                entry['alert_label'] = api_info['alert_label']
+                entry['alert_tone'] = api_info['alert_tone']
+                entry['alert_message'] = api_info['alert_message']
+                entry['alert_date'] = api_info['alert_date']
+                entry['api_match'] = api_name
+                if not entry.get('name') or entry.get('name_source') == 'drive_pdf':
+                    api_clean = extract_name_from_text(api_name)
+                    if api_clean:
+                        entry['name'] = api_clean
+                        entry['name_source'] = 'api_match'
+                changed = True
+
+        # 合併即時警示資料（用名稱匹配，含 api_match）
+        # 通用名稱不可用於警示匹配（會造成誤配）
+        generic_alert = re.compile(r'^(監測報告|監測報表|安全觀測報告書?|安全監測系統|觀測報告|觀測數據|工地監測數據)')
+        if entry.get('name') or entry.get('api_match'):
+            names_to_try = [n for n in [entry.get('api_match', ''), entry.get('name', '')] if n and not generic_alert.match(n)]
             for alert_project, alert_list in live_alerts.items():
-                # 用建案名稱匹配 API 的 project 名稱
-                entry_name = entry.get('name', '')
-                if (len(entry_name) >= 3 and entry_name in alert_project) or \
-                   (len(alert_project) >= 3 and alert_project in entry_name):
+                matched_alert = False
+                for try_name in names_to_try:
+                    if not try_name:
+                        continue
+                    # 完整子字串匹配
+                    if (len(try_name) >= 3 and try_name in alert_project) or \
+                       (len(alert_project) >= 3 and alert_project in try_name):
+                        matched_alert = True
+                        break
+                    # 滑動視窗匹配（3+ 字，唯一匹配）
+                    cjk = re.sub(r'[^\u4e00-\u9fff]', '', re.sub(r'(安全觀測|監測|觀測|報告|報表|數據|新建工程|工程)', '', try_name))
+                    for flen in range(min(5, len(cjk)), 2, -1):
+                        for start in range(len(cjk) - flen + 1):
+                            sub = cjk[start:start + flen]
+                            alert_matches = [ap for ap in live_alerts.keys() if sub in ap]
+                            if len(alert_matches) == 1 and sub in alert_project:
+                                matched_alert = True
+                                break
+                        if matched_alert:
+                            break
+                    if matched_alert:
+                        break
+                if matched_alert:
                     danger = sum(1 for a in alert_list if a['tone'] == 'danger')
                     warning = sum(1 for a in alert_list if a['tone'] == 'warning')
                     latest_date = max((a['date'] for a in alert_list if a['date']), default='')
