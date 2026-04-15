@@ -903,9 +903,11 @@ def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], a
     # 建立非 Google 查詢表
     non_google_set = {item['permit']: item['cloud'] for item in non_google}
 
-    # 需要關注：有警戒值的建案
+    # 需要關注：有警戒值的建案（只顯示有 AI 辨識紀錄的，避免誤配）
     alert_permits = []
     for permit_key, pdata in permit_data.items():
+        if pdata.get('system_count', 0) == 0:
+            continue  # AI 未對應的建案不顯示警戒值
         pa = alert_data.get(permit_key, {})
         if pa.get('total', 0) > 0:
             wc = pa.get('warning_count', 0)
@@ -1023,7 +1025,8 @@ def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], a
             name_html = esc(building_name) if building_name else '<span class="empty-val">-</span>'
 
         # 即時監測狀態（來自 construction-alerts API）
-        permit_alert = alert_data.get(permit, {})
+        # 只在有 AI 辨識紀錄的建案才顯示警戒值（AI=0 表示名稱匹配不可靠，警戒值可能也是誤配）
+        permit_alert = alert_data.get(permit, {}) if system_count > 0 else {}
         alert_total = permit_alert.get('total', 0)
         warning_count = permit_alert.get('warning_count', 0)
         danger_count = permit_alert.get('danger_count', 0)
