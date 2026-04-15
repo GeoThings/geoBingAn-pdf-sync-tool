@@ -144,10 +144,11 @@ body {{ font-family: "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", sans-s
 
 h2 {{ font-size: 14px; font-weight: 700; margin: 20px 0 8px; padding-bottom: 4px; border-bottom: 2px solid #e5e7eb; color: #1a1a1a; }}
 
-table {{ width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 16px; }}
-th {{ background: #f3f4f6; padding: 6px 8px; text-align: left; font-weight: 600; border-bottom: 2px solid #d1d5db; }}
-td {{ padding: 5px 8px; border-bottom: 1px solid #e5e7eb; white-space: nowrap; }}
-td.wrap {{ white-space: normal; word-break: break-all; }}
+table {{ width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 16px; table-layout: auto; }}
+th {{ background: #f3f4f6; padding: 6px 8px; text-align: left; font-weight: 600; border-bottom: 2px solid #d1d5db; white-space: nowrap; word-break: keep-all; }}
+td {{ padding: 5px 8px; border-bottom: 1px solid #e5e7eb; word-break: keep-all; }}
+td.wrap {{ word-break: normal; overflow-wrap: break-word; }}
+td.name {{ max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }}
 tr:nth-child(even) {{ background: #fafafa; }}
 
 .badge {{ display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; white-space: nowrap; }}
@@ -165,8 +166,8 @@ tr:nth-child(even) {{ background: #fafafa; }}
 .section-warning {{ background: #fffbeb; border: 1px solid #fde68a; }}
 .section-box h3 {{ font-size: 13px; margin-bottom: 8px; }}
 
-.status-bar {{ display: flex; height: 18px; border-radius: 4px; overflow: hidden; margin: 6px 0 14px; }}
-.status-bar div {{ display: flex; align-items: center; justify-content: center; font-size: 9px; color: white; font-weight: 600; }}
+.status-bar {{ display: flex; height: 22px; border-radius: 4px; overflow: hidden; margin: 6px 0 14px; gap: 1px; }}
+.status-bar div {{ display: flex; align-items: center; justify-content: center; font-size: 9px; color: white; font-weight: 600; padding: 0 4px; white-space: nowrap; min-width: fit-content; }}
 
 .footer {{ text-align: center; color: #9ca3af; font-size: 10px; padding: 16px; border-top: 1px solid #e5e7eb; margin-top: 20px; }}
 
@@ -217,7 +218,7 @@ tr:nth-child(even) {{ background: #fafafa; }}
         html += '<tr><th>建照號碼</th><th>工地名稱</th><th>觸發日期</th><th>異常說明</th></tr>'
         for a in s['danger_alerts']:
             detail = '、'.join(a['details']) if a['details'] else '有感測器超過行動值'
-            html += f'<tr><td class="nowrap"><strong>{esc(a["permit"])}</strong></td><td>{esc(a["name"])}</td><td class="nowrap">{esc(a["date"])}</td><td class="wrap">{esc(detail)}</td></tr>'
+            html += f'<tr><td class="nowrap"><strong>{esc(a["permit"])}</strong></td><td class="name">{esc(a["name"])}</td><td class="nowrap">{esc(a["date"])}</td><td>{esc(detail)}</td></tr>'
         html += '</table></div>'
 
     # Warning alerts
@@ -225,7 +226,7 @@ tr:nth-child(even) {{ background: #fafafa; }}
         html += '<div class="section-box section-warning"><h3>⚠️ 警戒值超標建案 — 持續監控</h3><table>'
         html += '<tr><th>建照號碼</th><th>工地名稱</th><th>觸發日期</th></tr>'
         for a in s['warning_alerts']:
-            html += f'<tr><td class="nowrap"><strong>{esc(a["permit"])}</strong></td><td>{esc(a["name"])}</td><td class="nowrap">{esc(a["date"])}</td></tr>'
+            html += f'<tr><td class="nowrap"><strong>{esc(a["permit"])}</strong></td><td class="name">{esc(a["name"])}</td><td class="nowrap">{esc(a["date"])}</td></tr>'
         html += '</table></div>'
 
     # Updated permits
@@ -238,7 +239,7 @@ tr:nth-child(even) {{ background: #fafafa; }}
         progress = f'<div class="progress"><div class="progress-fill" style="width:{pct}%;background:{color}"></div></div> {pct_text}'
         ai_text = str(u['ai']) if u['ai'] > 0 else '<span class="empty">-</span>'
         name = esc(u['name'][:22] + '...' if len(u['name']) > 22 else u['name'])
-        html += f'<tr><td>{i}</td><td class="nowrap"><strong>{esc(u["permit"])}</strong></td><td>{name}</td><td>{u["drive"]}</td><td>{ai_text}</td><td>{progress}</td><td class="nowrap">{u["latest"]}</td></tr>'
+        html += f'<tr><td>{i}</td><td class="nowrap"><strong>{esc(u["permit"])}</strong></td><td class="name">{name}</td><td>{u["drive"]}</td><td>{ai_text}</td><td class="nowrap">{progress}</td><td class="nowrap">{u["latest"]}</td></tr>'
     html += '</table>'
 
     html += f'''
@@ -253,11 +254,52 @@ geoBingAn 究平安 ・ 建案監測週報 ・ {s["report_date"]} 自動產生
 
 
 def html_to_pdf(html_content, output_path):
-    """HTML 轉 PDF"""
-    from weasyprint import HTML
-    HTML(string=html_content).write_pdf(output_path)
-    size_kb = os.path.getsize(output_path) / 1024
-    print(f"  PDF 產生完成: {output_path} ({size_kb:.0f} KB)")
+    """HTML 轉 PDF（使用 Chrome headless，像素級完美渲染）"""
+    import subprocess
+    import tempfile
+
+    # 寫入暫存 HTML
+    html_path = tempfile.mktemp(suffix='.html')
+    with open(html_path, 'w', encoding='utf-8') as f:
+        f.write(html_content)
+
+    # Chrome headless 路徑
+    chrome_paths = [
+        '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+        '/usr/bin/google-chrome',
+        '/usr/bin/chromium-browser',
+    ]
+    chrome = None
+    for p in chrome_paths:
+        if os.path.exists(p):
+            chrome = p
+            break
+
+    if chrome:
+        result = subprocess.run([
+            chrome, '--headless', '--disable-gpu', '--no-sandbox',
+            f'--print-to-pdf={output_path}',
+            '--print-to-pdf-no-header',
+            html_path
+        ], capture_output=True, text=True, timeout=30)
+        os.unlink(html_path)
+        if os.path.exists(output_path):
+            size_kb = os.path.getsize(output_path) / 1024
+            print(f"  PDF 產生完成（Chrome）: {output_path} ({size_kb:.0f} KB)")
+            return
+        print(f"  Chrome PDF 失敗，回退到 weasyprint: {result.stderr[:200]}")
+
+    # 回退到 weasyprint
+    try:
+        from weasyprint import HTML
+        HTML(filename=html_path).write_pdf(output_path)
+        os.unlink(html_path)
+        size_kb = os.path.getsize(output_path) / 1024
+        print(f"  PDF 產生完成（weasyprint）: {output_path} ({size_kb:.0f} KB)")
+    except Exception as e:
+        print(f"  PDF 產生失敗: {e}")
+        if os.path.exists(html_path):
+            os.unlink(html_path)
 
 
 def upload_to_clickup(pdf_path, summary_text):
