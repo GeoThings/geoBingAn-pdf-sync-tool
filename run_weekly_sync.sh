@@ -222,6 +222,14 @@ FAILED_COUNT=$(grep -c "上傳失敗" "$LOG_FILE" 2>/dev/null | head -1 | tr -d 
 [[ "$UPLOADED_COUNT" =~ ^[0-9]+$ ]] || UPLOADED_COUNT=0
 [[ "$FAILED_COUNT" =~ ^[0-9]+$ ]] || FAILED_COUNT=0
 
+# 步驟 2.5: 建案名稱交叉比對
+echo "" | tee -a "$LOG_FILE"
+echo "🔍 步驟 2.5: 建案名稱交叉比對..." | tee -a "$LOG_FILE"
+echo "----------------------------------------" | tee -a "$LOG_FILE"
+if ! python3 "$SCRIPT_DIR/match_permits.py" 2>&1 | tee -a "$LOG_FILE"; then
+    echo "⚠️  名稱比對失敗，使用現有 registry 繼續" | tee -a "$LOG_FILE"
+fi
+
 # 步驟 3: 生成建照監測追蹤報告
 # 如果步驟 2 失敗，跳過報告生成（會使用不完整的資料）
 if [ $STEP2_FAILED -ne 0 ]; then
@@ -229,7 +237,7 @@ if [ $STEP2_FAILED -ne 0 ]; then
     echo "⚠️  步驟 2 失敗，跳過步驟 3（報告會使用不完整的資料）" | tee -a "$LOG_FILE"
 else
 echo "" | tee -a "$LOG_FILE"
-echo "📊 步驟 3/4: 生成建照監測追蹤報告..." | tee -a "$LOG_FILE"
+echo "📊 步驟 3/6: 生成建照監測追蹤報告..." | tee -a "$LOG_FILE"
 echo "----------------------------------------" | tee -a "$LOG_FILE"
 if ! python3 "$SCRIPT_DIR/generate_permit_tracking_report.py" 2>&1 | tee -a "$LOG_FILE"; then
     handle_error "步驟3" "生成報告失敗"
@@ -256,7 +264,7 @@ fi
 
 # 提交並推送到 GitHub（檢查報告或上傳歷史是否有變更）
 cd "$SCRIPT_DIR"
-git add docs/index.html state/permit_tracking_report.html state/permit_tracking.csv state/upload_history_all.json 2>/dev/null || true
+git add docs/index.html state/permit_tracking_report.html state/permit_tracking.csv state/upload_history_all.json state/permit_registry.json 2>/dev/null || true
 if git diff --cached --quiet 2>/dev/null; then
     echo "ℹ️  無任何變更，跳過推送" | tee -a "$LOG_FILE"
 else
@@ -270,6 +278,16 @@ else
     else
         handle_error "步驟4" "Git commit 失敗"
     fi
+fi
+
+# 步驟 5: 產生週報 PDF 並上傳到 ClickUp
+echo "" | tee -a "$LOG_FILE"
+echo "📄 步驟 5/5: 產生同步週報 PDF..." | tee -a "$LOG_FILE"
+echo "----------------------------------------" | tee -a "$LOG_FILE"
+if python3 "$SCRIPT_DIR/generate_weekly_report.py" --type sync --upload 2>&1 | tee -a "$LOG_FILE"; then
+    echo "✅ 週報已上傳到 ClickUp" | tee -a "$LOG_FILE"
+else
+    echo "⚠️  週報產生或上傳失敗（不影響同步結果）" | tee -a "$LOG_FILE"
 fi
 
 # cleanup 會在 EXIT trap 中執行
