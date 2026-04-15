@@ -479,10 +479,23 @@ def fetch_api_reports() -> Dict[str, List[dict]]:
 
     print(f"  共取得 {len(all_reports)} 筆報告")
 
+    # 高信度匹配：api_match 名稱 → permit（已通過 construction-projects API 驗證）
+    registry_file = './state/permit_registry.json'
+    api_name_to_permits = {}  # api_match name → [permits]（支援多對一）
+    if os.path.exists(registry_file):
+        with open(registry_file, 'r', encoding='utf-8') as f:
+            _reg_tmp = json.load(f)
+        for permit, info in _reg_tmp.items():
+            api_match = info.get('api_match', '')
+            if api_match and len(api_match) >= 4:
+                if api_match not in api_name_to_permits:
+                    api_name_to_permits[api_match] = []
+                api_name_to_permits[api_match].append(permit)
+        print(f"  高信度 API 名稱: {len(api_name_to_permits)} 個")
+
     # 從 permit_registry.json + construction-projects API 建立名稱對應
     name_to_permit_fuzzy = {}  # 完整名稱 → permit
-    fragment_to_permit = {}    # 名稱片段（≥3字） → permit（唯一對應才使用）
-    registry_file = './state/permit_registry.json'
+    fragment_to_permit = {}    # 名稱片段（≥4字） → permit（唯一對應才使用）
     if os.path.exists(registry_file):
         with open(registry_file, 'r', encoding='utf-8') as f:
             registry = json.load(f)
@@ -537,6 +550,35 @@ def fetch_api_reports() -> Dict[str, List[dict]]:
         else:
             # 方法 2: 從上傳記錄對應
             permit = filename_to_permit.get(filename)
+
+        # 方法 2.5: 高信度 API 名稱匹配（api_match 已驗證的名稱）
+        if not permit and api_name_to_permits:
+            fn_clean_api = re.sub(r'\d{7,8}|\d{4}[-/.]\d{2}[-/.]\d{2}|\.pdf$|[^\u4e00-\u9fff\w\s-]', '', filename)
+            best_permits = None
+            best_api_len = 0
+            for api_name, permits_list in api_name_to_permits.items():
+                # 從 API 名稱逐步去除通用後綴，提取核心名稱
+                api_core = api_name
+                for _ in range(3):
+                    api_core = re.sub(r'[-\s]*(新建工程|監測案|新建統包工程|集合住宅|住宅大樓|商辦大樓|店鋪|工程|監測)$', '', api_core).strip()
+                if len(api_core) >= 3 and api_core in fn_clean_api and len(api_core) > best_api_len:
+                    best_permits = permits_list
+                    best_api_len = len(api_core)
+            if best_permits:
+                # 將報告分配給所有對應的 permit
+                for p in best_permits:
+                    if p not in permit_reports:
+                        permit_reports[p] = []
+                    existing = {r['filename'] for r in permit_reports[p]}
+                    if filename not in existing:
+                        permit_reports[p].append({
+                            'filename': filename,
+                            'created_at': report.get('created_at', ''),
+                            'status': report.get('parse_status', report.get('status', ''))
+                        })
+                matched += 1
+                fuzzy_matched += 1
+                continue  # 跳過後續匹配
 
         # 方法 3: 用 permit_registry 名稱模糊匹配
         if not permit and name_to_permit_fuzzy:
