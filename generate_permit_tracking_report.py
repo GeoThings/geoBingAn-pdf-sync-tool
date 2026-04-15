@@ -1069,7 +1069,7 @@ def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], a
 <td class="name-cell">{name_html}</td>
 <td>{cloud_badge}</td>
 <td class="col-num">{drive_link}</td>
-<td class="col-num">{system_count}</td>
+<td class="col-num">{system_count if system_count > 0 else ('<span class="empty-val">-</span>' if drive_count == 0 else '<span class="empty-val" title="PDF 已在雲端，尚未對應到 AI 分析結果">-</span>')}</td>
 <td>{coverage_html}</td>
 <td>{merged_alert_html}</td>
 <td>{latest_html}</td>
@@ -1234,7 +1234,7 @@ a:hover{{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}}
 <div class="legend-block-title">欄位說明</div>
 <table class="legend-table">
 <tr><td class="legend-col-name">雲端報告數</td><td>Google Drive 上該工地的 PDF 報告總數（可點擊開啟資料夾）</td></tr>
-<tr><td class="legend-col-name">AI 辨識數</td><td>已完成 AI 自動讀取 PDF 內容的報告數量</td></tr>
+<tr><td class="legend-col-name">AI 辨識數</td><td>已對應到此建案的 AI 分析報告數量。顯示 - 表示系統尚未對應（PDF 可能已上傳但檔名無法自動匹配）</td></tr>
 <tr><td class="legend-col-name">系統處理進度</td><td>AI 辨識數 ÷ 雲端報告數，進度條顯示處理比例</td></tr>
 <tr><td class="legend-col-name">監測警戒</td><td>即時監測狀態：⚠️ 警戒值（感測器超過警戒值）/ 🔴 行動值（超過行動值，需立即處理）。日期為最近一次觸發時間</td></tr>
 <tr><td class="legend-col-name">更新間隔</td><td>最近一份報告距今天數，超過 30 天會以紅字標示</td></tr>
@@ -1291,7 +1291,7 @@ a:hover{{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}}
 <th onclick="sortTable(2)">工地名稱</th>
 <th onclick="sortTable(3)" class="col-cloud">資料來源</th>
 <th onclick="sortTable(4)" class="col-num">雲端報告數</th>
-<th onclick="sortTable(5)" class="col-num" title="已完成 AI 內容讀取的報告數量">AI 辨識數</th>
+<th onclick="sortTable(5)" class="col-num" title="已對應到此建案的 AI 分析報告數量。- 表示尚未對應">AI 辨識數</th>
 <th onclick="sortTable(6)" class="col-coverage" title="AI 辨識數 ÷ 雲端報告數">系統處理進度</th>
 <th onclick="sortTable(7)" title="即時監測警戒狀態（來自系統 API），日期為最近一次警戒觸發時間">監測警戒 ℹ️</th>
 <th onclick="sortTable(8)">最近更新</th>
