@@ -1,6 +1,6 @@
 # 系統架構設計文件
 
-> geoBingAn PDF 同步上傳工具 v4.1 架構說明
+> geoBingAn PDF 同步上傳工具 v4.2 架構說明
 
 ## 系統概覽
 
@@ -108,31 +108,36 @@ Shared Drive（批次查詢，~12 次分頁 API 呼叫）
 6 個資料來源交叉比對：
 ├── 1. 台北市政府 PDF（建照清單 + 來源資料夾名稱）
 ├── 2. Google Drive 來源資料夾名稱
-├── 3. Google Drive PDF 檔名（最大來源，288 筆）
-├── 4. riskmap.today API construction-projects
+├── 3. Google Drive PDF 檔名（含子資料夾遞迴掃描，26,820 個 PDF）
+├── 4. riskmap.today API construction-projects（580 個，去重 + 滑動視窗匹配）
 ├── 5. riskmap.today API construction-reports
 └── 6. riskmap.today API construction-alerts（即時警戒值）
     │
-    ▼ 名稱清理（extract_name_from_filename）
+    ▼ 名稱清理（extract_name_from_filename，支援括號格式）
     │
-    ▼ 優先順序合併（手動確認 > alert > api > drive_pdf > source_folder）
+    ▼ 通用名稱過濾（監測、監測報告、工地監測數據等不用於匹配）
+    │
+    ▼ 優先順序合併（手動確認 > alert_csv > api_match > drive_pdf > source_folder）
+    │
+    ▼ 名稱優化（API 名稱自動取代通用/短名稱）
     │
     ▼ 產出 state/permit_registry.json
-        396 筆建案，362 筆有名稱（91%），16 筆有即時警戒
+        411 筆建案，378 筆有名稱（92%），66 筆有即時警戒
 
 手動確認：31 筆建案名稱已由使用者逐一確認
+API project 匹配：116 筆（滑動視窗 + 去重）
 ```
 
 ### 步驟 3：generate_permit_tracking_report.py
 
 ```
 資料來源（4 路合併）：
-├── Google Drive（批次查詢 + unique filename 去重）
-├── riskmap.today API（18,900+ 筆報告）
+├── Google Drive（批次查詢 + 子資料夾遞迴 + unique filename 去重）
+├── riskmap.today API（19,000+ 筆報告，名稱模糊匹配 15,002 筆對應）
 ├── 台北市政府 PDF（建照清單 + 來源資料夾名稱）
 └── state/permit_registry.json（建案名稱 + 即時警戒值）
     │
-    ▼ 合併 + html.escape() + 名稱載入（6 來源交叉比對，91% 覆蓋）
+    ▼ 合併 + html.escape() + 名稱載入（6 來源交叉比對，92% 覆蓋）
     │
     ▼ 已結案標記（建照年份 ≤ 110 年且無系統報告）
     │
