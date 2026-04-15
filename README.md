@@ -268,13 +268,16 @@ python3 generate_permit_tracking_report.py
 **執行順序：**
 1. `sync_permits.py` - 同步最新 PDF 到 Google Drive
 2. `upload_pdfs.py` - 上傳最近 7 天的 PDF 到 Backend
-3. `generate_permit_tracking_report.py` - 生成追蹤報告
-4. Git push - 更新線上報告
+3. `match_permits.py` - 建案名稱交叉比對（6 來源）
+4. `generate_permit_tracking_report.py` - 生成追蹤報告
+5. Git push - 更新線上報告
+6. `generate_weekly_report.py` - 產生週報 PDF 並上傳到 ClickUp
 
 **自動化功能：**
 - 執行狀態追蹤（`state/sync_status.json`）
 - 失敗時發送通知（LINE Notify / macOS）
 - 完成時發送摘要通知
+- 週報 PDF 自動產生並上傳 ClickUp
 - 錯誤處理與自動清理
 
 **日誌管理：**
@@ -299,28 +302,17 @@ python3 -c "from sync_status import SyncStatus; SyncStatus().print_summary()"
 
 ## ⏰ 定期執行設定
 
-### Cron Job（已設定）
+### Cron Job
 
 ```bash
-# 查看當前排程
-crontab -l
+# 週一 09:00 — 完整同步 + 同步週報
+0 9 * * 1 /path/to/run_weekly_sync.sh
 
-# 當前設定：每週一早上 9:00
-0 9 * * 1 /Users/geothingsmacbookair/Documents/GitHub/geoBingAn-pdf-sync-tool/run_weekly_sync.sh
-```
+# 週五 18:00 — 總結週報 PDF
+0 18 * * 5 /path/to/run_friday_report.sh
 
-### 修改排程時間
-
-```bash
-# 編輯 crontab
-crontab -e
-
-# Cron 格式：分 時 日 月 星期
-# 範例：每週三下午 3:00
-0 15 * * 3 /path/to/run_weekly_sync.sh
-
-# 範例：每天早上 8:00
-0 8 * * * /path/to/run_weekly_sync.sh
+# 每日 08:00 — 健康檢查（Token、磁碟、API）
+0 8 * * * cd /path/to && venv/bin/python3 health_check.py --notify
 ```
 
 ---
@@ -362,12 +354,15 @@ geoBingAn-pdf-sync-tool/
 ├── sync_permits.py                    # 核心：同步 PDF from 台北市政府
 ├── upload_pdfs.py                     # 核心：上傳 PDF to Backend API
 ├── match_permits.py                   # 核心：建案名稱 6 來源交叉比對
-├── generate_permit_tracking_report.py # 核心：生成建案追蹤報告
-├── run_weekly_sync.sh                 # 核心：自動執行腳本
+├── generate_permit_tracking_report.py # 核心：生成建案追蹤報告（HTML）
+├── generate_weekly_report.py          # 核心：生成週報 PDF + 上傳 ClickUp
+├── run_weekly_sync.sh                 # 核心：週一自動執行腳本
+├── run_friday_report.sh               # 核心：週五總結週報腳本
 │
 ├── config.py                    # 設定載入（從 .env 讀取）
 ├── filename_date_parser.py      # 檔名日期解析模組（獨立可測試）
 ├── jwt_auth.py                  # JWT Token 管理模組（thread-safe）
+├── health_check.py              # 每日健康檢查（Token / 磁碟 / API）
 ├── notify.py                    # 通知模組（LINE / macOS）
 ├── sync_status.py               # 狀態追蹤模組
 ├── record_sync_result.py        # 執行結果記錄
@@ -580,6 +575,17 @@ Service Account 只需要：
 
 ## 📝 版本歷史
 
+### v4.3.0 (2026-04-15)
+- ✅ 全自動化流程：sync → upload → match_permits → report → git push → 週報 PDF → ClickUp
+- ✅ 新增 `generate_weekly_report.py`：自動產生 A4 週報 PDF（Chrome headless 渲染）
+- ✅ 新增 `run_friday_report.sh`：週五 18:00 自動產生總結週報
+- ✅ 週報自動上傳 ClickUp task comment（task ID: 86ex8u782）
+- ✅ 報告優化：AI=0 顯示 `-`、狀態改為「部分對應」「待上傳」
+- ✅ 警戒值只在有 AI 辨識的建案顯示（避免誤配混淆）
+- ✅ 通用名稱清理：35 個壞名稱修正/清空
+- ✅ 高信度 API 匹配：支援多 permit 共用同一 api_match
+- ✅ 括號名稱解析：`(嘉鎷)115.01監測月報.pdf` → 嘉鎷
+
 ### v4.2.0 (2026-04-15)
 - ✅ 遞迴掃描子資料夾：18,931 → 26,820 個 PDF（+7,889 個來自 1,222 個子資料夾）
 - ✅ API 報告模糊匹配：名稱滑動視窗匹配，對應成功 15,002 筆
@@ -741,4 +747,4 @@ MIT License
 ---
 
 **維護者**: geoBingAn Team
-**最後更新**: 2026-04-15
+**最後更新**: 2026-04-15 v4.3

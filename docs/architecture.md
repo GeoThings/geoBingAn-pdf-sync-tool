@@ -1,6 +1,6 @@
 # 系統架構設計文件
 
-> geoBingAn PDF 同步上傳工具 v4.2 架構說明
+> geoBingAn PDF 同步上傳工具 v4.3 架構說明
 
 ## 系統概覽
 
@@ -17,7 +17,20 @@
                     └──────────────────┘     └──────────────┘
                generate_permit_tracking_report.py
                          步驟 3                  步驟 4
+
+                    ┌──────────────────┐     ┌──────────────┐
+                    │  週報 PDF         │────▶│   ClickUp    │
+                    └──────────────────┘     └──────────────┘
+               generate_weekly_report.py
+                         步驟 5
 ```
+
+### 自動化排程
+
+| 時間 | 觸發腳本 | 內容 |
+|------|----------|------|
+| 週一 09:00 | `run_weekly_sync.sh` | 完整流程（步驟 1-5） |
+| 週五 18:00 | `run_friday_report.sh` | 總結週報 PDF → ClickUp |
 
 ## 模組依賴關係
 
@@ -35,10 +48,15 @@ run_weekly_sync.sh（orchestrator）
 │   ├── config.py → .env
 │   └── jwt_auth.py          ← 共用 JWT 管理
 │
-└── generate_permit_tracking_report.py
-    ├── config.py → .env
-    ├── jwt_auth.py          ← 共用 JWT 管理
-    └── state/permit_registry.json  ← 從 match_permits.py 產出
+├── generate_permit_tracking_report.py
+│   ├── config.py → .env
+│   ├── jwt_auth.py          ← 共用 JWT 管理
+│   └── state/permit_registry.json  ← 從 match_permits.py 產出
+│
+└── generate_weekly_report.py        ← 週報 PDF + ClickUp 上傳
+    ├── state/permit_system_mapping.json
+    ├── state/permit_registry.json
+    └── Chrome headless（PDF 渲染）
 ```
 
 ### 獨立可測試模組
