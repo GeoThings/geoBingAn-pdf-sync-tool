@@ -485,17 +485,17 @@ def fetch_api_reports() -> Dict[str, List[dict]]:
         # 收集所有名稱片段（用於去重）
         fragment_permits = {}  # fragment → set of permits
         # 通用名稱和太短的名稱不可用於模糊匹配（會造成大量誤配）
-        generic_patterns = re.compile(r'^(監測報告?|監測報表|安全觀測報告書?|安全監測系統|觀測報告|觀測數據|工地監測數據)')
+        generic_patterns = re.compile(r'^(監測報告?|監測報表?|監測$|安全觀測報告書?|安全觀測系統|安全監測系統|觀測報告|觀測數據|工地監測報告?|工地監測數據|報告$|報表$|工地$)')
         for permit, info in registry.items():
             name = info.get('name', '')
-            if name and len(name) >= 3 and not generic_patterns.match(name):
+            if name and len(name) >= 4 and not generic_patterns.match(name):
                 name_to_permit_fuzzy[name] = permit
                 # 提取 3~6 字的滑動視窗片段（≥3字避免公司名/地名誤匹配）
                 clean = re.sub(r'(安全觀測|監測報表?|觀測報告|觀測數據|新建工程|工程|報告|報表|數據)', '', name)
                 # 只保留中文字元片段
                 cjk_parts = re.findall(r'[\u4e00-\u9fff]+', clean)
                 for part in cjk_parts:
-                    for flen in range(3, min(7, len(part) + 1)):
+                    for flen in range(4, min(7, len(part) + 1)):
                         for start in range(len(part) - flen + 1):
                             frag = part[start:start + flen]
                             if frag not in fragment_permits:
@@ -552,12 +552,12 @@ def fetch_api_reports() -> Dict[str, List[dict]]:
                         best_match = p
                         best_len = len(frag)
                         break
-            # 3c: 反向匹配 — 從檔名提取 2~5 字子片段，在 registry 名稱中搜尋（唯一匹配才採用）
+            # 3c: 反向匹配 — 從檔名提取 4~6 字子片段，在 registry 名稱中搜尋（唯一匹配才採用）
             if not best_match and name_to_permit_fuzzy:
-                fn_clean = re.sub(r'\d{7,8}|\d{4}[-/.]\d{2}[-/.]\d{2}|\.pdf$|監測報告|觀測報告|觀測數據|報告|報表|[^\u4e00-\u9fff]', '', filename)
+                fn_clean = re.sub(r'\d{7,8}|\d{4}[-/.]\d{2}[-/.]\d{2}|\.pdf$|監測報告|觀測報告|觀測數據|報告|報表|新建工程|集合住宅|住宅大樓|安全觀測|安全監測|[^\u4e00-\u9fff]', '', filename)
                 cjk_text = ''.join(re.findall(r'[\u4e00-\u9fff]+', fn_clean))
-                # 從長到短嘗試，找到唯一匹配就停
-                for flen in range(min(5, len(cjk_text)), 1, -1):
+                # 從長到短嘗試，最短 4 字（避免短片段誤配）
+                for flen in range(min(6, len(cjk_text)), 3, -1):
                     found = False
                     for start in range(len(cjk_text) - flen + 1):
                         sub = cjk_text[start:start + flen]
