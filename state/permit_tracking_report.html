@@ -115,13 +115,13 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <div class="container">
 <div class="header">
 <div><h1>建照監測追蹤報告</h1></div>
-<div class="meta">2026年04月15日 12:26 | 自動生成</div>
+<div class="meta">2026年04月15日 12:48 | 自動生成</div>
 </div>
 <div class="stats">
 <div class="stat" title="台北市政府列管的建案監測數量"><div class="label">監測建案總數</div><div class="value">504</div></div>
 <div class="stat" title="所有報告都已上傳到究平安系統完成分析"><div class="label">已完成上傳</div><div class="value" style="color:#22c55e">90</div></div>
-<div class="stat" title="報告已上傳，AI 正在讀取 PDF 內容"><div class="label">AI 處理中</div><div class="value" style="color:#3b82f6">119</div></div>
-<div class="stat" title="雲端有報告，系統排隊等待自動同步中"><div class="label">等待同步</div><div class="value" style="color:#f59e0b">102</div></div>
+<div class="stat" title="部分報告已對應到 AI 分析結果"><div class="label">部分對應</div><div class="value" style="color:#3b82f6">119</div></div>
+<div class="stat" title="雲端有報告但尚未對應到 AI 分析"><div class="label">待上傳</div><div class="value" style="color:#f59e0b">102</div></div>
 <div class="stat" title="雲端資料夾中沒有任何 PDF 報告"><div class="label">尚無監測資料</div><div class="value" style="color:#6b7280">60</div></div>
 <div class="stat" title="最後更新超過一年，建案可能已完工"><div class="label">已結案</div><div class="value" style="color:#9ca3af">133</div></div>
 <div class="stat" title="使用 SharePoint、Dropbox 等其他雲端服務"><div class="label">非 Google Drive</div><div class="value" style="color:#c2410c">59</div></div>
@@ -138,8 +138,8 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <div class="legend-block-title">同步狀態說明</div>
 <table class="legend-table">
 <tr><td><span class="badge badge-success">已完成</span></td><td>所有雲端報告皆已上傳並完成分析</td></tr>
-<tr><td><span class="badge badge-info">AI 處理中</span></td><td>報告已上傳，AI 正在自動讀取 PDF 內容，無需操作</td></tr>
-<tr><td><span class="badge badge-warning">等待同步</span></td><td>雲端有報告，系統排隊等待自動同步，無需手動操作</td></tr>
+<tr><td><span class="badge badge-info">部分對應</span></td><td>部分報告已對應到 AI 分析結果，其餘因檔名無法自動匹配</td></tr>
+<tr><td><span class="badge badge-warning">待上傳</span></td><td>雲端有報告但尚未對應到 AI 分析，可能尚未上傳或檔名無法匹配</td></tr>
 <tr><td><span class="badge badge-gray">無資料</span></td><td>雲端資料夾目前沒有任何 PDF 報告</td></tr>
 <tr><td><span class="badge badge-danger">異常</span></td><td>同步或上傳過程中發生錯誤，請聯絡技術人員</td></tr>
 </table>
@@ -249,8 +249,8 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <div class="filter-group">
 <button class="btn active" onclick="filterStatus(this,'')">全部</button>
 <button class="btn" onclick="filterStatus(this,'completed')">已完成</button>
-<button class="btn" onclick="filterStatus(this,'in_progress')">AI 處理中</button>
-<button class="btn" onclick="filterStatus(this,'not_uploaded')">等待同步</button>
+<button class="btn" onclick="filterStatus(this,'in_progress')">部分對應</button>
+<button class="btn" onclick="filterStatus(this,'not_uploaded')">待上傳</button>
 <button class="btn" onclick="filterStatus(this,'other_cloud')">需手動處理</button>
 <button class="btn" onclick="filterStatus(this,'needs_attention')">需要處理</button>
 </div>
@@ -284,7 +284,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-04-13</td>
 <td class="col-num"><span class="days" data-date="2026-04-13"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-04-13" class="">
 <td>2</td>
@@ -297,7 +297,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-04-13</td>
 <td class="col-num"><span class="days" data-date="2026-04-13"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-04-13" class="">
 <td>3</td>
@@ -310,7 +310,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-04-13</td>
 <td class="col-num"><span class="days" data-date="2026-04-13"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="1" data-latest-date="2026-04-13" class="row-alert">
 <td>4</td>
@@ -323,7 +323,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="alert-merged" title="有感測器超過行動值">🔴 行動值1項<span class="alert-date">1/14</span></span></td>
 <td>2026-04-13</td>
 <td class="col-num"><span class="days" data-date="2026-04-13"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="1" data-latest-date="2026-04-13" class="row-alert">
 <td>5</td>
@@ -336,7 +336,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="alert-merged" title="有感測器超過警戒值">⚠️ 警戒值1項<span class="alert-date">4/13</span></span></td>
 <td>2026-04-13</td>
 <td class="col-num"><span class="days" data-date="2026-04-13"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-04-13" class="">
 <td>6</td>
@@ -362,7 +362,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-04-13</td>
 <td class="col-num"><span class="days" data-date="2026-04-13"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-04-13" class="">
 <td>8</td>
@@ -388,7 +388,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-04-13</td>
 <td class="col-num"><span class="days" data-date="2026-04-13"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-04-13" class="">
 <td>10</td>
@@ -401,7 +401,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-04-13</td>
 <td class="col-num"><span class="days" data-date="2026-04-13"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="1" data-latest-date="2026-04-13" class="row-alert">
 <td>11</td>
@@ -414,7 +414,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="alert-merged" title="有感測器超過警戒值">⚠️ 警戒值1項<span class="alert-date">3/2</span></span></td>
 <td>2026-04-13</td>
 <td class="col-num"><span class="days" data-date="2026-04-13"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-04-13" class="">
 <td>12</td>
@@ -427,7 +427,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-04-13</td>
 <td class="col-num"><span class="days" data-date="2026-04-13"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="1" data-latest-date="2026-04-13" class="row-alert">
 <td>13</td>
@@ -440,7 +440,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="alert-merged" title="有感測器超過行動值">🔴 行動值1項<span class="alert-date">2/12</span></span></td>
 <td>2026-04-13</td>
 <td class="col-num"><span class="days" data-date="2026-04-13"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-04-13" class="">
 <td>14</td>
@@ -453,7 +453,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-04-13</td>
 <td class="col-num"><span class="days" data-date="2026-04-13"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-04-13" class="">
 <td>15</td>
@@ -466,7 +466,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-04-13</td>
 <td class="col-num"><span class="days" data-date="2026-04-13"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-04-13" class="">
 <td>16</td>
@@ -479,7 +479,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-04-13</td>
 <td class="col-num"><span class="days" data-date="2026-04-13"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-04-07" class="">
 <td>17</td>
@@ -505,7 +505,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-04-07</td>
 <td class="col-num"><span class="days" data-date="2026-04-07"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-04-07" class="">
 <td>19</td>
@@ -531,7 +531,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-04-02</td>
 <td class="col-num"><span class="days" data-date="2026-04-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="1" data-latest-date="2026-04-02" class="row-alert">
 <td>21</td>
@@ -544,7 +544,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="alert-merged" title="有感測器超過警戒值">⚠️ 警戒值1項<span class="alert-date">4/13</span></span></td>
 <td>2026-04-02</td>
 <td class="col-num"><span class="days" data-date="2026-04-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-04-02" class="">
 <td>22</td>
@@ -557,7 +557,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-04-02</td>
 <td class="col-num"><span class="days" data-date="2026-04-02"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-04-02" class="">
 <td>23</td>
@@ -570,7 +570,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-04-02</td>
 <td class="col-num"><span class="days" data-date="2026-04-02"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-04-02" class="">
 <td>24</td>
@@ -583,7 +583,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-04-02</td>
 <td class="col-num"><span class="days" data-date="2026-04-02"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-04-02" class="">
 <td>25</td>
@@ -609,7 +609,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-04-02</td>
 <td class="col-num"><span class="days" data-date="2026-04-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-04-02" class="">
 <td>27</td>
@@ -622,7 +622,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-04-02</td>
 <td class="col-num"><span class="days" data-date="2026-04-02"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-04-02" class="">
 <td>28</td>
@@ -635,7 +635,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-04-02</td>
 <td class="col-num"><span class="days" data-date="2026-04-02"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="1" data-latest-date="2026-04-02" class="row-alert">
 <td>29</td>
@@ -648,7 +648,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="alert-merged" title="有感測器超過行動值">🔴 行動值1項<span class="alert-date">1/12</span></span></td>
 <td>2026-04-02</td>
 <td class="col-num"><span class="days" data-date="2026-04-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-04-02" class="">
 <td>30</td>
@@ -661,7 +661,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-04-02</td>
 <td class="col-num"><span class="days" data-date="2026-04-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-04-02" class="">
 <td>31</td>
@@ -674,7 +674,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-04-02</td>
 <td class="col-num"><span class="days" data-date="2026-04-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="1" data-latest-date="2026-04-02" class="row-alert">
 <td>32</td>
@@ -687,7 +687,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="alert-merged" title="有感測器超過警戒值">⚠️ 警戒值1項<span class="alert-date">1/19</span></span></td>
 <td>2026-04-02</td>
 <td class="col-num"><span class="days" data-date="2026-04-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-04-02" class="">
 <td>33</td>
@@ -713,7 +713,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-04-02</td>
 <td class="col-num"><span class="days" data-date="2026-04-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-04-01" class="">
 <td>35</td>
@@ -726,7 +726,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-04-01</td>
 <td class="col-num"><span class="days" data-date="2026-04-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="1" data-latest-date="2026-04-01" class="row-alert">
 <td>36</td>
@@ -739,7 +739,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="alert-merged" title="有感測器超過警戒值">⚠️ 警戒值1項<span class="alert-date">12/23</span></span></td>
 <td>2026-04-01</td>
 <td class="col-num"><span class="days" data-date="2026-04-01"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-04-01" class="">
 <td>37</td>
@@ -752,7 +752,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-04-01</td>
 <td class="col-num"><span class="days" data-date="2026-04-01"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-04-01" class="">
 <td>38</td>
@@ -804,7 +804,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-04-01</td>
 <td class="col-num"><span class="days" data-date="2026-04-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-04-01" class="">
 <td>42</td>
@@ -830,7 +830,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-04-01</td>
 <td class="col-num"><span class="days" data-date="2026-04-01"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-03-02" class="">
 <td>44</td>
@@ -843,7 +843,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-03-02" class="">
 <td>45</td>
@@ -856,7 +856,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-03-02" class="">
 <td>46</td>
@@ -869,7 +869,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-03-02" class="">
 <td>47</td>
@@ -908,7 +908,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="alert-merged" title="有感測器超過行動值">🔴 行動值1項<span class="alert-date">3/2</span></span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-03-02" class="">
 <td>50</td>
@@ -934,7 +934,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-03-02" class="">
 <td>52</td>
@@ -973,7 +973,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="alert-merged" title="多項感測器嚴重超標">🔴 行動值1項<span class="alert-date">3/2</span></span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-03-02" class="">
 <td>55</td>
@@ -999,7 +999,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-03-02" class="">
 <td>57</td>
@@ -1025,7 +1025,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="alert-merged" title="有感測器超過警戒值">⚠️ 警戒值1項<span class="alert-date">3/2</span></span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-03-02" class="">
 <td>59</td>
@@ -1038,7 +1038,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-03-02" class="">
 <td>60</td>
@@ -1051,7 +1051,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="1" data-latest-date="2026-03-02" class="row-alert">
 <td>61</td>
@@ -1064,7 +1064,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="alert-merged" title="有感測器超過行動值">🔴 行動值1項<span class="alert-date">3/2</span></span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="1" data-latest-date="2026-03-02" class="row-alert">
 <td>62</td>
@@ -1090,7 +1090,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="alert-merged" title="有感測器超過行動值">🔴 行動值1項<span class="alert-date">3/2</span></span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-03-02" class="">
 <td>64</td>
@@ -1116,7 +1116,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="alert-merged" title="有感測器超過警戒值">⚠️ 警戒值1項<span class="alert-date">1/13</span></span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-03-02" class="">
 <td>66</td>
@@ -1129,7 +1129,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-03-02" class="">
 <td>67</td>
@@ -1155,7 +1155,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-03-02" class="">
 <td>69</td>
@@ -1168,7 +1168,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-03-02" class="">
 <td>70</td>
@@ -1194,7 +1194,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-03-02" class="">
 <td>72</td>
@@ -1207,7 +1207,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-03-02" class="">
 <td>73</td>
@@ -1272,7 +1272,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="alert-merged" title="有感測器超過警戒值">⚠️ 警戒值1項<span class="alert-date">12/8</span></span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-03-02" class="">
 <td>78</td>
@@ -1298,7 +1298,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="1" data-latest-date="2026-03-02" class="row-alert">
 <td>80</td>
@@ -1311,7 +1311,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="alert-merged" title="有感測器超過警戒值">⚠️ 警戒值1項<span class="alert-date">3/2</span></span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-03-02" class="">
 <td>81</td>
@@ -1324,7 +1324,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-03-02" class="">
 <td>82</td>
@@ -1363,7 +1363,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="1" data-latest-date="2026-03-02" class="row-alert">
 <td>85</td>
@@ -1376,7 +1376,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="alert-merged" title="有感測器超過警戒值">⚠️ 警戒值1項<span class="alert-date">3/2</span></span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-03-02" class="">
 <td>86</td>
@@ -1389,7 +1389,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-03-02" class="">
 <td>87</td>
@@ -1402,7 +1402,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-03-02" class="">
 <td>88</td>
@@ -1415,7 +1415,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="1" data-latest-date="2026-03-02" class="row-alert">
 <td>89</td>
@@ -1428,7 +1428,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="alert-merged" title="有感測器超過警戒值">⚠️ 警戒值1項<span class="alert-date">1/19</span></span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-03-02" class="">
 <td>90</td>
@@ -1441,7 +1441,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="1" data-latest-date="2026-03-02" class="row-alert">
 <td>91</td>
@@ -1454,7 +1454,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="alert-merged" title="有感測器超過警戒值">⚠️ 警戒值1項<span class="alert-date">3/2</span></span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-03-02" class="">
 <td>92</td>
@@ -1467,7 +1467,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-03-02" class="">
 <td>93</td>
@@ -1493,7 +1493,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-03-02" class="">
 <td>95</td>
@@ -1506,7 +1506,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="1" data-latest-date="2026-03-02" class="row-alert">
 <td>96</td>
@@ -1519,7 +1519,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="alert-merged" title="有感測器超過警戒值">⚠️ 警戒值1項<span class="alert-date">3/2</span></span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-03-02" class="">
 <td>97</td>
@@ -1584,7 +1584,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-03-02" class="">
 <td>102</td>
@@ -1610,7 +1610,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-03-02" class="">
 <td>104</td>
@@ -1688,7 +1688,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-03-02" class="">
 <td>110</td>
@@ -1714,7 +1714,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-03-02" class="">
 <td>112</td>
@@ -1753,7 +1753,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-03-02" class="">
 <td>115</td>
@@ -1844,7 +1844,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-03-02" class="">
 <td>122</td>
@@ -1883,7 +1883,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-03-02" class="">
 <td>125</td>
@@ -1922,7 +1922,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-12" class="">
 <td>128</td>
@@ -1935,7 +1935,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-12</td>
 <td class="col-num"><span class="days" data-date="2026-02-12"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-12" class="">
 <td>129</td>
@@ -1948,7 +1948,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-12</td>
 <td class="col-num"><span class="days" data-date="2026-02-12"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-12" class="">
 <td>130</td>
@@ -1974,7 +1974,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-12</td>
 <td class="col-num"><span class="days" data-date="2026-02-12"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-12" class="">
 <td>132</td>
@@ -2000,7 +2000,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="1" data-latest-date="2026-02-11" class="row-alert">
 <td>134</td>
@@ -2013,7 +2013,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="alert-merged" title="有感測器超過警戒值">⚠️ 警戒值1項<span class="alert-date">12/8</span></span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" class="">
 <td>135</td>
@@ -2026,7 +2026,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" class="">
 <td>136</td>
@@ -2039,7 +2039,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" class="">
 <td>137</td>
@@ -2052,7 +2052,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" class="">
 <td>138</td>
@@ -2065,7 +2065,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" class="">
 <td>139</td>
@@ -2078,7 +2078,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" class="">
 <td>140</td>
@@ -2091,7 +2091,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" class="">
 <td>141</td>
@@ -2104,7 +2104,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" class="">
 <td>142</td>
@@ -2117,7 +2117,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" class="">
 <td>143</td>
@@ -2130,7 +2130,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" class="">
 <td>144</td>
@@ -2143,7 +2143,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" class="">
 <td>145</td>
@@ -2156,7 +2156,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" class="">
 <td>146</td>
@@ -2169,7 +2169,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" class="">
 <td>147</td>
@@ -2182,7 +2182,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" class="">
 <td>148</td>
@@ -2195,7 +2195,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" class="">
 <td>149</td>
@@ -2208,7 +2208,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" class="">
 <td>150</td>
@@ -2221,7 +2221,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" class="">
 <td>151</td>
@@ -2234,7 +2234,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" class="">
 <td>152</td>
@@ -2247,7 +2247,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" class="">
 <td>153</td>
@@ -2260,7 +2260,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" class="">
 <td>154</td>
@@ -2273,7 +2273,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" class="">
 <td>155</td>
@@ -2286,7 +2286,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" class="">
 <td>156</td>
@@ -2299,7 +2299,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" class="">
 <td>157</td>
@@ -2312,7 +2312,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" class="">
 <td>158</td>
@@ -2325,7 +2325,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" class="">
 <td>159</td>
@@ -2338,7 +2338,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" class="">
 <td>160</td>
@@ -2351,7 +2351,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" class="">
 <td>161</td>
@@ -2364,7 +2364,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" class="">
 <td>162</td>
@@ -2377,7 +2377,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="1" data-latest-date="2026-02-11" class="row-alert">
 <td>163</td>
@@ -2416,7 +2416,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" class="">
 <td>166</td>
@@ -2429,7 +2429,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" class="">
 <td>167</td>
@@ -2442,7 +2442,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="1" data-latest-date="2026-02-11" class="row-alert">
 <td>168</td>
@@ -2455,7 +2455,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="alert-merged" title="多項感測器嚴重超標">🔴 行動值1項<span class="alert-date">12/8</span></span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" class="">
 <td>169</td>
@@ -2468,7 +2468,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" class="">
 <td>170</td>
@@ -2481,7 +2481,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" class="">
 <td>171</td>
@@ -2494,7 +2494,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" class="">
 <td>172</td>
@@ -2507,7 +2507,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="1" data-latest-date="2026-02-11" class="row-alert">
 <td>173</td>
@@ -2520,7 +2520,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="alert-merged" title="有感測器超過警戒值">⚠️ 警戒值1項<span class="alert-date">4/13</span></span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" class="">
 <td>174</td>
@@ -2533,7 +2533,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" class="">
 <td>175</td>
@@ -2546,7 +2546,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" class="">
 <td>176</td>
@@ -2559,7 +2559,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" class="">
 <td>177</td>
@@ -2572,7 +2572,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" class="">
 <td>178</td>
@@ -2585,7 +2585,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-02" class="">
 <td>179</td>
@@ -2598,7 +2598,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-02</td>
 <td class="col-num"><span class="days" data-date="2026-02-02"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-02" class="">
 <td>180</td>
@@ -2611,7 +2611,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-02</td>
 <td class="col-num"><span class="days" data-date="2026-02-02"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="1" data-latest-date="2026-01-20" class="row-alert">
 <td>181</td>
@@ -2663,7 +2663,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-01-19</td>
 <td class="col-num"><span class="days" data-date="2026-01-19"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-01-19" class="">
 <td>185</td>
@@ -2702,7 +2702,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-01-19</td>
 <td class="col-num"><span class="days" data-date="2026-01-19"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-01-19" class="">
 <td>188</td>
@@ -2728,7 +2728,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-01-19</td>
 <td class="col-num"><span class="days" data-date="2026-01-19"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-01-19" class="">
 <td>190</td>
@@ -2767,7 +2767,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="alert-merged" title="有感測器超過警戒值">⚠️ 警戒值1項<span class="alert-date">3/2</span></span></td>
 <td>2026-01-15</td>
 <td class="col-num"><span class="days" data-date="2026-01-15"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-01-15" class="">
 <td>193</td>
@@ -2780,7 +2780,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-01-15</td>
 <td class="col-num"><span class="days" data-date="2026-01-15"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-01-15" class="">
 <td>194</td>
@@ -2793,7 +2793,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-01-15</td>
 <td class="col-num"><span class="days" data-date="2026-01-15"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-01-15" class="">
 <td>195</td>
@@ -2819,7 +2819,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-01-15</td>
 <td class="col-num"><span class="days" data-date="2026-01-15"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-01-15" class="">
 <td>197</td>
@@ -2832,7 +2832,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-01-15</td>
 <td class="col-num"><span class="days" data-date="2026-01-15"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-01-15" class="">
 <td>198</td>
@@ -2871,7 +2871,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-01-15</td>
 <td class="col-num"><span class="days" data-date="2026-01-15"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-01-15" class="">
 <td>201</td>
@@ -2975,7 +2975,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-01-15</td>
 <td class="col-num"><span class="days" data-date="2026-01-15"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-01-15" class="">
 <td>209</td>
@@ -2988,7 +2988,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-01-15</td>
 <td class="col-num"><span class="days" data-date="2026-01-15"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="1" data-latest-date="2026-01-15" class="row-alert">
 <td>210</td>
@@ -3066,7 +3066,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-01-15</td>
 <td class="col-num"><span class="days" data-date="2026-01-15"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-01-15" class="">
 <td>216</td>
@@ -3092,7 +3092,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-01-15</td>
 <td class="col-num"><span class="days" data-date="2026-01-15"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-01-15" class="">
 <td>218</td>
@@ -3105,7 +3105,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-01-15</td>
 <td class="col-num"><span class="days" data-date="2026-01-15"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-01-15" class="">
 <td>219</td>
@@ -3118,7 +3118,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-01-15</td>
 <td class="col-num"><span class="days" data-date="2026-01-15"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-01-15" class="">
 <td>220</td>
@@ -3144,7 +3144,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-01-15</td>
 <td class="col-num"><span class="days" data-date="2026-01-15"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-01-15" class="">
 <td>222</td>
@@ -3183,7 +3183,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-01-15</td>
 <td class="col-num"><span class="days" data-date="2026-01-15"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="1" data-latest-date="2026-01-15" class="row-alert">
 <td>225</td>
@@ -3196,7 +3196,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="alert-merged" title="有感測器超過警戒值">⚠️ 警戒值1項<span class="alert-date">1/14</span></span></td>
 <td>2026-01-15</td>
 <td class="col-num"><span class="days" data-date="2026-01-15"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-01-15" class="">
 <td>226</td>
@@ -3209,7 +3209,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-01-15</td>
 <td class="col-num"><span class="days" data-date="2026-01-15"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-01-15" class="">
 <td>227</td>
@@ -3222,7 +3222,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-01-15</td>
 <td class="col-num"><span class="days" data-date="2026-01-15"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-01-15" class="">
 <td>228</td>
@@ -3261,7 +3261,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-01-15</td>
 <td class="col-num"><span class="days" data-date="2026-01-15"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-01-14" class="">
 <td>231</td>
@@ -3313,7 +3313,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-01-14</td>
 <td class="col-num"><span class="days" data-date="2026-01-14"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-01-14" class="">
 <td>235</td>
@@ -3339,7 +3339,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-01-14</td>
 <td class="col-num"><span class="days" data-date="2026-01-14"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-01-14" class="">
 <td>237</td>
@@ -3456,7 +3456,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-01-14</td>
 <td class="col-num"><span class="days" data-date="2026-01-14"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-01-14" class="">
 <td>246</td>
@@ -3469,7 +3469,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-01-14</td>
 <td class="col-num"><span class="days" data-date="2026-01-14"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-01-14" class="">
 <td>247</td>
@@ -3586,7 +3586,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-01-13</td>
 <td class="col-num"><span class="days" data-date="2026-01-13"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-01-13" class="">
 <td>256</td>
@@ -3599,7 +3599,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-01-13</td>
 <td class="col-num"><span class="days" data-date="2026-01-13"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-01-13" class="">
 <td>257</td>
@@ -3625,7 +3625,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="alert-merged" title="有感測器超過行動值">🔴 行動值1項<span class="alert-date">1/13</span></span></td>
 <td>2026-01-13</td>
 <td class="col-num"><span class="days" data-date="2026-01-13"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="1" data-latest-date="2026-01-13" class="row-alert">
 <td>259</td>
@@ -3638,7 +3638,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="alert-merged" title="有感測器超過行動值">🔴 行動值1項<span class="alert-date">1/13</span></span></td>
 <td>2026-01-13</td>
 <td class="col-num"><span class="days" data-date="2026-01-13"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="1" data-latest-date="2026-01-13" class="row-alert">
 <td>260</td>
@@ -3664,7 +3664,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-01-13</td>
 <td class="col-num"><span class="days" data-date="2026-01-13"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-01-13" class="">
 <td>262</td>
@@ -3755,7 +3755,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-01-13</td>
 <td class="col-num"><span class="days" data-date="2026-01-13"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-01-13" class="">
 <td>269</td>
@@ -3807,7 +3807,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-01-05</td>
 <td class="col-num"><span class="days" data-date="2026-01-05"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-12-29" class="">
 <td>273</td>
@@ -3872,7 +3872,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-12-09</td>
 <td class="col-num"><span class="days" data-date="2025-12-09"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-12-09" class="">
 <td>278</td>
@@ -3911,7 +3911,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-12-09</td>
 <td class="col-num"><span class="days" data-date="2025-12-09"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="no_reports" data-cloud="MEGA" data-alert-total="0" data-latest-date="2025-12-08" class="">
 <td>281</td>
@@ -3937,7 +3937,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-12-05</td>
 <td class="col-num"><span class="days" data-date="2025-12-05"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-12-01" class="">
 <td>283</td>
@@ -3963,7 +3963,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-12-01</td>
 <td class="col-num"><span class="days" data-date="2025-12-01"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-12-01" class="">
 <td>285</td>
@@ -3976,7 +3976,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-12-01</td>
 <td class="col-num"><span class="days" data-date="2025-12-01"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-12-01" class="">
 <td>286</td>
@@ -3989,7 +3989,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-12-01</td>
 <td class="col-num"><span class="days" data-date="2025-12-01"></span></td>
-<td><span class="badge badge-info">⏳ AI 處理中</span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-11-24" class="">
 <td>287</td>
@@ -4028,7 +4028,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-11-24</td>
 <td class="col-num"><span class="days" data-date="2025-11-24"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-11-24" class="">
 <td>290</td>
@@ -4054,7 +4054,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-11-24</td>
 <td class="col-num"><span class="days" data-date="2025-11-24"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-11-24" class="">
 <td>292</td>
@@ -4093,7 +4093,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-11-24</td>
 <td class="col-num"><span class="days" data-date="2025-11-24"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-11-24" class="">
 <td>295</td>
@@ -4119,7 +4119,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-11-14</td>
 <td class="col-num"><span class="days" data-date="2025-11-14"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-11-14" class="">
 <td>297</td>
@@ -4132,7 +4132,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-11-14</td>
 <td class="col-num"><span class="days" data-date="2025-11-14"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-11-14" class="">
 <td>298</td>
@@ -4145,7 +4145,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-11-14</td>
 <td class="col-num"><span class="days" data-date="2025-11-14"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-11-14" class="">
 <td>299</td>
@@ -4158,7 +4158,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-11-14</td>
 <td class="col-num"><span class="days" data-date="2025-11-14"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-11-04" class="">
 <td>300</td>
@@ -4171,7 +4171,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-11-04</td>
 <td class="col-num"><span class="days" data-date="2025-11-04"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-27" class="">
 <td>301</td>
@@ -4184,7 +4184,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-27</td>
 <td class="col-num"><span class="days" data-date="2025-10-27"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-27" class="">
 <td>302</td>
@@ -4197,7 +4197,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-27</td>
 <td class="col-num"><span class="days" data-date="2025-10-27"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-20" class="">
 <td>303</td>
@@ -4210,7 +4210,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-20</td>
 <td class="col-num"><span class="days" data-date="2025-10-20"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-20" class="">
 <td>304</td>
@@ -4223,7 +4223,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-20</td>
 <td class="col-num"><span class="days" data-date="2025-10-20"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-15" class="">
 <td>305</td>
@@ -4249,7 +4249,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-13</td>
 <td class="col-num"><span class="days" data-date="2025-10-13"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-13" class="">
 <td>307</td>
@@ -4262,7 +4262,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-13</td>
 <td class="col-num"><span class="days" data-date="2025-10-13"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-06" class="">
 <td>308</td>
@@ -4288,7 +4288,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>310</td>
@@ -4301,7 +4301,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>311</td>
@@ -4314,7 +4314,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>312</td>
@@ -4327,7 +4327,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>313</td>
@@ -4340,7 +4340,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>314</td>
@@ -4353,7 +4353,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>315</td>
@@ -4366,7 +4366,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>316</td>
@@ -4379,7 +4379,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>317</td>
@@ -4392,7 +4392,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>318</td>
@@ -4405,7 +4405,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>319</td>
@@ -4418,7 +4418,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>320</td>
@@ -4444,7 +4444,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>322</td>
@@ -4457,7 +4457,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>323</td>
@@ -4483,7 +4483,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>325</td>
@@ -4509,7 +4509,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>327</td>
@@ -4535,7 +4535,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>329</td>
@@ -4548,7 +4548,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>330</td>
@@ -4561,7 +4561,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>331</td>
@@ -4574,7 +4574,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>332</td>
@@ -4587,7 +4587,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>333</td>
@@ -4626,7 +4626,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>336</td>
@@ -4678,7 +4678,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>340</td>
@@ -4704,7 +4704,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>342</td>
@@ -4821,7 +4821,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>351</td>
@@ -4847,7 +4847,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>353</td>
@@ -4860,7 +4860,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>354</td>
@@ -4873,7 +4873,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>355</td>
@@ -4886,7 +4886,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>356</td>
@@ -4899,7 +4899,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>357</td>
@@ -4925,7 +4925,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>359</td>
@@ -4951,7 +4951,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>361</td>
@@ -4990,7 +4990,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>364</td>
@@ -5068,7 +5068,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>370</td>
@@ -5094,7 +5094,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>372</td>
@@ -5107,7 +5107,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>373</td>
@@ -5146,7 +5146,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>376</td>
@@ -5172,7 +5172,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>378</td>
@@ -5198,7 +5198,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>380</td>
@@ -5211,7 +5211,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>381</td>
@@ -5237,7 +5237,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>383</td>
@@ -5250,7 +5250,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>384</td>
@@ -5302,7 +5302,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>388</td>
@@ -5315,7 +5315,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>389</td>
@@ -5328,7 +5328,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" class="">
 <td>390</td>
@@ -5354,7 +5354,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 等待同步</span></td>
+<td><span class="badge badge-warning">⬆ 待上傳</span></td>
 </tr>
 <tr data-status="no_reports" data-cloud="Google Drive" data-alert-total="0" data-latest-date="" class="">
 <td>392</td>

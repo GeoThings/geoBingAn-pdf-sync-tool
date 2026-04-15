@@ -979,8 +979,8 @@ def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], a
         # 狀態 badge
         status_badges = {
             'completed': ('✔ 已完成', 'badge-success'),
-            'in_progress': ('⏳ AI 處理中', 'badge-info'),
-            'not_uploaded': ('⬆ 等待同步', 'badge-warning'),
+            'in_progress': ('⏳ 部分對應', 'badge-info'),
+            'not_uploaded': ('⬆ 待上傳', 'badge-warning'),
             'no_reports': ('── 無資料', 'badge-gray'),
             'completed_project': ('🏁 已結案', 'badge-gray'),
             'error': ('✖ 異常', 'badge-danger')
@@ -1202,8 +1202,8 @@ a:hover{{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}}
 <div class="stats">
 <div class="stat" title="台北市政府列管的建案監測數量"><div class="label">監測建案總數</div><div class="value">{total}</div></div>
 <div class="stat" title="所有報告都已上傳到究平安系統完成分析"><div class="label">已完成上傳</div><div class="value" style="color:#22c55e">{completed}</div></div>
-<div class="stat" title="報告已上傳，AI 正在讀取 PDF 內容"><div class="label">AI 處理中</div><div class="value" style="color:#3b82f6">{in_progress}</div></div>
-<div class="stat" title="雲端有報告，系統排隊等待自動同步中"><div class="label">等待同步</div><div class="value" style="color:#f59e0b">{not_uploaded}</div></div>
+<div class="stat" title="部分報告已對應到 AI 分析結果"><div class="label">部分對應</div><div class="value" style="color:#3b82f6">{in_progress}</div></div>
+<div class="stat" title="雲端有報告但尚未對應到 AI 分析"><div class="label">待上傳</div><div class="value" style="color:#f59e0b">{not_uploaded}</div></div>
 <div class="stat" title="雲端資料夾中沒有任何 PDF 報告"><div class="label">尚無監測資料</div><div class="value" style="color:#6b7280">{no_reports}</div></div>
 <div class="stat" title="最後更新超過一年，建案可能已完工"><div class="label">已結案</div><div class="value" style="color:#9ca3af">{completed_project}</div></div>
 <div class="stat" title="使用 SharePoint、Dropbox 等其他雲端服務"><div class="label">非 Google Drive</div><div class="value" style="color:#c2410c">{other_cloud}</div></div>
@@ -1220,8 +1220,8 @@ a:hover{{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}}
 <div class="legend-block-title">同步狀態說明</div>
 <table class="legend-table">
 <tr><td><span class="badge badge-success">已完成</span></td><td>所有雲端報告皆已上傳並完成分析</td></tr>
-<tr><td><span class="badge badge-info">AI 處理中</span></td><td>報告已上傳，AI 正在自動讀取 PDF 內容，無需操作</td></tr>
-<tr><td><span class="badge badge-warning">等待同步</span></td><td>雲端有報告，系統排隊等待自動同步，無需手動操作</td></tr>
+<tr><td><span class="badge badge-info">部分對應</span></td><td>部分報告已對應到 AI 分析結果，其餘因檔名無法自動匹配</td></tr>
+<tr><td><span class="badge badge-warning">待上傳</span></td><td>雲端有報告但尚未對應到 AI 分析，可能尚未上傳或檔名無法匹配</td></tr>
 <tr><td><span class="badge badge-gray">無資料</span></td><td>雲端資料夾目前沒有任何 PDF 報告</td></tr>
 <tr><td><span class="badge badge-danger">異常</span></td><td>同步或上傳過程中發生錯誤，請聯絡技術人員</td></tr>
 </table>
@@ -1279,8 +1279,8 @@ a:hover{{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}}
 <div class="filter-group">
 <button class="btn active" onclick="filterStatus(this,'')">全部</button>
 <button class="btn" onclick="filterStatus(this,'completed')">已完成</button>
-<button class="btn" onclick="filterStatus(this,'in_progress')">AI 處理中</button>
-<button class="btn" onclick="filterStatus(this,'not_uploaded')">等待同步</button>
+<button class="btn" onclick="filterStatus(this,'in_progress')">部分對應</button>
+<button class="btn" onclick="filterStatus(this,'not_uploaded')">待上傳</button>
 <button class="btn" onclick="filterStatus(this,'other_cloud')">需手動處理</button>
 <button class="btn" onclick="filterStatus(this,'needs_attention')">需要處理</button>
 </div>
