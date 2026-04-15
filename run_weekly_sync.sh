@@ -230,6 +230,11 @@ if ! python3 "$SCRIPT_DIR/match_permits.py" 2>&1 | tee -a "$LOG_FILE"; then
     echo "⚠️  名稱比對失敗，使用現有 registry 繼續" | tee -a "$LOG_FILE"
 fi
 
+# 儲存快照 + 偵測新建案
+echo "" | tee -a "$LOG_FILE"
+echo "📸 儲存快照 + 偵測新建案..." | tee -a "$LOG_FILE"
+python3 "$SCRIPT_DIR/weekly_snapshot.py" --notify 2>&1 | tee -a "$LOG_FILE" || true
+
 # 步驟 3: 生成建照監測追蹤報告
 # 如果步驟 2 失敗，跳過報告生成（會使用不完整的資料）
 if [ $STEP2_FAILED -ne 0 ]; then
@@ -264,7 +269,7 @@ fi
 
 # 提交並推送到 GitHub（檢查報告或上傳歷史是否有變更）
 cd "$SCRIPT_DIR"
-git add docs/index.html state/permit_tracking_report.html state/permit_tracking.csv state/upload_history_all.json state/permit_registry.json 2>/dev/null || true
+git add docs/index.html state/permit_tracking_report.html state/permit_tracking.csv state/upload_history_all.json state/permit_registry.json state/weekly_snapshots/ 2>/dev/null || true
 if git diff --cached --quiet 2>/dev/null; then
     echo "ℹ️  無任何變更，跳過推送" | tee -a "$LOG_FILE"
 else

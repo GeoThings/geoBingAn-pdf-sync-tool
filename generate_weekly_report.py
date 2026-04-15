@@ -98,6 +98,7 @@ def gather_stats(mapping, registry, days=7):
         'report_date': now.strftime('%Y-%m-%d'),
         'period_start': cutoff.strftime('%Y/%m/%d'),
         'period_end': now.strftime('%Y/%m/%d'),
+        'trend': None,  # 由 main() 填入
     }
 
 
@@ -194,7 +195,32 @@ tr:nth-child(even) {{ background: #fafafa; }}
 <div class="stat-card danger"><div class="num">{len(s["danger_alerts"])}</div><div class="label">🔴 行動值</div></div>
 <div class="stat-card warning"><div class="num">{len(s["warning_alerts"])}</div><div class="label">⚠️ 警戒值</div></div>
 </div>
+'''
 
+    # Trend section (if available)
+    trend = s.get('trend')
+    if trend:
+        def arrow(n):
+            if n > 0: return f'<span style="color:#16a34a">+{n}</span>'
+            if n < 0: return f'<span style="color:#dc2626">{n}</span>'
+            return '<span style="color:#6b7280">0</span>'
+
+        html += '<table style="font-size:10px;margin-bottom:16px"><tr>'
+        html += f'<td style="border:none;padding:4px 12px">建案 {arrow(trend["total_change"])}</td>'
+        html += f'<td style="border:none;padding:4px 12px">雲端 {arrow(trend["pdfs_change"])}</td>'
+        html += f'<td style="border:none;padding:4px 12px">AI {arrow(trend["ai_change"])}</td>'
+        html += f'<td style="border:none;padding:4px 12px">警戒 {arrow(trend["alerts_change"])}</td>'
+        html += '</tr></table>'
+
+        if trend.get('new_permits'):
+            html += f'<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:10px;margin-bottom:14px;font-size:10px">'
+            html += f'<strong>🆕 新增建案（{len(trend["new_permits"])} 個）：</strong> '
+            html += '、'.join(esc(p) for p in trend['new_permits'][:8])
+            if len(trend['new_permits']) > 8:
+                html += f'...等 {len(trend["new_permits"])} 個'
+            html += '</div>'
+
+    html += '''
 <h2>📋 建案狀態分布</h2>
 <table class="status-bar"><tr>'''
 
@@ -343,6 +369,20 @@ def main():
     # 載入資料
     mapping, registry = load_data()
     stats = gather_stats(mapping, registry, days=args.days)
+
+    # 儲存快照並取得趨勢
+    try:
+        from weekly_snapshot import save_snapshot, get_previous_snapshot, compute_diff
+        current_snap = save_snapshot()
+        previous_snap = get_previous_snapshot()
+        trend = compute_diff(current_snap, previous_snap)
+        stats['trend'] = trend
+        if trend:
+            print(f"  趨勢：建案{'+' if trend['total_change']>=0 else ''}{trend['total_change']}、"
+                  f"AI{'+' if trend['ai_change']>=0 else ''}{trend['ai_change']}、"
+                  f"新增 {len(trend['new_permits'])} 個建案")
+    except Exception as e:
+        print(f"  快照/趨勢分析失敗: {e}")
 
     # 產生 HTML
     html = generate_html(stats, report_type=args.type)
