@@ -413,7 +413,7 @@ def build_registry():
     print(f"🔄 開始交叉比對 {len(all_permits)} 個建照...")
     print(f"{'=' * 60}\n")
 
-    generic_name_pat = re.compile(r'^(監測報告?|監測報表?|監測$|安全觀測報告書?|安全監測系統|觀測報告|觀測數據|工地監測數據)')
+    generic_name_pat = re.compile(r'^(監測報告?|監測報表?|監測$|安全觀測|安全監測|觀測報告|觀測數據|工地監測|工地$|報告$|報表$|告示牌|基地觀測系統|建號\d)')
     updated = 0
     for permit in sorted(all_permits):
         entry = registry.get(permit, {})
@@ -561,7 +561,7 @@ def build_registry():
         registry[permit] = entry
 
     # 名稱優化：有 api_match 的建案，用 API 名稱取代通用/較差的名稱
-    generic_name_pat = re.compile(r'^(監測報告?|監測報表?|監測$|安全觀測報告書?|安全監測系統|觀測報告|觀測數據|工地監測數據)')
+    generic_name_pat = re.compile(r'^(監測報告?|監測報表?|監測$|安全觀測|安全監測|觀測報告|觀測數據|工地監測|工地$|報告$|報表$|告示牌|基地觀測系統|建號\d)')
     name_upgraded = 0
     for permit, entry in registry.items():
         api_match = entry.get('api_match', '')
@@ -585,6 +585,28 @@ def build_registry():
                 entry['name'] = api_clean
                 entry['name_source'] = 'api_match'
                 name_upgraded += 1
+    # 名稱清理：去除所有名稱中的壞模式（不論是否有 api_match）
+    bad_suffix = re.compile(r'[-_\s]*(初始?值|_compressed|日報表).*$')
+    bad_prefix = re.compile(r'^(P-\s*|\d+\.\s*)')
+    name_cleaned = 0
+    for permit, entry in registry.items():
+        name = entry.get('name', '')
+        if not name or entry.get('name_source') == 'manual':
+            continue
+        cleaned = bad_suffix.sub('', name)
+        cleaned = bad_prefix.sub('', cleaned)
+        cleaned = cleaned.strip(' -_')
+        if cleaned != name and len(cleaned) >= 2:
+            entry['name'] = cleaned
+            name_cleaned += 1
+        elif generic_name_pat.match(name) and not entry.get('api_match'):
+            # 無法修的通用名稱 → 清空，讓報告顯示空白而不是垃圾
+            entry['name'] = ''
+            entry['name_source'] = ''
+            name_cleaned += 1
+    if name_cleaned:
+        print(f"  名稱清理: {name_cleaned} 個建案名稱已修正或清空")
+
     if name_upgraded:
         print(f"  名稱優化: {name_upgraded} 個建案改用 API 名稱")
 

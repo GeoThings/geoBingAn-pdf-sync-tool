@@ -374,7 +374,11 @@ def extract_name_from_filename(filename: str) -> str:
     name = re.sub(r'[-_\s]*(上傳|公告|更正|報告書|報告|觀測報告)$', '', name)
     name = re.sub(r'[-_\s]*NO\.\d+$', '', name)
     name = re.sub(r'[-_\s]*\d+$', '', name)  # 結尾數字
-    name = re.sub(r'^\d+[-_\s]*', '', name)  # 開頭數字
+    name = re.sub(r'^\d+[-_.\s]*', '', name)  # 開頭數字
+    name = re.sub(r'^P-\s*', '', name)  # P- 前綴
+    name = re.sub(r'[-_\s]*初始?值.*$', '', name)  # 去除初始值後綴
+    name = re.sub(r'[-_\s]*_compressed$', '', name)  # 壓縮後綴
+    name = re.sub(r'[-_\s]*日報表$', '', name)  # 日報表後綴
     name = name.strip(' -_()（）/\\')
     # 去除殘留的括號內容和不完整括號
     name = re.sub(r'^[()（）\s]+', '', name)
@@ -485,7 +489,7 @@ def fetch_api_reports() -> Dict[str, List[dict]]:
         # 收集所有名稱片段（用於去重）
         fragment_permits = {}  # fragment → set of permits
         # 通用名稱和太短的名稱不可用於模糊匹配（會造成大量誤配）
-        generic_patterns = re.compile(r'^(監測報告?|監測報表?|監測$|安全觀測報告書?|安全觀測系統|安全監測系統|觀測報告|觀測數據|工地監測報告?|工地監測數據|報告$|報表$|工地$)')
+        generic_patterns = re.compile(r'^(監測報告?|監測報表?|監測$|安全觀測|安全監測|觀測報告|觀測數據|工地監測|工地$|報告$|報表$|告示牌|基地觀測系統|建號\d)')
         for permit, info in registry.items():
             name = info.get('name', '')
             if name and len(name) >= 4 and not generic_patterns.match(name):
