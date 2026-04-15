@@ -108,11 +108,11 @@ def generate_html(stats, report_type='summary'):
     
     # 狀態名稱（與 web 版一致）
     status_labels = {
-        'completed': ('✔ 已完成', '#22c55e', 'AI 已辨識全部報告'),
-        'in_progress': ('⏳ 部分對應', '#3b82f6', '部分報告已對應到 AI 分析'),
-        'not_uploaded': ('⬆ 待上傳', '#f59e0b', '雲端有報告，AI 尚未對應'),
-        'completed_project': ('🏁 已結案', '#9ca3af', '建照 ≤ 110 年且無報告'),
-        'no_reports': ('── 無資料', '#d1d5db', '尚無雲端報告'),
+        'completed': ('已完成', '#22c55e', 'AI 已辨識全部報告'),
+        'in_progress': ('部分對應', '#3b82f6', '部分報告已對應到 AI 分析'),
+        'not_uploaded': ('待上傳', '#f59e0b', '雲端有報告，AI 尚未對應'),
+        'completed_project': ('已結案', '#9ca3af', '建照年份 110 年前且無報告'),
+        'no_reports': ('無資料', '#d1d5db', '尚無雲端報告'),
     }
 
     def esc(text):
@@ -126,7 +126,8 @@ def generate_html(stats, report_type='summary'):
 <style>
 @page {{ size: A4; margin: 18mm 15mm; }}
 * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-body {{ font-family: "PingFang TC", "Heiti TC", "Apple LiGothic", "Microsoft JhengHei", "Noto Sans TC", sans-serif; color: #1a1a1a; line-height: 1.55; font-size: 11px; }}
+@font-face {{ font-family: 'LocalChinese'; src: url('file:///Library/Fonts/Arial Unicode.ttf'); }}
+body {{ font-family: 'LocalChinese', sans-serif; color: #1a1a1a; line-height: 1.55; font-size: 11px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }}
 
 .header {{ background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%); color: white; padding: 28px 36px; }}
 .header h1 {{ font-size: 20px; font-weight: 700; }}
@@ -145,10 +146,13 @@ body {{ font-family: "PingFang TC", "Heiti TC", "Apple LiGothic", "Microsoft Jhe
 h2 {{ font-size: 14px; font-weight: 700; margin: 20px 0 8px; padding-bottom: 4px; border-bottom: 2px solid #e5e7eb; color: #1a1a1a; }}
 
 table {{ width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 14px; }}
-th {{ background: #f3f4f6; padding: 5px 6px; text-align: left; font-weight: 600; border-bottom: 2px solid #d1d5db; white-space: nowrap; }}
-td {{ padding: 4px 6px; border-bottom: 1px solid #e5e7eb; white-space: nowrap; }}
+th {{ background: #f3f4f6; padding: 6px 8px; text-align: left; font-weight: 600; border-bottom: 2px solid #d1d5db; white-space: nowrap; }}
+td {{ padding: 6px 8px; border-bottom: 1px solid #d1d5db; white-space: nowrap; }}
 td.name {{ white-space: normal; word-break: keep-all; max-width: 160px; }}
+tr {{ height: 28px; page-break-inside: avoid; }}
 tr:nth-child(even) {{ background: #fafafa; }}
+.num {{ text-align: right; min-width: 30px; }}
+.empty {{ color: #999; }}
 
 .badge {{ display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; white-space: nowrap; }}
 .badge-danger {{ background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }}
@@ -198,7 +202,9 @@ tr:nth-child(even) {{ background: #fafafa; }}
         count = s['statuses'].get(status_key, 0)
         label, color, _ = status_labels.get(status_key, ('', '#ccc', ''))
         pct = count / s['total'] * 100 if s['total'] > 0 else 0
-        html += f'<td style="width:{pct:.0f}%;background:{color}">{label.split(" ")[-1]} {count}</td>'
+        short_labels = {'completed': '完成', 'in_progress': '部分', 'not_uploaded': '待傳', 'completed_project': '結案', 'no_reports': ''}
+        short = short_labels.get(status_key, '')
+        html += f'<td style="width:{pct:.0f}%;background:{color}">{short}{count}</td>'
 
     html += '</tr></table><table><tr><th>狀態</th><th>數量</th><th>占比</th><th>說明</th></tr>'
     for status_key in ['completed', 'in_progress', 'not_uploaded', 'completed_project', 'no_reports']:
@@ -211,30 +217,30 @@ tr:nth-child(even) {{ background: #fafafa; }}
 
     # Danger alerts
     if s['danger_alerts']:
-        html += '<div class="section-box section-danger"><h3>🔴 行動值超標建案 — 需立即評估</h3><table>'
-        html += '<tr><th>建照號碼</th><th>工地名稱</th><th>觸發日期</th><th>異常說明</th></tr>'
+        html += '<h2 style="color:#dc2626">🔴 行動值超標建案 — 需立即評估</h2>\n<table>\n'
+        html += '<tr><th>建照號碼</th><th>工地名稱</th><th>觸發日期</th><th>異常說明</th></tr>\n'
         for a in s['danger_alerts']:
             detail = '、'.join(a['details']) if a['details'] else '有感測器超過行動值'
             a_name = a['name'] if a['name'] and a['name'] != '-' else '（未命名）'
             html += f'<tr><td>{esc(a["permit"])}</td><td class="name">{esc(a_name)}</td><td>{esc(a["date"])}</td><td>{esc(detail)}</td></tr>\n'
-        html += '</table></div>'
+        html += '</table>\n'
 
     # Warning alerts
     if s['warning_alerts']:
-        html += '<div class="section-box section-warning"><h3>⚠️ 警戒值超標建案 — 持續監控</h3><table>'
-        html += '<tr><th>建照號碼</th><th>工地名稱</th><th>觸發日期</th></tr>'
+        html += '<h2 style="color:#d97706">⚠️ 警戒值超標建案 — 持續監控</h2>\n<table>\n'
+        html += '<tr><th>建照號碼</th><th>工地名稱</th><th>觸發日期</th></tr>\n'
         for a in s['warning_alerts']:
             a_name = a['name'] if a['name'] and a['name'] != '-' else '（未命名）'
             html += f'<tr><td>{esc(a["permit"])}</td><td class="name">{esc(a_name)}</td><td>{esc(a["date"])}</td></tr>\n'
-        html += '</table></div>'
+        html += '</table>\n'
 
     # Updated permits
     html += '<h2>🔄 本週更新建案</h2><table>'
-    html += '<tr><th>#</th><th>建照號碼</th><th>工地名稱</th><th>雲端</th><th>AI</th><th>進度</th><th>更新日期</th></tr>'
+    html += '<tr><th style="width:24px">#</th><th>建照號碼</th><th>工地名稱</th><th class="num">雲端數</th><th class="num">AI數</th><th class="num">進度</th><th>更新日期</th></tr>'
     for i, u in enumerate(s['updated'], 1):
         pct = min(100, int(u['ai'] / u['drive'] * 100)) if u['drive'] > 0 and u['ai'] > 0 else 0
-        pct_text = f'{pct}%' if pct > 0 else '-'
-        ai_text = str(u['ai']) if u['ai'] > 0 else '-'
+        pct_text = f'{pct}%' if pct > 0 else '0%'
+        ai_text = str(u['ai']) if u['ai'] > 0 else '0'
         name_raw = u['name'] if u['name'] and u['name'] != '-' else '（未命名）'
         name_display = esc(name_raw[:20] + '...' if len(name_raw) > 20 else name_raw)
         html += (
@@ -242,9 +248,9 @@ tr:nth-child(even) {{ background: #fafafa; }}
             f'<td>{i}</td>'
             f'<td>{esc(u["permit"])}</td>'
             f'<td class="name">{name_display}</td>'
-            f'<td>{u["drive"]}</td>'
-            f'<td>{ai_text}</td>'
-            f'<td>{pct_text}</td>'
+            f'<td class="num">{u["drive"]}</td>'
+            f'<td class="num">{ai_text}</td>'
+            f'<td class="num">{pct_text}</td>'
             f'<td>{u["latest"]}</td>'
             f'</tr>\n'
         )
@@ -262,11 +268,35 @@ geoBingAn 究平安 ・ 建案監測週報 ・ {s["report_date"]} 自動產生
 
 
 def html_to_pdf(html_content, output_path):
-    """HTML 轉 PDF（使用 weasyprint）"""
+    """HTML 轉 PDF（使用 Chrome headless）"""
+    import subprocess
+    import tempfile
+
+    html_path = tempfile.mktemp(suffix='.html')
+    with open(html_path, 'w', encoding='utf-8') as f:
+        f.write(html_content)
+
+    chrome = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+    if os.path.exists(chrome):
+        subprocess.run([
+            chrome, '--headless', '--disable-gpu', '--no-sandbox',
+            f'--print-to-pdf={output_path}',
+            '--print-to-pdf-no-header',
+            html_path
+        ], capture_output=True, timeout=30)
+        os.unlink(html_path)
+        if os.path.exists(output_path):
+            size_kb = os.path.getsize(output_path) / 1024
+            print(f"  PDF 產生完成: {output_path} ({size_kb:.0f} KB)")
+            return
+
+    # Fallback to weasyprint
     from weasyprint import HTML
-    HTML(string=html_content).write_pdf(output_path)
+    HTML(filename=html_path).write_pdf(output_path)
+    if os.path.exists(html_path):
+        os.unlink(html_path)
     size_kb = os.path.getsize(output_path) / 1024
-    print(f"  PDF 產生完成: {output_path} ({size_kb:.0f} KB)")
+    print(f"  PDF 產生完成（weasyprint fallback）: {output_path} ({size_kb:.0f} KB)")
 
 
 def upload_to_clickup(pdf_path, summary_text):
