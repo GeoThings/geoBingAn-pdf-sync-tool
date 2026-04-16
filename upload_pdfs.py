@@ -76,7 +76,7 @@ DAYS_AGO = 7  # 上傳最近 7 天更新的 PDF
 MAX_UPLOADS = 100  # 每次上傳最新 100 筆 PDF
 
 # 速率控制：每次上傳之間的延遲（秒）
-DELAY_BETWEEN_UPLOADS = 0.5  # 後端為非同步 AI 處理，不需長等待
+from config import DELAY_BETWEEN_UPLOADS
 
 # 並行上傳設定
 

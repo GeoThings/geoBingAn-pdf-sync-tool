@@ -97,78 +97,35 @@ def scan_google_drive(service) -> Dict[str, dict]:
     """掃描 Google Drive 取得所有建照資料夾"""
     print("\n📂 掃描 Google Drive 建照資料夾...")
 
+    from drive_utils import list_top_level_folders, list_all_subfolders, build_folder_resolver
+
+    raw_folders = list_top_level_folders(
+        service, SHARED_DRIVE_ID,
+        fields='nextPageToken, files(id, name, modifiedTime)'
+    )
+
     permit_folders = {}
-    page_token = None
-
-    while True:
-        results = service.files().list(
-            q=f"'{SHARED_DRIVE_ID}' in parents and mimeType='application/vnd.google-apps.folder'",
-            corpora='drive',
-            driveId=SHARED_DRIVE_ID,
-            includeItemsFromAllDrives=True,
-            supportsAllDrives=True,
-            fields='nextPageToken, files(id, name, modifiedTime)',
-            pageSize=1000,
-            pageToken=page_token
-        ).execute()
-
-        for folder in results.get('files', []):
-            permit_match = re.search(r'(\d{2,3}建字第\d{3,5}號)', folder['name'])
-            if permit_match:
-                permit_num = permit_match.group(1)
-                permit_folders[permit_num] = {
-                    'folder_id': folder['id'],
-                    'folder_name': folder['name'],
-                    'modified_time': folder.get('modifiedTime', '')
-                }
-
-        page_token = results.get('nextPageToken')
-        if not page_token:
-            break
+    for folder in raw_folders:
+        permit_match = re.search(r'(\d{2,3}建字第\d{3,5}號)', folder['name'])
+        if permit_match:
+            permit_num = permit_match.group(1)
+            permit_folders[permit_num] = {
+                'folder_id': folder['id'],
+                'folder_name': folder['name'],
+                'modified_time': folder.get('modifiedTime', '')
+            }
 
     print(f"  找到 {len(permit_folders)} 個建照資料夾")
 
-    # 建立資料夾 ID → 建照號碼的完整對應（含子資料夾）
     print("  掃描子資料夾結構...")
     folder_id_to_permit = {info['folder_id']: permit for permit, info in permit_folders.items()}
+    all_folders = list_all_subfolders(service, SHARED_DRIVE_ID)
+    resolve_permit = build_folder_resolver(folder_id_to_permit, all_folders)
 
-    # 掃描 Shared Drive 中所有資料夾，建立 parent→child 關係
-    all_folders = {}  # folder_id → parent_id
-    page_token = None
-    while True:
-        results = service.files().list(
-            q="mimeType='application/vnd.google-apps.folder' and trashed=false",
-            corpora='drive',
-            driveId=SHARED_DRIVE_ID,
-            includeItemsFromAllDrives=True,
-            supportsAllDrives=True,
-            fields='nextPageToken, files(id, parents)',
-            pageSize=1000,
-            pageToken=page_token
-        ).execute()
-        for f in results.get('files', []):
-            parents = f.get('parents', [])
-            if parents:
-                all_folders[f['id']] = parents[0]
-        page_token = results.get('nextPageToken')
-        if not page_token:
-            break
-
-    # 遞迴解析：任何子資料夾都對應到最上層的建案資料夾
-    def resolve_permit(folder_id, depth=0):
-        if folder_id in folder_id_to_permit:
-            return folder_id_to_permit[folder_id]
-        if depth > 5 or folder_id not in all_folders:
-            return None
-        parent = all_folders[folder_id]
-        result = resolve_permit(parent, depth + 1)
-        if result:
-            folder_id_to_permit[folder_id] = result  # 快取
-        return result
-
-    # 預先解析所有子資料夾
     for fid in list(all_folders.keys()):
-        resolve_permit(fid)
+        resolved = resolve_permit(fid)
+        if resolved:
+            folder_id_to_permit[fid] = resolved
     subfolder_count = len(folder_id_to_permit) - len(permit_folders)
     print(f"    已建立 {len(permit_folders)} 個建案資料夾 + {subfolder_count} 個子資料夾的對應")
 

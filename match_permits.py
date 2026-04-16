@@ -143,56 +143,26 @@ def fetch_drive_pdf_names(drive_service) -> Dict[str, dict]:
     """批次掃描 Shared Drive 所有 PDF，提取建案名稱"""
     print("📁 來源 3: Drive PDF 檔名...")
 
-    # 先取資料夾 ID → 建照號碼 對應
+    from drive_utils import list_top_level_folders, list_all_subfolders, build_folder_resolver
+
+    # 頂層資料夾 ID → 建照號碼
+    raw_folders = list_top_level_folders(drive_service, SHARED_DRIVE_ID)
     folders = {}
-    page_token = None
-    while True:
-        results = drive_service.files().list(
-            q=f"'{SHARED_DRIVE_ID}' in parents and mimeType='application/vnd.google-apps.folder'",
-            fields='nextPageToken, files(id, name)',
-            pageSize=1000, pageToken=page_token,
-            supportsAllDrives=True, includeItemsFromAllDrives=True,
-            corpora='drive', driveId=SHARED_DRIVE_ID
-        ).execute()
-        for f in results.get('files', []):
-            norm = normalize_permit(f['name'])
-            if norm:
-                folders[f['id']] = norm
-        page_token = results.get('nextPageToken')
-        if not page_token:
-            break
+    for f in raw_folders:
+        norm = normalize_permit(f['name'])
+        if norm:
+            folders[f['id']] = norm
 
-    # 掃描所有子資料夾，建立子資料夾 → 建案的遞迴對應
-    all_subfolders = {}  # folder_id → parent_id
-    page_token = None
-    while True:
-        results = drive_service.files().list(
-            q="mimeType='application/vnd.google-apps.folder' and trashed=false",
-            corpora='drive', driveId=SHARED_DRIVE_ID,
-            includeItemsFromAllDrives=True, supportsAllDrives=True,
-            fields='nextPageToken, files(id, parents)',
-            pageSize=1000, pageToken=page_token
-        ).execute()
-        for f in results.get('files', []):
-            parents = f.get('parents', [])
-            if parents:
-                all_subfolders[f['id']] = parents[0]
-        page_token = results.get('nextPageToken')
-        if not page_token:
-            break
-
-    def resolve_permit(folder_id, depth=0):
-        if folder_id in folders:
-            return folders[folder_id]
-        if depth > 5 or folder_id not in all_subfolders:
-            return None
-        result = resolve_permit(all_subfolders[folder_id], depth + 1)
-        if result:
-            folders[folder_id] = result
-        return result
-
+    # 子資料夾層級解析
+    all_subfolders = list_all_subfolders(drive_service, SHARED_DRIVE_ID)
+    resolve_permit = build_folder_resolver(folders, all_subfolders)
     for fid in list(all_subfolders.keys()):
         resolve_permit(fid)
+    # build_folder_resolver 的 cache 不會回寫 folders，手動合併
+    for fid in all_subfolders:
+        p = resolve_permit(fid)
+        if p:
+            folders[fid] = p
     print(f"  含子資料夾共 {len(folders)} 個資料夾對應")
 
     # 批次掃描所有 PDF
