@@ -11,6 +11,7 @@
 """
 import json
 import os
+import csv
 import re
 import requests
 import urllib3
@@ -47,24 +48,35 @@ PDF_LIST_URL_DEFAULT = 'https://www-ws.gov.taipei/001/Upload/845/relfile/-1/845/
 STATE_FILE = './state/sync_permits_progress.json'
 # ============================================
 
-# Google Drive API 認證
+# Google Drive API 認證（lazy init，避免 import 時就需要 credentials.json）
 # credentials 是 thread-safe 的，但 httplib2.Http 不是。
 # 每個 thread 需要自己的 service instance。
 # https://googleapis.github.io/google-api-python-client/docs/thread_safety.html
-credentials = service_account.Credentials.from_service_account_file(
-    SERVICE_ACCOUNT_FILE, scopes=SCOPES)
-
-# 主執行緒的 service（用於 run() 中的非並行操作）
-drive_service = build('drive', 'v3', credentials=credentials)
-
-# Thread-local storage
+_credentials = None
+_drive_service = None
 _thread_local = threading.local()
+
+
+def _get_credentials():
+    global _credentials
+    if _credentials is None:
+        _credentials = service_account.Credentials.from_service_account_file(
+            SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+    return _credentials
+
+
+def get_drive_service():
+    """取得主執行緒的 Drive service（lazy init）"""
+    global _drive_service
+    if _drive_service is None:
+        _drive_service = build('drive', 'v3', credentials=_get_credentials())
+    return _drive_service
 
 
 def get_thread_drive_service():
     """取得當前 thread 的獨立 Drive service instance"""
     if not hasattr(_thread_local, 'service'):
-        _thread_local.service = build('drive', 'v3', credentials=credentials)
+        _thread_local.service = build('drive', 'v3', credentials=_get_credentials())
     return _thread_local.service
 
 # 並行處理設定
@@ -78,7 +90,9 @@ class PermitSync:
     def __init__(self, city: dict = None):
         self.city = city or {}
         self.city_name = self.city.get('name', '台北市')
+        self.source_type = self.city.get('source_type', 'pdf')
         self.pdf_list_url = self.city.get('pdf_list_url') or PDF_LIST_URL_DEFAULT
+        self.csv_path = self.city.get('csv_path', '')
         self.shared_drive_id = self.city.get('shared_drive_id') or SHARED_DRIVE_ID
         self.target_folders = {}
         self.permit_mapping = {}
@@ -110,6 +124,26 @@ class PermitSync:
         with self._print_lock:
             print(msg, flush=True)
     
+    def load_csv_list(self) -> Dict[str, str]:
+        """從 CSV 檔案載入建照號碼 → Drive URL 對應"""
+        print(f"📄 載入 CSV: {self.csv_path}")
+        mapping = {}
+        csv_file = Path(self.csv_path)
+        if not csv_file.is_absolute():
+            csv_file = Path(__file__).parent / self.csv_path
+        if not csv_file.exists():
+            print(f"❌ CSV 檔案不存在: {csv_file}")
+            return mapping
+        with open(csv_file, 'r', encoding='utf-8-sig') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                permit_no = row.get('permit_no', '').strip()
+                source_url = row.get('source_url', '').strip()
+                if permit_no and source_url:
+                    mapping[permit_no] = source_url
+        print(f"✅ 載入 {len(mapping)} 個建案")
+        return mapping
+
     def download_pdf_list(self) -> str:
         print("📥 下載建案列表 PDF...")
         try:
@@ -197,7 +231,7 @@ class PermitSync:
     def scan_shared_drive(self) -> Dict[str, str]:
         print(f"\n📂 掃描共享雲端...")
         from drive_utils import list_top_level_folders
-        raw_folders = list_top_level_folders(drive_service, self.shared_drive_id)
+        raw_folders = list_top_level_folders(get_drive_service(), self.shared_drive_id)
         return {item['name']: item['id'] for item in raw_folders}
     
     def extract_folder_id_from_url(self, url: str) -> str:
@@ -298,7 +332,7 @@ class PermitSync:
     def create_target_folder(self, folder_name: str) -> str:
         try:
             file_metadata = {'name': folder_name, 'mimeType': 'application/vnd.google-apps.folder', 'parents': [self.shared_drive_id]}
-            folder = drive_service.files().create(body=file_metadata, fields='id', supportsAllDrives=True).execute()
+            folder = get_drive_service().files().create(body=file_metadata, fields='id', supportsAllDrives=True).execute()
             print(f"🆕 已自動建立資料夾: {folder_name}")
             return folder['id']
         except HttpError as e:
@@ -437,8 +471,11 @@ class PermitSync:
         print("   特性: 增量同步、跳過已處理建案、快速模式")
         print("="*70)
 
-        pdf_path = self.download_pdf_list()
-        self.permit_mapping = self.parse_pdf_list(pdf_path)
+        if self.source_type == 'csv':
+            self.permit_mapping = self.load_csv_list()
+        else:
+            pdf_path = self.download_pdf_list()
+            self.permit_mapping = self.parse_pdf_list(pdf_path)
         self.target_folders = self.scan_shared_drive()
 
         permit_list = list(self.permit_mapping.items())
