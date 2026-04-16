@@ -47,7 +47,7 @@ ENABLE_MACOS_NOTIFY = os.environ.get('ENABLE_MACOS_NOTIFY', 'true').lower() == '
 # 同步設定
 DAYS_AGO = int(os.environ.get('DAYS_AGO', '7'))
 MAX_UPLOADS = int(os.environ.get('MAX_UPLOADS', '0'))
-DELAY_BETWEEN_UPLOADS = int(os.environ.get('DELAY_BETWEEN_UPLOADS', '2'))
+DELAY_BETWEEN_UPLOADS = float(os.environ.get('DELAY_BETWEEN_UPLOADS', '2'))
 
 
 def update_jwt_token(new_token: str, new_refresh_token: str = None):

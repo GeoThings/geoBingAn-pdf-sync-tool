@@ -196,25 +196,9 @@ class PermitSync:
     
     def scan_shared_drive(self) -> Dict[str, str]:
         print(f"\n📂 掃描共享雲端...")
-        folders = {}
-        page_token = None
-        while True:
-            try:
-                results = drive_service.files().list(
-                    q=f"'{self.shared_drive_id}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false",
-                    fields='nextPageToken, files(id, name)',
-                    pageSize=1000, pageToken=page_token,
-                    supportsAllDrives=True, includeItemsFromAllDrives=True,
-                    corpora='drive', driveId=self.shared_drive_id
-                ).execute()
-                for item in results.get('files', []):
-                    folders[item['name']] = item['id']
-                page_token = results.get('nextPageToken')
-                if not page_token: break
-            except HttpError as e:
-                print(f"⚠️  掃描 Drive 失敗: {e}")
-                break
-        return folders
+        from drive_utils import list_top_level_folders
+        raw_folders = list_top_level_folders(drive_service, self.shared_drive_id)
+        return {item['name']: item['id'] for item in raw_folders}
     
     def extract_folder_id_from_url(self, url: str) -> str:
         # 支援 /folders/ID 和 /open?id=ID 兩種格式
