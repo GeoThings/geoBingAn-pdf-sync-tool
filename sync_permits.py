@@ -71,9 +71,7 @@ def get_thread_drive_service():
 MAX_CONCURRENT_PERMITS = 5  # 同時處理的建案數（Google Drive API quota: 12,000 req/min）
 
 
-def _escape_drive_query(s: str) -> str:
-    """Escape single quotes for Google Drive API q parameter."""
-    return s.replace("\\", "\\\\").replace("'", "\\'")
+from config import escape_drive_query as _escape_drive_query
 
 
 class PermitSync:

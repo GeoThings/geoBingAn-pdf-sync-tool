@@ -88,3 +88,8 @@ def update_jwt_token(new_token: str, new_refresh_token: str = None):
 
     env_path.write_text(content, encoding='utf-8')
     print("✅ Token 已更新到 .env 檔案")
+
+
+def escape_drive_query(s: str) -> str:
+    """Escape single quotes for Google Drive API q parameter."""
+    return s.replace("\\", "\\\\").replace("'", "\\'")

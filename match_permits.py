@@ -42,9 +42,14 @@ SERVICE_ACCOUNT_FILE = os.environ.get('GOOGLE_CREDENTIALS', './credentials.json'
 
 def get_api_token():
     global JWT_TOKEN
-    token, was_refreshed, _new_refresh = get_valid_token(JWT_TOKEN, REFRESH_TOKEN, GEOBINGAN_REFRESH_URL)
+    token, was_refreshed, new_refresh = get_valid_token(JWT_TOKEN, REFRESH_TOKEN, GEOBINGAN_REFRESH_URL)
     if was_refreshed:
         JWT_TOKEN = token
+        try:
+            from config import update_jwt_token
+            update_jwt_token(token, new_refresh)
+        except Exception as e:
+            print(f"⚠️  無法更新 .env Token: {e}")
     return token
 
 

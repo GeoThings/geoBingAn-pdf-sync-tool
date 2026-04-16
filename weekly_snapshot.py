@@ -147,6 +147,8 @@ def notify_new_permits(diff):
     try:
         import requests
         clickup_token = os.environ.get('CLICKUP_TOKEN', '')
+        if not clickup_token:
+            return
         requests.post(
             'https://api.clickup.com/api/v2/task/86ex8u782/comment',
             headers={'Authorization': clickup_token, 'Content-Type': 'application/json'},

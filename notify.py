@@ -74,8 +74,8 @@ def send_macos_notification(title: str, message: str, sound: bool = True) -> boo
         return False
 
     try:
-        safe_title = title.replace('\\', '\\\\').replace('"', '\\"')
-        safe_msg = message.replace('\\', '\\\\').replace('"', '\\"')
+        safe_title = title.replace('\\', '\\\\').replace('"', '\\"').replace('\n', ' ').replace('\r', '')
+        safe_msg = message.replace('\\', '\\\\').replace('"', '\\"').replace('\n', ' ').replace('\r', '')
         sound_script = 'with sound name "default"' if sound else ''
         script = f'display notification "{safe_msg}" with title "{safe_title}" {sound_script}'
         subprocess.run(['osascript', '-e', script], capture_output=True, check=True)

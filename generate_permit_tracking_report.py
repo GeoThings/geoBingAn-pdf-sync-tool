@@ -71,13 +71,18 @@ current_access_token = JWT_TOKEN
 
 
 def get_valid_token() -> str:
-    """取得有效的 Token（使用 jwt_auth 模組）"""
+    """取得有效的 Token（使用 jwt_auth 模組），刷新時同步寫回 .env"""
     global current_access_token
-    valid_token, was_refreshed, _new_refresh = _jwt_get_valid_token(
+    valid_token, was_refreshed, new_refresh = _jwt_get_valid_token(
         current_access_token, REFRESH_TOKEN, GEOBINGAN_REFRESH_URL
     )
     if was_refreshed:
         current_access_token = valid_token
+        try:
+            from config import update_jwt_token
+            update_jwt_token(valid_token, new_refresh)
+        except Exception as e:
+            print(f"⚠️  無法更新 .env Token: {e}")
     return current_access_token
 
 
