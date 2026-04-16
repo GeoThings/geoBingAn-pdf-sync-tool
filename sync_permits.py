@@ -44,7 +44,7 @@ try:
     from config import SHARED_DRIVE_ID
 except ImportError:
     SHARED_DRIVE_ID = os.environ.get('SHARED_DRIVE_ID', '0AIvp1h-6BZ1oUk9PVA')
-PDF_LIST_URL = 'https://www-ws.gov.taipei/001/Upload/845/relfile/-1/845/03b35db7-a123-4b29-b881-1cb17fa9c4f2.pdf'
+PDF_LIST_URL_DEFAULT = 'https://www-ws.gov.taipei/001/Upload/845/relfile/-1/845/03b35db7-a123-4b29-b881-1cb17fa9c4f2.pdf'
 STATE_FILE = './state/sync_permits_progress.json'
 # ============================================
 
@@ -73,16 +73,19 @@ MAX_CONCURRENT_PERMITS = 5  # 同時處理的建案數（Google Drive API quota:
 
 
 class PermitSync:
-    def __init__(self):
+    def __init__(self, city: dict = None):
+        self.city = city or {}
+        self.city_name = self.city.get('name', '台北市')
+        self.pdf_list_url = self.city.get('pdf_list_url') or PDF_LIST_URL_DEFAULT
+        self.shared_drive_id = self.city.get('shared_drive_id') or SHARED_DRIVE_ID
         self.target_folders = {}
         self.permit_mapping = {}
         self.state = self.load_state()
         self.restricted_files = []
         self._state_lock = threading.Lock()
         self._print_lock = threading.Lock()
-        # 效能快取：目標資料夾的檔案樹和子資料夾 ID
-        self._target_file_cache = {}   # permit_no → set of "path/filename" or "filename"
-        self._subfolder_cache = {}     # (parent_id, subfolder_name) → folder_id
+        self._target_file_cache = {}
+        self._subfolder_cache = {}
         
     def load_state(self) -> dict:
         if os.path.exists(STATE_FILE):
@@ -108,7 +111,7 @@ class PermitSync:
     def download_pdf_list(self) -> str:
         print("📥 下載建案列表 PDF...")
         try:
-            response = requests.get(PDF_LIST_URL, verify=False, timeout=30)
+            response = requests.get(self.pdf_list_url, verify=False, timeout=30)
             pdf_path = '/tmp/permit_list.pdf'
             with open(pdf_path, 'wb') as f:
                 f.write(response.content)
@@ -194,11 +197,11 @@ class PermitSync:
         while True:
             try:
                 results = drive_service.files().list(
-                    q=f"'{SHARED_DRIVE_ID}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false",
+                    q=f"'{self.shared_drive_id}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false",
                     fields='nextPageToken, files(id, name)',
                     pageSize=1000, pageToken=page_token,
                     supportsAllDrives=True, includeItemsFromAllDrives=True,
-                    corpora='drive', driveId=SHARED_DRIVE_ID
+                    corpora='drive', driveId=self.shared_drive_id
                 ).execute()
                 for item in results.get('files', []):
                     folders[item['name']] = item['id']
@@ -302,7 +305,7 @@ class PermitSync:
     
     def create_target_folder(self, folder_name: str) -> str:
         try:
-            file_metadata = {'name': folder_name, 'mimeType': 'application/vnd.google-apps.folder', 'parents': [SHARED_DRIVE_ID]}
+            file_metadata = {'name': folder_name, 'mimeType': 'application/vnd.google-apps.folder', 'parents': [self.shared_drive_id]}
             folder = drive_service.files().create(body=file_metadata, fields='id', supportsAllDrives=True).execute()
             print(f"🆕 已自動建立資料夾: {folder_name}")
             return folder['id']
@@ -434,7 +437,7 @@ class PermitSync:
     
     def run(self):
         print("="*70)
-        print(f"🚀 建築執照監測資料同步工具 v5.1 (效能優化版)")
+        print(f"🚀 建築執照監測資料同步工具 v5.1 ({self.city_name})")
         print("   特性: 增量同步、跳過已處理建案、快速模式")
         print("="*70)
 
@@ -489,10 +492,23 @@ class PermitSync:
                     self._print(f"  ❌ {permit_no} 未預期錯誤: {e}")
 
 if __name__ == '__main__':
-    try:
-        sync = PermitSync()
-        sync.run()
-    except KeyboardInterrupt:
-        print("\n🛑 使用者手動停止")
-    except Exception as e:
-        print(f"\n❌ 發生未預期錯誤: {e}")
+    import argparse
+    from city_config import get_cities_for_cli
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--city', default=None, help='City ID or "all"')
+    args = parser.parse_args()
+
+    cities = get_cities_for_cli(args.city)
+    for city in cities:
+        print(f"\n{'='*70}")
+        print(f"🏙️  處理城市: {city['name']}")
+        print(f"{'='*70}")
+        try:
+            sync = PermitSync(city=city)
+            sync.run()
+        except KeyboardInterrupt:
+            print("\n🛑 使用者手動停止")
+            break
+        except Exception as e:
+            print(f"\n❌ {city['name']} 發生錯誤: {e}")

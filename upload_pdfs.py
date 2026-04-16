@@ -676,10 +676,15 @@ def flush_state(state: dict):
             _pending_error_saves = 0
 
 
-def main():
+def main(city: dict = None):
     """主程式"""
+    if city:
+        global SHARED_DRIVE_ID, GROUP_ID
+        SHARED_DRIVE_ID = city.get('shared_drive_id') or SHARED_DRIVE_ID
+        GROUP_ID = city.get('group_id') or GROUP_ID
+    city_name = city.get('name', '') if city else ''
     print("\n" + "=" * 60)
-    print("🚀 上傳最新 PDF 到 geoBingAn")
+    print(f"🚀 上傳最新 PDF 到 geoBingAn{f' ({city_name})' if city_name else ''}")
     print("=" * 60)
 
     # 初始化
@@ -846,8 +851,17 @@ def main():
 
 
 if __name__ == '__main__':
+    import argparse
+    from city_config import get_cities_for_cli
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--city', default=None, help='City ID or "all"')
+    args = parser.parse_args()
+
+    cities = get_cities_for_cli(args.city)
     try:
-        main()
+        for city in cities:
+            main(city=city)
     except KeyboardInterrupt:
         print("\n\n👋 使用者中斷執行")
         sys.exit(0)

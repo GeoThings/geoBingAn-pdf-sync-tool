@@ -79,11 +79,11 @@ def extract_name_from_text(text: str) -> str:
 
 
 # ==================== 來源 1: 政府 PDF ====================
-def fetch_gov_pdf_data() -> Dict[str, dict]:
+def fetch_gov_pdf_data(city: dict = None) -> Dict[str, dict]:
     """從政府 PDF 取得建照號碼 + 承造人/監造人"""
     print("📄 來源 1: 政府 PDF...")
     from sync_permits import PermitSync
-    ps = PermitSync()
+    ps = PermitSync(city=city)
     pdf_path = ps.download_pdf_list()
     mapping = ps.parse_pdf_list(pdf_path)
 
@@ -350,9 +350,14 @@ def fetch_live_alerts() -> Dict[str, list]:
 
 
 # ==================== 主程式：交叉比對 ====================
-def build_registry():
+def build_registry(city: dict = None):
+    if city:
+        global SHARED_DRIVE_ID, GROUP_ID
+        SHARED_DRIVE_ID = city.get('shared_drive_id') or SHARED_DRIVE_ID
+        GROUP_ID = city.get('group_id') or GROUP_ID
+    city_name = city.get('name', '') if city else ''
     print("=" * 60)
-    print("🔍 建案交叉比對工具")
+    print(f"🔍 建案交叉比對工具{f' ({city_name})' if city_name else ''}")
     print("=" * 60)
 
     # 初始化 Drive
@@ -365,7 +370,7 @@ def build_registry():
     print(f"現有 registry: {len(registry)} 筆\n")
 
     # 取得所有來源
-    gov_data = fetch_gov_pdf_data()
+    gov_data = fetch_gov_pdf_data(city=city)
     source_names = fetch_source_folder_names(gov_data, drive_service)
     drive_names = fetch_drive_pdf_names(drive_service)
     api_projects = fetch_api_projects()
@@ -640,4 +645,13 @@ def build_registry():
 
 
 if __name__ == '__main__':
-    build_registry()
+    import argparse
+    from city_config import get_cities_for_cli
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--city', default=None, help='City ID or "all"')
+    args = parser.parse_args()
+
+    cities = get_cities_for_cli(args.city)
+    for city in cities:
+        build_registry(city=city)

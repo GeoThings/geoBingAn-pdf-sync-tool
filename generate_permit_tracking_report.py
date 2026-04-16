@@ -52,7 +52,8 @@ SERVICE_ACCOUNT_FILE = os.environ.get(
     os.path.join(os.path.dirname(__file__), 'credentials.json')
 )
 SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
-PDF_LIST_URL = 'https://www-ws.gov.taipei/001/Upload/845/relfile/-1/845/03b35db7-a123-4b29-b881-1cb17fa9c4f2.pdf'
+PDF_LIST_URL_DEFAULT = 'https://www-ws.gov.taipei/001/Upload/845/relfile/-1/845/03b35db7-a123-4b29-b881-1cb17fa9c4f2.pdf'
+PDF_LIST_URL = PDF_LIST_URL_DEFAULT
 
 # API 設定
 GEOBINGAN_API_BASE = 'https://riskmap.today/api/reports/construction-reports/'
@@ -1200,7 +1201,7 @@ a:hover{{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}}
 <div class="meta">{now.strftime('%Y年%m月%d日 %H:%M')} | 自動生成</div>
 </div>
 <div class="stats">
-<div class="stat" title="台北市政府列管的建案監測數量"><div class="label">監測建案總數</div><div class="value">{total}</div></div>
+<div class="stat" title="政府列管的建案監測數量"><div class="label">監測建案總數</div><div class="value">{total}</div></div>
 <div class="stat" title="所有報告都已上傳到究平安系統完成分析"><div class="label">已完成上傳</div><div class="value" style="color:#22c55e">{completed}</div></div>
 <div class="stat" title="部分報告已對應到 AI 分析結果"><div class="label">部分對應</div><div class="value" style="color:#3b82f6">{in_progress}</div></div>
 <div class="stat" title="雲端有報告但尚未對應到 AI 分析"><div class="label">待上傳</div><div class="value" style="color:#f59e0b">{not_uploaded}</div></div>
@@ -1485,10 +1486,15 @@ def generate_csv_report(permit_data: Dict[str, dict], non_google: List[dict], al
     print(f"  已生成: {OUTPUT_CSV}")
 
 
-def main():
+def main(city: dict = None):
     """主程式"""
+    if city:
+        global SHARED_DRIVE_ID, PDF_LIST_URL
+        SHARED_DRIVE_ID = city.get('shared_drive_id') or SHARED_DRIVE_ID
+        PDF_LIST_URL = city.get('pdf_list_url') or PDF_LIST_URL
+    city_name = city.get('name', '') if city else ''
     print("=" * 50)
-    print("建照監測追蹤報告生成工具")
+    print(f"建照監測追蹤報告生成工具{f' ({city_name})' if city_name else ''}")
     print("=" * 50)
 
     start_time = time.time()
@@ -1633,4 +1639,13 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    import argparse
+    from city_config import get_cities_for_cli
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--city', default=None, help='City ID or "all"')
+    args = parser.parse_args()
+
+    cities = get_cities_for_cli(args.city)
+    for city in cities:
+        main(city=city)

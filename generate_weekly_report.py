@@ -181,7 +181,7 @@ tr:nth-child(even) {{ background: #fafafa; }}
 
 <div class="header">
 <h1>{title}</h1>
-<div class="subtitle">geoBingAn 究平安 ・ 台北市建管處建案追蹤</div>
+<div class="subtitle">geoBingAn 究平安 ・ 建案監測追蹤</div>
 <div class="period">📅 {s["period_start"]}（{'一二三四五六日'[datetime.strptime(s['period_start'].replace('/','-'), '%Y-%m-%d').weekday()]}）— {s["period_end"]}（{'一二三四五六日'[datetime.strptime(s['period_end'].replace('/','-'), '%Y-%m-%d').weekday()]}）</div>
 </div>
 
