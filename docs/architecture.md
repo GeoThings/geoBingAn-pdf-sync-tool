@@ -1,16 +1,20 @@
 # 系統架構設計文件
 
-> geoBingAn PDF 同步上傳工具 v4.3 架構說明
+> geoBingAn 建案監測同步工具 v5.1 架構說明
+> 最後更新：2026-04-16
 
 ## 系統概覽
 
 ```
-┌─────────────────┐     ┌──────────────┐     ┌─────────────────┐
-│  台北市政府       │────▶│ Google Drive  │────▶│  riskmap.today  │
-│  建管處 PDF 列表  │     │ Shared Drive │     │  (geoBingAn API)│
-└─────────────────┘     └──────────────┘     └─────────────────┘
-     sync_permits.py         upload_pdfs.py
-         步驟 1                  步驟 2
+┌─────────────────┐
+│  各縣市政府       │──┐
+│  PDF 列表         │  │
+└─────────────────┘  │  ┌──────────────┐     ┌─────────────────┐
+                     ├─▶│ Google Drive  │────▶│  riskmap.today  │
+┌─────────────────┐  │  │ Shared Drive │     │  (geoBingAn API)│
+│  CSV 匯入         │──┘  └──────────────┘     └─────────────────┘
+│  (NGO 手動整理)   │   sync_permits.py         upload_pdfs.py
+└─────────────────┘       步驟 1                  步驟 2
 
                     ┌──────────────────┐     ┌──────────────┐
                     │ 追蹤報告 HTML/CSV │────▶│ GitHub Pages │
@@ -29,7 +33,8 @@
 
 | 時間 | 觸發腳本 | 內容 |
 |------|----------|------|
-| 週一 09:00 | `run_weekly_sync.sh` | 完整流程（步驟 1-5） |
+| 每日 08:00 | `health_check.py --notify` | Token/磁碟/同步狀態/API 檢查 |
+| 週一 09:00 | `run_weekly_sync.sh` | 完整流程（步驟 1-7） |
 | 週五 18:00 | `run_friday_report.sh` | 總結週報 PDF → ClickUp |
 
 ## 模組依賴關係
@@ -37,46 +42,68 @@
 ```
 run_weekly_sync.sh（orchestrator）
 ├── sync_permits.py
-│   └── config.py → .env
+│   ├── city_config.py → cities.json    ← 多城市配置
+│   ├── config.py → .env
+│   └── drive_utils.py                  ← 共用 Drive 掃描
 │
 ├── upload_pdfs.py
 │   ├── config.py → .env
-│   ├── jwt_auth.py          ← 共用 JWT 管理
-│   └── filename_date_parser.py  ← 共用日期解析
+│   ├── jwt_auth.py                     ← 共用 JWT 管理（auto-rotate refresh token）
+│   └── filename_date_parser.py         ← 共用日期解析
 │
-├── match_permits.py              ← 建案名稱交叉比對（6 來源）
+├── match_permits.py
 │   ├── config.py → .env
-│   └── jwt_auth.py          ← 共用 JWT 管理
+│   ├── jwt_auth.py
+│   ├── drive_utils.py                  ← 共用 Drive 掃描
+│   └── permit_utils.py                 ← 共用建案名稱提取
 │
-├── generate_permit_tracking_report.py
+├── generate_permit_tracking_report.py（907 行，資料收集 + main）
 │   ├── config.py → .env
-│   ├── jwt_auth.py          ← 共用 JWT 管理
-│   └── state/permit_registry.json  ← 從 match_permits.py 產出
+│   ├── jwt_auth.py
+│   ├── drive_utils.py                  ← 共用 Drive 掃描
+│   ├── permit_utils.py                 ← 共用建案名稱提取
+│   └── report_template.py             ← HTML/CSV 報告模板（656 行）
 │
-└── generate_weekly_report.py        ← 週報 PDF + ClickUp 上傳
-    ├── state/permit_system_mapping.json
+└── generate_weekly_report.py
     ├── state/permit_registry.json
     └── Chrome headless（PDF 渲染）
 ```
 
-### 獨立可測試模組
+### 獨立可測試模組（零外部服務依賴）
 
-| 模組 | 職責 | 外部依賴 | 測試 |
-|------|------|----------|------|
-| `filename_date_parser.py` | 從 PDF 檔名解析日期 | 無 | 21 cases |
-| `jwt_auth.py` | JWT decode/expire/refresh | `requests` | 20 cases |
+| 模組 | 職責 | 測試 |
+|------|------|------|
+| `permit_utils.py` | 從 PDF 檔名提取建案名稱（30+ regex） | 16 cases |
+| `filename_date_parser.py` | 從 PDF 檔名解析日期（7 種格式） | 21 cases |
+| `jwt_auth.py` | JWT decode/expire/refresh（thread-safe） | 14 cases |
+| `drive_utils.py` | 共用 Drive 掃描（list folders, resolve subfolder hierarchy） | 8 cases |
+| `report_template.py` | HTML/CSV 報告生成 | 11 cases |
+| `config.py` | 配置 + escape_drive_query | 7 cases |
+| `city_config.py` | 多城市配置載入/解析 | — |
 
-設計原則：這兩個模組不依賴 `config.py`、Google API 或任何認證，可在任何環境直接 import 和測試。
+設計原則：這些模組不依賴 `credentials.json` 或任何外部服務（lazy init），可在 CI 或乾淨環境直接 import 和測試。
+
+### CI Pipeline
+
+```
+GitHub Actions → pytest tests/ → Python 3.11 + 3.12 → 63 tests
+觸發條件：push to main / PR to main
+```
 
 ## 資料流
 
 ### 步驟 1：sync_permits.py
 
 ```
-台北市政府 PDF 列表
+cities.json（多城市配置）
     │
-    ▼ 下載 + 解析
-292 個建案（含 Google Drive 連結）
+    ▼ 依 source_type 分流
+    │
+    ├── PDF: 下載政府 PDF → 智慧分塊解析
+    └── CSV: 載入本地 CSV（NGO 手動整理）
+    │
+    ▼
+N 個建案（含 Google Drive 連結）
     │
     ▼ 比對 state/sync_permits_progress.json
 未處理建案
@@ -289,13 +316,15 @@ run_weekly_sync.sh
 
 ```python
 get_valid_token(current_token, refresh_token, refresh_url)
-    → (valid_token, was_refreshed)
+    → (valid_token, was_refreshed, new_refresh_token)
 ```
 
 - **Thread-safe**：`_token_lock` 保護整個 check-and-refresh 流程
 - **自動刷新**：過期前 5 分鐘（buffer_seconds=300）觸發
+- **Refresh Token 自動輪替**：API 回傳新 refresh_token 時自動寫回 .env
 - **降級策略**：刷新失敗時回傳舊 Token 嘗試（可能失敗但不中斷流程）
-- **雙格式支援**：API 回應 `access` 或 `access_token` 都接受
+- **雙格式支援**：API 回應 `access`/`access_token` + `refresh`/`refresh_token` 都接受
+- **所有呼叫者都持久化**：upload_pdfs、match_permits、report generator 刷新時都寫回 .env
 
 ## 設定管理
 
@@ -312,6 +341,16 @@ config.py (from .env)  →  環境變數  →  硬編碼預設值
 | 測試檔案 | 覆蓋模組 | Cases | 依賴 |
 |----------|----------|-------|------|
 | `test_parse_date_from_filename.py` | filename_date_parser.py | 21 | 無 |
-| `test_jwt_auth.py` | jwt_auth.py | 20 | unittest.mock |
+| `test_jwt_auth.py` | jwt_auth.py | 14 | unittest.mock |
+| `test_normalize_permit.py` | match_permits.normalize_permit | 13 | 無 |
+| `test_extract_name.py` | permit_utils.extract_name_from_filename | 16 | 無 |
+| `test_config.py` | config.escape_drive_query | 7 | 無 |
+| `test_drive_utils.py` | drive_utils.build_folder_resolver | 8 | 無 |
+| `test_report_template.py` | report_template (HTML + CSV) | 11 | tempfile |
+| `test_csv_import.py` | sync_permits.load_csv_list | 8 | tempfile |
+| **合計** | | **63** | |
 
-設計原則：測試只 import 獨立模組，不觸發 config.py / Google API 初始化，可在 CI 或乾淨環境執行。
+設計原則：
+- 測試只 import 獨立模組，不觸發 credentials 載入或 Google API 初始化（lazy init）
+- 可在 CI（無 credentials.json）或乾淨環境執行
+- Smoke tests 覆蓋報告生成端到端路徑（包含 XSS escaping 驗證）

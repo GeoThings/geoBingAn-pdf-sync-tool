@@ -1,6 +1,6 @@
-# geoBingAn PDF 同步上傳工具
+# geoBingAn 建案監測同步工具
 
-自動從台北市政府建管處同步建案 PDF，並上傳到 geoBingAn Backend API 建立監測報告。
+自動同步各縣市建案監測 PDF 到 Google Drive，並上傳到 geoBingAn Backend API 建立監測報告。支援多城市（PDF 列表或 CSV 匯入）。
 
 ## 📊 最新同步結果（2026-04-15）
 
@@ -37,7 +37,9 @@
 - ✅ 線上追蹤報告自動更新
 - ✅ 環境變數管理（.env 檔案，向後相容 fallback）
 - ✅ 通知功能（LINE Notify / macOS）
-- ✅ 自動化測試（pytest, 41 cases）
+- ✅ 自動化測試（pytest, 63 cases, GitHub Actions CI）
+- ✅ 多城市支援（cities.json 配置，PDF 或 CSV 資料來源）
+- ✅ Refresh Token 自動輪替（API 回傳新 token 時自動寫回 .env）
 
 詳見文件：
 - [建照監測追蹤報告](https://htmlpreview.github.io/?https://github.com/GeoThings/geoBingAn-pdf-sync-tool/blob/main/docs/index.html) 📊 線上即時查看
@@ -48,10 +50,13 @@
 
 ## 🎯 工具定位
 
-**這是一個純粹的 PDF 同步上傳工具**，只負責：
-1. ✅ 從台北市政府建管處同步建案 PDF 到 Google Drive
-2. ✅ 從 Google Drive 上傳 PDF 到 geoBingAn Backend API
-3. ✅ 定期自動執行（cron job）
+**這是一個多縣市建案監測自動化工具**，負責：
+1. ✅ 從各縣市政府同步建案 PDF 到 Google Drive（支援 PDF 列表或 CSV 匯入）
+2. ✅ 從 Google Drive 上傳 PDF 到 geoBingAn Backend API（AI 分析）
+3. ✅ 建案名稱交叉比對（6 個資料來源）
+4. ✅ 產生追蹤報告（HTML/CSV）+ 週報 PDF 上傳 ClickUp
+5. ✅ 全自動排程（cron：每日健檢 / 週一同步 / 週五總結）
+6. ✅ CI 測試保護（GitHub Actions，63 個測試）
 
 **後端負責（不由此工具處理）**：
 - AI 分析（Gemini 2.5/3.0 Pro）
@@ -107,6 +112,9 @@ GROUP_NAME=your-group-name
 GEOBINGAN_API_URL=https://riskmap.today/api/reports/construction-reports/upload/
 GEOBINGAN_REFRESH_URL=https://riskmap.today/api/auth/auth/refresh_token/
 
+# ClickUp 週報上傳
+CLICKUP_TOKEN=your-clickup-token      # 從 ClickUp Settings > Apps 取得
+
 # 通知設定（可選）
 LINE_NOTIFY_TOKEN=your-line-token     # 從 https://notify-bot.line.me/ 取得
 ENABLE_MACOS_NOTIFY=true              # 啟用 macOS 系統通知
@@ -114,44 +122,35 @@ ENABLE_MACOS_NOTIFY=true              # 啟用 macOS 系統通知
 
 ### 4. 執行
 
-#### 快速執行指令（一行版本）：
+#### 快速執行：
 ```bash
-# 完整流程（同步 + 上傳）
-/Users/geothingsmacbookair/Documents/GitHub/geoBingAn-pdf-sync-tool/run_weekly_sync.sh
+# 完整流程（同步 + 上傳 + 報告）
+./run_weekly_sync.sh
 
-# 只上傳 PDF（跳過同步）
-cd /Users/geothingsmacbookair/Documents/GitHub/geoBingAn-pdf-sync-tool && source venv/bin/activate && python3 upload_pdfs.py
+# 只同步特定城市
+python3 sync_permits.py --city taipei
 
-# 只同步 PDF（從台北市政府）
-cd /Users/geothingsmacbookair/Documents/GitHub/geoBingAn-pdf-sync-tool && source venv/bin/activate && python3 sync_permits.py
-```
-
-#### 手動執行（分步驟）：
-```bash
-cd /Users/geothingsmacbookair/Documents/GitHub/geoBingAn-pdf-sync-tool
-source venv/bin/activate
-
-# 步驟 1: 同步建案 PDF from 台北市政府
-python3 sync_permits.py
-
-# 步驟 2: 上傳最近 7 天的 PDF 到 Backend
+# 只上傳 PDF
 python3 upload_pdfs.py
+
+# 健康檢查
+python3 health_check.py
 ```
 
-#### 自動執行（已設定 cron job）：
+#### Cron 自動排程設定：
 ```bash
-# 每週一早上 9:00 自動執行
-# 查看排程: crontab -l
-0 9 * * 1 /Users/geothingsmacbookair/Documents/GitHub/geoBingAn-pdf-sync-tool/run_weekly_sync.sh
+# 一鍵設定 3 個排程
+./setup_cron.sh
+
+# 排程內容：
+# 每日 08:00 — 健康檢查（Token/磁碟/API）
+# 週一 09:00 — 完整同步 + 同步週報
+# 週五 18:00 — 總結週報
 ```
 
-#### 查看執行日誌：
+#### 查看日誌：
 ```bash
-# 最新日誌
-tail -100 /Users/geothingsmacbookair/Documents/GitHub/geoBingAn-pdf-sync-tool/logs/weekly_sync_*.log
-
-# 即時監控
-tail -f /Users/geothingsmacbookair/Documents/GitHub/geoBingAn-pdf-sync-tool/logs/weekly_sync_*.log
+tail -f logs/weekly_sync_*.log
 ```
 
 ---
@@ -159,24 +158,29 @@ tail -f /Users/geothingsmacbookair/Documents/GitHub/geoBingAn-pdf-sync-tool/logs
 ## 📋 核心腳本說明
 
 ### `sync_permits.py`
-從台北市政府建管處網站同步建案 PDF 到 Google Drive
+從各縣市政府同步建案 PDF 到 Google Drive（支援多城市）
 
 **功能：**
-- 下載台北市政府最新建案清單 PDF
-- 解析 PDF 中的建案代碼和 Google Drive 連結
-- 自動建立資料夾並下載 PDF 到共享雲端
-- 斷點續傳，避免重複下載
+- 支援兩種資料來源：政府 PDF 列表（`source_type: pdf`）或 CSV 匯入（`source_type: csv`）
+- 解析建案代碼和 Google Drive 連結
+- 自動建立資料夾並複製 PDF 到共享雲端（5 thread 並行）
+- 斷點續傳、增量同步
+- `--city` 參數指定城市或 `--city all` 處理所有啟用城市
 
-**設定：**
-```python
-SERVICE_ACCOUNT_FILE = '/path/to/credentials.json'
-SHARED_DRIVE_ID = '0AIvp1h-6BZ1oUk9PVA'
-PDF_LIST_URL = 'https://www-ws.gov.taipei/...'
+**多城市配置（cities.json）：**
+```json
+{
+  "cities": [
+    {"id": "taipei", "source_type": "pdf", "pdf_list_url": "https://...", ...},
+    {"id": "newtaipei", "source_type": "csv", "csv_path": "./data/newtaipei.csv", ...}
+  ]
+}
 ```
 
-**狀態追蹤：**
-```
-state/sync_permits_progress.json
+**CSV 格式（data/example_permits.csv）：**
+```csv
+permit_no,source_url,name
+112建字第0238號,https://drive.google.com/drive/folders/ABC,建案名稱
 ```
 
 ---
