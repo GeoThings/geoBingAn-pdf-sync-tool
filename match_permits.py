@@ -189,7 +189,7 @@ def fetch_drive_pdf_names(drive_service) -> Dict[str, dict]:
             break
 
     # 從檔名提取名稱（投票制：最常出現的名稱）
-    from generate_permit_tracking_report import extract_name_from_filename
+    from permit_utils import extract_name_from_filename
     names = {}
     for permit, files in permit_files.items():
         counts = Counter()
