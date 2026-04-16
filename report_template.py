@@ -5,6 +5,7 @@
 """
 import os
 import re
+from datetime import datetime
 from typing import Dict, List
 
 
@@ -649,6 +650,7 @@ def generate_csv_report(permit_data: Dict[str, dict], non_google: List[dict], al
         lines.append(f'{i},"{permit}","{building_name}","{cloud}",{drive},{system},{coverage},{warning},{danger},{latest_alert},{latest},{days},{status}')
 
     if output_path:
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
         with open(output_path, 'w', encoding='utf-8-sig') as f:
             f.write('\n'.join(lines))
         print(f"  已生成: {output_path}")

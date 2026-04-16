@@ -24,6 +24,8 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 import PyPDF2
 from jwt_auth import get_valid_token as _jwt_get_valid_token
+from permit_utils import extract_name_from_filename
+from report_template import generate_html_report, generate_csv_report
 
 import warnings
 
@@ -306,8 +308,6 @@ def load_upload_history_by_permit() -> Dict[str, set]:
 
     return permit_files
 
-
-from permit_utils import extract_name_from_filename
 
 
 def fetch_api_reports() -> Dict[str, List[dict]]:
@@ -738,8 +738,6 @@ def load_alert_data() -> Tuple[Dict[str, dict], Dict[str, str]]:
 
     return alert_data, permit_to_name
 
-
-from report_template import generate_html_report, generate_csv_report
 
 
 def main(city: dict = None):
