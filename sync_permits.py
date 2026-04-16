@@ -28,8 +28,7 @@ from googleapiclient.http import MediaIoBaseDownload, MediaIoBaseUpload
 import PyPDF2
 from typing import Dict, List, Tuple
 
-# 禁用 SSL 警告
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+import warnings
 
 # ================== 設定區域 ==================
 # 請確認金鑰路徑是否正確
@@ -72,6 +71,9 @@ def get_thread_drive_service():
 MAX_CONCURRENT_PERMITS = 5  # 同時處理的建案數（Google Drive API quota: 12,000 req/min）
 
 
+from config import escape_drive_query as _escape_drive_query
+
+
 class PermitSync:
     def __init__(self, city: dict = None):
         self.city = city or {}
@@ -111,7 +113,9 @@ class PermitSync:
     def download_pdf_list(self) -> str:
         print("📥 下載建案列表 PDF...")
         try:
-            response = requests.get(self.pdf_list_url, verify=False, timeout=30)
+            with warnings.catch_warnings():
+                warnings.filterwarnings('ignore', category=urllib3.exceptions.InsecureRequestWarning)
+                response = requests.get(self.pdf_list_url, verify=False, timeout=30)
             pdf_path = '/tmp/permit_list.pdf'
             with open(pdf_path, 'wb') as f:
                 f.write(response.content)
@@ -295,7 +299,8 @@ class PermitSync:
             target_folder_id = self.get_or_create_subfolder(folder_id, path)
             if not target_folder_id: return False
         try:
-            query = f"'{target_folder_id}' in parents and (name='{filename}' or name='{filename}.url') and trashed=false"
+            safe_name = _escape_drive_query(filename)
+            query = f"'{target_folder_id}' in parents and (name='{safe_name}' or name='{safe_name}.url') and trashed=false"
             results = self._get_svc().files().list(
                 q=query, fields='files(id)', supportsAllDrives=True, includeItemsFromAllDrives=True
             ).execute()
@@ -322,7 +327,8 @@ class PermitSync:
                 current_folder_id = self._subfolder_cache[cache_key]
                 continue
             try:
-                query = f"'{current_folder_id}' in parents and name='{folder_name}' and mimeType='application/vnd.google-apps.folder' and trashed=false"
+                safe_folder = _escape_drive_query(folder_name)
+                query = f"'{current_folder_id}' in parents and name='{safe_folder}' and mimeType='application/vnd.google-apps.folder' and trashed=false"
                 results = self._get_svc().files().list(q=query, fields='files(id)', supportsAllDrives=True, includeItemsFromAllDrives=True).execute()
                 items = results.get('files', [])
                 if items:
