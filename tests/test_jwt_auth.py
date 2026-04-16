@@ -85,8 +85,9 @@ class TestRefreshAccessToken:
         mock_response.json.return_value = {"access": "new_token_123"}
         mock_post.return_value = mock_response
 
-        result = refresh_access_token("refresh_tok", "https://example.com/refresh")
-        assert result == "new_token_123"
+        access, refresh = refresh_access_token("refresh_tok", "https://example.com/refresh")
+        assert access == "new_token_123"
+        assert refresh is None
         mock_post.assert_called_once()
 
     @patch('jwt_auth.requests.post')
@@ -96,8 +97,19 @@ class TestRefreshAccessToken:
         mock_response.json.return_value = {"access_token": "new_token_456"}
         mock_post.return_value = mock_response
 
-        result = refresh_access_token("refresh_tok", "https://example.com/refresh")
-        assert result == "new_token_456"
+        access, refresh = refresh_access_token("refresh_tok", "https://example.com/refresh")
+        assert access == "new_token_456"
+
+    @patch('jwt_auth.requests.post')
+    def test_success_with_both_tokens(self, mock_post):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"access": "new_access", "refresh": "new_refresh"}
+        mock_post.return_value = mock_response
+
+        access, refresh = refresh_access_token("refresh_tok", "https://example.com/refresh")
+        assert access == "new_access"
+        assert refresh == "new_refresh"
 
     @patch('jwt_auth.requests.post')
     def test_failure_status_code(self, mock_post):
@@ -106,15 +118,17 @@ class TestRefreshAccessToken:
         mock_response.text = "Unauthorized"
         mock_post.return_value = mock_response
 
-        result = refresh_access_token("refresh_tok", "https://example.com/refresh")
-        assert result is None
+        access, refresh = refresh_access_token("refresh_tok", "https://example.com/refresh")
+        assert access is None
+        assert refresh is None
 
     @patch('jwt_auth.requests.post')
     def test_network_error(self, mock_post):
         mock_post.side_effect = Exception("Connection refused")
 
-        result = refresh_access_token("refresh_tok", "https://example.com/refresh")
-        assert result is None
+        access, refresh = refresh_access_token("refresh_tok", "https://example.com/refresh")
+        assert access is None
+        assert refresh is None
 
     @patch('jwt_auth.requests.post')
     def test_missing_token_in_response(self, mock_post):
@@ -123,8 +137,8 @@ class TestRefreshAccessToken:
         mock_response.json.return_value = {"message": "ok"}
         mock_post.return_value = mock_response
 
-        result = refresh_access_token("refresh_tok", "https://example.com/refresh")
-        assert result is None
+        access, refresh = refresh_access_token("refresh_tok", "https://example.com/refresh")
+        assert access is None
 
 
 class TestGetValidToken:
@@ -132,28 +146,30 @@ class TestGetValidToken:
         future_exp = int(time.time()) + 3600
         token = _make_jwt({"exp": future_exp})
 
-        result_token, was_refreshed = get_valid_token(token, "refresh", "https://example.com/refresh")
+        result_token, was_refreshed, new_refresh = get_valid_token(token, "refresh", "https://example.com/refresh")
         assert result_token == token
         assert was_refreshed is False
+        assert new_refresh is None
 
     @patch('jwt_auth.refresh_access_token')
     def test_expired_token_refreshed(self, mock_refresh):
         past_exp = int(time.time()) - 100
         old_token = _make_jwt({"exp": past_exp})
-        mock_refresh.return_value = "fresh_token"
+        mock_refresh.return_value = ("fresh_token", "fresh_refresh")
 
-        result_token, was_refreshed = get_valid_token(old_token, "refresh", "https://example.com/refresh")
+        result_token, was_refreshed, new_refresh = get_valid_token(old_token, "refresh", "https://example.com/refresh")
         assert result_token == "fresh_token"
         assert was_refreshed is True
+        assert new_refresh == "fresh_refresh"
         mock_refresh.assert_called_once_with("refresh", "https://example.com/refresh")
 
     @patch('jwt_auth.refresh_access_token')
     def test_expired_token_refresh_fails(self, mock_refresh):
         past_exp = int(time.time()) - 100
         old_token = _make_jwt({"exp": past_exp})
-        mock_refresh.return_value = None
+        mock_refresh.return_value = (None, None)
 
-        result_token, was_refreshed = get_valid_token(old_token, "refresh", "https://example.com/refresh")
+        result_token, was_refreshed, new_refresh = get_valid_token(old_token, "refresh", "https://example.com/refresh")
         assert result_token == old_token
         assert was_refreshed is False
 
@@ -166,7 +182,7 @@ class TestGetValidToken:
         results = []
 
         def call_get_valid():
-            t, refreshed = get_valid_token(token, "refresh", "https://example.com/refresh")
+            t, refreshed, _ = get_valid_token(token, "refresh", "https://example.com/refresh")
             results.append((t, refreshed))
 
         threads = [threading.Thread(target=call_get_valid) for _ in range(10)]

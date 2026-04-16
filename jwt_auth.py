@@ -61,16 +61,12 @@ def is_token_expired(token: str, buffer_seconds: int = 300) -> bool:
     return current_time >= (exp - buffer_seconds)
 
 
-def refresh_access_token(refresh_token: str, refresh_url: str) -> Optional[str]:
+def refresh_access_token(refresh_token: str, refresh_url: str) -> tuple:
     """
-    使用 refresh_token 取得新的 access_token
-
-    Args:
-        refresh_token: 用於刷新的 token
-        refresh_url: 刷新 API 的 URL
+    使用 refresh_token 取得新的 access_token（及可能的新 refresh_token）
 
     Returns:
-        新的 access_token，失敗時返回 None
+        tuple of (new_access_token, new_refresh_token) — 任一可能為 None
     """
     try:
         print("🔄 正在刷新 JWT Token...", flush=True)
@@ -85,43 +81,39 @@ def refresh_access_token(refresh_token: str, refresh_url: str) -> Optional[str]:
         if response.status_code == 200:
             data = response.json()
             new_token = data.get('access') or data.get('access_token')
+            new_refresh = data.get('refresh') or data.get('refresh_token')
 
             if new_token:
                 print("✅ JWT Token 刷新成功", flush=True)
-                return new_token
+                if new_refresh:
+                    print("✅ Refresh Token 也已更新", flush=True)
+                return new_token, new_refresh
             else:
                 print(f"❌ 刷新回應中找不到 access token: {data}", flush=True)
-                return None
+                return None, None
         else:
             print(f"❌ Token 刷新失敗 ({response.status_code}): {response.text[:200]}", flush=True)
-            return None
+            return None, None
 
     except Exception as e:
         print(f"❌ Token 刷新發生錯誤: {e}", flush=True)
-        return None
+        return None, None
 
 
 def get_valid_token(current_token: str, refresh_token: str, refresh_url: str) -> tuple:
     """
     取得有效的 access token（執行緒安全）
 
-    如果當前 token 即將過期，會自動刷新。
-
-    Args:
-        current_token: 目前的 access token
-        refresh_token: 用於刷新的 token
-        refresh_url: 刷新 API 的 URL
-
     Returns:
-        tuple of (valid_token, was_refreshed) - 有效的 token 和是否有刷新
+        tuple of (valid_token, was_refreshed, new_refresh_token)
     """
     with _token_lock:
         if is_token_expired(current_token):
             print("⚠️  JWT Token 已過期或即將過期", flush=True)
-            new_token = refresh_access_token(refresh_token, refresh_url)
+            new_token, new_refresh = refresh_access_token(refresh_token, refresh_url)
             if new_token:
-                return new_token, True
+                return new_token, True, new_refresh
             else:
                 print("⚠️  使用舊 Token 嘗試（可能會失敗）", flush=True)
 
-        return current_token, False
+        return current_token, False, None
