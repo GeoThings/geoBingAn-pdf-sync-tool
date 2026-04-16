@@ -11,6 +11,7 @@
 """
 import json
 import os
+import csv
 import re
 import requests
 import urllib3
@@ -78,7 +79,9 @@ class PermitSync:
     def __init__(self, city: dict = None):
         self.city = city or {}
         self.city_name = self.city.get('name', '台北市')
+        self.source_type = self.city.get('source_type', 'pdf')
         self.pdf_list_url = self.city.get('pdf_list_url') or PDF_LIST_URL_DEFAULT
+        self.csv_path = self.city.get('csv_path', '')
         self.shared_drive_id = self.city.get('shared_drive_id') or SHARED_DRIVE_ID
         self.target_folders = {}
         self.permit_mapping = {}
@@ -110,6 +113,26 @@ class PermitSync:
         with self._print_lock:
             print(msg, flush=True)
     
+    def load_csv_list(self) -> Dict[str, str]:
+        """從 CSV 檔案載入建照號碼 → Drive URL 對應"""
+        print(f"📄 載入 CSV: {self.csv_path}")
+        mapping = {}
+        csv_file = Path(self.csv_path)
+        if not csv_file.is_absolute():
+            csv_file = Path(__file__).parent / self.csv_path
+        if not csv_file.exists():
+            print(f"❌ CSV 檔案不存在: {csv_file}")
+            return mapping
+        with open(csv_file, 'r', encoding='utf-8-sig') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                permit_no = row.get('permit_no', '').strip()
+                source_url = row.get('source_url', '').strip()
+                if permit_no and source_url:
+                    mapping[permit_no] = source_url
+        print(f"✅ 載入 {len(mapping)} 個建案")
+        return mapping
+
     def download_pdf_list(self) -> str:
         print("📥 下載建案列表 PDF...")
         try:
@@ -437,8 +460,11 @@ class PermitSync:
         print("   特性: 增量同步、跳過已處理建案、快速模式")
         print("="*70)
 
-        pdf_path = self.download_pdf_list()
-        self.permit_mapping = self.parse_pdf_list(pdf_path)
+        if self.source_type == 'csv':
+            self.permit_mapping = self.load_csv_list()
+        else:
+            pdf_path = self.download_pdf_list()
+            self.permit_mapping = self.parse_pdf_list(pdf_path)
         self.target_folders = self.scan_shared_drive()
 
         permit_list = list(self.permit_mapping.items())
