@@ -74,10 +74,10 @@ def send_macos_notification(title: str, message: str, sound: bool = True) -> boo
         return False
 
     try:
+        safe_title = title.replace('\\', '\\\\').replace('"', '\\"')
+        safe_msg = message.replace('\\', '\\\\').replace('"', '\\"')
         sound_script = 'with sound name "default"' if sound else ''
-        script = f'''
-        display notification "{message}" with title "{title}" {sound_script}
-        '''
+        script = f'display notification "{safe_msg}" with title "{safe_title}" {sound_script}'
         subprocess.run(['osascript', '-e', script], capture_output=True, check=True)
         return True
     except Exception as e:

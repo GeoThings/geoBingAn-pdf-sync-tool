@@ -25,8 +25,7 @@ from googleapiclient.errors import HttpError
 import PyPDF2
 from jwt_auth import get_valid_token as _jwt_get_valid_token
 
-# 禁用 SSL 警告
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+import warnings
 
 # 匯入配置
 try:
@@ -74,7 +73,7 @@ current_access_token = JWT_TOKEN
 def get_valid_token() -> str:
     """取得有效的 Token（使用 jwt_auth 模組）"""
     global current_access_token
-    valid_token, was_refreshed = _jwt_get_valid_token(
+    valid_token, was_refreshed, _new_refresh = _jwt_get_valid_token(
         current_access_token, REFRESH_TOKEN, GEOBINGAN_REFRESH_URL
     )
     if was_refreshed:
@@ -441,6 +440,7 @@ def fetch_api_reports() -> Dict[str, List[dict]]:
 
     all_reports = []
     page = 1
+    auth_retries = 0
 
     while True:
         try:
@@ -451,11 +451,16 @@ def fetch_api_reports() -> Dict[str, List[dict]]:
             )
 
             if response.status_code == 401:
-                token = refresh_access_token()
+                auth_retries += 1
+                if auth_retries > 2:
+                    print("  ❌ 401 重試超過上限，停止")
+                    break
+                token = get_valid_token()
                 if token:
                     headers = {'Authorization': f'Bearer {token}'}
                     continue
                 break
+            auth_retries = 0
 
             if response.status_code != 200:
                 print(f"  API 錯誤: {response.status_code}")
@@ -647,7 +652,9 @@ def download_and_parse_gov_pdf() -> List[dict]:
     print("\n📥 下載台北市政府建案列表...")
 
     try:
-        response = requests.get(PDF_LIST_URL, verify=False, timeout=30)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=urllib3.exceptions.InsecureRequestWarning)
+            response = requests.get(PDF_LIST_URL, verify=False, timeout=30)
         pdf_path = '/tmp/permit_list.pdf'
         with open(pdf_path, 'wb') as f:
             f.write(response.content)

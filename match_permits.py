@@ -41,7 +41,10 @@ SERVICE_ACCOUNT_FILE = os.environ.get('GOOGLE_CREDENTIALS', './credentials.json'
 
 
 def get_api_token():
-    token, _ = get_valid_token(JWT_TOKEN, REFRESH_TOKEN, GEOBINGAN_REFRESH_URL)
+    global JWT_TOKEN
+    token, was_refreshed, _new_refresh = get_valid_token(JWT_TOKEN, REFRESH_TOKEN, GEOBINGAN_REFRESH_URL)
+    if was_refreshed:
+        JWT_TOKEN = token
     return token
 
 
@@ -268,15 +271,21 @@ def fetch_api_report_categories() -> Dict[str, str]:
     # 分頁取得所有 reports
     all_reports = []
     page = 1
+    auth_retries = 0
     while True:
         r = requests.get(
             f'https://riskmap.today/api/reports/construction-reports/?group_id={GROUP_ID}&page={page}&page_size=100',
             headers=headers, timeout=30
         )
         if r.status_code == 401:
+            auth_retries += 1
+            if auth_retries > 2:
+                print("  ❌ 401 重試超過上限，停止")
+                break
             token = get_api_token()
             headers = {'Authorization': f'Bearer {token}'}
             continue
+        auth_retries = 0
         if r.status_code != 200:
             break
         data = r.json()

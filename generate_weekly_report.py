@@ -18,7 +18,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 # ClickUp
-CLICKUP_TOKEN = os.environ.get('CLICKUP_TOKEN', 'pk_48123565_3YBBPG98F9LB9VM694I2V0IOLYIOAPJ0')
+CLICKUP_TOKEN = os.environ.get('CLICKUP_TOKEN', '')
 WEEKLY_REPORT_TASK_ID = '86ex8u782'
 
 STATE_DIR = './state'
