@@ -4,7 +4,6 @@
 提供 Shared Drive 資料夾掃描、子資料夾層級解析等共用操作，
 避免在 sync_permits / match_permits / generate_permit_tracking_report 中重複實作。
 """
-import re
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError

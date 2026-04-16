@@ -156,9 +156,6 @@ def fetch_drive_pdf_names(drive_service) -> Dict[str, dict]:
     # 子資料夾層級解析
     all_subfolders = list_all_subfolders(drive_service, SHARED_DRIVE_ID)
     resolve_permit = build_folder_resolver(folders, all_subfolders)
-    for fid in list(all_subfolders.keys()):
-        resolve_permit(fid)
-    # build_folder_resolver 的 cache 不會回寫 folders，手動合併
     for fid in all_subfolders:
         p = resolve_permit(fid)
         if p:

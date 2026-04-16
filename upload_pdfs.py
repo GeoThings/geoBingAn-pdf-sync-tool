@@ -37,7 +37,8 @@ try:
         GROUP_ID,
         GEOBINGAN_API_URL,
         REFRESH_TOKEN,
-        GEOBINGAN_REFRESH_URL
+        GEOBINGAN_REFRESH_URL,
+        DELAY_BETWEEN_UPLOADS
     )
     try:
         from config import SHARED_DRIVE_ID
@@ -74,9 +75,6 @@ DAYS_AGO = 7  # 上傳最近 7 天更新的 PDF
 
 # 批次上傳設定
 MAX_UPLOADS = 100  # 每次上傳最新 100 筆 PDF
-
-# 速率控制：每次上傳之間的延遲（秒）
-from config import DELAY_BETWEEN_UPLOADS
 
 # 並行上傳設定
 
