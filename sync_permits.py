@@ -211,7 +211,8 @@ class PermitSync:
                     folders[item['name']] = item['id']
                 page_token = results.get('nextPageToken')
                 if not page_token: break
-            except HttpError:
+            except HttpError as e:
+                print(f"⚠️  掃描 Drive 失敗: {e}")
                 break
         return folders
     
@@ -241,8 +242,8 @@ class PermitSync:
                     files.extend(subfolder_files)
                 elif item['mimeType'] == 'application/pdf':
                     files.append((item['id'], item['name'], path, item.get('webViewLink', '')))
-        except HttpError:
-            pass 
+        except HttpError as e:
+            self._print(f"  ⚠️ 列出檔案失敗: {e}")
         return files
     
     def preload_target_files(self, folder_id: str, permit_no: str):
@@ -283,7 +284,8 @@ class PermitSync:
                 if not page_token:
                     break
             return True
-        except HttpError:
+        except HttpError as e:
+            self._print(f"  ⚠️ 預載檔案快取失敗: {e}")
             return False
 
     def check_file_exists(self, folder_id: str, filename: str, path: str = "", permit_no: str = "") -> bool:
@@ -305,16 +307,18 @@ class PermitSync:
                 q=query, fields='files(id)', supportsAllDrives=True, includeItemsFromAllDrives=True
             ).execute()
             return len(results.get('files', [])) > 0
-        except HttpError:
+        except HttpError as e:
+            self._print(f"  ⚠️ 檢查檔案存在失敗: {e}")
             return False
-    
+
     def create_target_folder(self, folder_name: str) -> str:
         try:
             file_metadata = {'name': folder_name, 'mimeType': 'application/vnd.google-apps.folder', 'parents': [self.shared_drive_id]}
             folder = drive_service.files().create(body=file_metadata, fields='id', supportsAllDrives=True).execute()
             print(f"🆕 已自動建立資料夾: {folder_name}")
             return folder['id']
-        except HttpError:
+        except HttpError as e:
+            print(f"⚠️ 建立資料夾失敗 {folder_name}: {e}")
             return None
 
     def get_or_create_subfolder(self, parent_id: str, path: str) -> str:
@@ -339,7 +343,8 @@ class PermitSync:
                     current_folder_id = folder['id']
                 # 寫入快取
                 self._subfolder_cache[cache_key] = current_folder_id
-            except HttpError:
+            except HttpError as e:
+                self._print(f"  ⚠️ 子資料夾操作失敗 {folder_name}: {e}")
                 return None
         return current_folder_id
 
@@ -351,7 +356,8 @@ class PermitSync:
             media = MediaIoBaseUpload(io.BytesIO(file_content.encode('utf-8')), mimetype='text/plain', resumable=True)
             self._get_svc().files().create(body=file_metadata, media_body=media, fields='id', supportsAllDrives=True).execute()
             return True
-        except Exception:
+        except Exception as e:
+            self._print(f"  ⚠️ 建立捷徑失敗 {filename}: {e}")
             return False
 
     def copy_file(self, source_file_id: str, target_folder_id: str, filename: str, path: str = ""):
