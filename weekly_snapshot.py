@@ -146,7 +146,7 @@ def notify_new_permits(diff):
     # ClickUp comment
     try:
         import requests
-        clickup_token = os.environ.get('CLICKUP_TOKEN', '')
+        from config import CLICKUP_TOKEN as clickup_token
         if not clickup_token:
             return
         requests.post(

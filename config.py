@@ -40,6 +40,9 @@ GEOBINGAN_REFRESH_URL = os.environ.get('GEOBINGAN_REFRESH_URL', 'https://riskmap
 GOOGLE_CREDENTIALS = os.environ.get('GOOGLE_CREDENTIALS', './credentials.json')
 SHARED_DRIVE_ID = os.environ.get('SHARED_DRIVE_ID', '')
 
+# ClickUp
+CLICKUP_TOKEN = os.environ.get('CLICKUP_TOKEN', '')
+
 # 通知設定
 LINE_NOTIFY_TOKEN = os.environ.get('LINE_NOTIFY_TOKEN', '')
 ENABLE_MACOS_NOTIFY = os.environ.get('ENABLE_MACOS_NOTIFY', 'true').lower() == 'true'
