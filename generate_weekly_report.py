@@ -18,7 +18,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 # ClickUp
-CLICKUP_TOKEN = os.environ.get('CLICKUP_TOKEN', '')
+from config import CLICKUP_TOKEN
 WEEKLY_REPORT_TASK_ID = '86ex8u782'
 
 STATE_DIR = './state'
@@ -326,32 +326,32 @@ def html_to_pdf(html_content, output_path):
 
 
 def upload_to_clickup(pdf_path, summary_text):
-    """上傳 PDF 到 ClickUp task：先 comment 再附件，讓附件顯示在 comment 下方"""
+    """上傳 PDF 到 ClickUp task：先附件再 comment，ClickUp 會將附件合併到 comment 中顯示"""
     headers = {'Authorization': CLICKUP_TOKEN}
 
-    # 先發 comment（顯示在上方）
-    r1 = requests.post(
-        f'https://api.clickup.com/api/v2/task/{WEEKLY_REPORT_TASK_ID}/comment',
-        headers={**headers, 'Content-Type': 'application/json'},
-        json={'comment_text': summary_text}
-    )
-    if r1.status_code == 200:
-        print(f"  Comment 已發送")
-    else:
-        print(f"  Comment 發送失敗: {r1.status_code}")
-
-    # 再上傳附件（顯示在 comment 下方）
+    # 先上傳附件（ClickUp 會把附件合併到接下來的 comment 中）
     filename = os.path.basename(pdf_path)
     with open(pdf_path, 'rb') as f:
-        r2 = requests.post(
+        r1 = requests.post(
             f'https://api.clickup.com/api/v2/task/{WEEKLY_REPORT_TASK_ID}/attachment',
             headers=headers,
             files={'attachment': (filename, f, 'application/pdf')}
         )
-    if r2.status_code == 200:
+    if r1.status_code == 200:
         print(f"  附件已上傳: {filename}")
     else:
-        print(f"  附件上傳失敗: {r2.status_code} {r2.text[:200]}")
+        print(f"  附件上傳失敗: {r1.status_code} {r1.text[:200]}")
+
+    # 再發 comment（附件會顯示在 comment 下方）
+    r2 = requests.post(
+        f'https://api.clickup.com/api/v2/task/{WEEKLY_REPORT_TASK_ID}/comment',
+        headers={**headers, 'Content-Type': 'application/json'},
+        json={'comment_text': summary_text}
+    )
+    if r2.status_code == 200:
+        print(f"  Comment 已發送")
+    else:
+        print(f"  Comment 發送失敗: {r2.status_code}")
 
 
 def main():
