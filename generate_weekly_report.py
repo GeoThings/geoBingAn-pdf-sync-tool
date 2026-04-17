@@ -326,11 +326,12 @@ def html_to_pdf(html_content, output_path):
 
 
 def upload_to_clickup(pdf_path, summary_text):
-    """上傳 PDF 到 ClickUp task：先附件再 comment，ClickUp 會將附件合併到 comment 中顯示"""
+    """上傳 PDF 到 ClickUp task，並在 comment 中嵌入附件下載連結"""
     headers = {'Authorization': CLICKUP_TOKEN}
 
-    # 先上傳附件（ClickUp 會把附件合併到接下來的 comment 中）
+    # 上傳附件並取得 URL
     filename = os.path.basename(pdf_path)
+    attachment_url = None
     with open(pdf_path, 'rb') as f:
         r1 = requests.post(
             f'https://api.clickup.com/api/v2/task/{WEEKLY_REPORT_TASK_ID}/attachment',
@@ -338,15 +339,20 @@ def upload_to_clickup(pdf_path, summary_text):
             files={'attachment': (filename, f, 'application/pdf')}
         )
     if r1.status_code == 200:
+        attachment_url = r1.json().get('url_w_query') or r1.json().get('url')
         print(f"  附件已上傳: {filename}")
     else:
         print(f"  附件上傳失敗: {r1.status_code} {r1.text[:200]}")
 
-    # 再發 comment（附件會顯示在 comment 下方）
+    # 發 comment，嵌入附件連結
+    comment_body = summary_text
+    if attachment_url:
+        comment_body += f'\n\n📎 {filename}\n{attachment_url}'
+
     r2 = requests.post(
         f'https://api.clickup.com/api/v2/task/{WEEKLY_REPORT_TASK_ID}/comment',
         headers={**headers, 'Content-Type': 'application/json'},
-        json={'comment_text': summary_text}
+        json={'comment_text': comment_body}
     )
     if r2.status_code == 200:
         print(f"  Comment 已發送")
