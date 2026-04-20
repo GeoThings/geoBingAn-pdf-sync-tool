@@ -18,6 +18,8 @@ import re
 import sys
 import csv
 import requests
+
+_session = requests.Session()
 from datetime import datetime
 from typing import Dict, Optional
 from collections import Counter
@@ -124,7 +126,8 @@ def fetch_source_folder_names(gov_data: dict, drive_service) -> Dict[str, str]:
             clean = extract_name_from_text(raw_name)
             if clean:
                 names[permit] = clean
-        except Exception:
+        except Exception as e:
+            print(f"  ⚠️ Drive 資料夾讀取失敗 {permit}: {e}")
             continue
 
     print(f"  {len(names)} 個有名稱")
@@ -178,7 +181,8 @@ def fetch_drive_pdf_names(drive_service) -> Dict[str, dict]:
             page_token = results.get('nextPageToken')
             if not page_token:
                 break
-        except Exception:
+        except Exception as e:
+            print(f"  ⚠️ PDF 掃描中斷: {e}")
             break
 
     # 從檔名提取名稱（投票制：最常出現的名稱）
@@ -210,7 +214,7 @@ def fetch_api_projects() -> list:
     all_projects = []
     page = 1
     while True:
-        r = requests.get(
+        r = _session.get(
             f'https://riskmap.today/api/groups/{GROUP_ID}/construction-projects/?page={page}&page_size=100',
             headers=headers, timeout=15
         )
@@ -238,7 +242,7 @@ def fetch_api_report_categories() -> Dict[str, str]:
     page = 1
     auth_retries = 0
     while True:
-        r = requests.get(
+        r = _session.get(
             f'https://riskmap.today/api/reports/construction-reports/?group_id={GROUP_ID}&page={page}&page_size=100',
             headers=headers, timeout=30
         )
@@ -286,7 +290,7 @@ def fetch_live_alerts() -> Dict[str, list]:
     headers = {'Authorization': f'Bearer {token}', 'X-Current-Group': GROUP_ID}
 
     try:
-        r = requests.get(
+        r = _session.get(
             f'https://riskmap.today/api/groups/{GROUP_ID}/construction-alerts/',
             headers=headers, timeout=15
         )

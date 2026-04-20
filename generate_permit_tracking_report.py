@@ -15,6 +15,8 @@ import re
 import sys
 import time
 import requests
+
+_session = requests.Session()
 import urllib3
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -259,8 +261,8 @@ def load_filename_to_permit_mapping() -> Dict[str, str]:
             for f in state.get('uploaded_files', []):
                 if f not in all_files:
                     all_files.append(f)
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"  ⚠️ 載入上傳歷史失敗: {e}")
 
     print(f"  載入 {len(all_files)} 個上傳記錄")
 
@@ -332,7 +334,7 @@ def fetch_api_reports() -> Dict[str, List[dict]]:
 
     while True:
         try:
-            response = requests.get(
+            response = _session.get(
                 f"{GEOBINGAN_API_BASE}?group_id={GROUP_ID}&page={page}&page_size=100",
                 headers=headers,
                 timeout=30
