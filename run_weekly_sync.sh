@@ -115,8 +115,8 @@ if [ ! -f "$SCRIPT_DIR/venv/bin/activate" ]; then
 fi
 source "$SCRIPT_DIR/venv/bin/activate"
 
-# 預編譯 .pyc（避免 Python 升級後首次執行 import 極慢）
-python3 -m compileall -q "$SCRIPT_DIR" 2>/dev/null || true
+# 預編譯 .pyc（避免 Python 升級後首次執行 import 極慢，跳過 venv）
+python3 -m compileall -q -x 'venv|__pycache__|\.git' "$SCRIPT_DIR" 2>/dev/null || true
 
 # 記錄開始執行
 python3 -c "
