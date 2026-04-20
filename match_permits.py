@@ -60,14 +60,7 @@ def load_existing_registry() -> dict:
     return {}
 
 
-def normalize_permit(raw: str) -> Optional[str]:
-    """標準化建照號碼格式"""
-    m = re.search(r'(\d{2,3})\s*建\s*字?\s*第?\s*0*(\d{3,5})\s*號?', raw)
-    if m:
-        year = m.group(1)
-        num = m.group(2).zfill(4)
-        return f'{year}建字第{num}號'
-    return None
+from permit_utils import normalize_permit
 
 
 def extract_name_from_text(text: str) -> str:

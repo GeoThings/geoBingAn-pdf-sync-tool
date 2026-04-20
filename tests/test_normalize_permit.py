@@ -1,9 +1,9 @@
-"""Tests for match_permits.normalize_permit()"""
+"""Tests for permit_utils.normalize_permit()"""
 import sys
 import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from match_permits import normalize_permit
+from permit_utils import normalize_permit
 
 
 class TestNormalizePermit:
