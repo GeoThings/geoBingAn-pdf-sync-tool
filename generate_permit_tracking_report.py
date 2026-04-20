@@ -22,7 +22,7 @@ from typing import Dict, List, Optional, Tuple
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-import PyPDF2
+import pypdf
 from jwt_auth import get_valid_token as _jwt_get_valid_token
 from permit_utils import extract_name_from_filename
 from report_template import generate_html_report, generate_csv_report
@@ -556,12 +556,8 @@ def download_and_parse_gov_pdf() -> List[dict]:
 
     try:
         with open(pdf_path, 'rb') as f:
-            pdf_reader = PyPDF2.PdfReader(f)
-            all_text = ""
-            for page in pdf_reader.pages:
-                text = page.extract_text()
-                if text:
-                    all_text += text + "\n"
+            pdf_reader = pypdf.PdfReader(f)
+            all_text = '\n'.join(p.extract_text() or '' for p in pdf_reader.pages)
 
         # 找出所有建照號碼位置
         permit_pattern = r'(\d{2,3}建字第\d{3,5}號)'
