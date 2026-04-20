@@ -679,7 +679,7 @@ Service Account 只需要：
 - ✅ SHARED_DRIVE_ID 統一從 config.py 載入（含向後相容 fallback）
 - ✅ 移除已停用的 parallel upload 死碼（~30 行）
 - ✅ 修正 exit code：錯誤情境 exit(1)，正常情境 exit(0)
-- ✅ 新增 JWT 測試（20 cases），總計 41 tests
+- ✅ 新增 JWT 測試（20 cases），總計 63 tests（GitHub Actions CI）
 - 📄 新增 `docs/architecture.md` 設計文件
 
 ### v3.0.0 (2026-04-02)
