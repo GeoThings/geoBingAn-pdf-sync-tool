@@ -26,7 +26,7 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaIoBaseDownload, MediaIoBaseUpload
-import PyPDF2
+import pypdf
 from typing import Dict, List, Tuple
 
 import warnings
@@ -163,11 +163,8 @@ class PermitSync:
     def parse_pdf_list(self, pdf_path: str) -> Dict[str, str]:
         print("\n📖 解析 PDF 列表 (智慧分塊演算法)...")
         with open(pdf_path, 'rb') as f:
-            pdf_reader = PyPDF2.PdfReader(f)
-            all_text = ""
-            for page in pdf_reader.pages:
-                text = page.extract_text()
-                if text: all_text += text
+            pdf_reader = pypdf.PdfReader(f)
+            all_text = ''.join(p.extract_text() or '' for p in pdf_reader.pages)
         
         # 移除空白，接合斷行
         clean_text = re.sub(r'\s+', '', all_text)

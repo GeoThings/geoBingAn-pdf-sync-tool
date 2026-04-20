@@ -89,9 +89,9 @@ def fetch_gov_pdf_data(city: dict = None) -> Dict[str, dict]:
     mapping = ps.parse_pdf_list(pdf_path)
 
     # 從 PDF 原文解析承造人
-    import PyPDF2
+    import pypdf
     with open(pdf_path, 'rb') as f:
-        reader = PyPDF2.PdfReader(f)
+        reader = pypdf.PdfReader(f)
         all_text = ''.join(p.extract_text() or '' for p in reader.pages)
 
     results = {}
