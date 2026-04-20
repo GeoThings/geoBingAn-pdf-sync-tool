@@ -307,7 +307,7 @@ def html_to_pdf(html_content, output_path):
         subprocess.run([
             chrome, '--headless', '--disable-gpu', '--no-sandbox',
             f'--print-to-pdf={output_path}',
-            '--print-to-pdf-no-header',
+            '--no-pdf-header-footer',
             html_path
         ], capture_output=True, timeout=30)
         os.unlink(html_path)

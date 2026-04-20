@@ -1,14 +1,17 @@
 {
   "date": "2026-04-16",
-  "total_permits": 503,
-  "total_pdfs": 18632,
-  "total_ai": 0,
+  "total_permits": 504,
+  "total_pdfs": 26820,
+  "total_ai": 11693,
   "named_permits": 358,
   "api_matched": 116,
-  "alerts_confirmed": 0,
+  "alerts_confirmed": 40,
   "statuses": {
-    "no_reports": 165,
-    "not_uploaded": 338
+    "completed_project": 133,
+    "not_uploaded": 102,
+    "no_reports": 60,
+    "in_progress": 119,
+    "completed": 90
   },
   "permits": [
     "102建字第0325號",
@@ -513,6 +516,7 @@
     "114建字第0032號",
     "114建字第0052號",
     "114建字第0058號",
-    "114建字第0059號"
+    "114建字第0059號",
+    "_drive_names"
   ]
 }
