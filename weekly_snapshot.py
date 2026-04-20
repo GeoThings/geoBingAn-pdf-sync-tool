@@ -155,8 +155,8 @@ def notify_new_permits(diff):
             json={'comment_text': message},
             timeout=10
         )
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"  ⚠️ ClickUp 通知失敗: {e}")
 
 
 def main():

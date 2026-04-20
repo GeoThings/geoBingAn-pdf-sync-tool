@@ -38,7 +38,9 @@ try:
         GEOBINGAN_API_URL,
         REFRESH_TOKEN,
         GEOBINGAN_REFRESH_URL,
-        DELAY_BETWEEN_UPLOADS
+        DELAY_BETWEEN_UPLOADS,
+        DAYS_AGO,
+        MAX_UPLOADS
     )
     try:
         from config import SHARED_DRIVE_ID
@@ -70,11 +72,7 @@ SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
 STATE_FILE = './state/uploaded_to_geobingan_7days.json'
 HISTORY_FILE = './state/upload_history_all.json'  # 永久歷史記錄
 
-# 日期過濾設定
-DAYS_AGO = 7  # 上傳最近 7 天更新的 PDF
-
-# 批次上傳設定
-MAX_UPLOADS = 100  # 每次上傳最新 100 筆 PDF
+# DAYS_AGO, MAX_UPLOADS, DELAY_BETWEEN_UPLOADS 從 config.py (.env) 載入
 
 # 並行上傳設定
 
