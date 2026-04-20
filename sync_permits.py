@@ -84,6 +84,7 @@ MAX_CONCURRENT_PERMITS = 5  # 同時處理的建案數（Google Drive API quota:
 
 
 from config import escape_drive_query as _escape_drive_query
+from permit_utils import normalize_permit as _normalize_permit
 
 
 class PermitSync:
@@ -208,7 +209,8 @@ class PermitSync:
             
             if url_match:
                 url = url_match.group(1)
-                permit_mapping[permit_no] = url
+                normalized = _normalize_permit(permit_no) or permit_no
+                permit_mapping[normalized] = url
                 count_found += 1
             else:
                 # 只有當找不到 Google 連結時，才嘗試找 OneDrive (選配)
@@ -221,10 +223,6 @@ class PermitSync:
                      count_missed += 1
 
         print(f"✅ 解析完成: 成功配對 {len(permit_mapping)} 個 (無連結/無效: {count_missed} 個)")
-        
-        # 檢查 0238 是否自動修復 (Debug)
-        if '112建字第0238號' in permit_mapping:
-            print(f"  ✨ 自動修復檢測: 112建字第0238號 已成功抓取！")
         
         return permit_mapping
     

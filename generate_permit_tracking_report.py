@@ -106,11 +106,11 @@ def scan_google_drive(service) -> Dict[str, dict]:
         fields='nextPageToken, files(id, name, modifiedTime)'
     )
 
+    from permit_utils import normalize_permit as _normalize
     permit_folders = {}
     for folder in raw_folders:
-        permit_match = re.search(r'(\d{2,3}建字第\d{3,5}號)', folder['name'])
-        if permit_match:
-            permit_num = permit_match.group(1)
+        permit_num = _normalize(folder['name'])
+        if permit_num:
             permit_folders[permit_num] = {
                 'folder_id': folder['id'],
                 'folder_name': folder['name'],
