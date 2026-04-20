@@ -29,13 +29,17 @@
                          步驟 5
 ```
 
-### 自動化排程
+### 自動化排程（macOS launchd）
 
-| 時間 | 觸發腳本 | 內容 |
-|------|----------|------|
-| 每日 08:00 | `health_check.py --notify` | Token/磁碟/同步狀態/API 檢查 |
-| 週一 09:00 | `run_weekly_sync.sh` | 完整流程（步驟 1-7） |
-| 週五 18:00 | `run_friday_report.sh` | 總結週報 PDF → ClickUp |
+使用 `launchd` 而非 `cron`：Mac 從睡眠醒來時自動補跑錯過的排程。
+
+| 時間 | LaunchAgent | 內容 |
+|------|-------------|------|
+| 每日 08:00 | `com.geothings.geobingan.healthcheck` | Token/磁碟/同步狀態/API 檢查 |
+| 週一 09:00 | `com.geothings.geobingan.weeklysync` | 完整流程（步驟 1-7） |
+| 週五 18:00 | `com.geothings.geobingan.fridayreport` | 總結週報 PDF → ClickUp |
+
+安裝：`./setup_launchd.sh` · 卸載：`./uninstall_launchd.sh` · plist 位於 `launchd/`
 
 ## 模組依賴關係
 

@@ -137,16 +137,23 @@ python3 upload_pdfs.py
 python3 health_check.py
 ```
 
-#### Cron 自動排程設定：
+#### 自動排程設定（launchd，睡眠補跑）：
 ```bash
-# 一鍵設定 3 個排程
-./setup_cron.sh
+# 一鍵安裝（移除舊 cron + 安裝 launchd）
+./setup_launchd.sh
 
 # 排程內容：
 # 每日 08:00 — 健康檢查（Token/磁碟/API）
 # 週一 09:00 — 完整同步 + 同步週報
 # 週五 18:00 — 總結週報
+
+# 管理指令：
+launchctl list | grep geobingan                                    # 查看狀態
+launchctl kickstart gui/$(id -u)/com.geothings.geobingan.weeklysync  # 手動觸發
+./uninstall_launchd.sh                                              # 卸載
 ```
+
+> **為什麼用 launchd 而不是 cron？** macOS 筆電睡眠時 cron 會跳過排程且不補跑。launchd 是 macOS 原生排程系統，Mac 醒來後會自動補跑錯過的任務。
 
 #### 查看日誌：
 ```bash
