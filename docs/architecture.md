@@ -1,7 +1,7 @@
 # 系統架構設計文件
 
-> geoBingAn 建案監測同步工具 v5.1 架構說明
-> 最後更新：2026-04-16
+> geoBingAn 建案監測同步工具 v5.2 架構說明
+> 最後更新：2026-04-20
 
 ## 系統概覽
 
@@ -58,15 +58,17 @@ run_weekly_sync.sh（orchestrator）
 ├── match_permits.py
 │   ├── config.py → .env
 │   ├── jwt_auth.py
+│   ├── permit_utils.py                 ← normalize_permit + 名稱提取
 │   ├── drive_utils.py                  ← 共用 Drive 掃描
-│   └── permit_utils.py                 ← 共用建案名稱提取
+│   └── requests.Session                ← API 連線池（TCP/TLS 重用）
 │
-├── generate_permit_tracking_report.py（907 行，資料收集 + main）
+├── generate_permit_tracking_report.py（資料收集 + main）
 │   ├── config.py → .env
 │   ├── jwt_auth.py
+│   ├── permit_utils.py                 ← normalize_permit
 │   ├── drive_utils.py                  ← 共用 Drive 掃描
-│   ├── permit_utils.py                 ← 共用建案名稱提取
-│   └── report_template.py             ← HTML/CSV 報告模板（656 行）
+│   ├── report_template.py             ← HTML/CSV 報告模板
+│   └── requests.Session                ← API 連線池
 │
 └── generate_weekly_report.py
     ├── state/permit_registry.json
@@ -77,7 +79,7 @@ run_weekly_sync.sh（orchestrator）
 
 | 模組 | 職責 | 測試 |
 |------|------|------|
-| `permit_utils.py` | 從 PDF 檔名提取建案名稱（30+ regex） | 16 cases |
+| `permit_utils.py` | normalize_permit + 檔名名稱提取（30+ 預編譯 regex） | 16+13 cases |
 | `filename_date_parser.py` | 從 PDF 檔名解析日期（7 種格式） | 21 cases |
 | `jwt_auth.py` | JWT decode/expire/refresh（thread-safe） | 14 cases |
 | `drive_utils.py` | 共用 Drive 掃描（list folders, resolve subfolder hierarchy） | 8 cases |
@@ -338,7 +340,7 @@ get_valid_token(current_token, refresh_token, refresh_url)
 config.py (from .env)  →  環境變數  →  硬編碼預設值
 ```
 
-所有三個腳本的 `SHARED_DRIVE_ID` 都遵循此 fallback 策略，確保舊 config.py（不含新欄位）不會導致 import 失敗。
+所有設定值（`SHARED_DRIVE_ID`、`DAYS_AGO`、`MAX_UPLOADS`、`DELAY_BETWEEN_UPLOADS`、`CLICKUP_TOKEN`）統一由 `config.py` 從 `.env` 載入，各腳本 import 使用，不再有本地硬編碼覆蓋。多城市配置由 `city_config.py` 從 `cities.json` 載入，空白欄位自動回退到 `.env` 預設值。
 
 ## 測試策略
 
@@ -346,15 +348,16 @@ config.py (from .env)  →  環境變數  →  硬編碼預設值
 |----------|----------|-------|------|
 | `test_parse_date_from_filename.py` | filename_date_parser.py | 21 | 無 |
 | `test_jwt_auth.py` | jwt_auth.py | 14 | unittest.mock |
-| `test_normalize_permit.py` | match_permits.normalize_permit | 13 | 無 |
+| `test_normalize_permit.py` | permit_utils.normalize_permit | 13 | 無 |
 | `test_extract_name.py` | permit_utils.extract_name_from_filename | 16 | 無 |
 | `test_config.py` | config.escape_drive_query | 7 | 無 |
 | `test_drive_utils.py` | drive_utils.build_folder_resolver | 8 | 無 |
-| `test_report_template.py` | report_template (HTML + CSV) | 11 | tempfile |
+| `test_report_template.py` | report_template (HTML + CSV + XSS) | 11 | tempfile |
 | `test_csv_import.py` | sync_permits.load_csv_list | 8 | tempfile |
 | **合計** | | **63** | |
 
 設計原則：
-- 測試只 import 獨立模組，不觸發 credentials 載入或 Google API 初始化（lazy init）
+- 所有測試 import 零依賴模組（`permit_utils`、`drive_utils`），不觸發 credentials 或 Google API（lazy init）
 - 可在 CI（無 credentials.json）或乾淨環境執行
-- Smoke tests 覆蓋報告生成端到端路徑（包含 XSS escaping 驗證）
+- Smoke tests 覆蓋報告生成端到端路徑（含 XSS escaping、file round-trip）
+- `normalize_permit` 和 `extract_name_from_filename` 統一在 `permit_utils.py`，消除 test import side effects
