@@ -24,10 +24,12 @@ from typing import Optional
 
 # 載入設定
 try:
-    from config import LINE_NOTIFY_TOKEN, ENABLE_MACOS_NOTIFY
+    from config import LINE_NOTIFY_TOKEN, ENABLE_MACOS_NOTIFY, CLICKUP_TOKEN, HEALTHCHECK_CLICKUP_TASK_ID
 except ImportError:
     LINE_NOTIFY_TOKEN = os.environ.get('LINE_NOTIFY_TOKEN', '')
     ENABLE_MACOS_NOTIFY = os.environ.get('ENABLE_MACOS_NOTIFY', 'true').lower() == 'true'
+    CLICKUP_TOKEN = os.environ.get('CLICKUP_TOKEN', '')
+    HEALTHCHECK_CLICKUP_TASK_ID = os.environ.get('HEALTHCHECK_CLICKUP_TASK_ID', '')
 
 
 def send_line_notify(message: str) -> bool:
@@ -85,7 +87,38 @@ def send_macos_notification(title: str, message: str, sound: bool = True) -> boo
         return False
 
 
-def send_notification(title: str, message: str, use_line: bool = True, use_macos: bool = True):
+def send_clickup_comment(task_id: str, message: str) -> bool:
+    """
+    發送 ClickUp task comment
+
+    Args:
+        task_id: ClickUp task ID
+        message: comment 內容
+
+    Returns:
+        bool: 發送是否成功
+    """
+    if not CLICKUP_TOKEN or not task_id:
+        return False
+
+    try:
+        import requests
+        response = requests.post(
+            f'https://api.clickup.com/api/v2/task/{task_id}/comment',
+            headers={'Authorization': CLICKUP_TOKEN, 'Content-Type': 'application/json'},
+            json={'comment_text': message},
+            timeout=10
+        )
+        if response.status_code != 200:
+            print(f"ClickUp comment 非 200: {response.status_code} {response.text[:200]}")
+        return response.status_code == 200
+    except Exception as e:
+        print(f"ClickUp comment 發送失敗: {e}")
+        return False
+
+
+def send_notification(title: str, message: str, use_line: bool = True, use_macos: bool = True,
+                      use_clickup: bool = False, clickup_task_id: Optional[str] = None):
     """
     發送通知（同時使用所有可用的通知方式）
 
@@ -94,6 +127,8 @@ def send_notification(title: str, message: str, use_line: bool = True, use_macos
         message: 通知內容
         use_line: 是否使用 LINE Notify
         use_macos: 是否使用 macOS 通知
+        use_clickup: 是否使用 ClickUp comment（需 CLICKUP_TOKEN 與 task_id）
+        clickup_task_id: ClickUp task ID（未提供則用 HEALTHCHECK_CLICKUP_TASK_ID）
     """
     results = []
 
@@ -105,6 +140,12 @@ def send_notification(title: str, message: str, use_line: bool = True, use_macos
         line_message = f"\n{title}\n{message}"
         line_result = send_line_notify(line_message)
         results.append(('LINE', line_result))
+
+    if use_clickup:
+        task_id = clickup_task_id or HEALTHCHECK_CLICKUP_TASK_ID
+        if task_id and CLICKUP_TOKEN:
+            clickup_result = send_clickup_comment(task_id, f"{title}\n\n{message}")
+            results.append(('ClickUp', clickup_result))
 
     return results
 
