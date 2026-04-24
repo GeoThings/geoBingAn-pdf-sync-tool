@@ -109,6 +109,8 @@ def send_clickup_comment(task_id: str, message: str) -> bool:
             json={'comment_text': message},
             timeout=10
         )
+        if response.status_code != 200:
+            print(f"ClickUp comment 非 200: {response.status_code} {response.text[:200]}")
         return response.status_code == 200
     except Exception as e:
         print(f"ClickUp comment 發送失敗: {e}")
