@@ -42,6 +42,7 @@ SHARED_DRIVE_ID = os.environ.get('SHARED_DRIVE_ID', '')
 
 # ClickUp
 CLICKUP_TOKEN = os.environ.get('CLICKUP_TOKEN', '')
+HEALTHCHECK_CLICKUP_TASK_ID = os.environ.get('HEALTHCHECK_CLICKUP_TASK_ID', '')
 
 # 通知設定
 LINE_NOTIFY_TOKEN = os.environ.get('LINE_NOTIFY_TOKEN', '')

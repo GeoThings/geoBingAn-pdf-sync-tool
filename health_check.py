@@ -42,9 +42,9 @@ def check_token():
         exp = payload.get('exp', 0)
         days_left = (exp - time.time()) / 86400
         if days_left < 0:
-            return 'error', f'Refresh Token 已過期 {-days_left:.1f} 天'
-        elif days_left < 2:
-            return 'warning', f'Refresh Token 剩餘 {days_left:.1f} 天'
+            return 'error', f'Refresh Token 已過期 {-days_left:.1f} 天，需要重新登入 riskmap.tw 取得新 refresh_token'
+        elif days_left < 3:
+            return 'warning', f'Refresh Token 剩餘 {days_left:.1f} 天，請到 riskmap.tw 重新登入取得新 refresh_token'
         else:
             return 'ok', f'Refresh Token 剩餘 {days_left:.1f} 天'
     except Exception as e:
@@ -132,7 +132,8 @@ def main():
                 from notify import send_notification
                 send_notification(
                     f'⚠️ geoBingAn 健康檢查: {len(issues)} 個問題',
-                    '\n'.join(issues)
+                    '\n'.join(issues),
+                    use_clickup=True,
                 )
                 print("  通知已發送")
             except Exception as e:
