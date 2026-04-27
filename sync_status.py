@@ -23,11 +23,35 @@
     )
 """
 
+import errno
 import json
 import os
+import time
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Dict, Any, List
+from typing import Any, Callable, Dict, List, Optional, TypeVar
+
+T = TypeVar('T')
+
+
+def _retry_on_edeadlk(operation: Callable[[], T], *, retries: int = 5, delay: float = 2.0) -> T:
+    """重試包裝器，避開 macOS 剛喚醒時的暫時性 OSError errno 11 (EDEADLK)。
+
+    觀察：launchd 在 wake 後立即觸發時，state/ 下的檔案 open() 偶發
+    "Resource deadlock avoided"（4/21、4/27 重現過）。系統穩定後幾秒內恢復。
+    """
+    last_exc: Optional[OSError] = None
+    for attempt in range(retries):
+        try:
+            return operation()
+        except OSError as e:
+            if e.errno != errno.EDEADLK:
+                raise
+            last_exc = e
+            if attempt < retries - 1:
+                time.sleep(delay)
+    assert last_exc is not None
+    raise last_exc
 
 
 class SyncStatus:
@@ -55,8 +79,10 @@ class SyncStatus:
         """載入狀態檔案"""
         if self.status_file.exists():
             try:
-                with open(self.status_file, 'r', encoding='utf-8') as f:
-                    return json.load(f)
+                def _read():
+                    with open(self.status_file, 'r', encoding='utf-8') as f:
+                        return json.load(f)
+                return _retry_on_edeadlk(_read)
             except (json.JSONDecodeError, IOError):
                 pass
 
@@ -77,15 +103,19 @@ class SyncStatus:
 
     def _save_status(self):
         """儲存狀態檔案"""
-        with open(self.status_file, 'w', encoding='utf-8') as f:
-            json.dump(self.data, f, ensure_ascii=False, indent=2)
+        def _write():
+            with open(self.status_file, 'w', encoding='utf-8') as f:
+                json.dump(self.data, f, ensure_ascii=False, indent=2)
+        _retry_on_edeadlk(_write)
 
     def start_run(self):
         """標記執行開始（會保存到檔案以支援跨 process）"""
         self._start_time = datetime.now()
         # 保存到檔案以支援跨 process
-        with open(self._start_time_file, 'w') as f:
-            f.write(self._start_time.isoformat())
+        def _write():
+            with open(self._start_time_file, 'w') as f:
+                f.write(self._start_time.isoformat())
+        _retry_on_edeadlk(_write)
         print(f"📝 同步開始於 {self._start_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
     def end_run(self,
