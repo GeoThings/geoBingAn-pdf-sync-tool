@@ -83,7 +83,9 @@ def send_macos_notification(title: str, message: str, sound: bool = True) -> boo
         subprocess.run(['osascript', '-e', script], capture_output=True, check=True)
         return True
     except Exception as e:
-        print(f"macOS 通知發送失敗: {e}")
+        # launchd context 呼叫 osascript 偶發 exit 1（macOS 環境限制，非業務錯誤）
+        # 主要可靠通道為 ClickUp，此處僅記錄
+        print(f"  (macOS 通知未送達: {e})")
         return False
 
 
