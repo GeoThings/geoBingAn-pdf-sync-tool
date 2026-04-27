@@ -49,6 +49,7 @@ def _retry_on_edeadlk(operation: Callable[[], T], *, retries: int = 5, delay: fl
                 raise
             last_exc = e
             if attempt < retries - 1:
+                print(f"  ⚠️  state 檔案遇 EDEADLK，{delay:.0f}s 後重試 [{attempt+1}/{retries-1}]")
                 time.sleep(delay)
     assert last_exc is not None
     raise last_exc
@@ -83,8 +84,8 @@ class SyncStatus:
                     with open(self.status_file, 'r', encoding='utf-8') as f:
                         return json.load(f)
                 return _retry_on_edeadlk(_read)
-            except (json.JSONDecodeError, IOError):
-                pass
+            except (json.JSONDecodeError, IOError) as e:
+                print(f"⚠️  狀態檔案載入失敗，使用預設空狀態（先前 history 將不可見）: {e}")
 
         # 預設結構
         return {
