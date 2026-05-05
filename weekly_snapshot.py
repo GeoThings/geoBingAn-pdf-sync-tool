@@ -20,6 +20,13 @@ from pathlib import Path
 
 SNAPSHOT_DIR = './state/weekly_snapshots'
 STATE_DIR = './state'
+DRIVE_CACHE_FILE = './state/uploaded_to_geobingan_7days.json'
+MONTHLY_ALERT_STATE = './state/monthly_activity_alert.json'
+
+# 月度活動告警門檻：當月報告數 < 前 3 月平均 × 此倍率 → 警告
+MONTHLY_DROP_THRESHOLD = 0.3
+# 前 3 月平均低於此值就不警告（樣本太小）
+MONTHLY_MIN_BASELINE = 10
 
 
 def save_snapshot():
@@ -159,6 +166,103 @@ def notify_new_permits(diff):
         print(f"  ⚠️ ClickUp 通知失敗: {e}")
 
 
+def _bin_pdfs_by_report_month(pdfs):
+    """從檔名解析報告日期，依年月計數。"""
+    from collections import Counter
+    from filename_date_parser import parse_date_from_filename
+    by_month = Counter()
+    for p in pdfs:
+        dt = parse_date_from_filename(p.get('name', ''))
+        if dt:
+            by_month[(dt.year, dt.month)] += 1
+    return by_month
+
+
+def _months_back(y: int, m: int, n: int):
+    """回推 n 個月。"""
+    m -= n
+    while m < 1:
+        m += 12
+        y -= 1
+    return y, m
+
+
+def check_monthly_activity_trend(notify: bool = False):
+    """偵測上一個月的監測報告數是否異常下滑。
+
+    動機：2026-04 觀察到工地監測 PDF 數從 3 月 55 暴跌到 11，雖然個別小變化看不出來，
+    但月度匯總一目瞭然。完工退場、法規變動、合規鬆動都可能造成此類訊號。
+    """
+    if not os.path.exists(DRIVE_CACHE_FILE):
+        return
+    try:
+        with open(DRIVE_CACHE_FILE, 'r', encoding='utf-8') as f:
+            pdfs = json.load(f).get('cache', {}).get('pdfs', [])
+    except (json.JSONDecodeError, IOError):
+        return
+    if not pdfs:
+        return
+
+    by_month = _bin_pdfs_by_report_month(pdfs)
+    today = datetime.now()
+    last_y, last_m = _months_back(today.year, today.month, 1)
+    last_label = f'{last_y}-{last_m:02d}'
+    last_count = by_month.get((last_y, last_m), 0)
+
+    prior_keys = [_months_back(last_y, last_m, n) for n in range(1, 4)]
+    prior_counts = [by_month.get(k, 0) for k in prior_keys]
+    prior_avg = sum(prior_counts) / len(prior_counts)
+
+    print(f"\n📊 月度監測報告：{last_label} = {last_count}，前 3 月平均 = {prior_avg:.1f}")
+
+    if prior_avg < MONTHLY_MIN_BASELINE:
+        return  # 樣本太小不警告
+    if last_count >= MONTHLY_DROP_THRESHOLD * prior_avg:
+        return  # 在正常範圍
+
+    # 同一個月只警告一次
+    state = {}
+    if os.path.exists(MONTHLY_ALERT_STATE):
+        try:
+            with open(MONTHLY_ALERT_STATE, 'r', encoding='utf-8') as f:
+                state = json.load(f)
+        except (json.JSONDecodeError, IOError):
+            pass
+    if state.get('last_alerted_month') == last_label:
+        return
+
+    drop_pct = (1 - last_count / prior_avg) * 100
+    prior_detail = ', '.join(
+        f'{y}-{m:02d}={by_month.get((y, m), 0)}'
+        for y, m in reversed(prior_keys)
+    )
+    msg = (
+        f"{last_label} 監測報告數 {last_count}，前 3 月平均 {prior_avg:.0f}（下滑 {drop_pct:.0f}%）。\n"
+        f"前 3 月：{prior_detail}\n"
+        f"可能原因：工地完工退場、法規執行面變動、合規鬆動、新建案資料源切換。\n"
+        f"建議：抽樣 3-5 個前月活躍但本月沒動的工地，檢查 Drive 資料夾。"
+    )
+    print(f"\n⚠️  月度監測活動異常下滑\n{msg}")
+
+    if notify:
+        try:
+            from notify import send_notification
+            send_notification(
+                f'⚠️ {last_label} 監測報告下滑 {drop_pct:.0f}%',
+                msg,
+                use_clickup=True,
+            )
+        except Exception as e:
+            print(f"  通知發送失敗: {e}")
+
+    state['last_alerted_month'] = last_label
+    try:
+        with open(MONTHLY_ALERT_STATE, 'w', encoding='utf-8') as f:
+            json.dump(state, f, ensure_ascii=False, indent=2)
+    except IOError as e:
+        print(f"  ⚠️ 無法寫入告警狀態: {e}")
+
+
 def main():
     parser = argparse.ArgumentParser(description='週報快照管理')
     parser.add_argument('--notify', action='store_true', help='新建案時發送通知')
@@ -180,6 +284,9 @@ def main():
     # 通知新建案
     if args.notify and diff and diff['new_permits']:
         notify_new_permits(diff)
+
+    # 月度活動趨勢檢查
+    check_monthly_activity_trend(notify=args.notify)
 
     # 回傳 diff 供週報使用
     return diff
