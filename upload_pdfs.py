@@ -18,7 +18,7 @@ import time
 import fcntl
 import requests
 from pathlib import Path
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
@@ -736,20 +736,18 @@ def main(city: dict = None):
     # 不依賴檔名日期解析 — 月報（YYYYMM）、民國年（114年04月）、設計圖等沒解析到的也都要上傳。
     all_pdfs.sort(key=lambda x: x.get('modifiedTime', ''), reverse=True)
 
-    # 日期 cutoff：1 個月（rolling），相對 now()。
-    # 用 Drive modifiedTime 判斷（「最近一個月有人放進 Drive」就送），不依賴檔名日期 —
-    # 因為 3 月份報告可能 4 月才上傳，這些屬於近期活動而非歷史 backfill。
-    # 月報 / 民國年 / 設計圖等沒檔名日期的也都包進來。
-    cutoff = datetime.now(timezone.utc) - timedelta(days=30)
+    # 日期 cutoff：1 個月（rolling），用「檔名日期」判斷而非 Drive modifiedTime。
+    # 原因：modifiedTime 會被「批次回填舊報告」誤導 — 有人 5 月把 2024 年資料一口氣丟進 Drive，
+    # modifiedTime 看起來很新但實際是舊報告。檔名日期才是「實際監測日期」的權威來源。
+    # 解析不到的（月報 YYYYMM、民國年月、設計圖等）暫時跳過，等後續 PR 強化 parser 再涵蓋。
+    cutoff = datetime.now() - timedelta(days=30)
 
-    def _drive_modified(pdf):
-        mt = pdf.get('modifiedTime')
-        if not mt:
-            return None
-        try:
-            return datetime.fromisoformat(mt.replace('Z', '+00:00'))
-        except (TypeError, ValueError):
-            return None
+    def _filename_date(pdf):
+        from filename_date_parser import parse_date_from_filename
+        d = parse_date_from_filename(pdf.get('name', ''))
+        if d is None and pdf.get('folder_name'):
+            d = parse_date_from_filename(pdf['folder_name'] + '/' + pdf['name'])
+        return d
 
     # 過濾：已上傳的 + 排除清單 + 1 個月外。MAX_UPLOADS > 0 才當上限，0 = 不限。
     pdfs_to_upload = []
@@ -767,11 +765,11 @@ def main(city: dict = None):
             already_uploaded_count += 1
             continue
 
-        mt = _drive_modified(pdf)
-        if mt is None:
+        fd = _filename_date(pdf)
+        if fd is None:
             no_date_count += 1
             continue
-        if mt < cutoff:
+        if fd < cutoff:
             too_old_count += 1
             continue
 
@@ -783,9 +781,9 @@ def main(city: dict = None):
     if excluded_count > 0:
         print(f"  排除清單: {excluded_count}")
     if too_old_count > 0:
-        print(f"  Drive 上傳超過 1 個月: {too_old_count}")
+        print(f"  檔名日期超過 1 個月: {too_old_count}")
     if no_date_count > 0:
-        print(f"  Drive modifiedTime 缺失: {no_date_count}")
+        print(f"  檔名無法解析日期（待 parser 強化）: {no_date_count}")
     print(f"  待上傳: {len(pdfs_to_upload)}" + (f"（上限 {MAX_UPLOADS}）" if MAX_UPLOADS > 0 else "（無上限）"))
 
     if not pdfs_to_upload:
