@@ -477,17 +477,13 @@ class PermitSync:
         # 隨機打亂，確保每次執行檢查不同建案
         random.shuffle(permit_list)
 
-        # 過濾掉已處理且無錯誤的建案（增量同步）
-        unprocessed_permits = []
-        for permit_no, source_url in permit_list:
-            if permit_no in self.state['processed']:
-                has_error = any(e.get('permit') == permit_no for e in self.state.get('errors', []))
-                if not has_error:
-                    continue
-            unprocessed_permits.append((permit_no, source_url))
+        # 不再用 state['processed'] 永久跳過已處理建照 — 那會錯過承造人後續在
+        # personal Drive 加的新檔（2026-05-05 揚昇君悅 case：4/7 後 4 週新檔
+        # 全部沒同步到 Shared Drive，因為被當「processed 跳過」）。
+        # 改成每次都 revisit 全部 permit；逐檔 dedup 由 check_file_exists 處理。
+        unprocessed_permits = list(permit_list)
 
-        print(f"\n📋 監測目標: {len(permit_list)} 個建案")
-        print(f"✅ 已處理: {len(permit_list) - len(unprocessed_permits)} 個")
+        print(f"\n📋 監測目標: {len(permit_list)} 個建案（全部 revisit）")
         print(f"🔄 待處理: {len(unprocessed_permits)} 個")
 
         # 先確保所有建案都有目標資料夾（序列化，因為涉及建立資料夾）
