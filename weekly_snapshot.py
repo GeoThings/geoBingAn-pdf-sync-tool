@@ -239,9 +239,19 @@ def check_monthly_activity_trend(notify: bool = False):
     msg = (
         f"{last_label} 監測報告數 {last_count}，前 3 月平均 {prior_avg:.0f}（下滑 {drop_pct:.0f}%）。\n"
         f"前 3 月：{prior_detail}\n"
-        f"可能原因：工地完工退場、法規執行面變動、合規鬆動、新建案資料源切換。\n"
-        f"建議：抽樣 3-5 個前月活躍但本月沒動的工地，檢查 Drive 資料夾。"
+        f"可能原因：工地完工退場、法規執行面變動、合規鬆動、新建案資料源切換。"
     )
+
+    # 自動帶上候選工地（前月活躍、本月歸零），讓告警一觸發就有可調查的對象
+    try:
+        from analyze_decline import find_decline_candidates, format_candidates, load_pdfs
+        analyzer_pdfs = load_pdfs()
+        if analyzer_pdfs:
+            candidates = find_decline_candidates(analyzer_pdfs, last_y, last_m, top=5)
+            msg += '\n\n' + format_candidates(candidates, last_label)
+    except Exception as e:
+        msg += f'\n\n（候選工地分析失敗: {e}）'
+
     print(f"\n⚠️  月度監測活動異常下滑\n{msg}")
 
     if notify:
