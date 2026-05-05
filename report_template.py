@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import Dict, List
 
 
-def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], alert_data: Dict[str, dict] = None, permit_names: Dict[str, str] = None, output_path: str = None):
+def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], alert_data: Dict[str, dict] = None, permit_names: Dict[str, str] = None, output_path: str = None, gov_url_statuses: Dict[str, str] = None):
     """生成 HTML 報告"""
     import html as html_mod
     print("\n📊 生成 HTML 報告...")
@@ -18,6 +18,8 @@ def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], a
         alert_data = {}
     if permit_names is None:
         permit_names = {}
+    if gov_url_statuses is None:
+        gov_url_statuses = {}
 
     def esc(s: str) -> str:
         """Escape string for safe HTML insertion (text and attributes)"""
@@ -231,10 +233,14 @@ def generate_html_report(permit_data: Dict[str, dict], non_google: List[dict], a
 
         row_class_str = ' '.join(row_classes)
 
+        # 政府 PDF folder URL 失效標記
+        url_status = gov_url_statuses.get(permit, '')
+        url_404_badge = ' <span class="badge badge-danger" title="政府 PDF folder URL 已失效，需聯繫建管處更新 PDF">URL 失效</span>' if url_status == '404' else ''
+
         rows_html += f'''
-<tr data-status="{esc(status)}" data-cloud="{esc(cloud)}" data-alert-total="{alert_total}" data-latest-date="{esc(latest_date_attr)}" class="{row_class_str}">
+<tr data-status="{esc(status)}" data-cloud="{esc(cloud)}" data-alert-total="{alert_total}" data-latest-date="{esc(latest_date_attr)}" data-url-status="{esc(url_status)}" class="{row_class_str}">
 <td>{i}</td>
-<td><strong>{esc(permit)}</strong></td>
+<td><strong>{esc(permit)}</strong>{url_404_badge}</td>
 <td class="name-cell">{name_html}</td>
 <td>{cloud_badge}</td>
 <td class="col-num">{drive_link}</td>
@@ -613,7 +619,7 @@ function toggleLegend() {{
 
 
 
-def generate_csv_report(permit_data: Dict[str, dict], non_google: List[dict], alert_data: Dict[str, dict] = None, permit_names: Dict[str, str] = None, output_path: str = None):
+def generate_csv_report(permit_data: Dict[str, dict], non_google: List[dict], alert_data: Dict[str, dict] = None, permit_names: Dict[str, str] = None, output_path: str = None, gov_url_statuses: Dict[str, str] = None):
     """生成 CSV 報告"""
     print("📄 生成 CSV 報告...")
 
@@ -621,12 +627,14 @@ def generate_csv_report(permit_data: Dict[str, dict], non_google: List[dict], al
         alert_data = {}
     if permit_names is None:
         permit_names = {}
+    if gov_url_statuses is None:
+        gov_url_statuses = {}
 
     non_google_set = {item['permit']: item['cloud'] for item in non_google}
 
     sorted_permits = sorted(permit_data.keys(), key=lambda x: permit_data[x].get('latest_report', '') or '', reverse=True)
 
-    lines = ['序號,建照字號,建案名稱,雲端服務,Drive PDF,系統 PDF,覆蓋率,警戒值項數,行動值項數,最近警戒日期,最新報告,距今天數,狀態']
+    lines = ['序號,建照字號,建案名稱,雲端服務,Drive PDF,系統 PDF,覆蓋率,警戒值項數,行動值項數,最近警戒日期,最新報告,距今天數,狀態,政府PDF URL狀態']
 
     for i, permit in enumerate(sorted_permits, 1):
         data = permit_data[permit]
@@ -647,7 +655,9 @@ def generate_csv_report(permit_data: Dict[str, dict], non_google: List[dict], al
         danger = permit_alert.get('danger_count', 0)
         latest_alert = permit_alert.get('latest_alert_date', '')[:10] if permit_alert.get('latest_alert_date') else ''
 
-        lines.append(f'{i},"{permit}","{building_name}","{cloud}",{drive},{system},{coverage},{warning},{danger},{latest_alert},{latest},{days},{status}')
+        url_status = gov_url_statuses.get(permit, '')
+
+        lines.append(f'{i},"{permit}","{building_name}","{cloud}",{drive},{system},{coverage},{warning},{danger},{latest_alert},{latest},{days},{status},{url_status}')
 
     if output_path:
         os.makedirs(os.path.dirname(output_path), exist_ok=True)

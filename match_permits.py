@@ -110,10 +110,19 @@ def fetch_gov_pdf_data(city: dict = None) -> Dict[str, dict]:
 
 
 # ==================== 來源 2: Drive 來源資料夾名稱 ====================
-def fetch_source_folder_names(gov_data: dict, drive_service) -> Dict[str, str]:
-    """從來源 Google Drive 資料夾名稱提取建案名稱"""
+def fetch_source_folder_names(gov_data: dict, drive_service):
+    """從來源 Google Drive 資料夾名稱提取建案名稱 + 順便記錄 URL 活/死狀態。
+
+    回傳 (names, statuses)：
+      names[permit_no] = 清理後的建案名稱
+      statuses[permit_no] = 'alive' / '404' / 'error'
+    政府 PDF 從 2025-01-23 後沒更新，所裡面的 URL 會持續腐爛。記錄狀態
+    讓週報統計表能列出，並週報後可彙整給建管處請求更新 PDF。
+    """
     print("📂 來源 2: Drive 來源資料夾名稱...")
+    from googleapiclient.errors import HttpError
     names = {}
+    statuses = {}
     for permit, info in gov_data.items():
         fid = info.get('source_folder_id')
         if not fid:
@@ -122,16 +131,24 @@ def fetch_source_folder_names(gov_data: dict, drive_service) -> Dict[str, str]:
             folder = drive_service.files().get(
                 fileId=fid, fields='name', supportsAllDrives=True
             ).execute()
+            statuses[permit] = 'alive'
             raw_name = folder.get('name', '')
             clean = extract_name_from_text(raw_name)
             if clean:
                 names[permit] = clean
-        except Exception as e:
+        except HttpError as e:
+            if e.resp.status == 404:
+                statuses[permit] = '404'
+            else:
+                statuses[permit] = 'error'
             print(f"  ⚠️ Drive 資料夾讀取失敗 {permit}: {e}")
-            continue
+        except Exception as e:
+            statuses[permit] = 'error'
+            print(f"  ⚠️ Drive 資料夾讀取失敗 {permit}: {e}")
 
-    print(f"  {len(names)} 個有名稱")
-    return names
+    print(f"  {len(names)} 個有名稱（狀態：alive={sum(1 for s in statuses.values() if s=='alive')}, "
+          f"404={sum(1 for s in statuses.values() if s=='404')}, error={sum(1 for s in statuses.values() if s=='error')}）")
+    return names, statuses
 
 
 # ==================== 來源 3: Drive PDF 檔名 ====================
@@ -349,7 +366,7 @@ def build_registry(city: dict = None):
 
     # 取得所有來源
     gov_data = fetch_gov_pdf_data(city=city)
-    source_names = fetch_source_folder_names(gov_data, drive_service)
+    source_names, gov_url_statuses = fetch_source_folder_names(gov_data, drive_service)
     drive_names = fetch_drive_pdf_names(drive_service)
     api_projects = fetch_api_projects()
     report_permits = fetch_api_report_categories()
@@ -533,9 +550,11 @@ def build_registry(city: dict = None):
                         changed = True
                     break
 
-        # 合併來源 URL
+        # 合併來源 URL + URL 活/死狀態（政府 PDF 凍結後 URL 持續腐爛，做列管）
         if permit in gov_data:
             entry['source_url'] = gov_data[permit].get('source_url', '')
+        if permit in gov_url_statuses:
+            entry['gov_pdf_url_status'] = gov_url_statuses[permit]
 
         if changed:
             updated += 1
