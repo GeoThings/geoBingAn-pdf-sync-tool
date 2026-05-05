@@ -26,7 +26,6 @@ from googleapiclient.http import MediaIoBaseDownload
 from typing import Dict, List, Optional
 import threading
 import re
-from filename_date_parser import parse_date_from_filename, FILENAME_DATE_CUTOFF
 from jwt_auth import decode_jwt_payload, is_token_expired, refresh_access_token, get_valid_token
 
 # 匯入配置檔案
@@ -733,60 +732,62 @@ def main(city: dict = None):
 
     print(f"✅ 找到 {len(all_pdfs)} 個 PDF 檔案")
 
-    # 使用檔名日期過濾（農曆新年 2026-02-17 之後）
-    cutoff_date = FILENAME_DATE_CUTOFF
-    print(f"\n🗓️  過濾檔名日期在 {cutoff_date.strftime('%Y-%m-%d')}（農曆新年初一）之後的 PDF...")
+    # 排序：按 Drive modifiedTime 降序（最新的在前面）。
+    # 不依賴檔名日期解析 — 月報（YYYYMM）、民國年（114年04月）、設計圖等沒解析到的也都要上傳。
+    all_pdfs.sort(key=lambda x: x.get('modifiedTime', ''), reverse=True)
 
-    recent_pdfs = []
-    no_date_count = 0
-    too_old_count = 0
-    for pdf in all_pdfs:
-        # 嘗試從檔名解析日期，若失敗則用 folder_name + 檔名組合再試
-        file_date = parse_date_from_filename(pdf['name'])
-        if file_date is None and pdf.get('folder_name'):
-            file_date = parse_date_from_filename(pdf['folder_name'] + '/' + pdf['name'])
-        if file_date is None:
-            no_date_count += 1
-            continue
-        if file_date > cutoff_date:
-            pdf['_parsed_date'] = file_date
-            recent_pdfs.append(pdf)
-        else:
-            too_old_count += 1
+    # 日期 cutoff：1 個月（rolling），用「檔名日期」判斷而非 Drive modifiedTime。
+    # 原因：modifiedTime 會被「批次回填舊報告」誤導 — 有人 5 月把 2024 年資料一口氣丟進 Drive，
+    # modifiedTime 看起來很新但實際是舊報告。檔名日期才是「實際監測日期」的權威來源。
+    # 解析不到的（月報 YYYYMM、民國年月、設計圖等）暫時跳過，等後續 PR 強化 parser 再涵蓋。
+    cutoff = datetime.now() - timedelta(days=30)
 
-    print(f"✅ 找到 {len(recent_pdfs)} 個農曆新年後的 PDF")
-    if no_date_count > 0:
-        print(f"⏭️  {no_date_count} 個無法從檔名解析日期（已跳過）")
-    if too_old_count > 0:
-        print(f"⏭️  {too_old_count} 個日期在農曆新年之前（已跳過）")
+    def _filename_date(pdf):
+        from filename_date_parser import parse_date_from_filename
+        d = parse_date_from_filename(pdf.get('name', ''))
+        if d is None and pdf.get('folder_name'):
+            d = parse_date_from_filename(pdf['folder_name'] + '/' + pdf['name'])
+        return d
 
-    # 排序：按檔名解析日期降序（最新的在前面）
-    recent_pdfs.sort(key=lambda x: x.get('_parsed_date', datetime.min), reverse=True)
-
-    # 移除暫存的 datetime 物件，避免 JSON 序列化失敗
-    for pdf in recent_pdfs:
-        pdf.pop('_parsed_date', None)
-
-    # 過濾掉已上傳的和排除清單中的檔案，最多取 MAX_UPLOADS 筆
+    # 過濾：已上傳的 + 排除清單 + 1 個月外。MAX_UPLOADS > 0 才當上限，0 = 不限。
     pdfs_to_upload = []
     excluded_count = 0
-    for pdf in recent_pdfs:
-        # 檢查是否在排除清單中
+    already_uploaded_count = 0
+    too_old_count = 0
+    no_date_count = 0
+    for pdf in all_pdfs:
         if pdf['name'] in EXCLUDE_FILES:
             excluded_count += 1
             continue
 
         unique_id = f"{pdf['folder_name']}/{pdf['name']}"
-        if unique_id not in state['uploaded_files']:
-            pdfs_to_upload.append(pdf)
-            if len(pdfs_to_upload) >= MAX_UPLOADS:
-                break
+        if unique_id in state['uploaded_files']:
+            already_uploaded_count += 1
+            continue
 
+        fd = _filename_date(pdf)
+        if fd is None:
+            no_date_count += 1
+            continue
+        if fd < cutoff:
+            too_old_count += 1
+            continue
+
+        pdfs_to_upload.append(pdf)
+        if MAX_UPLOADS > 0 and len(pdfs_to_upload) >= MAX_UPLOADS:
+            break
+
+    print(f"  已上傳過: {already_uploaded_count}")
     if excluded_count > 0:
-        print(f"⏭️  已跳過 {excluded_count} 個排除清單中的檔案")
+        print(f"  排除清單: {excluded_count}")
+    if too_old_count > 0:
+        print(f"  檔名日期超過 1 個月: {too_old_count}")
+    if no_date_count > 0:
+        print(f"  檔名無法解析日期（待 parser 強化）: {no_date_count}")
+    print(f"  待上傳: {len(pdfs_to_upload)}" + (f"（上限 {MAX_UPLOADS}）" if MAX_UPLOADS > 0 else "（無上限）"))
 
     if not pdfs_to_upload:
-        print(f"\n⚠️  最新的 {MAX_UPLOADS} 筆 PDF 都已上傳過了！")
+        print(f"\n⚠️  所有 PDF 都已上傳過了！")
         print("\n如要重新上傳，請刪除狀態檔案:")
         print(f"  rm {STATE_FILE}")
         sys.exit(0)
