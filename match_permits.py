@@ -640,6 +640,36 @@ def build_registry(city: dict = None):
         json.dump(registry, f, indent=2, ensure_ascii=False)
     print(f"\n✅ 已儲存到 {REGISTRY_FILE}")
 
+    # 列管 PDF URL 失效清單 — 給建管處請求更新政府 PDF 用
+    _write_url_404_csv(registry)
+
+
+def _write_url_404_csv(registry: dict):
+    """從 registry 抽出所有 gov_pdf_url_status='404' 的 entry，輸出獨立 CSV。
+
+    人工流程：每週 sync 後可直接拿這個檔案附件給建管處請求更新 PDF。
+    """
+    import csv
+    from datetime import datetime
+    out_path = './state/gov_pdf_url_404.csv'
+    today = datetime.now().strftime('%Y-%m-%d')
+    rows = []
+    for permit, info in sorted(registry.items()):
+        if info.get('gov_pdf_url_status') != '404':
+            continue
+        url = info.get('source_url') or info.get('source_url_removed', '')
+        fid = ''
+        if 'folders/' in url:
+            fid = url.split('folders/')[1].split('?')[0].split('/')[0]
+        name = info.get('name') or info.get('api_match', '')
+        rows.append([permit, name, fid, url, today])
+
+    with open(out_path, 'w', encoding='utf-8-sig', newline='') as f:
+        w = csv.writer(f)
+        w.writerow(['建照字號', '建案名稱', '失效 folder_id', '失效完整 URL', '檢查日'])
+        w.writerows(rows)
+    print(f"📋 失效 URL 列管表已輸出 {out_path}（{len(rows)} 筆）")
+
 
 if __name__ == '__main__':
     import argparse
