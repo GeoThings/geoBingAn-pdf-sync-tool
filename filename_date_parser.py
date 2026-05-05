@@ -3,8 +3,15 @@
 獨立於 config.py 和 Google Drive API，可安全用於測試。
 """
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
+
+
+def _month_end(year: int, month: int) -> datetime:
+    """月底最後一天。月度報告（YYYYMM、民國年月）回傳月底，對 cutoff 比較較寬容。"""
+    if month == 12:
+        return datetime(year, 12, 31)
+    return datetime(year, month + 1, 1) - timedelta(days=1)
 
 # 檔名日期過濾：2026 農曆新年（正月初一）= 2026-02-17
 FILENAME_DATE_CUTOFF = datetime(2026, 2, 17)
@@ -87,17 +94,48 @@ def parse_date_from_filename(filename: str) -> Optional[datetime]:
         except ValueError:
             pass
 
-    # 模式6: 4碼日期 + 觀測報告（如「0303觀測報告」），僅在路徑含明確年份時推斷
-    m = re.search(r'(\d{2})(\d{2})觀測報告', basename)
+    # 模式6: 4碼日期 + 觀測報告（前或後都接受），從路徑取年份（西元年或民國年）
+    # 例「0303觀測報告」、「觀測報告1208」
+    m = re.search(r'(?:(\d{2})(\d{2})觀測報告|觀測報告(\d{2})(\d{2}))', basename)
     if m:
         try:
-            month = int(m.group(1))
-            day = int(m.group(2))
+            month = int(m.group(1) or m.group(3))
+            day = int(m.group(2) or m.group(4))
             if 1 <= month <= 12 and 1 <= day <= 31:
-                # 必須從路徑中找到明確的西元年才推斷，避免誤判
+                # 先試西元年
                 year_match = re.search(r'(20\d{2})', basename)
                 if year_match:
                     return datetime(int(year_match.group(1)), month, day)
+                # 再試民國年（folder 像 `114年`）
+                roc_match = re.search(r'(?<!\d)(\d{2,3})年(?!\d)', basename)
+                if roc_match:
+                    roc_year = int(roc_match.group(1))
+                    if 100 <= roc_year <= 130:
+                        return datetime(roc_year + 1911, month, day)
+        except ValueError:
+            pass
+
+    # 模式7: 民國年月（無日）「114年04月」、「113.12月」、「113年12月」
+    # 月度報告，回傳該月最後一天（對 cutoff 寬容）
+    m = re.search(r'(?<!\d)(\d{2,3})[年.](\d{1,2})月(?!\d)', basename)
+    if m:
+        try:
+            roc_year = int(m.group(1))
+            month = int(m.group(2))
+            if 100 <= roc_year <= 130 and 1 <= month <= 12:
+                return _month_end(roc_year + 1911, month)
+        except ValueError:
+            pass
+
+    # 模式8: YYYYMM 6 碼月份（如「監測月報202512」）
+    # 月度報告，回傳該月最後一天
+    m = re.search(r'(?<!\d)(20\d{2})(\d{2})(?!\d)', basename)
+    if m:
+        try:
+            year = int(m.group(1))
+            month = int(m.group(2))
+            if 1 <= month <= 12:
+                return _month_end(year, month)
         except ValueError:
             pass
 
