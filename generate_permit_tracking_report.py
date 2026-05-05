@@ -828,6 +828,7 @@ def main(city: dict = None):
     registry_file = './state/permit_registry.json'
     permit_names = {}
     alert_data = {}
+    gov_url_statuses = {}
     if os.path.exists(registry_file):
         with open(registry_file, 'r', encoding='utf-8') as f:
             registry = json.load(f)
@@ -845,7 +846,12 @@ def main(city: dict = None):
                     'latest_alert_date': la.get('latest_date', ''),
                     'details': la.get('details', []),
                 }
-        print(f"  從 permit_registry 載入 {len(permit_names)} 個建案名稱，{len(alert_data)} 個有即時警戒值")
+            # 政府 PDF folder URL 活/死狀態
+            url_status = info.get('gov_pdf_url_status', '')
+            if url_status:
+                gov_url_statuses[permit] = url_status
+        n_404 = sum(1 for s in gov_url_statuses.values() if s == '404')
+        print(f"  從 permit_registry 載入 {len(permit_names)} 個建案名稱，{len(alert_data)} 個有即時警戒值，{n_404} 個 URL 失效")
     else:
         print("  ⚠️ permit_registry.json 不存在，請先執行 python3 match_permits.py")
         registry = {}
@@ -881,8 +887,8 @@ def main(city: dict = None):
         json.dump(non_google, f, indent=2, ensure_ascii=False)
 
     # 7. 生成報告
-    generate_html_report(permit_data, non_google, alert_data, permit_names, output_path=OUTPUT_HTML)
-    generate_csv_report(permit_data, non_google, alert_data, permit_names, output_path=OUTPUT_CSV)
+    generate_html_report(permit_data, non_google, alert_data, permit_names, output_path=OUTPUT_HTML, gov_url_statuses=gov_url_statuses)
+    generate_csv_report(permit_data, non_google, alert_data, permit_names, output_path=OUTPUT_CSV, gov_url_statuses=gov_url_statuses)
 
     elapsed = time.time() - start_time
     print(f"\n✅ 報告生成完成！耗時 {elapsed:.1f} 秒")
