@@ -6,6 +6,8 @@ state/*.json
 state/*.lock
 state/*.tmp.*
 state/.sync_start_time
+state/*.bak.*
+state/*.pdf
 
 # But keep upload history (needs to persist across clones)
 !state/upload_history_all.json
@@ -38,10 +40,16 @@ Thumbs.db
 
 # Environment
 .env
-.env.local
+.env.*
+!.env.example
+!.env.example.*
 venv/
 env/
 ENV/
+
+# Local test artifacts
+temp_pdfs/
+test_*.txt
 
 # 保留 config.py.example 作為範本
 # config.py 現在從 .env 載入，不再包含敏感資訊
