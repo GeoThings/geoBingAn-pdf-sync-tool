@@ -227,6 +227,17 @@ API project 匹配：116 筆（滑動視窗 + 去重）
 | `sync_permits_progress.json` | 已處理建案清單 | 每個建案 | 否 |
 | `uploaded_to_geobingan_7days.json` | 已上傳 PDF + 快取 | 每次成功上傳 | 否 |
 | `sync_status.json` | 執行狀態與歷史 | 每次執行 | 否 |
+| `weekly_snapshots/{date}.json` | sync 後狀態快照（供 compute_diff 算趨勢） | 每次 sync | 否（local-only，見下） |
+
+### Weekly snapshots：local-only state（PR #45）
+
+`weekly_snapshots/` 是純粹的 sync-to-sync diff 工具：
+- `get_previous_snapshot()` 只讀**最近 1 筆**非今天的快照
+- `compute_diff(curr, None)` 三重容錯 — fresh clone 第一次 sync 無 trend 輸出、之後正常
+- 月度趨勢（`check_monthly_activity_trend`）走 `uploaded_to_geobingan_7days.json`，**不依賴 snapshots**
+- 真正的歷史歸檔在 ClickUp（每週 sync 自動上傳 PDF）
+
+→ 不進 git。每位執行者本地各自維護自己的 snapshot 序列。
 
 ### 上傳歷史持久化（v3.7+）
 
