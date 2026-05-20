@@ -272,7 +272,7 @@ fi
 
 # 提交並推送到 GitHub（檢查報告或上傳歷史是否有變更）
 cd "$SCRIPT_DIR"
-git add docs/index.html state/permit_tracking_report.html state/permit_tracking.csv state/upload_history_all.json state/permit_registry.json state/weekly_snapshots/ 2>/dev/null || true
+git add docs/index.html state/permit_tracking_report.html state/permit_tracking.csv state/upload_history_all.json state/permit_registry.json 2>/dev/null || true
 if git diff --cached --quiet 2>/dev/null; then
     echo "ℹ️  無任何變更，跳過推送" | tee -a "$LOG_FILE"
 else
