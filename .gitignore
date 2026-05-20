@@ -42,13 +42,14 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+!.env.example.*
 venv/
 env/
 ENV/
 
 # Local test artifacts
 temp_pdfs/
-test_io.txt
+test_*.txt
 
 # 保留 config.py.example 作為範本
 # config.py 現在從 .env 載入，不再包含敏感資訊
