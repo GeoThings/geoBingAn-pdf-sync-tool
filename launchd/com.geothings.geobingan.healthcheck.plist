@@ -8,7 +8,7 @@
     <array>
         <string>/bin/bash</string>
         <string>-c</string>
-        <string>cd /Users/geothingsmacbookair/Documents/GitHub/geoBingAn-pdf-sync-tool &amp;&amp; ./venv/bin/python3 health_check.py --notify >> logs/health_check.log 2>&amp;1</string>
+        <string>sleep 30 &amp;&amp; cd /Users/geothingsmacbookair/Documents/GitHub/geoBingAn-pdf-sync-tool &amp;&amp; echo "[$(date '+%F %T')] launchd fired, post-sleep, starting python..." >> logs/health_check.log &amp;&amp; ./venv/bin/python3 health_check.py --notify >> logs/health_check.log 2>&amp;1</string>
     </array>
     <key>StartCalendarInterval</key>
     <dict>
