@@ -10,6 +10,12 @@ cd "$SCRIPT_DIR"
 
 LOG_DIR="$SCRIPT_DIR/logs"
 mkdir -p "$LOG_DIR"
+
+# Diagnostic trigger marker — 永遠寫入、不依賴後續 setup 成功
+# 5/1 那次 launchd EX_CONFIG 78 fail 沒有任何 log 線索；下次 fail 看這個 log 即可定位
+# PPID 區分觸發來源：launchd spawn 的 PPID 是 user-level launchd（通常低 PID，非 1）、手動跑是 user shell 高 PID
+echo "[$(date '+%F %T')] === run_friday_report.sh triggered (PID=$$, PPID=$PPID) ===" >> "$LOG_DIR/fridayreport_trigger.log"
+
 LOG_FILE="$LOG_DIR/friday_report_$(date +%Y%m%d_%H%M%S).log"
 
 echo "========================================" | tee -a "$LOG_FILE"
