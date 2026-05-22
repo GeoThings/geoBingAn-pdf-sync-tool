@@ -143,7 +143,7 @@ python3 health_check.py
 ./setup_launchd.sh
 
 # 步驟 2: 設定 pmset 喚醒 schedule（必要 — 否則 Mac 睡眠時排程不會跑）
-sudo pmset repeat wakeorpoweron MTWRFSU 07:55:00
+sudo pmset repeat wakepoweron MTWRFSU 07:55:00
 
 # 排程內容：
 # 每日 08:00 — 健康檢查（Token/磁碟/API）
