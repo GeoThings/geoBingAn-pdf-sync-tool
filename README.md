@@ -157,7 +157,7 @@ pmset -g sched                                                      # 查看 wak
 ./uninstall_launchd.sh                                              # 卸載
 ```
 
-> **為什麼需要 pmset？** macOS launchd `StartCalendarInterval` **不會主動喚醒 Mac**。若 Mac 在排程時間處於睡眠狀態，job 會完全跳過（不像 cron 也不會補跑）。`pmset wakeorpoweron` 讓 Mac 在排程前自動醒來、launchd 才能準時觸發。
+> **為什麼需要 pmset？** macOS launchd `StartCalendarInterval` **不會主動喚醒 Mac**。若 Mac 在排程時間處於睡眠狀態，job 會完全跳過（不像 cron 也不會補跑）。`pmset wakepoweron` 讓 Mac 在排程前自動醒來、launchd 才能準時觸發。
 >
 > **launchd 自身還有 wake-aware spawn 延後**（約 25 分鐘觀察值）— 詳見 [`docs/architecture.md` 的「Wake-from-sleep 排程行為」段](docs/architecture.md)。
 
