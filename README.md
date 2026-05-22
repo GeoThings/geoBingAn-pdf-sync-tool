@@ -137,23 +137,29 @@ python3 upload_pdfs.py
 python3 health_check.py
 ```
 
-#### 自動排程設定（launchd，睡眠補跑）：
+#### 自動排程設定（launchd + pmset wake schedule）：
 ```bash
-# 一鍵安裝（移除舊 cron + 安裝 launchd）
+# 步驟 1: 安裝 launchd 排程（移除舊 cron）
 ./setup_launchd.sh
+
+# 步驟 2: 設定 pmset 喚醒 schedule（必要 — 否則 Mac 睡眠時排程不會跑）
+sudo pmset repeat wakeorpoweron MTWRFSU 07:55:00
 
 # 排程內容：
 # 每日 08:00 — 健康檢查（Token/磁碟/API）
 # 週一 09:00 — 完整同步 + 同步週報
-# 週五 18:00 — 總結週報
+# 週五 17:00 — 總結週報
 
 # 管理指令：
 launchctl list | grep geobingan                                    # 查看狀態
 launchctl kickstart gui/$(id -u)/com.geothings.geobingan.weeklysync  # 手動觸發
+pmset -g sched                                                      # 查看 wake schedule
 ./uninstall_launchd.sh                                              # 卸載
 ```
 
-> **為什麼用 launchd 而不是 cron？** macOS 筆電睡眠時 cron 會跳過排程且不補跑。launchd 是 macOS 原生排程系統，Mac 醒來後會自動補跑錯過的任務。
+> **為什麼需要 pmset？** macOS launchd `StartCalendarInterval` **不會主動喚醒 Mac**。若 Mac 在排程時間處於睡眠狀態，job 會完全跳過（不像 cron 也不會補跑）。`pmset wakeorpoweron` 讓 Mac 在排程前自動醒來、launchd 才能準時觸發。
+>
+> **launchd 自身還有 wake-aware spawn 延後**（約 25 分鐘觀察值）— 詳見 [`docs/architecture.md` 的「Wake-from-sleep 排程行為」段](docs/architecture.md)。
 
 #### 查看日誌：
 ```bash
@@ -313,18 +319,7 @@ python3 -c "from sync_status import SyncStatus; SyncStatus().print_summary()"
 
 ## ⏰ 定期執行設定
 
-### Cron Job
-
-```bash
-# 週一 09:00 — 完整同步 + 同步週報
-0 9 * * 1 /path/to/run_weekly_sync.sh
-
-# 週五 18:00 — 總結週報 PDF
-0 18 * * 5 /path/to/run_friday_report.sh
-
-# 每日 08:00 — 健康檢查（Token、磁碟、API）
-0 8 * * * cd /path/to && venv/bin/python3 health_check.py --notify
-```
+預設使用 launchd + pmset、設定步驟見上方「🚀 快速開始 → 自動排程設定」段。Cron 已棄用（macOS 睡眠不補跑、與 launchd 衝突）。
 
 ---
 
