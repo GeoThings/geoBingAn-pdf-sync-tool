@@ -41,6 +41,41 @@
 
 安裝：`./setup_launchd.sh` · 卸載：`./uninstall_launchd.sh` · plist 位於 `launchd/`
 
+#### Wake-from-sleep 排程行為（2026-05 incident RCA）
+
+筆電型 Mac 長期睡眠會讓 `StartCalendarInterval` 完全跳過排程時間（launchd 不會主動喚醒系統）。修復走兩層：
+
+1. **`pmset repeat wakepoweron MTWRFSU 07:55:00`** — 每天 07:55 把系統喚醒，讓 launchd 排程能準時觸發。系統指令、不在 repo plist 內、需手動 `sudo pmset` 安裝。
+2. **healthcheck plist 加 `sleep 30 &&` + diagnostic echo**（PR #47）— 喚醒到 launchd spawn 之間的 race window 暫時緩衝。
+
+##### 觀察到的 launchd throttle（待驗證）
+
+5/22 首次成功觀察：pmset wake `07:55` → launchd schedule `08:00` → echo timestamp `08:25:01`（取自 bash `$(date)` 系統時鐘），**表面 delay ~25 分鐘**。對照 plist 加的 `sleep 30` 只佔其中 30 秒，意味著真正的 buffer 來自 macOS 內建的 wake-aware spawn 延後行為（user-level LaunchAgent 在 wake 後不會立即被 spawn）。**具體機制未驗證** — 可能來源包含 DarkWake 狀態下 LaunchAgent 延後、`com.apple.duetexpertd` 的 background activity scheduler、或 plist 未設特定 policy 的隱含 throttle。等累積觀察後再具體歸因。
+
+→ 推論：`sleep 30` workaround 多半是冗餘、真正讓 healthcheck 跑成功的是 macOS 內建的 wake-aware spawn 延後。但目前只有 1 個 data point、且 timestamp 是 bash 系統時鐘單來源、未做雙來源交叉驗證，需累積 1-2 週後判斷。
+
+##### 失敗診斷決策樹（PR #47 follow-up 完整版）
+
+failed 時看 `logs/health_check.log` 是否含 `launchd fired, post-sleep, starting python...` 那行 echo：
+
+| Echo 是否寫入 | Python exit code | 推論 | 下一步 |
+|---|---|---|---|
+| ✅ 寫入 | 0 | OK、流程正常 | 無 |
+| ✅ 寫入 | 1+ | 大概率不是 wake race；也可能 `sleep 30` 不足、race window 偶爾 > 30s | 查 venv `<frozen site>` import / refresh token / API 健康 |
+| ❌ 沒寫入 | （未 spawn） | bash 沒跑到 echo — pmset wake 未生效、launchd throttle 永遠延後、或 plist 格式問題 | `pmset -g sched`、`launchctl print` 看 spawn type / runs 是否 +1、`log show --predicate "process == launchd"` |
+
+##### Follow-up backlog
+
+- [ ] 連續觀察 5/22–6/05 healthcheck.log 的 timestamp、量化 wake-to-spawn delay 分佈
+  - 雙來源交叉驗證、防 bash `$(date)` 系統時鐘潛在 drift：
+    `launchctl print "gui/$(id -u)/com.geothings.geobingan.healthcheck" | grep "last spawn"`
+    + `log show --predicate 'subsystem == "com.apple.xpc.launchd"' --info`
+- [ ] 數據出來後決定：
+  - 若 delay 穩定 > sleep 時間 → 移除 plist 內 `sleep 30`（純靠 macOS 內建延後）
+  - 若 delay 高度不穩 → 升級為 `health_check_wrapper.sh` retry 機制
+  - **若全程穩定通過、無觀察變數變化 → 預設保留 `sleep 30` 作 defense in depth**，不主動移除（YAGNI / 移除省 30 秒 vs 引入潛在 incident 的風險不對稱）
+- [ ] 若改 schedule 從 08:00 → 08:30（避開 delay 不確定段），同步更新本表
+
 ## 模組依賴關係
 
 ```
