@@ -27,6 +27,11 @@ cd "$SCRIPT_DIR"
 LOG_DIR="$SCRIPT_DIR/logs"
 mkdir -p "$LOG_DIR"
 
+# Diagnostic trigger marker — 永遠寫入、不依賴後續 setup 成功
+# 4 月某次 launchd 跑 weeklysync 失敗 (EX_CONFIG 78) → 進 backoff 鎖死 4 週、5/25 才發現
+# 鏡像 PR #49 fridayreport 模式：marker 在最早 mkdir 完成的位置、PID/PPID 區分觸發來源
+echo "[$(date '+%F %T')] === run_weekly_sync.sh triggered (PID=$$, PPID=$PPID) ===" >> "$LOG_DIR/weeklysync_trigger.log"
+
 # 日誌檔案（使用日期時間命名）
 LOG_FILE="$LOG_DIR/weekly_sync_$(date +%Y%m%d_%H%M%S).log"
 
