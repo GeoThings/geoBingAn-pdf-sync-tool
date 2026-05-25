@@ -27,6 +27,12 @@ cd "$SCRIPT_DIR"
 LOG_DIR="$SCRIPT_DIR/logs"
 mkdir -p "$LOG_DIR"
 
+# Diagnostic trigger marker — 永遠寫入、不依賴後續 setup 成功
+# 4 月某次 launchd 跑 weeklysync 失敗 (EX_CONFIG 78) → 進 backoff 鎖死 4 週、5/25 才發現
+# PPID 區分觸發來源：launchd spawn 的 PPID 是 user-level launchd（通常低 PID，非 1）、手動跑是 user shell 高 PID
+# 鏡像 PR #49 對 run_friday_report.sh 的處理（兩個 job plist 結構相同）
+echo "[$(date '+%F %T')] === run_weekly_sync.sh triggered (PID=$$, PPID=$PPID) ===" >> "$LOG_DIR/weeklysync_trigger.log"
+
 # 日誌檔案（使用日期時間命名）
 LOG_FILE="$LOG_DIR/weekly_sync_$(date +%Y%m%d_%H%M%S).log"
 
