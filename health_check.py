@@ -43,8 +43,10 @@ def check_token():
         days_left = (exp - time.time()) / 86400
         if days_left < 0:
             return 'error', f'Refresh Token 已過期 {-days_left:.1f} 天，需要重新登入 riskmap.tw 取得新 refresh_token'
-        elif days_left < 3:
-            return 'warning', f'Refresh Token 剩餘 {days_left:.1f} 天，請到 riskmap.tw 重新登入取得新 refresh_token'
+        elif days_left < 1:
+            return 'error', f'Refresh Token 即將過期 < {days_left*24:.0f} 小時，請立即到 riskmap.tw 重新登入'
+        elif days_left < 5:
+            return 'warning', f'Refresh Token 剩餘 {days_left:.1f} 天，請盡快到 riskmap.tw 重新登入取得新 refresh_token'
         else:
             return 'ok', f'Refresh Token 剩餘 {days_left:.1f} 天'
     except Exception as e:
