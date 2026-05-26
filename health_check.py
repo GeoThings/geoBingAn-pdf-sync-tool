@@ -41,10 +41,14 @@ def check_token():
         payload = decode_jwt_payload(refresh)
         exp = payload.get('exp', 0)
         days_left = (exp - time.time()) / 86400
+        # Thresholds 假設 refresh_token lifetime = 7 天（riskmap.tw server-side）
+        # 5 天 warning 給 ~5d buffer；<= 1 天升 urgent error；超 7 天的 lifetime 變更要同步調這裡
         if days_left < 0:
-            return 'error', f'Refresh Token 已過期 {-days_left:.1f} 天，需要重新登入 riskmap.tw 取得新 refresh_token'
-        elif days_left < 3:
-            return 'warning', f'Refresh Token 剩餘 {days_left:.1f} 天，請到 riskmap.tw 重新登入取得新 refresh_token'
+            return 'error', f'Refresh Token 已過期 {-days_left:.1f} 天，請立即到 riskmap.tw 重新登入取得新 refresh_token'
+        elif days_left <= 1:
+            return 'error', f'Refresh Token 即將過期 < {days_left*24:.0f} 小時，請立即到 riskmap.tw 重新登入取得新 refresh_token'
+        elif days_left < 5:
+            return 'warning', f'Refresh Token 剩餘 {days_left:.1f} 天，請盡快到 riskmap.tw 重新登入取得新 refresh_token'
         else:
             return 'ok', f'Refresh Token 剩餘 {days_left:.1f} 天'
     except Exception as e:
