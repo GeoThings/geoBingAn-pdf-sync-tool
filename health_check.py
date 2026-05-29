@@ -107,6 +107,9 @@ def check_launchd_jobs():
     動機：launchd 對 EX_CONFIG 等錯誤會 silent backoff 鎖死整個 schedule、
     沒有任何 alerting。fridayreport 5/1 鎖 3 週、weeklysync 4 月某次鎖 4 週
     都是下游發現「咦週報沒進來」才察覺。把巡檢納入每日健檢、stuck 立刻浮現。
+
+    註：用 `gui/{uid}` domain 查 LaunchAgent，需在 GUI (Aqua) session 執行。
+    純 SSH session（無 GUI）可能查不到、會回報「無法解析」— 屬預期保守誤報。
     """
     import subprocess
     import re
@@ -128,10 +131,11 @@ def check_launchd_jobs():
             continue
         # launchctl 輸出形如 "last exit code = 78: EX_CONFIG" 或 "= 0" 或 "= (never exited)"
         m = re.search(r'last exit code = (\d+|\(never)', out)
-        code = m.group(1) if m else '?'
         # '(never' = 從未跑過（剛 reload，正常）；'0' = 正常；其他非零 = 異常
-        if code not in ('0', '(never'):
-            bad.append(f'{job}（last exit={code}）')
+        if m is None:
+            bad.append(f'{job}（無法解析 launchctl 輸出、請手動確認）')
+        elif m.group(1) not in ('0', '(never'):
+            bad.append(f'{job}（last exit={m.group(1)}）')
     if bad:
         return 'warning', 'launchd job 異常（可能 backoff 鎖死，需 bootout+bootstrap reload）: ' + '、'.join(bad)
     return 'ok', '三個排程 job 正常'
