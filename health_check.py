@@ -101,6 +101,42 @@ def check_api():
         return 'error', f'API 無法連線: {e}'
 
 
+def check_launchd_jobs():
+    """檢查三個 launchd 排程 job 的最後執行狀態。
+
+    動機：launchd 對 EX_CONFIG 等錯誤會 silent backoff 鎖死整個 schedule、
+    沒有任何 alerting。fridayreport 5/1 鎖 3 週、weeklysync 4 月某次鎖 4 週
+    都是下游發現「咦週報沒進來」才察覺。把巡檢納入每日健檢、stuck 立刻浮現。
+    """
+    import subprocess
+    import re
+    jobs = ['healthcheck', 'weeklysync', 'fridayreport']
+    uid = os.getuid()
+    bad = []
+    for job in jobs:
+        label = f'com.geothings.geobingan.{job}'
+        try:
+            out = subprocess.run(
+                ['launchctl', 'print', f'gui/{uid}/{label}'],
+                capture_output=True, text=True, timeout=10,
+            ).stdout
+        except Exception:
+            bad.append(f'{job}（查詢失敗）')
+            continue
+        if not out:
+            bad.append(f'{job}（未載入）')
+            continue
+        # launchctl 輸出形如 "last exit code = 78: EX_CONFIG" 或 "= 0" 或 "= (never exited)"
+        m = re.search(r'last exit code = (\d+|\(never)', out)
+        code = m.group(1) if m else '?'
+        # '(never' = 從未跑過（剛 reload，正常）；'0' = 正常；其他非零 = 異常
+        if code not in ('0', '(never'):
+            bad.append(f'{job}（last exit={code}）')
+    if bad:
+        return 'warning', 'launchd job 異常（可能 backoff 鎖死，需 bootout+bootstrap reload）: ' + '、'.join(bad)
+    return 'ok', '三個排程 job 正常'
+
+
 def main():
     parser = argparse.ArgumentParser(description='系統健康檢查')
     parser.add_argument('--notify', action='store_true', help='異常時發送通知')
@@ -111,6 +147,7 @@ def main():
         ('磁碟空間', check_disk),
         ('同步狀態', check_last_sync),
         ('API 連線', check_api),
+        ('排程 Job', check_launchd_jobs),
     ]
 
     icons = {'ok': '✅', 'warning': '⚠️', 'error': '❌'}
