@@ -372,10 +372,10 @@ a:hover{{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}}
 <div class="meta">{now.strftime('%Y年%m月%d日 %H:%M')} | 自動生成</div>
 </div>
 <div class="stats">
-<div class="stat" title="政府列管的監測建案總數（＝ 已完成 + 部分對應 + 待 AI 對應 + 尚無資料 + 已結案，全部都在監控）"><div class="label">監測建案總數</div><div class="value">{total}</div></div>
+<div class="stat" title="政府列管的監測建案總數（＝ 已完成上傳 + 部分對應 + 待 AI 對應 + 尚無監測資料 + 已結案，全部都在監控）"><div class="label">監測建案總數</div><div class="value">{total}</div></div>
 <div class="stat" title="所有報告都已上傳到究平安系統完成分析"><div class="label">已完成上傳</div><div class="value" style="color:#22c55e">{completed}</div></div>
 <div class="stat" title="部分報告已對應到 AI 分析結果"><div class="label">部分對應</div><div class="value" style="color:#3b82f6">{in_progress}</div></div>
-<div class="stat" title="Google Drive 已有此建案 PDF，但系統未對應到 AI 分析。常見原因：(1) 檔名格式無法自動解析、(2) 檔名日期超過 30 天，系統不主動上傳舊報告"><div class="label">待 AI 對應</div><div class="value" style="color:#f59e0b">{not_uploaded}</div></div>
+<div class="stat" title="Google Drive 已有此建案 PDF，但系統未對應到 AI 分析。常見原因：（1）檔名格式無法自動解析、（2）檔名日期超過 30 天，系統不主動上傳舊報告"><div class="label">待 AI 對應</div><div class="value" style="color:#f59e0b">{not_uploaded}</div></div>
 <div class="stat" title="雲端資料夾中沒有任何 PDF 報告"><div class="label">尚無監測資料</div><div class="value" style="color:#6b7280">{no_reports}</div></div>
 <div class="stat" title="最後更新超過一年，建案可能已完工"><div class="label">已結案</div><div class="value" style="color:#9ca3af">{completed_project}</div></div>
 <div class="stat" title="使用 SharePoint、Dropbox 等其他雲端服務"><div class="label">非 Google Drive</div><div class="value" style="color:#c2410c">{other_cloud}</div></div>
