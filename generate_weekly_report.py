@@ -111,7 +111,7 @@ def generate_html(stats, report_type='summary'):
     status_labels = {
         'completed': ('已完成', '#22c55e', 'AI 已辨識全部報告'),
         'in_progress': ('部分對應', '#3b82f6', '部分報告已對應到 AI 分析'),
-        'not_uploaded': ('待上傳', '#f59e0b', '雲端有報告，AI 尚未對應'),
+        'not_uploaded': ('待 AI 對應', '#f59e0b', '雲端有報告，AI 尚未對應'),
         'completed_project': ('已結案', '#9ca3af', '建照年份 110 年前且無報告'),
         'no_reports': ('無資料', '#d1d5db', '尚無雲端報告'),
     }
