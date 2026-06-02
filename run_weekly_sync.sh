@@ -44,6 +44,15 @@ HAS_ERROR=0
 ERROR_MESSAGE=""
 START_TIME=$(date +%s)
 
+# 今天是週幾（ISO: 1=Mon..7=Sun）— commit message 標籤 + 步驟 5 是否產 PDF 都用這個
+# WEEKDAY 取值若失敗（極罕）會是空字串、後續比較 "1" 為 false、保守視為非週一（skip PDF + Daily label）
+WEEKDAY=$(date +%u)
+if [ "$WEEKDAY" = "1" ]; then
+    COMMIT_LABEL="Weekly sync"
+else
+    COMMIT_LABEL="Daily sync"
+fi
+
 # 清理函數（在腳本結束時執行）
 cleanup() {
     local exit_code=$?
@@ -282,7 +291,7 @@ git add docs/index.html state/permit_tracking_report.html state/permit_tracking.
 if git diff --cached --quiet 2>/dev/null; then
     echo "ℹ️  無任何變更，跳過推送" | tee -a "$LOG_FILE"
 else
-    if git commit -m "Weekly sync report update ($(date +%Y-%m-%d))" 2>&1 | tee -a "$LOG_FILE"; then
+    if git commit -m "$COMMIT_LABEL report update ($(date +%Y-%m-%d))" 2>&1 | tee -a "$LOG_FILE"; then
         if git push origin main 2>&1 | tee -a "$LOG_FILE"; then
             echo "✅ 已推送到 GitHub" | tee -a "$LOG_FILE"
             echo "🔗 線上報告: https://htmlpreview.github.io/?https://github.com/GeoThings/geoBingAn-pdf-sync-tool/blob/main/docs/index.html" | tee -a "$LOG_FILE"
@@ -294,14 +303,20 @@ else
     fi
 fi
 
-# 步驟 5: 產生週報 PDF 並上傳到 ClickUp
+# 步驟 5: 產生 sync 週報 PDF 並上傳到 ClickUp（只週一執行）
+# 週二-週日：跳過 PDF 步驟、避免 ClickUp 每天都有重複附件
+# 週五另有 fridayreport launchd job 產 summary 週報 (--type summary)
 echo "" | tee -a "$LOG_FILE"
-echo "📄 步驟 5/5: 產生同步週報 PDF..." | tee -a "$LOG_FILE"
-echo "----------------------------------------" | tee -a "$LOG_FILE"
-if python3 "$SCRIPT_DIR/generate_weekly_report.py" --type sync --upload 2>&1 | tee -a "$LOG_FILE"; then
-    echo "✅ 週報已上傳到 ClickUp" | tee -a "$LOG_FILE"
+if [ "$WEEKDAY" = "1" ]; then
+    echo "📄 步驟 5/5: 產生 sync 週報 PDF（週一例行）..." | tee -a "$LOG_FILE"
+    echo "----------------------------------------" | tee -a "$LOG_FILE"
+    if python3 "$SCRIPT_DIR/generate_weekly_report.py" --type sync --upload 2>&1 | tee -a "$LOG_FILE"; then
+        echo "✅ 週報已上傳到 ClickUp" | tee -a "$LOG_FILE"
+    else
+        echo "⚠️  週報產生或上傳失敗（不影響同步結果）" | tee -a "$LOG_FILE"
+    fi
 else
-    echo "⚠️  週報產生或上傳失敗（不影響同步結果）" | tee -a "$LOG_FILE"
+    echo "ℹ️  步驟 5/5: 跳過 sync 週報 PDF（非週一、避免每日重複附件）" | tee -a "$LOG_FILE"
 fi
 
 # cleanup 會在 EXIT trap 中執行
