@@ -147,7 +147,7 @@ sudo pmset repeat wakepoweron MTWRFSU 07:55:00
 
 # 排程內容：
 # 每日 08:00 — 健康檢查（Token/磁碟/API）
-# 每日 09:00 — 完整同步（核心 PDF 同步 + 上傳 + 報告 + Git push）
+# 每日 10:00 — 完整同步（核心 PDF 同步 + 上傳 + 報告 + Git push）
 #              週一額外產 sync 週報 PDF 上傳 ClickUp
 # 週五 17:00 — 總結週報（summary 週報 PDF）
 
