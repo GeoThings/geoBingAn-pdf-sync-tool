@@ -115,13 +115,13 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <div class="container">
 <div class="header">
 <div><h1>建照監測追蹤報告</h1></div>
-<div class="meta">2026年06月01日 10:18 | 自動生成</div>
+<div class="meta">2026年06月03日 11:09 | 自動生成</div>
 </div>
 <div class="stats">
-<div class="stat" title="政府列管的建案監測數量"><div class="label">監測建案總數</div><div class="value">504</div></div>
+<div class="stat" title="政府列管的監測建案總數（＝ 已完成上傳 + 部分對應 + 待 AI 對應 + 尚無監測資料 + 已結案，全部都在監控）"><div class="label">監測建案總數</div><div class="value">504</div></div>
 <div class="stat" title="所有報告都已上傳到究平安系統完成分析"><div class="label">已完成上傳</div><div class="value" style="color:#22c55e">88</div></div>
 <div class="stat" title="部分報告已對應到 AI 分析結果"><div class="label">部分對應</div><div class="value" style="color:#3b82f6">124</div></div>
-<div class="stat" title="雲端有報告但尚未對應到 AI 分析"><div class="label">待上傳</div><div class="value" style="color:#f59e0b">99</div></div>
+<div class="stat" title="Google Drive 已有此建案 PDF，但系統未對應到 AI 分析。常見原因：（1）檔名格式無法自動解析、（2）檔名日期超過 30 天，系統不主動上傳舊報告"><div class="label">待 AI 對應</div><div class="value" style="color:#f59e0b">99</div></div>
 <div class="stat" title="雲端資料夾中沒有任何 PDF 報告"><div class="label">尚無監測資料</div><div class="value" style="color:#6b7280">60</div></div>
 <div class="stat" title="最後更新超過一年，建案可能已完工"><div class="label">已結案</div><div class="value" style="color:#9ca3af">133</div></div>
 <div class="stat" title="使用 SharePoint、Dropbox 等其他雲端服務"><div class="label">非 Google Drive</div><div class="value" style="color:#c2410c">59</div></div>
@@ -139,7 +139,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <table class="legend-table">
 <tr><td><span class="badge badge-success">已完成</span></td><td>所有雲端報告皆已上傳並完成分析</td></tr>
 <tr><td><span class="badge badge-info">部分對應</span></td><td>部分報告已對應到 AI 分析結果，其餘因檔名無法自動匹配</td></tr>
-<tr><td><span class="badge badge-warning">待上傳</span></td><td>雲端有報告但尚未對應到 AI 分析，可能尚未上傳或檔名無法匹配</td></tr>
+<tr><td><span class="badge badge-warning">待 AI 對應</span></td><td>雲端有報告但系統未對應到 AI 分析。原因：<strong>檔名格式無法解析</strong>，或<strong>檔名日期超過 30 天</strong>（系統不主動上傳舊報告）</td></tr>
 <tr><td><span class="badge badge-gray">無資料</span></td><td>雲端資料夾目前沒有任何 PDF 報告</td></tr>
 <tr><td><span class="badge badge-danger">異常</span></td><td>同步或上傳過程中發生錯誤，請聯絡技術人員</td></tr>
 </table>
@@ -250,7 +250,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <button class="btn active" onclick="filterStatus(this,'')">全部</button>
 <button class="btn" onclick="filterStatus(this,'completed')">已完成</button>
 <button class="btn" onclick="filterStatus(this,'in_progress')">部分對應</button>
-<button class="btn" onclick="filterStatus(this,'not_uploaded')">待上傳</button>
+<button class="btn" onclick="filterStatus(this,'not_uploaded')">待 AI 對應</button>
 <button class="btn" onclick="filterStatus(this,'other_cloud')">需手動處理</button>
 <button class="btn" onclick="filterStatus(this,'needs_attention')">需要處理</button>
 </div>
@@ -273,8 +273,86 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 </tr>
 </thead>
 <tbody>
-<tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-06-01" data-url-status="alive" class="">
+<tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-06-03" data-url-status="alive" class="">
 <td>1</td>
+<td><strong>112建字第0289號</strong></td>
+<td class="name-cell">合矩建設合矩青澄</td>
+<td></td>
+<td class="col-num"><a href="https://drive.google.com/drive/folders/1nLjkoB8g536o5XTpYbMWZjz7J153gddA" target="_blank" title="開啟 Google Drive 資料夾">67 ↗</a></td>
+<td class="col-num">3</td>
+<td><div class="progress-wrapper"><div class="progress-text">4%</div><div class="bar"><div class="bar-fill" style="width:4%;background:#dc2626"></div></div></div></td>
+<td><span class="empty-val">-</span></td>
+<td>2026-06-03</td>
+<td class="col-num"><span class="days" data-date="2026-06-03"></span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
+</tr>
+<tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-06-03" data-url-status="alive" class="">
+<td>2</td>
+<td><strong>110建字第0315號</strong></td>
+<td class="name-cell">信義區永吉段152等4筆地號工地</td>
+<td></td>
+<td class="col-num"><a href="https://drive.google.com/drive/folders/1bEJYW8WDly6JPs5GXonWn1QrKzDw8xKU" target="_blank" title="開啟 Google Drive 資料夾">82 ↗</a></td>
+<td class="col-num">66</td>
+<td><div class="progress-wrapper"><div class="progress-text">80%</div><div class="bar"><div class="bar-fill" style="width:80%;background:#22c55e"></div></div></div></td>
+<td><span class="empty-val">-</span></td>
+<td>2026-06-03</td>
+<td class="col-num"><span class="days" data-date="2026-06-03"></span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
+</tr>
+<tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-06-03" data-url-status="alive" class="">
+<td>3</td>
+<td><strong>111建字第1688號</strong></td>
+<td class="name-cell"><span class="empty-val">-</span></td>
+<td></td>
+<td class="col-num"><a href="https://drive.google.com/drive/folders/1eDHRWan38_-I4XfBL_6DmjtncumotY77" target="_blank" title="開啟 Google Drive 資料夾">115 ↗</a></td>
+<td class="col-num"><span class="empty-val" title="PDF 已在雲端，尚未對應到 AI 分析結果">-</span></td>
+<td><span class="empty-val">-</span></td>
+<td><span class="empty-val">-</span></td>
+<td>2026-06-03</td>
+<td class="col-num"><span class="days" data-date="2026-06-03"></span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
+</tr>
+<tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-06-03" data-url-status="alive" class="">
+<td>4</td>
+<td><strong>111建字第0117號</strong></td>
+<td class="name-cell"><span title="臺灣戲曲學院_內湖校區「劇藝教學大樓新建工程」車道區基地觀測系統">臺灣戲曲學院_內湖校區「劇藝教學大樓新建工程」車道...</span></td>
+<td></td>
+<td class="col-num"><a href="https://drive.google.com/drive/folders/10qwjyU0oUSNspBHydgi6LXEYkwJ_onXc" target="_blank" title="開啟 Google Drive 資料夾">289 ↗</a></td>
+<td class="col-num">270</td>
+<td><div class="progress-wrapper"><div class="progress-text">93%</div><div class="bar"><div class="bar-fill" style="width:93%;background:#22c55e"></div></div></div></td>
+<td><span class="empty-val">-</span></td>
+<td>2026-06-03</td>
+<td class="col-num"><span class="days" data-date="2026-06-03"></span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
+</tr>
+<tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-06-03" data-url-status="alive" class="">
+<td>5</td>
+<td><strong>111建字第0276號</strong></td>
+<td class="name-cell">連雲玥恒</td>
+<td></td>
+<td class="col-num"><a href="https://drive.google.com/drive/folders/1zxLfxbevxkpw3rXwJkDvwyVGH855dNtH" target="_blank" title="開啟 Google Drive 資料夾">109 ↗</a></td>
+<td class="col-num">107</td>
+<td><div class="progress-wrapper"><div class="progress-text">98%</div><div class="bar"><div class="bar-fill" style="width:98%;background:#22c55e"></div></div></div></td>
+<td><span class="empty-val">-</span></td>
+<td>2026-06-03</td>
+<td class="col-num"><span class="days" data-date="2026-06-03"></span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
+</tr>
+<tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="1" data-latest-date="2026-06-03" data-url-status="alive" class="row-alert">
+<td>6</td>
+<td><strong>113建字第0120號</strong></td>
+<td class="name-cell">台北市士林區蘭雅段新</td>
+<td></td>
+<td class="col-num"><a href="https://drive.google.com/drive/folders/1Bw8wK8A6VxcdBqKSy5PuLXzj_RW0HSWL" target="_blank" title="開啟 Google Drive 資料夾">24 ↗</a></td>
+<td class="col-num">8</td>
+<td><div class="progress-wrapper"><div class="progress-text">33%</div><div class="bar"><div class="bar-fill" style="width:33%;background:#dc2626"></div></div></div></td>
+<td><span class="alert-merged" title="有感測器超過警戒值">⚠️ 警戒值1項<span class="alert-date">3/2</span></span></td>
+<td>2026-06-03</td>
+<td class="col-num"><span class="days" data-date="2026-06-03"></span></td>
+<td><span class="badge badge-info">⏳ 部分對應</span></td>
+</tr>
+<tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-06-01" data-url-status="alive" class="">
+<td>7</td>
 <td><strong>112建字第0126號</strong></td>
 <td class="name-cell"><span title="揚昇君悅大樓新建工程 / 睦昇建設台北市復興南路敦化段三小段552地號28筆住宅">揚昇君悅大樓新建工程 / 睦昇建設台北市復興南路敦...</span></td>
 <td></td>
@@ -287,7 +365,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-06-01" data-url-status="alive" class="">
-<td>2</td>
+<td>8</td>
 <td><strong>112建字第0123號</strong></td>
 <td class="name-cell">全球人壽新總部大樓新建工程</td>
 <td></td>
@@ -300,7 +378,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-06-01" data-url-status="alive" class="">
-<td>3</td>
+<td>9</td>
 <td><strong>112建字第0118號</strong></td>
 <td class="name-cell">全球人壽新總部大樓新建工程</td>
 <td></td>
@@ -313,7 +391,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="1" data-latest-date="2026-06-01" data-url-status="alive" class="row-alert">
-<td>4</td>
+<td>10</td>
 <td><strong>113建字第0187號</strong></td>
 <td class="name-cell">凌霄好室社會住宅新建統包</td>
 <td></td>
@@ -326,7 +404,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="1" data-latest-date="2026-06-01" data-url-status="alive" class="row-alert">
-<td>5</td>
+<td>11</td>
 <td><strong>110建字第0176號</strong></td>
 <td class="name-cell">六福豐融商業大樓</td>
 <td></td>
@@ -339,7 +417,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-06-01" data-url-status="alive" class="">
-<td>6</td>
+<td>12</td>
 <td><strong>112建字第0097號</strong></td>
 <td class="name-cell">No29</td>
 <td></td>
@@ -352,7 +430,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-06-01" data-url-status="alive" class="">
-<td>7</td>
+<td>13</td>
 <td><strong>112建字第0031號</strong></td>
 <td class="name-cell">裕光東湖</td>
 <td></td>
@@ -362,36 +440,10 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-06-01</td>
 <td class="col-num"><span class="days" data-date="2026-06-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-06-01" data-url-status="alive" class="">
-<td>8</td>
-<td><strong>111建字第0276號</strong></td>
-<td class="name-cell">連雲玥恒</td>
-<td></td>
-<td class="col-num"><a href="https://drive.google.com/drive/folders/1zxLfxbevxkpw3rXwJkDvwyVGH855dNtH" target="_blank" title="開啟 Google Drive 資料夾">108 ↗</a></td>
-<td class="col-num">106</td>
-<td><div class="progress-wrapper"><div class="progress-text">98%</div><div class="bar"><div class="bar-fill" style="width:98%;background:#22c55e"></div></div></div></td>
-<td><span class="empty-val">-</span></td>
-<td>2026-06-01</td>
-<td class="col-num"><span class="days" data-date="2026-06-01"></span></td>
-<td><span class="badge badge-info">⏳ 部分對應</span></td>
-</tr>
-<tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="1" data-latest-date="2026-06-01" data-url-status="alive" class="row-alert">
-<td>9</td>
-<td><strong>113建字第0120號</strong></td>
-<td class="name-cell">台北市士林區蘭雅段新</td>
-<td></td>
-<td class="col-num"><a href="https://drive.google.com/drive/folders/1Bw8wK8A6VxcdBqKSy5PuLXzj_RW0HSWL" target="_blank" title="開啟 Google Drive 資料夾">23 ↗</a></td>
-<td class="col-num">8</td>
-<td><div class="progress-wrapper"><div class="progress-text">34%</div><div class="bar"><div class="bar-fill" style="width:34%;background:#dc2626"></div></div></div></td>
-<td><span class="alert-merged" title="有感測器超過警戒值">⚠️ 警戒值1項<span class="alert-date">3/2</span></span></td>
-<td>2026-06-01</td>
-<td class="col-num"><span class="days" data-date="2026-06-01"></span></td>
-<td><span class="badge badge-info">⏳ 部分對應</span></td>
-</tr>
-<tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-06-01" data-url-status="alive" class="">
-<td>10</td>
+<td>14</td>
 <td><strong>111建字第0111號</strong></td>
 <td class="name-cell">信升昌-士林區蘭雅段489地號</td>
 <td></td>
@@ -404,7 +456,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-06-01" data-url-status="alive" class="">
-<td>11</td>
+<td>15</td>
 <td><strong>110建字第0221號</strong></td>
 <td class="name-cell"><span title="楊昇建設臺北市松山區西松段一小段74等地號都更住宅新建工程">楊昇建設臺北市松山區西松段一小段74等地號都更住宅...</span></td>
 <td></td>
@@ -416,21 +468,8 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td class="col-num"><span class="days" data-date="2026-06-01"></span></td>
 <td><span class="badge badge-gray">🏁 已結案</span></td>
 </tr>
-<tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-06-01" data-url-status="alive" class="">
-<td>12</td>
-<td><strong>111建字第1688號</strong></td>
-<td class="name-cell"><span class="empty-val">-</span></td>
-<td></td>
-<td class="col-num"><a href="https://drive.google.com/drive/folders/1eDHRWan38_-I4XfBL_6DmjtncumotY77" target="_blank" title="開啟 Google Drive 資料夾">114 ↗</a></td>
-<td class="col-num"><span class="empty-val" title="PDF 已在雲端，尚未對應到 AI 分析結果">-</span></td>
-<td><span class="empty-val">-</span></td>
-<td><span class="empty-val">-</span></td>
-<td>2026-06-01</td>
-<td class="col-num"><span class="days" data-date="2026-06-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
-</tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="1" data-latest-date="2026-06-01" data-url-status="alive" class="row-alert">
-<td>13</td>
+<td>16</td>
 <td><strong>110建字第0360號</strong></td>
 <td class="name-cell">國產建材實業A棟企業總部大樓</td>
 <td></td>
@@ -443,7 +482,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="1" data-latest-date="2026-06-01" data-url-status="alive" class="row-alert">
-<td>14</td>
+<td>17</td>
 <td><strong>110建字第0210號</strong></td>
 <td class="name-cell">台北首都都更建設蘭雅段南側基地集合住宅</td>
 <td></td>
@@ -456,7 +495,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-05-25" data-url-status="alive" class="">
-<td>15</td>
+<td>18</td>
 <td><strong>110建字第0273號</strong></td>
 <td class="name-cell">萬鈞士林陽明段</td>
 <td></td>
@@ -469,7 +508,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="badge badge-gray">🏁 已結案</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-05-25" data-url-status="alive" class="">
-<td>16</td>
+<td>19</td>
 <td><strong>109建字第0262號</strong></td>
 <td class="name-cell">市府二小段商住新建工程</td>
 <td></td>
@@ -482,7 +521,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="badge badge-gray">🏁 已結案</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-05-25" data-url-status="alive" class="">
-<td>17</td>
+<td>20</td>
 <td><strong>110建字第0167號</strong></td>
 <td class="name-cell">忠孝勤靜大樓</td>
 <td></td>
@@ -495,7 +534,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-05-25" data-url-status="alive" class="">
-<td>18</td>
+<td>21</td>
 <td><strong>111建字第0158號</strong></td>
 <td class="name-cell">根基營造萬華區直興段</td>
 <td></td>
@@ -505,23 +544,10 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-05-25</td>
 <td class="col-num"><span class="days" data-date="2026-05-25"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
-</tr>
-<tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-05-25" data-url-status="alive" class="">
-<td>19</td>
-<td><strong>110建字第0315號</strong></td>
-<td class="name-cell">信義區永吉段152等4筆地號工地</td>
-<td></td>
-<td class="col-num"><a href="https://drive.google.com/drive/folders/1bEJYW8WDly6JPs5GXonWn1QrKzDw8xKU" target="_blank" title="開啟 Google Drive 資料夾">81 ↗</a></td>
-<td class="col-num">66</td>
-<td><div class="progress-wrapper"><div class="progress-text">81%</div><div class="bar"><div class="bar-fill" style="width:81%;background:#22c55e"></div></div></div></td>
-<td><span class="empty-val">-</span></td>
-<td>2026-05-25</td>
-<td class="col-num"><span class="days" data-date="2026-05-25"></span></td>
-<td><span class="badge badge-info">⏳ 部分對應</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-05-25" data-url-status="alive" class="">
-<td>20</td>
+<td>22</td>
 <td><strong>111建字第0129號</strong></td>
 <td class="name-cell">隆雲心仝聚安全監測報告</td>
 <td></td>
@@ -531,10 +557,10 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-05-25</td>
 <td class="col-num"><span class="days" data-date="2026-05-25"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-05-25" data-url-status="alive" class="">
-<td>21</td>
+<td>23</td>
 <td><strong>107建字第0092號</strong></td>
 <td class="name-cell">鴻輝建設-台北市北投區崇仰段一小段131地號等住宅</td>
 <td></td>
@@ -547,7 +573,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="badge badge-gray">🏁 已結案</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="1" data-latest-date="2026-05-25" data-url-status="alive" class="row-alert">
-<td>22</td>
+<td>24</td>
 <td><strong>112建字第0177號</strong></td>
 <td class="name-cell">台北市大同區雙連段三小段99等22筆地號新建工程</td>
 <td></td>
@@ -560,7 +586,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-05-25" data-url-status="alive" class="">
-<td>23</td>
+<td>25</td>
 <td><strong>109建字第0027號</strong></td>
 <td class="name-cell">台肥南港C4辦公大樓新建工程-專案</td>
 <td></td>
@@ -573,7 +599,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="1" data-latest-date="2026-05-18" data-url-status="alive" class="row-alert">
-<td>24</td>
+<td>26</td>
 <td><strong>110建字第0243號</strong></td>
 <td class="name-cell">璞真之道新建大樓日報</td>
 <td></td>
@@ -586,7 +612,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-05-15" data-url-status="alive" class="">
-<td>25</td>
+<td>27</td>
 <td><strong>111建字第0120號</strong></td>
 <td class="name-cell">東匯工地</td>
 <td></td>
@@ -599,7 +625,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-05-15" data-url-status="alive" class="">
-<td>26</td>
+<td>28</td>
 <td><strong>112建字第0276號</strong></td>
 <td class="name-cell">廣鐿德惠段</td>
 <td></td>
@@ -612,7 +638,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-05-15" data-url-status="alive" class="">
-<td>27</td>
+<td>29</td>
 <td><strong>111建字第0348號</strong></td>
 <td class="name-cell">內湖康寧路</td>
 <td></td>
@@ -625,7 +651,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-05-15" data-url-status="alive" class="">
-<td>28</td>
+<td>30</td>
 <td><strong>111建字第0245號</strong></td>
 <td class="name-cell">國產建材實業B棟商業辦公大樓</td>
 <td></td>
@@ -638,7 +664,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="badge badge-success">✔ 已完成</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="1" data-latest-date="2026-05-15" data-url-status="alive" class="row-alert">
-<td>29</td>
+<td>31</td>
 <td><strong>112建字第0080號</strong></td>
 <td class="name-cell">天母段三小段39、40等二筆地號</td>
 <td></td>
@@ -651,7 +677,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-05-15" data-url-status="alive" class="">
-<td>30</td>
+<td>32</td>
 <td><strong>110建字第0171號</strong></td>
 <td class="name-cell">璞承-中山築觀</td>
 <td></td>
@@ -664,7 +690,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-05-15" data-url-status="alive" class="">
-<td>31</td>
+<td>33</td>
 <td><strong>112建字第0056號</strong></td>
 <td class="name-cell">利晉緯成-安全監測系統量測</td>
 <td></td>
@@ -677,7 +703,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="badge badge-success">✔ 已完成</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-05-11" data-url-status="alive" class="">
-<td>32</td>
+<td>34</td>
 <td><strong>112建字第0146號</strong></td>
 <td class="name-cell">天母鑲玉</td>
 <td></td>
@@ -690,7 +716,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="badge badge-info">⏳ 部分對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-05-11" data-url-status="alive" class="">
-<td>33</td>
+<td>35</td>
 <td><strong>111建字第0095號</strong></td>
 <td class="name-cell">樸園璞開石</td>
 <td></td>
@@ -700,33 +726,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-05-11</td>
 <td class="col-num"><span class="days" data-date="2026-05-11"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
-</tr>
-<tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-05-05" data-url-status="alive" class="">
-<td>34</td>
-<td><strong>112建字第0289號</strong></td>
-<td class="name-cell">合矩建設合矩青澄</td>
-<td></td>
-<td class="col-num"><a href="https://drive.google.com/drive/folders/1nLjkoB8g536o5XTpYbMWZjz7J153gddA" target="_blank" title="開啟 Google Drive 資料夾">64 ↗</a></td>
-<td class="col-num">2</td>
-<td><div class="progress-wrapper"><div class="progress-text">3%</div><div class="bar"><div class="bar-fill" style="width:3%;background:#dc2626"></div></div></div></td>
-<td><span class="empty-val">-</span></td>
-<td>2026-05-05</td>
-<td class="col-num"><span class="days" data-date="2026-05-05"></span></td>
-<td><span class="badge badge-info">⏳ 部分對應</span></td>
-</tr>
-<tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-05-05" data-url-status="alive" class="">
-<td>35</td>
-<td><strong>111建字第0117號</strong></td>
-<td class="name-cell"><span title="臺灣戲曲學院_內湖校區「劇藝教學大樓新建工程」車道區基地觀測系統">臺灣戲曲學院_內湖校區「劇藝教學大樓新建工程」車道...</span></td>
-<td></td>
-<td class="col-num"><a href="https://drive.google.com/drive/folders/10qwjyU0oUSNspBHydgi6LXEYkwJ_onXc" target="_blank" title="開啟 Google Drive 資料夾">286 ↗</a></td>
-<td class="col-num">270</td>
-<td><div class="progress-wrapper"><div class="progress-text">94%</div><div class="bar"><div class="bar-fill" style="width:94%;background:#22c55e"></div></div></div></td>
-<td><span class="empty-val">-</span></td>
-<td>2026-05-05</td>
-<td class="col-num"><span class="days" data-date="2026-05-05"></span></td>
-<td><span class="badge badge-info">⏳ 部分對應</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-05-05" data-url-status="alive" class="">
 <td>36</td>
@@ -778,7 +778,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-05-05</td>
 <td class="col-num"><span class="days" data-date="2026-05-05"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-05-05" data-url-status="alive" class="">
 <td>40</td>
@@ -830,7 +830,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-04-02</td>
 <td class="col-num"><span class="days" data-date="2026-04-02"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-04-02" data-url-status="alive" class="">
 <td>44</td>
@@ -843,7 +843,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-04-02</td>
 <td class="col-num"><span class="days" data-date="2026-04-02"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-04-02" data-url-status="alive" class="">
 <td>45</td>
@@ -869,7 +869,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-04-02</td>
 <td class="col-num"><span class="days" data-date="2026-04-02"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="1" data-latest-date="2026-04-02" data-url-status="alive" class="row-alert">
 <td>47</td>
@@ -921,7 +921,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-04-01</td>
 <td class="col-num"><span class="days" data-date="2026-04-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-04-01" data-url-status="alive" class="">
 <td>51</td>
@@ -1701,7 +1701,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-03-02" data-url-status="alive" class="">
 <td>111</td>
@@ -1779,7 +1779,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-03-02" data-url-status="alive" class="">
 <td>117</td>
@@ -1805,7 +1805,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-03-02" data-url-status="alive" class="">
 <td>119</td>
@@ -1844,7 +1844,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-03-02" data-url-status="alive" class="">
 <td>122</td>
@@ -1935,7 +1935,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-03-02" data-url-status="alive" class="">
 <td>129</td>
@@ -2000,7 +2000,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-03-02</td>
 <td class="col-num"><span class="days" data-date="2026-03-02"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-12" data-url-status="" class="">
 <td>134</td>
@@ -2104,7 +2104,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" data-url-status="" class="">
 <td>142</td>
@@ -2117,7 +2117,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" data-url-status="alive" class="">
 <td>143</td>
@@ -2143,7 +2143,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" data-url-status="" class="">
 <td>145</td>
@@ -2156,7 +2156,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" data-url-status="" class="">
 <td>146</td>
@@ -2169,7 +2169,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" data-url-status="" class="">
 <td>147</td>
@@ -2195,7 +2195,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" data-url-status="alive" class="">
 <td>149</td>
@@ -2208,7 +2208,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" data-url-status="" class="">
 <td>150</td>
@@ -2260,7 +2260,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" data-url-status="" class="">
 <td>154</td>
@@ -2273,7 +2273,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" data-url-status="" class="">
 <td>155</td>
@@ -2286,7 +2286,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" data-url-status="" class="">
 <td>156</td>
@@ -2338,7 +2338,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" data-url-status="" class="">
 <td>160</td>
@@ -2351,7 +2351,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" data-url-status="" class="">
 <td>161</td>
@@ -2377,7 +2377,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" data-url-status="alive" class="">
 <td>163</td>
@@ -2429,7 +2429,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" data-url-status="" class="">
 <td>167</td>
@@ -2442,7 +2442,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="1" data-latest-date="2026-02-11" data-url-status="" class="row-alert">
 <td>168</td>
@@ -2481,7 +2481,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" data-url-status="" class="">
 <td>171</td>
@@ -2507,7 +2507,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="1" data-latest-date="2026-02-11" data-url-status="" class="row-alert">
 <td>173</td>
@@ -2546,7 +2546,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" data-url-status="" class="">
 <td>176</td>
@@ -2624,7 +2624,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" data-url-status="" class="">
 <td>182</td>
@@ -2637,7 +2637,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-11" data-url-status="" class="">
 <td>183</td>
@@ -2650,7 +2650,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-11</td>
 <td class="col-num"><span class="days" data-date="2026-02-11"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="in_progress" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2026-02-02" data-url-status="" class="">
 <td>184</td>
@@ -2676,7 +2676,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-02-02</td>
 <td class="col-num"><span class="days" data-date="2026-02-02"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="1" data-latest-date="2026-01-20" data-url-status="alive" class="row-alert">
 <td>186</td>
@@ -3846,7 +3846,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2026-01-05</td>
 <td class="col-num"><span class="days" data-date="2026-01-05"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-12-18" data-url-status="" class="">
 <td>276</td>
@@ -3937,7 +3937,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-12-09</td>
 <td class="col-num"><span class="days" data-date="2025-12-09"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="no_reports" data-cloud="MEGA" data-alert-total="0" data-latest-date="2025-12-08" data-url-status="" class="">
 <td>283</td>
@@ -3963,7 +3963,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-12-05</td>
 <td class="col-num"><span class="days" data-date="2025-12-05"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="completed" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-12-01" data-url-status="" class="">
 <td>285</td>
@@ -4054,7 +4054,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-11-24</td>
 <td class="col-num"><span class="days" data-date="2025-11-24"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-11-24" data-url-status="alive" class="">
 <td>292</td>
@@ -4080,7 +4080,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-11-24</td>
 <td class="col-num"><span class="days" data-date="2025-11-24"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-11-24" data-url-status="" class="">
 <td>294</td>
@@ -4119,7 +4119,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-11-24</td>
 <td class="col-num"><span class="days" data-date="2025-11-24"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-11-24" data-url-status="alive" class="">
 <td>297</td>
@@ -4145,7 +4145,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-11-14</td>
 <td class="col-num"><span class="days" data-date="2025-11-14"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-11-14" data-url-status="" class="">
 <td>299</td>
@@ -4158,7 +4158,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-11-14</td>
 <td class="col-num"><span class="days" data-date="2025-11-14"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-11-14" data-url-status="" class="">
 <td>300</td>
@@ -4171,7 +4171,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-11-14</td>
 <td class="col-num"><span class="days" data-date="2025-11-14"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-11-14" data-url-status="alive" class="">
 <td>301</td>
@@ -4184,7 +4184,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-11-14</td>
 <td class="col-num"><span class="days" data-date="2025-11-14"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-11-04" data-url-status="" class="">
 <td>302</td>
@@ -4197,7 +4197,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-11-04</td>
 <td class="col-num"><span class="days" data-date="2025-11-04"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-27" data-url-status="" class="">
 <td>303</td>
@@ -4210,7 +4210,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-27</td>
 <td class="col-num"><span class="days" data-date="2025-10-27"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-27" data-url-status="alive" class="">
 <td>304</td>
@@ -4223,7 +4223,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-27</td>
 <td class="col-num"><span class="days" data-date="2025-10-27"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-20" data-url-status="alive" class="">
 <td>305</td>
@@ -4236,7 +4236,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-20</td>
 <td class="col-num"><span class="days" data-date="2025-10-20"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-20" data-url-status="" class="">
 <td>306</td>
@@ -4249,7 +4249,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-20</td>
 <td class="col-num"><span class="days" data-date="2025-10-20"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-15" data-url-status="alive" class="">
 <td>307</td>
@@ -4275,7 +4275,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-13</td>
 <td class="col-num"><span class="days" data-date="2025-10-13"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-13" data-url-status="alive" class="">
 <td>309</td>
@@ -4288,7 +4288,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-13</td>
 <td class="col-num"><span class="days" data-date="2025-10-13"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-06" data-url-status="alive" class="">
 <td>310</td>
@@ -4314,7 +4314,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="alive" class="">
 <td>312</td>
@@ -4327,7 +4327,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="alive" class="">
 <td>313</td>
@@ -4340,7 +4340,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="" class="">
 <td>314</td>
@@ -4353,7 +4353,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="alive" class="">
 <td>315</td>
@@ -4366,7 +4366,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="alive" class="">
 <td>316</td>
@@ -4379,7 +4379,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="alive" class="">
 <td>317</td>
@@ -4392,7 +4392,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="alive" class="">
 <td>318</td>
@@ -4405,7 +4405,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="alive" class="">
 <td>319</td>
@@ -4418,7 +4418,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="alive" class="">
 <td>320</td>
@@ -4431,7 +4431,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="alive" class="">
 <td>321</td>
@@ -4457,7 +4457,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="" class="">
 <td>323</td>
@@ -4470,7 +4470,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="alive" class="">
 <td>324</td>
@@ -4496,7 +4496,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="alive" class="">
 <td>326</td>
@@ -4522,7 +4522,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="alive" class="">
 <td>328</td>
@@ -4548,7 +4548,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="alive" class="">
 <td>330</td>
@@ -4561,7 +4561,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="alive" class="">
 <td>331</td>
@@ -4574,7 +4574,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="404" class="">
 <td>332</td>
@@ -4587,7 +4587,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="alive" class="">
 <td>333</td>
@@ -4600,7 +4600,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="alive" class="">
 <td>334</td>
@@ -4639,7 +4639,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="404" class="">
 <td>337</td>
@@ -4691,7 +4691,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="alive" class="">
 <td>341</td>
@@ -4717,7 +4717,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="alive" class="">
 <td>343</td>
@@ -4821,7 +4821,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="alive" class="">
 <td>351</td>
@@ -4847,7 +4847,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="alive" class="">
 <td>353</td>
@@ -4860,7 +4860,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="alive" class="">
 <td>354</td>
@@ -4873,7 +4873,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="alive" class="">
 <td>355</td>
@@ -4886,7 +4886,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="alive" class="">
 <td>356</td>
@@ -4899,7 +4899,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="alive" class="">
 <td>357</td>
@@ -4925,7 +4925,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="alive" class="">
 <td>359</td>
@@ -4951,7 +4951,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="404" class="">
 <td>361</td>
@@ -4990,7 +4990,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="alive" class="">
 <td>364</td>
@@ -5068,7 +5068,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="alive" class="">
 <td>370</td>
@@ -5094,7 +5094,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="" class="">
 <td>372</td>
@@ -5107,7 +5107,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="404" class="">
 <td>373</td>
@@ -5146,7 +5146,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="alive" class="">
 <td>376</td>
@@ -5172,7 +5172,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="alive" class="">
 <td>378</td>
@@ -5198,7 +5198,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="404" class="">
 <td>380</td>
@@ -5211,7 +5211,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="alive" class="">
 <td>381</td>
@@ -5237,7 +5237,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="alive" class="">
 <td>383</td>
@@ -5250,7 +5250,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="alive" class="">
 <td>384</td>
@@ -5302,7 +5302,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="alive" class="">
 <td>388</td>
@@ -5315,7 +5315,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="not_uploaded" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="404" class="">
 <td>389</td>
@@ -5328,7 +5328,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="completed_project" data-cloud="Google Drive" data-alert-total="0" data-latest-date="2025-10-01" data-url-status="alive" class="">
 <td>390</td>
@@ -5354,7 +5354,7 @@ a:hover{color:#dc2626;border-bottom-color:#dc2626;background:#fff1f2}
 <td><span class="empty-val">-</span></td>
 <td>2025-10-01</td>
 <td class="col-num"><span class="days" data-date="2025-10-01"></span></td>
-<td><span class="badge badge-warning">⬆ 待上傳</span></td>
+<td><span class="badge badge-warning">⬆ 待 AI 對應</span></td>
 </tr>
 <tr data-status="no_reports" data-cloud="Google Drive" data-alert-total="0" data-latest-date="" data-url-status="" class="">
 <td>392</td>
