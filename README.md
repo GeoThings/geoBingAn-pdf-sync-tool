@@ -160,7 +160,7 @@ pmset -g sched                                                      # 查看 wak
 
 > **為什麼需要 pmset？** macOS launchd `StartCalendarInterval` **不會主動喚醒 Mac**。若 Mac 在排程時間處於睡眠狀態，job 會完全跳過（不像 cron 也不會補跑）。`pmset wakepoweron` 讓 Mac 在排程前自動醒來、launchd 才能準時觸發。
 >
-> **launchd 自身還有 wake-aware spawn 延後**（約 25 分鐘觀察值）— 詳見 [`docs/architecture.md` 的「Wake-from-sleep 排程行為」段](docs/architecture.md)。
+> ✅ **2026-06-09 ROOT CAUSE RESOLVED — repo 必須放在 `~/Developer/` 不能放在 `~/Documents/`**：原因是 macOS `Desktop & Documents` iCloud Drive 同步把 Documents 接管成 `com.apple.CloudDocs` FileProvider domain、會偶發性拒絕 launchd-spawn 出來的 bash read、造成 18 天 silent fail（exit 78 EX_CONFIG、stderr 0 bytes）。詳見 [`docs/architecture.md` 的「Auto-trigger 失敗 root cause」段](docs/architecture.md)。<br>**重要 setup 步驟**：clone 後務必驗證 `xattr ~/Developer/geoBingAn-pdf-sync-tool` 不要出現 `com.apple.file-provider-domain-id`。
 
 #### 查看日誌：
 ```bash
