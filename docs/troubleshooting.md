@@ -200,6 +200,7 @@ print(f'副檔名: {file.get(\"fileExtension\", \"無\")}')
 - 只在 launchd **自動** fire（08:00 健康檢查 / 10:00 同步，皆 post-wake）出現；同一指令手動跑正常
 - `launchctl list | grep geobingan` 的 weeklysync 顯示 status=`1`
 - 摘要：同步 0 / 上傳 0 / 執行時間 0.0 分鐘
+- 注意：step1 下載是 **硬中止點**——單一 transient DNS fail 就會跳過步驟 2-3、整條 pipeline 中止（這也是為何一個暫時性網路問題會炸掉整次同步）
 
 ### 原因
 pmset wake schedule 喚醒 Mac 後，launchd 幾乎立即觸發 job，但此時 Wi-Fi 重連 / DNS resolver 尚未就緒，政府網站 host 解析失敗。plist 已內建 `sleep 30` 緩衝，仍可能不足。屬 **transient 網路 race**，非認證或程式錯誤，不要誤判成 Token / API 問題。
@@ -216,10 +217,12 @@ pmset wake schedule 喚醒 Mac 後，launchd 幾乎立即觸發 job，但此時 
    ```
 3. `launchctl` 的 status=1 會在隔天自動排程成功後自動 reset 成 0，無需手動處理。
 
-### 根治方向（未實作）
+### 根治方向（未實作，追蹤 [#59](https://github.com/GeoThings/geoBingAn-pdf-sync-tool/issues/59)）
 - step1 下載前加 DNS readiness probe（loop 等 `nslookup` 成功再開跑）
 - 下載失敗改 retry-with-backoff，而非 step1 一失敗就整條中止
-- 或加大 plist `sleep` 緩衝（治標）
+- 或加大 plist `sleep` 緩衝（治標，需先觀測 wake→DNS-ready 典型延遲）
+
+> #59 修好後：本條降級為歷史紀錄、移除 README 快速表該列、close issue（self-removal trigger）。
 
 ---
 
