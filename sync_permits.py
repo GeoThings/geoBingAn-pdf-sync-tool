@@ -145,20 +145,29 @@ class PermitSync:
         print(f"✅ 載入 {len(mapping)} 個建案")
         return mapping
 
-    def download_pdf_list(self) -> str:
+    def download_pdf_list(self, max_attempts: int = 3) -> str:
+        # retry-with-backoff 防 transient 網路/DNS 失敗（#59）— 配合 network_ready.py
+        # 的 post-wake gate，雙層防禦：probe 等 DNS ready，此處再吸收 mid-run blip
         print("📥 下載建案列表 PDF...")
-        try:
-            with warnings.catch_warnings():
-                warnings.filterwarnings('ignore', category=urllib3.exceptions.InsecureRequestWarning)
-                response = requests.get(self.pdf_list_url, verify=False, timeout=30)
-            pdf_path = '/tmp/permit_list.pdf'
-            with open(pdf_path, 'wb') as f:
-                f.write(response.content)
-            print(f"✅ 列表已下載: {len(response.content)} bytes")
-            return pdf_path
-        except Exception as e:
-            print(f"❌ 下載失敗: {e}")
-            sys.exit(1)
+        last_err = None
+        for attempt in range(1, max_attempts + 1):
+            try:
+                with warnings.catch_warnings():
+                    warnings.filterwarnings('ignore', category=urllib3.exceptions.InsecureRequestWarning)
+                    response = requests.get(self.pdf_list_url, verify=False, timeout=30)
+                pdf_path = '/tmp/permit_list.pdf'
+                with open(pdf_path, 'wb') as f:
+                    f.write(response.content)
+                print(f"✅ 列表已下載: {len(response.content)} bytes")
+                return pdf_path
+            except Exception as e:
+                last_err = e
+                if attempt < max_attempts:
+                    wait = 5 * attempt
+                    print(f"⚠️  下載失敗（第 {attempt}/{max_attempts} 次）: {e}；{wait}s 後重試")
+                    time.sleep(wait)
+        print(f"❌ 下載失敗（已重試 {max_attempts} 次）: {last_err}")
+        sys.exit(1)
     
     def parse_pdf_list(self, pdf_path: str) -> Dict[str, str]:
         print("\n📖 解析 PDF 列表 (智慧分塊演算法)...")

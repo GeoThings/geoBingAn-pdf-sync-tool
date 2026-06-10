@@ -10,7 +10,7 @@
 4. [HTTP 狀態碼處理](#4-http-狀態碼處理)
 5. [504 Gateway Timeout](#5-504-gateway-timeout)
 6. [PDF 檔案缺少副檔名](#6-pdf-檔案缺少副檔名)
-7. [launchd 自動排程 step1 下載失敗（post-wake DNS race）](#7-launchd-自動排程-step1-下載失敗post-wake-dns-race)
+7. [launchd 自動排程 step1 下載失敗（post-wake DNS race）— ✅ 已緩解](#7-launchd-自動排程-step1-下載失敗post-wake-dns-race-已緩解)
 
 ---
 
@@ -188,9 +188,11 @@ print(f'副檔名: {file.get(\"fileExtension\", \"無\")}')
 
 ---
 
-## 7. launchd 自動排程 step1 下載失敗（post-wake DNS race）
+## 7. launchd 自動排程 step1 下載失敗（post-wake DNS race）— ✅ 已緩解
 
-### 症狀
+> **狀態**：已由 [#59](https://github.com/GeoThings/geoBingAn-pdf-sync-tool/issues/59) 修復（`network_ready.py` 就緒 probe + `download_pdf_list` retry-with-backoff）。本節保留為歷史紀錄與防呆參考。
+
+### 歷史症狀（2026-06-10 觀測）
 ```
 ❌ 下載失敗: HTTPSConnectionPool(host='www-ws.gov.taipei', port=443): Max retries exceeded
    ... NameResolutionError("Failed to resolve 'www-ws.gov.taipei' ([Errno 8] nodename nor servname provided, or not known)")
@@ -198,31 +200,22 @@ print(f'副檔名: {file.get(\"fileExtension\", \"無\")}')
 ⚠️  步驟 1 失敗，跳過步驟 2-3
 ```
 - 只在 launchd **自動** fire（08:00 健康檢查 / 10:00 同步，皆 post-wake）出現；同一指令手動跑正常
-- `launchctl list | grep geobingan` 的 weeklysync 顯示 status=`1`
-- 摘要：同步 0 / 上傳 0 / 執行時間 0.0 分鐘
-- 注意：step1 下載是 **硬中止點**——單一 transient DNS fail 就會跳過步驟 2-3、整條 pipeline 中止（這也是為何一個暫時性網路問題會炸掉整次同步）
+- `launchctl list | grep geobingan` 的 weeklysync 顯示 status=`1`；摘要：同步 0 / 上傳 0 / 0.0 分鐘
+- step1 下載曾是 **硬中止點**——單一 transient DNS fail 就跳過步驟 2-3、整條 pipeline 中止
 
 ### 原因
-pmset wake schedule 喚醒 Mac 後，launchd 幾乎立即觸發 job，但此時 Wi-Fi 重連 / DNS resolver 尚未就緒，政府網站 host 解析失敗。plist 已內建 `sleep 30` 緩衝，仍可能不足。屬 **transient 網路 race**，非認證或程式錯誤，不要誤判成 Token / API 問題。
+pmset wake schedule 喚醒 Mac 後，launchd 幾乎立即觸發 job，但此時 Wi-Fi 重連 / DNS resolver 尚未就緒，政府網站 host 解析失敗。plist 既有 `sleep 30` 緩衝不足。屬 **transient 網路 race**，非認證或程式錯誤。
 
-### 解決方案
-1. 確認是 transient（網路現已就緒）：
-   ```bash
-   nslookup www-ws.gov.taipei
-   curl -sI https://www-ws.gov.taipei/        # 有回應即代表 host 正常
-   ```
-2. 網路就緒後手動補跑（增量同步，不會重複處理已完成建案）：
-   ```bash
-   ./run_weekly_sync.sh
-   ```
-3. `launchctl` 的 status=1 會在隔天自動排程成功後自動 reset 成 0，無需手動處理。
+### 修復方式（#59）
+- **`network_ready.py`**：步驟 1 前阻塞等待 — 對 `cities.json` 所有 enabled 城市的 PDF host 做 DNS 解析 probe，一就緒立即繼續（典型數秒），逾時（預設 120s）也只記警告不 abort。由 `run_weekly_sync.sh` 在步驟 1 之前呼叫。
+- **`download_pdf_list` retry-with-backoff**：下載失敗改 3 次重試（5s/10s backoff），吸收 mid-run 網路 blip，而非一失敗就 `sys.exit(1)`。
 
-### 根治方向（未實作，追蹤 [#59](https://github.com/GeoThings/geoBingAn-pdf-sync-tool/issues/59)）
-- step1 下載前加 DNS readiness probe（loop 等 `nslookup` 成功再開跑）
-- 下載失敗改 retry-with-backoff，而非 step1 一失敗就整條中止
-- 或加大 plist `sleep` 緩衝（治標，需先觀測 wake→DNS-ready 典型延遲）
-
-> #59 修好後：本條降級為歷史紀錄、移除 README 快速表該列、close issue（self-removal trigger）。
+### 殘餘情境的手動補跑
+若 probe 逾時（>120s，代表真實斷網而非 race）仍可能 step1 失敗；網路恢復後手動補跑（增量同步，不會重複）：
+```bash
+./run_weekly_sync.sh
+```
+`launchctl` status=1 會在隔天自動排程成功後 reset 成 0。
 
 ---
 

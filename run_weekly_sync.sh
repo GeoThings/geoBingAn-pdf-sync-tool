@@ -187,6 +187,13 @@ else
     echo "✅ Refresh Token 有效期剩餘 ${DAYS} 天" | tee -a "$LOG_FILE"
 fi
 
+# 網路就緒檢查：阻塞等 DNS resolver ready 再開跑，根治 launchd post-wake DNS race (#59)
+# 即使逾時也只記警告、不 abort（交由步驟 1 既有錯誤處理）
+echo "" | tee -a "$LOG_FILE"
+set +e
+python3 "$SCRIPT_DIR/network_ready.py" 2>&1 | tee -a "$LOG_FILE"
+set -e
+
 # 步驟 1: 同步 PDF 從台北市政府到 Google Drive
 STEP1_FAILED=0
 echo "" | tee -a "$LOG_FILE"

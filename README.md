@@ -484,7 +484,6 @@ rm state/*.json
 | 401 Unauthorized | JWT Token 過期，會自動刷新 |
 | 500 Server Error | 檢查 API 端點是否正確 |
 | 504 Timeout | 大型 PDF，增加 timeout 設定 |
-| 自動排程 step1 DNS 失敗 | post-wake 網路未就緒（transient）；網路起來後手動 `./run_weekly_sync.sh`，詳見 [troubleshooting #7](docs/troubleshooting.md#7-launchd-自動排程-step1-下載失敗post-wake-dns-race) |
 
 ### 1. Google Drive 認證失敗
 
