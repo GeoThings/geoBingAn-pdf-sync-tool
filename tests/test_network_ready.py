@@ -8,7 +8,8 @@ from network_ready import hosts_from_cities, wait_for_dns
 
 class TestHostsFromCities:
     def test_extracts_enabled_pdf_host(self):
-        # cities.json 內 taipei 為唯一 enabled pdf 城市
+        # 刻意讀真實 cities.json 作 config 整合 smoke：驗 probe 真的有接上現行設定。
+        # 若 taipei 改名/停用此 test 會紅 —— 那正是要提醒「probe host 清單也要跟著改」。
         hosts = hosts_from_cities()
         assert 'www-ws.gov.taipei' in hosts
 
