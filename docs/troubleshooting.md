@@ -10,6 +10,7 @@
 4. [HTTP 狀態碼處理](#4-http-狀態碼處理)
 5. [504 Gateway Timeout](#5-504-gateway-timeout)
 6. [PDF 檔案缺少副檔名](#6-pdf-檔案缺少副檔名)
+7. [launchd 自動排程 step1 下載失敗（post-wake DNS race）](#7-launchd-自動排程-step1-下載失敗post-wake-dns-race)
 
 ---
 
@@ -184,6 +185,41 @@ print(f'MIME: {file.get(\"mimeType\")}')
 print(f'副檔名: {file.get(\"fileExtension\", \"無\")}')
 "
 ```
+
+---
+
+## 7. launchd 自動排程 step1 下載失敗（post-wake DNS race）
+
+### 症狀
+```
+❌ 下載失敗: HTTPSConnectionPool(host='www-ws.gov.taipei', port=443): Max retries exceeded
+   ... NameResolutionError("Failed to resolve 'www-ws.gov.taipei' ([Errno 8] nodename nor servname provided, or not known)")
+❌ 錯誤: 步驟1: 同步 PDF 失敗
+⚠️  步驟 1 失敗，跳過步驟 2-3
+```
+- 只在 launchd **自動** fire（08:00 健康檢查 / 10:00 同步，皆 post-wake）出現；同一指令手動跑正常
+- `launchctl list | grep geobingan` 的 weeklysync 顯示 status=`1`
+- 摘要：同步 0 / 上傳 0 / 執行時間 0.0 分鐘
+
+### 原因
+pmset wake schedule 喚醒 Mac 後，launchd 幾乎立即觸發 job，但此時 Wi-Fi 重連 / DNS resolver 尚未就緒，政府網站 host 解析失敗。plist 已內建 `sleep 30` 緩衝，仍可能不足。屬 **transient 網路 race**，非認證或程式錯誤，不要誤判成 Token / API 問題。
+
+### 解決方案
+1. 確認是 transient（網路現已就緒）：
+   ```bash
+   nslookup www-ws.gov.taipei
+   curl -sI https://www-ws.gov.taipei/        # 有回應即代表 host 正常
+   ```
+2. 網路就緒後手動補跑（增量同步，不會重複處理已完成建案）：
+   ```bash
+   ./run_weekly_sync.sh
+   ```
+3. `launchctl` 的 status=1 會在隔天自動排程成功後自動 reset 成 0，無需手動處理。
+
+### 根治方向（未實作）
+- step1 下載前加 DNS readiness probe（loop 等 `nslookup` 成功再開跑）
+- 下載失敗改 retry-with-backoff，而非 step1 一失敗就整條中止
+- 或加大 plist `sleep` 緩衝（治標）
 
 ---
 
