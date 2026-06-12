@@ -6,7 +6,7 @@
     <string>com.geothings.geobingan.fridayreport</string>
     <key>ProgramArguments</key>
     <array>
-        <string>/Users/geothingsmacbookair/Documents/GitHub/geoBingAn-pdf-sync-tool/run_friday_report.sh</string>
+        <string>/Users/geothingsmacbookair/Developer/geoBingAn-pdf-sync-tool/run_friday_report.sh</string>
     </array>
     <key>StartCalendarInterval</key>
     <dict>
@@ -18,6 +18,6 @@
         <integer>0</integer>
     </dict>
     <key>StandardErrorPath</key>
-    <string>/Users/geothingsmacbookair/Documents/GitHub/geoBingAn-pdf-sync-tool/logs/launchd_fridayreport_err.log</string>
+    <string>/Users/geothingsmacbookair/Developer/geoBingAn-pdf-sync-tool/logs/launchd_fridayreport_err.log</string>
 </dict>
 </plist>
