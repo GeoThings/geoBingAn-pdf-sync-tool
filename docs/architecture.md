@@ -117,10 +117,6 @@ manual shell 跑 = user shell 已經把 bash / venv / script 載入記憶體；F
 
 EX_CONFIG 78 觸發 launchd 內部 backoff **silent permanent lock**，後續 schedule 完全不再 spawn（連嘗試都沒、runs 計數不再 +1）。兩週內 3 個 job 都踩過（PR #47 healthcheck / PR #49 fridayreport / PR #51 weeklysync），無 alerting、需下游發現「咦週報沒進來」才察覺。fridayreport 鎖 3 週、weeklysync 鎖 4 週才被人手動 spot。**這條 backoff 行為跟 iCloud root cause 是獨立的、修了 root cause 之後仍然要小心 backoff 鎖死**。
 
-##### launchd backoff silent permanent lock（systematic 不是偶發）
-
-EX_CONFIG 78 觸發 launchd 內部 backoff **silent permanent lock**，後續 schedule 完全不再 spawn（連嘗試都沒、runs 計數不再 +1）。兩週內 3 個 job 都踩過（PR #47 healthcheck / PR #49 fridayreport / PR #51 weeklysync），無 alerting、需下游發現「咦週報沒進來」才察覺。fridayreport 鎖 3 週、weeklysync 鎖 4 週才被人手動 spot。
-
 **清除方式**：
 
 ```bash
