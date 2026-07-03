@@ -231,21 +231,13 @@ except Exception as e:
 " 2>&1 | tee -a "$LOG_FILE"
 
 # 步驟 2: 上傳最近 7 天的 PDF 到 geoBingAn Backend
-# 可用 .pause_upload 旗標檔暫停上傳（例如後端 AI 停用期間，避免堆積 parse 失敗的報告）。
-# 恢復方式：rm .pause_upload。同步其餘步驟（1 / 2.5 / 3 / 4 / 5）照常執行。
 STEP2_FAILED=0
-if [ -f "$SCRIPT_DIR/.pause_upload" ]; then
-    echo "" | tee -a "$LOG_FILE"
-    echo "⏸️  步驟 2/4: 上傳已暫停（偵測到 .pause_upload 旗標，恢復：rm .pause_upload）" | tee -a "$LOG_FILE"
-    sed 's/^/   /' "$SCRIPT_DIR/.pause_upload" 2>/dev/null | tee -a "$LOG_FILE"
-else
-    echo "" | tee -a "$LOG_FILE"
-    echo "📤 步驟 2/4: 上傳最近 7 天的 PDF 到 Backend..." | tee -a "$LOG_FILE"
-    echo "----------------------------------------" | tee -a "$LOG_FILE"
-    if ! python3 "$SCRIPT_DIR/upload_pdfs.py" 2>&1 | tee -a "$LOG_FILE"; then
-        handle_error "步驟2" "上傳 PDF 失敗"
-        STEP2_FAILED=1
-    fi
+echo "" | tee -a "$LOG_FILE"
+echo "📤 步驟 2/4: 上傳最近 7 天的 PDF 到 Backend..." | tee -a "$LOG_FILE"
+echo "----------------------------------------" | tee -a "$LOG_FILE"
+if ! python3 "$SCRIPT_DIR/upload_pdfs.py" 2>&1 | tee -a "$LOG_FILE"; then
+    handle_error "步驟2" "上傳 PDF 失敗"
+    STEP2_FAILED=1
 fi
 
 # 從日誌解析上傳數量（確保只取單一數字）
