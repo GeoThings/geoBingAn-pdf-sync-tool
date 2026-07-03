@@ -55,6 +55,22 @@ def check_token():
         return 'error', f'Token 檢查失敗: {e}'
 
 
+def check_pause():
+    """偵測 .pause_upload 旗標並提醒暫停時長（stale-pause guard，呼應 #57 silent lock）。
+
+    ≥30 天升級 error：upload_pdfs.py 用 30 天檔名日期窗，暫停超過此窗、恢復時
+    落窗外的報告會被靜默漏掉，須 `upload_pdfs.py --catchup-days N` 補掃。
+    """
+    flag = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.pause_upload')
+    if not os.path.exists(flag):
+        return 'ok', '上傳未暫停'
+    days = (time.time() - os.path.getmtime(flag)) / 86400
+    base = f'上傳已暫停 {days:.1f} 天（.pause_upload；恢復：rm .pause_upload）'
+    if days >= 30:
+        return 'error', base + '；⚠️ 已超過 30 天檔名窗，恢復時須 upload_pdfs.py --catchup-days N 補掃避免漏報告'
+    return 'warning', base
+
+
 def check_disk():
     """檢查磁碟空間"""
     usage = shutil.disk_usage('/')
@@ -152,6 +168,7 @@ def main():
         ('同步狀態', check_last_sync),
         ('API 連線', check_api),
         ('排程 Job', check_launchd_jobs),
+        ('上傳暫停', check_pause),
     ]
 
     icons = {'ok': '✅', 'warning': '⚠️', 'error': '❌'}
