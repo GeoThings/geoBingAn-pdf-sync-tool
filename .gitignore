@@ -7,9 +7,13 @@ state/*.lock
 state/*.tmp.*
 state/.sync_start_time
 state/*.bak.*
+state/*.bak-*
 state/*.pdf
 # Weekly snapshots: local-only, code 只讀最近 1 筆且 compute_diff 容錯 None
 state/weekly_snapshots/
+
+# Operational pause flag (machine-local; presence pauses step 2 upload)
+.pause_upload
 
 # But keep upload history (needs to persist across clones)
 !state/upload_history_all.json
