@@ -671,8 +671,13 @@ def flush_state(state: dict):
             _pending_error_saves = 0
 
 
-def main(city: dict = None):
-    """主程式"""
+def main(city: dict = None, catchup_days: int = None):
+    """主程式
+
+    catchup_days: 覆蓋預設 30 天檔名日期 cutoff（暫停後補掃用）。上傳去重靠
+    git-tracked history（idempotent），放大掃描窗不會重複上傳，只會補回暫停
+    期間落在 30 天窗外、否則會被靜默漏掉的報告。
+    """
     if city:
         global SHARED_DRIVE_ID, GROUP_ID
         SHARED_DRIVE_ID = city.get('shared_drive_id') or SHARED_DRIVE_ID
@@ -740,7 +745,11 @@ def main(city: dict = None):
     # 原因：modifiedTime 會被「批次回填舊報告」誤導 — 有人 5 月把 2024 年資料一口氣丟進 Drive，
     # modifiedTime 看起來很新但實際是舊報告。檔名日期才是「實際監測日期」的權威來源。
     # 解析不到的（月報 YYYYMM、民國年月、設計圖等）暫時跳過，等後續 PR 強化 parser 再涵蓋。
-    cutoff = datetime.now() - timedelta(days=30)
+    cutoff_days = catchup_days if catchup_days else 30
+    cutoff = datetime.now() - timedelta(days=cutoff_days)
+    if catchup_days:
+        print(f"🔄 Catch-up 模式：檔名日期掃描窗放大到 {cutoff_days} 天"
+              f"（暫停後補掃；history 去重、不會重傳）")
 
     def _filename_date(pdf):
         from filename_date_parser import parse_date_from_filename
@@ -853,12 +862,15 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--city', default=None, help='City ID or "all"')
+    parser.add_argument('--catchup-days', type=int, default=None,
+                        help='暫停後補掃：用 N 天檔名日期窗取代預設 30 天'
+                             '（history 去重、不會重傳；恢復 .pause_upload 後用一次）')
     args = parser.parse_args()
 
     cities = get_cities_for_cli(args.city)
     try:
         for city in cities:
-            main(city=city)
+            main(city=city, catchup_days=args.catchup_days)
     except KeyboardInterrupt:
         print("\n\n👋 使用者中斷執行")
         sys.exit(0)

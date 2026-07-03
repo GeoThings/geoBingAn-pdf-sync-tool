@@ -237,7 +237,7 @@ STEP2_FAILED=0
 if [ -f "$SCRIPT_DIR/.pause_upload" ]; then
     echo "" | tee -a "$LOG_FILE"
     echo "⏸️  步驟 2/4: 上傳已暫停（偵測到 .pause_upload 旗標，恢復：rm .pause_upload）" | tee -a "$LOG_FILE"
-    sed 's/^/   /' "$SCRIPT_DIR/.pause_upload" 2>/dev/null | tee -a "$LOG_FILE"
+    sed 's/^/   /' "$SCRIPT_DIR/.pause_upload" 2>/dev/null | tee -a "$LOG_FILE" || true
 else
     echo "" | tee -a "$LOG_FILE"
     echo "📤 步驟 2/4: 上傳最近 7 天的 PDF 到 Backend..." | tee -a "$LOG_FILE"
