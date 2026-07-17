@@ -764,6 +764,11 @@ def main(city: dict = None, catchup_days: int = None):
     already_uploaded_count = 0
     too_old_count = 0
     no_date_count = 0
+    dup_in_run_count = 0
+    # run 內去重：同一 unique_id（folder/檔名）在 Drive 出現多次（同名多份）時只上傳一次。
+    # history 的 unique_id 也是 folder/檔名 → 跨 run 靠 history 去重，但單一 run 內
+    # history 尚未寫入，故需獨立的 in-run 集合，否則會建出重複報告（2026-07-17 踩過）。
+    seen_this_run = set()
     for pdf in all_pdfs:
         if pdf['name'] in EXCLUDE_FILES:
             excluded_count += 1
@@ -772,6 +777,9 @@ def main(city: dict = None, catchup_days: int = None):
         unique_id = f"{pdf['folder_name']}/{pdf['name']}"
         if unique_id in state['uploaded_files']:
             already_uploaded_count += 1
+            continue
+        if unique_id in seen_this_run:
+            dup_in_run_count += 1
             continue
 
         fd = _filename_date(pdf)
@@ -783,10 +791,13 @@ def main(city: dict = None, catchup_days: int = None):
             continue
 
         pdfs_to_upload.append(pdf)
+        seen_this_run.add(unique_id)
         if MAX_UPLOADS > 0 and len(pdfs_to_upload) >= MAX_UPLOADS:
             break
 
     print(f"  已上傳過: {already_uploaded_count}")
+    if dup_in_run_count > 0:
+        print(f"  本次同名重複（run 內去重）: {dup_in_run_count}")
     if excluded_count > 0:
         print(f"  排除清單: {excluded_count}")
     if too_old_count > 0:
