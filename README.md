@@ -20,13 +20,13 @@
 
 👉 **[建照監測追蹤報告](https://htmlpreview.github.io/?https://github.com/GeoThings/geoBingAn-pdf-sync-tool/blob/main/docs/index.html)** 👈
 
-報告包含：建案同步狀態、究平安對應情況、即時警戒值標記、建案名稱（91% 覆蓋）、可搜尋篩選
+報告包含：建案同步狀態、究平安對應情況、即時警戒值標記、建案名稱（覆蓋率見上方系統概況）、可搜尋篩選
 
 **功能特色：**
 - ✅ 檔名日期智慧解析（支援民國年/西元年 7 種格式）
 - ✅ 依檔名日期過濾上傳（非 Google Drive 修改時間）
 - ✅ JWT Token 自動刷新（過期前 5 分鐘自動更新）
-- ✅ 智慧快取機制（自動偵測快取過期並重建）
+- ✅ 每日全量掃描（完整翻頁 + 429/5xx 重試）＋ PDF inventory 落盤（月度趨勢/decline 分析資料源）
 - ✅ 跨 process 安全的 state 管理（flock + read-merge-write + atomic replace）
 - ✅ 上傳重試機制（503 指數退避，502/504 不重試避免重複）
 - ✅ JWT Token 共用模組（jwt_auth.py，thread-safe）
