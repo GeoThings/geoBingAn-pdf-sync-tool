@@ -582,6 +582,13 @@ Service Account 只需要：
 
 ## 📝 版本歷史
 
+### v4.4.0 (2026-07-28)
+- 🐛 修復資料夾列表 1000 上限靜默截斷（PR #65）：Drive 資料夾成長到 1,758 個後，未翻頁的單次查詢截斷 758 個資料夾，其內 PDF 被 folder lookup 靜默丟棄 → 15+ 建案報告從未上傳
+- ✅ `list_all_folders()`：nextPageToken 完整翻頁；可見 PDF 11,613 → 28,603 個
+- ✅ parent 對不到資料夾表改為計數 + 顯式告警（不再靜默丟棄）；fallback 重掃時重設計數避免誤報
+- ✅ `--catchup-days 90` 補傳漏檔 166 份（166/166 成功，含國產建材A棟、蘭雅段、台肥南港C4 等）
+- 🧪 新增 `tests/test_upload_folder_scan.py` 5 tests（翻頁、告警、fallback 重設）
+
 ### v4.3.0 (2026-04-15)
 - ✅ 全自動化流程：sync → upload → match_permits → report → git push → 週報 PDF → ClickUp
 - ✅ 新增 `generate_weekly_report.py`：自動產生 A4 週報 PDF（Chrome headless 渲染）
