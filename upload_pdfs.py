@@ -445,8 +445,12 @@ def list_all_pdfs_with_folder_info(service, folders: List[Dict], use_cache: bool
             print(f"  ❌ 批次掃描第 {page_count + 1} 頁失敗: {e}")
             print(f"  ⚠️  丟棄部分結果，改為逐資料夾完整掃描...")
             # 批次掃描中斷，無法確定哪些資料夾完整掃到，
-            # 全部丟棄改用逐資料夾查詢確保完整性
+            # 全部丟棄改用逐資料夾查詢確保完整性。
+            # unmatched 計數描述的是已丟棄的批次結果，一併重設避免誤報；
+            # 逐資料夾查詢只掃已知資料夾，無 unmatched 概念。
             all_pdfs = []
+            unmatched_count = 0
+            unmatched_samples = []
             for idx, folder in enumerate(folders, 1):
                 if idx % 50 == 0:
                     print(f"    回退進度: {idx}/{len(folders)} 個資料夾...")

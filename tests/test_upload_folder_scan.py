@@ -92,6 +92,49 @@ def test_unmatched_parent_pdfs_are_reported(capsys):
     assert 'orphan-1.pdf' in out
 
 
+def test_fallback_resets_unmatched_counters(capsys):
+    """批次掃描中途 HttpError → fallback 逐資料夾重掃時，
+    已丟棄批次頁累積的 unmatched 計數必須一併重設，不得印出過期誤報。"""
+    from googleapiclient.errors import HttpError
+
+    class _FakeHttpResp:
+        status = 500
+        reason = 'Internal Server Error'
+
+    folders = [{'id': 'known', 'name': '110建字第0001號'}]
+    batch_page1 = {
+        'files': [
+            {'id': 'p1', 'name': 'orphan-in-discarded-batch.pdf', 'parents': ['unknown'],
+             'modifiedTime': '2026-07-28T00:00:00Z'},
+        ],
+        'nextPageToken': 'tok2',
+    }
+    fallback_page = {
+        'files': [
+            {'id': 'p2', 'name': 'recovered.pdf',
+             'modifiedTime': '2026-07-28T00:00:00Z'},
+        ],
+    }
+
+    class _FailingThenFallbackApi(_FakeFilesApi):
+        def list(self, **kwargs):
+            self.calls.append(kwargs)
+            if len(self.calls) == 2:  # 批次第 2 頁炸掉 → 觸發 fallback
+                raise HttpError(_FakeHttpResp(), b'boom')
+            return _FakeRequest(self.script.pop(0))
+
+    svc = _FakeService([])
+    svc._files = _FailingThenFallbackApi([batch_page1, fallback_page])
+
+    result = list_all_pdfs_with_folder_info(svc, folders, use_cache=False, state=None)
+
+    assert [p['name'] for p in result] == ['recovered.pdf']
+    out = capsys.readouterr().out
+    # 過期的批次 orphan 計數不得出現在告警
+    assert 'parent 資料夾不在資料夾列表中' not in out
+    assert '回退' in out or '逐資料夾' in out or '丟棄' in out
+
+
 def test_all_parents_matched_no_warning(capsys):
     folders = [{'id': 'known', 'name': '110建字第0001號'}]
     pdf_page = {
