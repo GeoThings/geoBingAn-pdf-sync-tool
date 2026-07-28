@@ -20,7 +20,25 @@ from pathlib import Path
 
 SNAPSHOT_DIR = './state/weekly_snapshots'
 STATE_DIR = './state'
-DRIVE_CACHE_FILE = './state/uploaded_to_geobingan_7days.json'
+DRIVE_CACHE_FILE = './state/uploaded_to_geobingan_7days.json'  # legacy fallback
+PDF_INVENTORY_FILE = './state/pdf_inventory.json'
+
+
+def _load_pdf_inventory() -> list:
+    """讀取全 Drive PDF 清單：優先新版 inventory，fallback legacy state cache。"""
+    if os.path.exists(PDF_INVENTORY_FILE):
+        try:
+            with open(PDF_INVENTORY_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f).get('pdfs', [])
+        except (json.JSONDecodeError, IOError):
+            pass
+    if os.path.exists(DRIVE_CACHE_FILE):
+        try:
+            with open(DRIVE_CACHE_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f).get('cache', {}).get('pdfs', [])
+        except (json.JSONDecodeError, IOError):
+            pass
+    return []
 MONTHLY_ALERT_STATE = './state/monthly_activity_alert.json'
 
 # 月度活動告警門檻：當月報告數 < 前 3 月平均 × 此倍率 → 警告
@@ -193,13 +211,7 @@ def check_monthly_activity_trend(notify: bool = False):
     動機：2026-04 觀察到工地監測 PDF 數從 3 月 55 暴跌到 11，雖然個別小變化看不出來，
     但月度匯總一目瞭然。完工退場、法規變動、合規鬆動都可能造成此類訊號。
     """
-    if not os.path.exists(DRIVE_CACHE_FILE):
-        return
-    try:
-        with open(DRIVE_CACHE_FILE, 'r', encoding='utf-8') as f:
-            pdfs = json.load(f).get('cache', {}).get('pdfs', [])
-    except (json.JSONDecodeError, IOError):
-        return
+    pdfs = _load_pdf_inventory()
     if not pdfs:
         return
 

@@ -84,7 +84,7 @@ def test_unmatched_parent_pdfs_are_reported(capsys):
     }
     svc = _FakeService([pdf_page])
 
-    result = list_all_pdfs_with_folder_info(svc, folders, use_cache=False, state=None)
+    result = list_all_pdfs_with_folder_info(svc, folders)
 
     assert [p['name'] for p in result] == ['in-scope.pdf']
     out = capsys.readouterr().out
@@ -126,7 +126,7 @@ def test_fallback_resets_unmatched_counters(capsys):
     svc = _FakeService([])
     svc._files = _FailingThenFallbackApi([batch_page1, fallback_page])
 
-    result = list_all_pdfs_with_folder_info(svc, folders, use_cache=False, state=None)
+    result = list_all_pdfs_with_folder_info(svc, folders)
 
     assert [p['name'] for p in result] == ['recovered.pdf']
     out = capsys.readouterr().out
@@ -145,7 +145,7 @@ def test_all_parents_matched_no_warning(capsys):
     }
     svc = _FakeService([pdf_page])
 
-    result = list_all_pdfs_with_folder_info(svc, folders, use_cache=False, state=None)
+    result = list_all_pdfs_with_folder_info(svc, folders)
 
     assert len(result) == 1
     assert 'parent 資料夾不在資料夾列表中' not in capsys.readouterr().out

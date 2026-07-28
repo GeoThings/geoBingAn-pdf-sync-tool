@@ -63,66 +63,47 @@ def create_drive_service(credentials_file: str, scopes: list = None):
 
 
 def list_top_level_folders(service, shared_drive_id: str,
-                           fields: str = 'nextPageToken, files(id, name)') -> list:
-    """列出 Shared Drive 頂層資料夾（分頁處理）
+                           fields: str = 'files(id, name)') -> list:
+    """列出 Shared Drive 頂層資料夾（完整翻頁 + retry）
+
+    持久失敗會 raise（fail-closed）——原版吞錯回傳部分結果，
+    會讓下游拿殘缺的資料夾清單當完整資料用（#65 同型風險）。
 
     Returns:
         list of dicts, each containing the requested fields
     """
-    folders = []
-    page_token = None
-    while True:
-        try:
-            results = service.files().list(
-                q=f"'{shared_drive_id}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false",
-                fields=fields,
-                pageSize=1000,
-                pageToken=page_token,
-                supportsAllDrives=True,
-                includeItemsFromAllDrives=True,
-                corpora='drive',
-                driveId=shared_drive_id
-            ).execute()
-            folders.extend(results.get('files', []))
-            page_token = results.get('nextPageToken')
-            if not page_token:
-                break
-        except HttpError as e:
-            print(f"⚠️  掃描 Drive 頂層資料夾失敗: {e}")
-            break
-    return folders
+    return paginate_files_list(
+        service,
+        q=f"'{shared_drive_id}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false",
+        fields=fields,
+        supportsAllDrives=True,
+        includeItemsFromAllDrives=True,
+        corpora='drive',
+        driveId=shared_drive_id
+    )
 
 
 def list_all_subfolders(service, shared_drive_id: str) -> dict:
     """掃描 Shared Drive 所有子資料夾，回傳 folder_id → parent_id 對應
 
+    持久失敗會 raise（fail-closed），不回傳靜默殘缺的對應表。
+
     Returns:
         dict mapping folder_id to its parent folder_id
     """
     subfolders = {}
-    page_token = None
-    while True:
-        try:
-            results = service.files().list(
-                q="mimeType='application/vnd.google-apps.folder' and trashed=false",
-                corpora='drive',
-                driveId=shared_drive_id,
-                includeItemsFromAllDrives=True,
-                supportsAllDrives=True,
-                fields='nextPageToken, files(id, parents)',
-                pageSize=1000,
-                pageToken=page_token
-            ).execute()
-            for f in results.get('files', []):
-                parents = f.get('parents', [])
-                if parents:
-                    subfolders[f['id']] = parents[0]
-            page_token = results.get('nextPageToken')
-            if not page_token:
-                break
-        except HttpError as e:
-            print(f"⚠️  掃描子資料夾失敗: {e}")
-            break
+    for f in paginate_files_list(
+        service,
+        q="mimeType='application/vnd.google-apps.folder' and trashed=false",
+        corpora='drive',
+        driveId=shared_drive_id,
+        includeItemsFromAllDrives=True,
+        supportsAllDrives=True,
+        fields='files(id, parents)'
+    ):
+        parents = f.get('parents', [])
+        if parents:
+            subfolders[f['id']] = parents[0]
     return subfolders
 
 

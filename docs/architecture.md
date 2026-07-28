@@ -348,7 +348,7 @@ API project 匹配：116 筆（滑動視窗 + 去重）
 | `upload_history_all.json` | 永久上傳歷史（防重複上傳） | 每次成功上傳 | ✅ 是 |
 | `permit_registry.json` | 建案名稱交叉比對結果（6 來源） | match_permits.py 執行時 | ✅ 是 |
 | `sync_permits_progress.json` | 已處理建案清單 | 每個建案 | 否 |
-| `uploaded_to_geobingan_7days.json` | 已上傳 PDF + 快取 | 每次成功上傳 | 否 |
+| `uploaded_to_geobingan_7days.json` | 已上傳 PDF 記錄（legacy 掃描快取已移除，載入時自動清除） | 每次成功上傳 | 否 |
 | `sync_status.json` | 執行狀態與歷史 | 每次執行 | 否 |
 | `weekly_snapshots/{date}.json` | sync 後狀態快照（供 compute_diff 算趨勢） | 每次 sync | 否（local-only，見下） |
 

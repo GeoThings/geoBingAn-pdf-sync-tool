@@ -97,6 +97,22 @@ def test_retries_exhausted_raises():
     assert len(svc._files.calls) == 4  # 1 + 3 retries
 
 
+def test_top_level_folders_paginate_and_subfolders_fail_closed():
+    """drive_utils 兩個舊迴圈收斂到 helper：翻頁到底 + 持久失敗 raise。"""
+    from drive_utils import list_top_level_folders, list_all_subfolders
+
+    svc = _FakeService([
+        {'files': [{'id': 'f1', 'name': 'A'}], 'nextPageToken': 't2'},
+        {'files': [{'id': 'f2', 'name': 'B'}]},
+    ])
+    folders = list_top_level_folders(svc, 'drv')
+    assert [f['id'] for f in folders] == ['f1', 'f2']
+
+    bad = _FakeService([HttpError(_FakeResp(403), b'denied')])
+    with pytest.raises(HttpError):
+        list_all_subfolders(bad, 'drv')
+
+
 def test_sync_list_files_recursive_paginates(monkeypatch):
     """#67 本體：來源資料夾兩頁檔案 + 子資料夾遞迴，全數收齊。"""
     import sync_permits
@@ -135,7 +151,7 @@ def test_upload_fallback_paginates_per_folder(capsys):
         {'files': [{'id': 'p2', 'name': 'b.pdf', 'modifiedTime': 'x'}]},
     ])
 
-    result = list_all_pdfs_with_folder_info(svc, folders, use_cache=False, state=None)
+    result = list_all_pdfs_with_folder_info(svc, folders)
 
     assert sorted(p['name'] for p in result) == ['a.pdf', 'b.pdf']
     assert all(p['folder_name'] == '110建字第0001號' for p in result)
@@ -157,7 +173,7 @@ def test_upload_fallback_fails_closed_on_persistent_folder_error(capsys):
     ])
 
     with pytest.raises(RuntimeError, match='110建字第0001號'):
-        list_all_pdfs_with_folder_info(svc, folders, use_cache=False, state=None)
+        list_all_pdfs_with_folder_info(svc, folders)
 
     out = capsys.readouterr().out
     assert '資料夾掃描失敗' in out

@@ -70,6 +70,10 @@ SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
 # 狀態追蹤檔案
 STATE_FILE = './state/uploaded_to_geobingan_7days.json'
 HISTORY_FILE = './state/upload_history_all.json'  # 永久歷史記錄
+# PDF inventory：全 Drive 掃描結果的獨立 snapshot（每 run 寫一次）。
+# 供 weekly_snapshot 月度趨勢告警與 analyze_decline 分析使用——
+# 取代舊的 state['cache']['pdfs']（那份跟著每次上傳全量重寫，浪費 I/O）。
+PDF_INVENTORY_FILE = './state/pdf_inventory.json'
 
 # DAYS_AGO, MAX_UPLOADS, DELAY_BETWEEN_UPLOADS 從 config.py (.env) 載入
 
@@ -165,7 +169,7 @@ def add_to_history(filepath: str):
 
 
 def load_state() -> dict:
-    """載入已上傳的 PDF 記錄（包含快取）
+    """載入已上傳的 PDF 記錄
 
     自動合併 upload_history_all.json（git 追蹤）的上傳記錄，
     確保 fresh clone 後不會重複上傳已處理的檔案。
@@ -173,22 +177,15 @@ def load_state() -> dict:
     if os.path.exists(STATE_FILE):
         with open(STATE_FILE, 'r', encoding='utf-8') as f:
             state = json.load(f)
-            # 確保有快取結構
-            if 'cache' not in state:
-                state['cache'] = {
-                    'folders': [],
-                    'pdfs': [],
-                    'last_scan': None
-                }
+            # 移除 legacy 快取（一次性瘦身）——但僅在新版 pdf_inventory 已成功
+            # 建立後才移除：inventory 尚未落地前，legacy cache.pdfs 仍是
+            # weekly_snapshot / analyze_decline 的唯一 fallback 資料源，不可先毀。
+            if os.path.exists(PDF_INVENTORY_FILE):
+                state.pop('cache', None)
     else:
         state = {
             'uploaded_files': [],
             'errors': [],
-            'cache': {
-                'folders': [],
-                'pdfs': [],
-                'last_scan': None
-            }
         }
 
     # 合併 git 追蹤的上傳歷史（確保 fresh clone 不重複上傳）
@@ -204,6 +201,35 @@ def load_state() -> dict:
 
 
 STATE_LOCK_FILE = STATE_FILE + '.lock'
+
+
+def save_pdf_inventory(all_pdfs: list) -> bool:
+    """寫出全 Drive PDF 清單 snapshot（atomic）。回傳是否成功。
+
+    月度趨勢告警（weekly_snapshot）與 decline 分析（analyze_decline）
+    以此為正式資料來源；每 run 掃描完成後寫一次。
+    寫入失敗不中斷上傳流程，但會回報 False——load_state 只在 inventory
+    檔存在時才移除 legacy cache，故失敗時 fallback 資料源不會被毀。
+    """
+    os.makedirs(os.path.dirname(PDF_INVENTORY_FILE), exist_ok=True)
+    tmp = f"{PDF_INVENTORY_FILE}.tmp.{os.getpid()}"
+    payload = {
+        'last_scan': datetime.now().isoformat(),
+        'pdfs': all_pdfs,
+    }
+    try:
+        with open(tmp, 'w', encoding='utf-8') as f:
+            json.dump(payload, f, ensure_ascii=False)
+        os.replace(tmp, PDF_INVENTORY_FILE)
+        print(f"📦 已更新 PDF inventory（{len(all_pdfs)} 筆）: {PDF_INVENTORY_FILE}")
+        return True
+    except Exception as e:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        print(f"⚠️  PDF inventory 寫入失敗（不影響上傳流程；legacy fallback 將保留）: {e}")
+        return False
 
 
 def save_state(state: dict):
@@ -276,67 +302,6 @@ def get_drive_service():
     return service
 
 
-def list_project_folders(service, use_cache: bool = True, state: dict = None, days_ago: int = 7) -> List[Dict]:
-    """
-    列出建案資料夾（支援快取和智慧掃描）
-
-    Args:
-        service: Google Drive API service
-        use_cache: 是否使用快取
-        state: 狀態檔案（包含快取）
-        days_ago: 只掃描最近 N 天修改的資料夾（智慧掃描）
-    """
-    # 檢查是否可以使用快取
-    if use_cache and state and state.get('cache', {}).get('last_scan'):
-        last_scan = state['cache']['last_scan']
-        last_scan_time = datetime.fromisoformat(last_scan.replace('Z', '+00:00'))
-        now = datetime.now(last_scan_time.tzinfo)
-
-        # 如果上次掃描在 24 小時內，使用快取
-        if (now - last_scan_time).total_seconds() < 86400:  # 24 hours
-            cached_folders = state['cache'].get('folders', [])
-            if cached_folders:
-                print(f"✅ 使用快取的資料夾列表（{len(cached_folders)} 個，上次掃描: {last_scan}）")
-                return cached_folders
-
-    try:
-        # 智慧掃描：只掃描最近 N 天修改的資料夾
-        cutoff_date = datetime.now() - timedelta(days=days_ago)
-        cutoff_date_str = cutoff_date.isoformat() + 'Z'
-
-        print(f"🔍 智慧掃描: 只列出最近 {days_ago} 天修改的資料夾...")
-
-        query = (
-            f"modifiedTime >= '{cutoff_date_str}' and "
-            "mimeType = 'application/vnd.google-apps.folder' and "
-            "trashed = false"
-        )
-
-        results = service.files().list(
-            q=query,
-            corpora='drive',
-            driveId=SHARED_DRIVE_ID,
-            includeItemsFromAllDrives=True,
-            supportsAllDrives=True,
-            pageSize=1000,
-            fields='files(id, name, modifiedTime)'
-        ).execute()
-
-        folders = results.get('files', [])
-
-        # 更新快取
-        if state is not None:
-            state['cache']['folders'] = folders
-            state['cache']['last_scan'] = datetime.now().isoformat() + 'Z'
-
-        print(f"✅ 找到 {len(folders)} 個最近 {days_ago} 天修改的資料夾")
-        return folders
-
-    except HttpError as e:
-        print(f"❌ 列出資料夾失敗: {e}")
-        return []
-
-
 def list_all_folders(service) -> List[Dict]:
     """
     列出 Shared Drive 中所有資料夾（完整翻頁）。
@@ -357,30 +322,20 @@ def list_all_folders(service) -> List[Dict]:
     )
 
 
-def list_all_pdfs_with_folder_info(service, folders: List[Dict], use_cache: bool = True, state: dict = None) -> List[Dict]:
+def list_all_pdfs_with_folder_info(service, folders: List[Dict]) -> List[Dict]:
     """
-    列出 Shared Drive 中所有 PDF，並附加資料夾資訊（支援快取）
+    列出 Shared Drive 中所有 PDF，並附加資料夾資訊。
 
     使用單一 Drive 查詢掃描整個 Shared Drive 的 PDF（分頁），
     再用 folder lookup table 對應資料夾名稱。
     比逐資料夾查詢（1000 次 API 呼叫）快 10-20 倍。
 
+    （原有的 24h state 快取機制已移除：讀取閘門依賴的 last_scan 從未被
+    live 路徑寫入、快取永遠不命中，卻讓每次 save_state 白白序列化 ~3MB。）
+
     Returns:
         List of dict with keys: id, name, size, modifiedTime, folder_id, folder_name
     """
-    # 檢查是否可以使用快取
-    if use_cache and state and state.get('cache', {}).get('last_scan'):
-        last_scan = state['cache']['last_scan']
-        last_scan_time = datetime.fromisoformat(last_scan.replace('Z', '+00:00'))
-        now = datetime.now(last_scan_time.tzinfo)
-
-        # 如果上次掃描在 24 小時內，使用快取
-        if (now - last_scan_time).total_seconds() < 86400:  # 24 hours
-            cached_pdfs = state['cache'].get('pdfs', [])
-            if cached_pdfs:
-                print(f"✅ 使用快取的 PDF 列表（{len(cached_pdfs)} 個）")
-                return cached_pdfs
-
     # 建立 folder_id → folder_name 的查找表
     folder_lookup = {f['id']: f['name'] for f in folders}
 
@@ -389,6 +344,7 @@ def list_all_pdfs_with_folder_info(service, folders: List[Dict], use_cache: bool
     all_pdfs = []
     unmatched_count = 0
     unmatched_samples = []
+    root_level_count = 0
     page_token = None
     page_count = 0
 
@@ -419,9 +375,12 @@ def list_all_pdfs_with_folder_info(service, folders: List[Dict], use_cache: bool
                 if folder_name:
                     pdf['folder_id'] = folder_id
                     pdf['folder_name'] = folder_name
-                    # 移除 parents 欄位（不需要存入快取）
                     pdf.pop('parents', None)
                     all_pdfs.append(pdf)
+                elif folder_id == SHARED_DRIVE_ID:
+                    # Shared Drive 根目錄的 PDF：非建案資料、一向不上傳。
+                    # 與 unmatched 分開計數，避免每次執行都觸發告警造成狼來了。
+                    root_level_count += 1
                 else:
                     # parent 對不到資料夾表 = 掃描結果會缺這份 PDF。
                     # 曾因資料夾列表被 1000 上限截斷而靜默漏傳整批建案，必須顯式告警。
@@ -443,6 +402,7 @@ def list_all_pdfs_with_folder_info(service, folders: List[Dict], use_cache: bool
             all_pdfs = []
             unmatched_count = 0
             unmatched_samples = []
+            root_level_count = 0
             failed_folders = []
             for idx, folder in enumerate(folders, 1):
                 if idx % 50 == 0:
@@ -480,10 +440,8 @@ def list_all_pdfs_with_folder_info(service, folders: List[Dict], use_cache: bool
         print(f"⚠️  {unmatched_count} 個 PDF 的 parent 資料夾不在資料夾列表中，已跳過"
               f"（若數量偏高，檢查資料夾掃描是否完整）")
         print(f"    範例: {', '.join(unmatched_samples)}")
-
-    # 更新快取
-    if state is not None:
-        state['cache']['pdfs'] = all_pdfs
+    if root_level_count > 0:
+        print(f"ℹ️  {root_level_count} 個 PDF 位於 Shared Drive 根目錄（非建案資料，照舊不上傳）")
 
     return all_pdfs
 
@@ -755,20 +713,18 @@ def main(city: dict = None, catchup_days: int = None):
         print("⚠️  未找到任何資料夾")
         sys.exit(1)
 
-    # 收集 PDF（使用快取加速，但若快取中的資料夾數量與本次掃描不符則重建）
+    # 收集 PDF（全 Drive 批次掃描；快取機制已移除，見 list_all_pdfs_with_folder_info）
     print(f"\n📄 收集 PDF 檔案...")
-    cached_folder_count = len(state.get('cache', {}).get('folders', []))
-    if cached_folder_count > 0 and cached_folder_count < len(project_folders):
-        print(f"⚠️  快取中只有 {cached_folder_count} 個資料夾的 PDF（本次掃描 {len(project_folders)} 個），清除快取重新掃描")
-        state['cache']['pdfs'] = []
-        state['cache']['last_scan'] = None
-    all_pdfs = list_all_pdfs_with_folder_info(service, project_folders, use_cache=True, state=state)
+    all_pdfs = list_all_pdfs_with_folder_info(service, project_folders)
 
     if not all_pdfs:
         print("❌ 未找到任何 PDF 檔案")
         sys.exit(1)
 
-    # 儲存快取（在開始過濾之前）
+    # 掃描結果寫入獨立 inventory（月度趨勢/decline 分析的資料來源）
+    save_pdf_inventory(all_pdfs)
+
+    # 寫回 state：讓 load_state 的 legacy cache 移除（一次性瘦身）落盤
     with state_lock:
         save_state(state)
 
