@@ -251,13 +251,17 @@ class PermitSync:
     def list_files_recursive(self, folder_id: str, path: str = "") -> List[Tuple[str, str, str, str]]:
         files = []
         try:
+            # 完整翻頁（#67）：來源資料夾 >1000 檔時，未翻頁的單次查詢會
+            # 靜默截斷第 1001 項起的檔案與子資料夾，PDF 永遠不會被複製。
+            from drive_utils import paginate_files_list
             query = f"'{folder_id}' in parents and trashed=false"
-            results = self._get_svc().files().list(
+            items = paginate_files_list(
+                self._get_svc(),
                 q=query, fields='files(id, name, mimeType, webViewLink)',
-                pageSize=1000, supportsAllDrives=True, includeItemsFromAllDrives=True
-            ).execute()
-            
-            for item in results.get('files', []):
+                supportsAllDrives=True, includeItemsFromAllDrives=True
+            )
+
+            for item in items:
                 item_path = f"{path}/{item['name']}" if path else item['name']
                 if item['mimeType'] == 'application/vnd.google-apps.folder':
                     subfolder_files = self.list_files_recursive(item['id'], item_path)

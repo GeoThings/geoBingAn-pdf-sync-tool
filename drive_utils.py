@@ -4,9 +4,54 @@
 提供 Shared Drive 資料夾掃描、子資料夾層級解析等共用操作，
 避免在 sync_permits / match_permits / generate_permit_tracking_report 中重複實作。
 """
+import time
+
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+
+# files().list 單次呼叫上限 1000；未翻頁的呼叫曾造成靜默截斷資料漏失
+# （#65：758 個資料夾內 PDF 從未上傳；#67：同步端來源資料夾 >1000 檔截斷）。
+# 新的 files().list 呼叫一律走 paginate_files_list，不要手寫翻頁迴圈。
+_RETRYABLE_STATUS = {429, 500, 502, 503, 504}
+
+
+def paginate_files_list(service, *, retries: int = 3, retry_base_delay: float = 2.0,
+                        sleep=time.sleep, **list_kwargs) -> list:
+    """完整翻頁的 files().list：跟隨 nextPageToken 到底，回傳所有 files。
+
+    - `fields` 若未包含 nextPageToken 會自動補上（否則翻頁靜默失效）。
+    - 每頁對 429/5xx 指數退避重試（retries 次）；其他錯誤或重試耗盡直接 raise，
+      由呼叫端決定 fail-closed 行為——寧可炸也不回傳靜默截斷的部分結果。
+    """
+    fields = list_kwargs.get('fields', '')
+    if fields and 'nextPageToken' not in fields:
+        list_kwargs['fields'] = f'nextPageToken, {fields}'
+
+    items = []
+    page_token = None
+    while True:
+        attempt = 0
+        while True:
+            try:
+                results = service.files().list(
+                    pageSize=1000, pageToken=page_token, **list_kwargs
+                ).execute()
+                break
+            except HttpError as e:
+                status = getattr(getattr(e, 'resp', None), 'status', None)
+                if status in _RETRYABLE_STATUS and attempt < retries:
+                    delay = retry_base_delay * (2 ** attempt)
+                    attempt += 1
+                    print(f"  ⚠️ files().list {status}，第 {attempt}/{retries} 次重試"
+                          f"（等待 {delay:.0f} 秒）...")
+                    sleep(delay)
+                    continue
+                raise
+        items.extend(results.get('files', []))
+        page_token = results.get('nextPageToken')
+        if not page_token:
+            return items
 
 
 def create_drive_service(credentials_file: str, scopes: list = None):
