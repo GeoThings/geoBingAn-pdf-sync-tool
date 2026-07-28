@@ -342,27 +342,19 @@ def list_all_folders(service) -> List[Dict]:
     列出 Shared Drive 中所有資料夾（完整翻頁）。
 
     必須翻頁：單次呼叫上限 1000，Drive 資料夾數已超過——
-    曾因未翻頁截斷資料夾列表，導致 758 個資料夾內的 PDF 被靜默漏傳。
+    曾因未翻頁截斷資料夾列表，導致 758 個資料夾內的 PDF 被靜默漏傳（#65）。
+    翻頁與 429/5xx 重試統一走 drive_utils.paginate_files_list（#67）。
     """
-    query = "mimeType = 'application/vnd.google-apps.folder' and trashed = false"
-    folders = []
-    page_token = None
-    while True:
-        results = service.files().list(
-            q=query,
-            corpora='drive',
-            driveId=SHARED_DRIVE_ID,
-            includeItemsFromAllDrives=True,
-            supportsAllDrives=True,
-            pageSize=1000,
-            pageToken=page_token,
-            fields='nextPageToken, files(id, name, modifiedTime)'
-        ).execute()
-        folders.extend(results.get('files', []))
-        page_token = results.get('nextPageToken')
-        if not page_token:
-            break
-    return folders
+    from drive_utils import paginate_files_list
+    return paginate_files_list(
+        service,
+        q="mimeType = 'application/vnd.google-apps.folder' and trashed = false",
+        corpora='drive',
+        driveId=SHARED_DRIVE_ID,
+        includeItemsFromAllDrives=True,
+        supportsAllDrives=True,
+        fields='files(id, name, modifiedTime)'
+    )
 
 
 def list_all_pdfs_with_folder_info(service, folders: List[Dict], use_cache: bool = True, state: dict = None) -> List[Dict]:
@@ -455,18 +447,19 @@ def list_all_pdfs_with_folder_info(service, folders: List[Dict], use_cache: bool
                 if idx % 50 == 0:
                     print(f"    回退進度: {idx}/{len(folders)} 個資料夾...")
                 try:
+                    # 完整翻頁（#67）：單一建案資料夾 >1000 份 PDF 時不可截斷
+                    from drive_utils import paginate_files_list
                     fallback_query = (
                         f"'{folder['id']}' in parents and "
                         f"mimeType = 'application/pdf' and trashed = false"
                     )
-                    fallback_results = service.files().list(
+                    for pdf in paginate_files_list(
+                        service,
                         q=fallback_query,
-                        pageSize=1000,
                         includeItemsFromAllDrives=True,
                         supportsAllDrives=True,
                         fields='files(id, name, size, modifiedTime)'
-                    ).execute()
-                    for pdf in fallback_results.get('files', []):
+                    ):
                         pdf['folder_id'] = folder['id']
                         pdf['folder_name'] = folder['name']
                         all_pdfs.append(pdf)
