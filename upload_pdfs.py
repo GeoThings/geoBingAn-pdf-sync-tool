@@ -337,6 +337,34 @@ def list_project_folders(service, use_cache: bool = True, state: dict = None, da
         return []
 
 
+def list_all_folders(service) -> List[Dict]:
+    """
+    列出 Shared Drive 中所有資料夾（完整翻頁）。
+
+    必須翻頁：單次呼叫上限 1000，Drive 資料夾數已超過——
+    曾因未翻頁截斷資料夾列表，導致 758 個資料夾內的 PDF 被靜默漏傳。
+    """
+    query = "mimeType = 'application/vnd.google-apps.folder' and trashed = false"
+    folders = []
+    page_token = None
+    while True:
+        results = service.files().list(
+            q=query,
+            corpora='drive',
+            driveId=SHARED_DRIVE_ID,
+            includeItemsFromAllDrives=True,
+            supportsAllDrives=True,
+            pageSize=1000,
+            pageToken=page_token,
+            fields='nextPageToken, files(id, name, modifiedTime)'
+        ).execute()
+        folders.extend(results.get('files', []))
+        page_token = results.get('nextPageToken')
+        if not page_token:
+            break
+    return folders
+
+
 def list_all_pdfs_with_folder_info(service, folders: List[Dict], use_cache: bool = True, state: dict = None) -> List[Dict]:
     """
     列出 Shared Drive 中所有 PDF，並附加資料夾資訊（支援快取）
@@ -367,6 +395,8 @@ def list_all_pdfs_with_folder_info(service, folders: List[Dict], use_cache: bool
     # 單一查詢掃描整個 Shared Drive 的所有 PDF（分頁處理）
     print(f"🔍 掃描 Shared Drive 中的所有 PDF...")
     all_pdfs = []
+    unmatched_count = 0
+    unmatched_samples = []
     page_token = None
     page_count = 0
 
@@ -400,6 +430,12 @@ def list_all_pdfs_with_folder_info(service, folders: List[Dict], use_cache: bool
                     # 移除 parents 欄位（不需要存入快取）
                     pdf.pop('parents', None)
                     all_pdfs.append(pdf)
+                else:
+                    # parent 對不到資料夾表 = 掃描結果會缺這份 PDF。
+                    # 曾因資料夾列表被 1000 上限截斷而靜默漏傳整批建案，必須顯式告警。
+                    unmatched_count += 1
+                    if len(unmatched_samples) < 5:
+                        unmatched_samples.append(pdf.get('name', '(unnamed)'))
 
             page_token = results.get('nextPageToken')
             if not page_token:
@@ -433,6 +469,11 @@ def list_all_pdfs_with_folder_info(service, folders: List[Dict], use_cache: bool
                 except HttpError:
                     continue
             break
+
+    if unmatched_count > 0:
+        print(f"⚠️  {unmatched_count} 個 PDF 的 parent 資料夾不在資料夾列表中，已跳過"
+              f"（若數量偏高，檢查資料夾掃描是否完整）")
+        print(f"    範例: {', '.join(unmatched_samples)}")
 
     # 更新快取
     if state is not None:
@@ -698,17 +739,7 @@ def main(city: dict = None, catchup_days: int = None):
     # 列出所有建案資料夾（完整掃描，因為過濾依據是檔名日期而非資料夾修改時間）
     print(f"\n📁 列出所有建案資料夾...")
     try:
-        query = "mimeType = 'application/vnd.google-apps.folder' and trashed = false"
-        results = service.files().list(
-            q=query,
-            corpora='drive',
-            driveId=SHARED_DRIVE_ID,
-            includeItemsFromAllDrives=True,
-            supportsAllDrives=True,
-            pageSize=1000,
-            fields='files(id, name, modifiedTime)'
-        ).execute()
-        project_folders = results.get('files', [])
+        project_folders = list_all_folders(service)
         print(f"✅ 找到 {len(project_folders)} 個資料夾")
     except Exception as e:
         print(f"❌ 掃描資料夾失敗: {e}")
