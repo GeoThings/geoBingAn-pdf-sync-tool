@@ -269,7 +269,8 @@ Shared Drive
     │  （批次失敗時回退到逐資料夾查詢〔亦完整翻頁〕；任一資料夾持久失敗
     │    → raise 放棄本次掃描，絕不回傳部分結果〔fail-closed〕）
     │
-    ▼ 寫出 state/pdf_inventory.json（全 Drive PDF 清單 snapshot，atomic）
+    ▼ 寫出 state/pdf_inventory.json（已成功對應建案資料夾的 PDF 清單 snapshot，atomic）
+    │  （不含根目錄 PDF 與 parent 對不到的 PDF——後兩者僅計數/告警）
     │  → weekly_snapshot 月度趨勢告警 / analyze_decline 的正式資料來源
     │
     ▼ filename_date_parser 解析檔名日期
@@ -356,7 +357,7 @@ API project 匹配：116 筆（滑動視窗 + 去重）
 | `permit_registry.json` | 建案名稱交叉比對結果（6 來源） | match_permits.py 執行時 | ✅ 是 |
 | `sync_permits_progress.json` | 已處理建案清單 | 每個建案 | 否 |
 | `uploaded_to_geobingan_7days.json` | 已上傳 PDF 記錄（legacy 掃描快取於 pdf_inventory 建立後自動移除） | 每次成功上傳 | 否 |
-| `pdf_inventory.json` | 全 Drive PDF 清單 snapshot（月度趨勢/decline 分析資料源；inventory 未落地前 consumer fallback 讀 legacy cache） | 每次掃描完成 | 否 |
+| `pdf_inventory.json` | 建案 PDF inventory（已成功對應建案資料夾的 PDF；不含根目錄/unmatched。月度趨勢/decline 分析資料源；未落地前 consumer fallback 讀 legacy cache） | 每次掃描完成 | 否 |
 | `sync_status.json` | 執行狀態與歷史 | 每次執行 | 否 |
 | `weekly_snapshots/{date}.json` | sync 後狀態快照（供 compute_diff 算趨勢） | 每次 sync | 否（local-only，見下） |
 

@@ -586,7 +586,7 @@ Service Account 只需要：
 - ✅ `drive_utils.paginate_files_list()` 共用 helper（#67/#68）：nextPageToken 翻頁到底 + fields 自動補 + 429/5xx 指數退避重試 + 持久失敗 raise（fail-closed）；全 repo 5 份翻頁實作收斂為 1
 - 🐛 修 `sync_permits.list_files_recursive` 未翻頁（同步端 >1000 檔截斷，#67）與 upload fallback 未翻頁
 - 🧹 刪死碼 `list_project_folders` 與死快取機制（每上傳白序列化 ~3MB；state 檔載入時自動瘦身）（#69）
-- ✅ 新增 `state/pdf_inventory.json`：全 Drive PDF 清單 snapshot，月度趨勢告警/decline 分析的正式資料來源；inventory 未落地前保留 legacy cache fallback（升級零空窗）
+- ✅ 新增 `state/pdf_inventory.json`：建案 PDF inventory（已成功對應建案資料夾的 PDF 清單），月度趨勢告警/decline 分析的正式資料來源；inventory 未落地前保留 legacy cache fallback（升級零空窗）
 - ✅ 根目錄 PDF 告警降噪（ℹ️ 分開計數）；fallback 任一資料夾持久失敗改 fail-closed raise
 - 🧪 新增 15 tests（helper/遞迴翻頁/fail-closed/跨模組 inventory contract/升級保護），全套 175
 
