@@ -19,7 +19,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-DRIVE_CACHE_FILE = Path(__file__).parent / 'state' / 'uploaded_to_geobingan_7days.json'
+DRIVE_CACHE_FILE = Path(__file__).parent / 'state' / 'uploaded_to_geobingan_7days.json'  # legacy fallback
+PDF_INVENTORY_FILE = Path(__file__).parent / 'state' / 'pdf_inventory.json'
 
 # 真工地名稱必含的關鍵字（過濾「2026年03月」、「115年1月」這類時間分類資料夾）
 SITE_NAME_KEYWORDS = re.compile(r'(建字|工程|新建|工地|大樓|社區|觀測|監測|案|場)')
@@ -147,6 +148,13 @@ def format_candidates(candidates: List[dict], target_label: str) -> str:
 
 
 def load_pdfs() -> Optional[list]:
+    """優先讀新版 pdf_inventory.json，fallback legacy state cache。"""
+    if PDF_INVENTORY_FILE.exists():
+        try:
+            with open(PDF_INVENTORY_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f).get('pdfs', [])
+        except (json.JSONDecodeError, IOError):
+            pass
     if not DRIVE_CACHE_FILE.exists():
         return None
     try:
