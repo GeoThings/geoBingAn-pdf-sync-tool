@@ -256,14 +256,21 @@ state/sync_permits_progress.json 更新（thread-safe _state_lock）
 ```
 Shared Drive
     │
-    ▼ list_all_folders()：全量資料夾列表（nextPageToken 翻頁到底，~1,758 個）
-    │  ⚠️ 必須翻頁：單次呼叫上限 1000，曾因未翻頁靜默截斷 758 個資料夾
-    │     → 15+ 建案的 PDF 從未上傳（PR #65 修復 + catchup 90 天補傳 166 份）
+    ▼ list_all_folders()：全量資料夾列表（~1,758 個）
+    │  走 drive_utils.paginate_files_list()：nextPageToken 翻頁到底 +
+    │  429/5xx 指數退避重試；持久失敗 raise（fail-closed）
+    │  ⚠️ 歷史事故：單次呼叫上限 1000、未翻頁靜默截斷 758 個資料夾
+    │     → 15+ 建案的 PDF 從未上傳（#65 修復 + catchup 補傳 166 份；
+    │        #67/#68 將翻頁收斂為共用 helper，未翻頁的寫法從此絕跡）
     │
     ▼ 批次查詢所有 PDF（~63 次分頁，28,000+ 個）+ folder lookup table 對應資料夾
     │  parent 對不到資料夾表 → 計數 + 顯式告警（不再靜默丟棄）
-    │  （批次失敗時回退到逐資料夾查詢，丟棄部分結果確保完整性，
-    │    並重設 unmatched 計數避免過期誤報）
+    │  根目錄 PDF（非建案資料）→ ℹ️ 分開計數，不觸發告警
+    │  （批次失敗時回退到逐資料夾查詢〔亦完整翻頁〕；任一資料夾持久失敗
+    │    → raise 放棄本次掃描，絕不回傳部分結果〔fail-closed〕）
+    │
+    ▼ 寫出 state/pdf_inventory.json（全 Drive PDF 清單 snapshot，atomic）
+    │  → weekly_snapshot 月度趨勢告警 / analyze_decline 的正式資料來源
     │
     ▼ filename_date_parser 解析檔名日期
     │
@@ -348,7 +355,8 @@ API project 匹配：116 筆（滑動視窗 + 去重）
 | `upload_history_all.json` | 永久上傳歷史（防重複上傳） | 每次成功上傳 | ✅ 是 |
 | `permit_registry.json` | 建案名稱交叉比對結果（6 來源） | match_permits.py 執行時 | ✅ 是 |
 | `sync_permits_progress.json` | 已處理建案清單 | 每個建案 | 否 |
-| `uploaded_to_geobingan_7days.json` | 已上傳 PDF 記錄（legacy 掃描快取已移除，載入時自動清除） | 每次成功上傳 | 否 |
+| `uploaded_to_geobingan_7days.json` | 已上傳 PDF 記錄（legacy 掃描快取於 pdf_inventory 建立後自動移除） | 每次成功上傳 | 否 |
+| `pdf_inventory.json` | 全 Drive PDF 清單 snapshot（月度趨勢/decline 分析資料源；inventory 未落地前 consumer fallback 讀 legacy cache） | 每次掃描完成 | 否 |
 | `sync_status.json` | 執行狀態與歷史 | 每次執行 | 否 |
 | `weekly_snapshots/{date}.json` | sync 後狀態快照（供 compute_diff 算趨勢） | 每次 sync | 否（local-only，見下） |
 
