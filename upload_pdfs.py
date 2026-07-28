@@ -177,9 +177,11 @@ def load_state() -> dict:
     if os.path.exists(STATE_FILE):
         with open(STATE_FILE, 'r', encoding='utf-8') as f:
             state = json.load(f)
-            # 移除 legacy 快取：讀取閘門依賴的 last_scan 從未被 live 路徑寫入、
-            # 快取永不命中，卻讓每次 save_state 白白序列化 ~3MB（一次性瘦身）
-            state.pop('cache', None)
+            # 移除 legacy 快取（一次性瘦身）——但僅在新版 pdf_inventory 已成功
+            # 建立後才移除：inventory 尚未落地前，legacy cache.pdfs 仍是
+            # weekly_snapshot / analyze_decline 的唯一 fallback 資料源，不可先毀。
+            if os.path.exists(PDF_INVENTORY_FILE):
+                state.pop('cache', None)
     else:
         state = {
             'uploaded_files': [],
@@ -201,11 +203,13 @@ def load_state() -> dict:
 STATE_LOCK_FILE = STATE_FILE + '.lock'
 
 
-def save_pdf_inventory(all_pdfs: list):
-    """寫出全 Drive PDF 清單 snapshot（atomic）。
+def save_pdf_inventory(all_pdfs: list) -> bool:
+    """寫出全 Drive PDF 清單 snapshot（atomic）。回傳是否成功。
 
     月度趨勢告警（weekly_snapshot）與 decline 分析（analyze_decline）
     以此為正式資料來源；每 run 掃描完成後寫一次。
+    寫入失敗不中斷上傳流程，但會回報 False——load_state 只在 inventory
+    檔存在時才移除 legacy cache，故失敗時 fallback 資料源不會被毀。
     """
     os.makedirs(os.path.dirname(PDF_INVENTORY_FILE), exist_ok=True)
     tmp = f"{PDF_INVENTORY_FILE}.tmp.{os.getpid()}"
@@ -218,12 +222,14 @@ def save_pdf_inventory(all_pdfs: list):
             json.dump(payload, f, ensure_ascii=False)
         os.replace(tmp, PDF_INVENTORY_FILE)
         print(f"📦 已更新 PDF inventory（{len(all_pdfs)} 筆）: {PDF_INVENTORY_FILE}")
+        return True
     except Exception as e:
         try:
             os.unlink(tmp)
         except OSError:
             pass
-        print(f"⚠️  PDF inventory 寫入失敗（不影響上傳流程）: {e}")
+        print(f"⚠️  PDF inventory 寫入失敗（不影響上傳流程；legacy fallback 將保留）: {e}")
+        return False
 
 
 def save_state(state: dict):

@@ -212,23 +212,8 @@ if [ $STEP1_FAILED -ne 0 ]; then
     echo "⚠️  步驟 1 失敗，跳過步驟 2-3（依賴同步資料）" | tee -a "$LOG_FILE"
 else
 
-# 清除 PDF 快取（確保偵測到新同步的檔案）
-echo "" | tee -a "$LOG_FILE"
-echo "🗑️  清除 PDF 快取..." | tee -a "$LOG_FILE"
-python3 -c "
-import json
-state_file = './state/uploaded_to_geobingan_7days.json'
-try:
-    with open(state_file, 'r') as f:
-        state = json.load(f)
-    if 'cache' in state:
-        state['cache'] = {'folders': [], 'pdfs': [], 'last_scan': None}
-        with open(state_file, 'w') as f:
-            json.dump(state, f, indent=2, ensure_ascii=False)
-        print('✅ 快取已清除')
-except Exception as e:
-    print(f'⚠️ 清除快取時發生錯誤: {e}')
-" 2>&1 | tee -a "$LOG_FILE"
+# （原「清除 PDF 快取」區塊已移除：掃描快取機制已拆除，
+#   且在 inventory 建立前清空 legacy cache 會毀掉月度告警的 fallback 資料源）
 
 # 步驟 2: 上傳最近 7 天的 PDF 到 geoBingAn Backend
 # 可用 .pause_upload 旗標檔暫停上傳（例如後端 AI 停用期間，避免堆積 parse 失敗的報告）。
