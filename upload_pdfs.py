@@ -443,6 +443,7 @@ def list_all_pdfs_with_folder_info(service, folders: List[Dict], use_cache: bool
             all_pdfs = []
             unmatched_count = 0
             unmatched_samples = []
+            failed_folders = []
             for idx, folder in enumerate(folders, 1):
                 if idx % 50 == 0:
                     print(f"    回退進度: {idx}/{len(folders)} 個資料夾...")
@@ -463,8 +464,16 @@ def list_all_pdfs_with_folder_info(service, folders: List[Dict], use_cache: bool
                         pdf['folder_id'] = folder['id']
                         pdf['folder_name'] = folder['name']
                         all_pdfs.append(pdf)
-                except HttpError:
-                    continue
+                except HttpError as folder_err:
+                    # 先記錄、掃完其餘資料夾再 raise：一次呈現完整失敗清單，
+                    # 但絕不把部分結果當完整掃描回傳/寫快取（fail-closed）
+                    failed_folders.append(folder['name'])
+                    print(f"    ❌ 資料夾掃描失敗（重試已耗盡）: {folder['name']}: {folder_err}")
+            if failed_folders:
+                raise RuntimeError(
+                    f"fallback 掃描有 {len(failed_folders)} 個資料夾持久失敗，"
+                    f"結果不完整、放棄本次掃描: {', '.join(failed_folders[:10])}"
+                )
             break
 
     if unmatched_count > 0:

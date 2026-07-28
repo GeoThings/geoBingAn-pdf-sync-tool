@@ -139,3 +139,27 @@ def test_upload_fallback_paginates_per_folder(capsys):
 
     assert sorted(p['name'] for p in result) == ['a.pdf', 'b.pdf']
     assert all(p['folder_name'] == '110建字第0001號' for p in result)
+
+
+def test_upload_fallback_fails_closed_on_persistent_folder_error(capsys):
+    """fallback 中任一資料夾持久失敗 → 整次掃描 raise，
+    不得把其餘資料夾的部分結果當完整掃描回傳（review P2）。"""
+    from upload_pdfs import list_all_pdfs_with_folder_info
+
+    folders = [
+        {'id': 'bad', 'name': '110建字第0001號'},
+        {'id': 'good', 'name': '110建字第0002號'},
+    ]
+    svc = _FakeService([
+        HttpError(_FakeResp(403), b'batch boom'),   # 批次失敗 → fallback
+        HttpError(_FakeResp(403), b'bad folder'),   # bad 資料夾：非重試錯誤
+        {'files': [{'id': 'p1', 'name': 'ok.pdf', 'modifiedTime': 'x'}]},  # good 資料夾
+    ])
+
+    with pytest.raises(RuntimeError, match='110建字第0001號'):
+        list_all_pdfs_with_folder_info(svc, folders, use_cache=False, state=None)
+
+    out = capsys.readouterr().out
+    assert '資料夾掃描失敗' in out
+    # good 資料夾仍被掃過（先收集完整失敗清單再 raise）
+    assert len(svc._files.calls) == 3
