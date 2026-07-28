@@ -254,19 +254,24 @@ state/sync_permits_progress.json 更新（thread-safe _state_lock）
 ### 步驟 2：upload_pdfs.py
 
 ```
-Shared Drive（批次查詢，~12 次分頁 API 呼叫）
+Shared Drive
     │
-    ▼ 一次取得所有 PDF（~11,000 個）+ folder lookup table 對應資料夾
-    │  （失敗時回退到逐資料夾查詢，丟棄部分結果確保完整性）
+    ▼ list_all_folders()：全量資料夾列表（nextPageToken 翻頁到底，~1,758 個）
+    │  ⚠️ 必須翻頁：單次呼叫上限 1000，曾因未翻頁靜默截斷 758 個資料夾
+    │     → 15+ 建案的 PDF 從未上傳（PR #65 修復 + catchup 90 天補傳 166 份）
+    │
+    ▼ 批次查詢所有 PDF（~63 次分頁，28,000+ 個）+ folder lookup table 對應資料夾
+    │  parent 對不到資料夾表 → 計數 + 顯式告警（不再靜默丟棄）
+    │  （批次失敗時回退到逐資料夾查詢，丟棄部分結果確保完整性，
+    │    並重設 unmatched 計數避免過期誤報）
     │
     ▼ filename_date_parser 解析檔名日期
     │
-    ▼ 過濾：日期 > 2026-02-17（農曆新年）
-~56 個符合條件的 PDF
+    ▼ 過濾：檔名日期在 30 天內（rolling；--catchup-days N 可放大窗口補掃）
     │
-    ▼ 排除已上傳（state/uploaded_to_geobingan_7days.json）
+    ▼ 排除已上傳（state/uploaded_to_geobingan_7days.json）+ run 內同名去重
     │
-    ▼ 逐一下載 + 上傳到 riskmap.today API（0.5 秒間隔）
+    ▼ 逐一下載 + 上傳到 riskmap.today API（2 秒間隔）
     │
     ▼ 成功立即寫入 state（flock + merge）
 ```
