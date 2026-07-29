@@ -264,13 +264,11 @@ Shared Drive
     │  （不含根目錄 PDF 與 parent 對不到的 PDF——後兩者僅計數/告警）
     │  → weekly_snapshot 月度趨勢告警 / analyze_decline 的正式資料來源
     │
-    ▼ filename_date_parser 解析檔名日期
-    │
-    ▼ 過濾：檔名日期在 30 天內（rolling；--catchup-days N 可放大窗口補掃）
-    │
     ▼ 候選過濾 select_pdfs_to_upload() 純函式（#64）：排除清單 →
     │  history 去重 → run 內同名去重（記檔名供 operator 分辨）→
-    │  檔名日期解析 → cutoff（正規化當日 00:00）→ max_uploads
+    │  filename_date_parser 解析檔名日期 →
+    │  cutoff 30 天 rolling（正規化當日 00:00；--catchup-days N 可放大補掃）→
+    │  max_uploads
     │
     ▼ 逐一下載 + 上傳到 riskmap.today API（2 秒間隔）
     │
