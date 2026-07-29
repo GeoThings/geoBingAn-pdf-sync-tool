@@ -115,7 +115,7 @@ def parse_date_from_filename(filename: str) -> Optional[datetime]:
                 # 再試檔名開頭的裸民國年前綴（如「115裕光東湖觀測報告0721」）。
                 # 排除「11X建字第…」——那是建照核發年份、不是報告年份，
                 # 誤組會把報告標錯年污染後端監測歷史。
-                prefix_match = re.search(r'^(1[0-2]\d)(?!\d)(?!建字)', basename)
+                prefix_match = re.search(r'^(1[0-2]\d|130)(?!\d)(?!建字)', basename)
                 if prefix_match:
                     roc_year = int(prefix_match.group(1))
                     if 100 <= roc_year <= 130:

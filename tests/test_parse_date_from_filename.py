@@ -144,3 +144,9 @@ class TestRocPrefixWithMmdd:
     def test_existing_folder_year_inference_still_wins(self):
         """既有的 folder 年份推斷（模式6 前段）不受影響。"""
         assert parse_date_from_filename('114年/0303觀測報告.pdf') == datetime(2025, 3, 3)
+
+    def test_roc_prefix_range_boundaries(self):
+        """契約 100–130（與模式6 其他年份來源一致）：100/130 收、131 拒。"""
+        assert parse_date_from_filename('100測試案觀測報告0101.pdf') == datetime(2011, 1, 1)
+        assert parse_date_from_filename('130測試案觀測報告0101.pdf') == datetime(2041, 1, 1)
+        assert parse_date_from_filename('131測試案觀測報告0101.pdf') is None
