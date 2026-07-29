@@ -3,9 +3,9 @@
 建案監測週報產生器
 
 用法：
-  python3 generate_weekly_report.py --type sync      # 週一同步後
-  python3 generate_weekly_report.py --type summary    # 週五總結
-  python3 generate_weekly_report.py --upload           # 產生後上傳到 ClickUp
+  python3 -m geobingan_sync.steps.generate_weekly_report --type sync      # 週一同步後
+  python3 -m geobingan_sync.steps.generate_weekly_report --type summary    # 週五總結
+  python3 -m geobingan_sync.steps.generate_weekly_report --upload           # 產生後上傳到 ClickUp
 """
 
 import json

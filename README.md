@@ -245,7 +245,7 @@ Body (multipart/form-data):
 
 **執行：**
 ```bash
-python3 match_permits.py
+python3 -m geobingan_sync.steps.match_permits
 ```
 
 **輸出：**
@@ -273,7 +273,7 @@ state/permit_tracking.csv          # CSV 資料匯出
 
 **執行：**
 ```bash
-python3 generate_permit_tracking_report.py
+python3 -m geobingan_sync.steps.generate_permit_tracking_report
 ```
 
 ---
@@ -333,7 +333,7 @@ python3 -c "from sync_status import SyncStatus; SyncStatus().print_summary()"
    ```
 3. 執行測試：
    ```bash
-   python3 notify.py
+   python3 -m geobingan_sync.notify
    ```
 
 ### macOS 系統通知

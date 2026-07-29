@@ -854,7 +854,7 @@ def main(city: dict = None):
         n_404 = sum(1 for s in gov_url_statuses.values() if s == '404')
         print(f"  從 permit_registry 載入 {len(permit_names)} 個建案名稱，{len(alert_data)} 個有即時警戒值，{n_404} 個 URL 失效")
     else:
-        print("  ⚠️ permit_registry.json 不存在，請先執行 python3 match_permits.py")
+        print("  ⚠️ permit_registry.json 不存在，請先執行 python3 -m geobingan_sync.steps.match_permits")
         registry = {}
 
     # 5b. 補充：從 upload_history 提取名稱（permit_registry 沒涵蓋的）

@@ -6,9 +6,9 @@
 也負責偵測新建案並發送通知。
 
 用法：
-  python3 weekly_snapshot.py              # 儲存快照 + 偵測新建案
-  python3 weekly_snapshot.py --notify      # 有新建案時發送通知
-  python3 weekly_snapshot.py --diff        # 顯示與上次快照的差異
+  python3 -m geobingan_sync.steps.weekly_snapshot              # 儲存快照 + 偵測新建案
+  python3 -m geobingan_sync.steps.weekly_snapshot --notify      # 有新建案時發送通知
+  python3 -m geobingan_sync.steps.weekly_snapshot --diff        # 顯示與上次快照的差異
 """
 
 import json

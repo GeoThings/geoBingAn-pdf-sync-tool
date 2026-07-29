@@ -39,7 +39,7 @@
 | 每日 10:00 | `com.geothings.geobingan.weeklysync` | 完整流程（步驟 1-4）+ 週一加步驟 5 產 PDF |
 | 週五 17:00 | `com.geothings.geobingan.fridayreport` | 總結週報 PDF → ClickUp |
 
-安裝：`./setup_launchd.sh` · 卸載：`./uninstall_launchd.sh` · plist 位於 `launchd/`
+安裝：`./setup/setup_launchd.sh` · 卸載：`./setup/uninstall_launchd.sh` · plist 位於 `launchd/`
 
 > ✅ **2026-06-09 ROOT CAUSE 確認 + RESOLVED**：18 天 launchd 自動觸發系統性 fail 的 root cause = repo 位於 `~/Documents/` 被 iCloud Drive `FileProvider` 接管。fix = 把 repo 搬到 `~/Developer/`（FileProvider 域外）。搬完後第一次 launchd kickstart healthcheck = exit 0、echo 寫入。詳見下方「Auto-trigger 失敗 root cause」段。
 

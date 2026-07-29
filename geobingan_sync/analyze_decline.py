@@ -6,9 +6,9 @@
 不用人再手寫 query。
 
 也可獨立 CLI 跑：
-    python3 analyze_decline.py                 # 對上一個完整月份分析
-    python3 analyze_decline.py --month 2026-04 # 指定月份
-    python3 analyze_decline.py --top 10        # 顯示前 10 名
+    python3 -m geobingan_sync.analyze_decline                 # 對上一個完整月份分析
+    python3 -m geobingan_sync.analyze_decline --month 2026-04 # 指定月份
+    python3 -m geobingan_sync.analyze_decline --top 10        # 顯示前 10 名
 """
 import argparse
 import json
