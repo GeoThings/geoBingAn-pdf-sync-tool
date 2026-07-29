@@ -126,10 +126,10 @@ ENABLE_MACOS_NOTIFY=true              # 啟用 macOS 系統通知
 ./run_weekly_sync.sh
 
 # 只同步特定城市
-python3 sync_permits.py --city taipei
+python3 -m geobingan_sync.steps.sync_permits --city taipei
 
 # 只上傳 PDF
-python3 upload_pdfs.py
+python3 -m geobingan_sync.steps.upload_pdfs
 
 # 健康檢查
 python3 health_check.py
@@ -138,7 +138,7 @@ python3 health_check.py
 #### 自動排程設定（launchd + pmset wake schedule）：
 ```bash
 # 步驟 1: 安裝 launchd 排程（移除舊 cron）
-./setup_launchd.sh
+./setup/setup_launchd.sh
 
 # 步驟 2: 設定 pmset 喚醒 schedule（必要 — 否則 Mac 睡眠時排程不會跑）
 sudo pmset repeat wakepoweron MTWRFSU 07:55:00
@@ -153,7 +153,7 @@ sudo pmset repeat wakepoweron MTWRFSU 07:55:00
 launchctl list | grep geobingan                                    # 查看狀態
 launchctl kickstart gui/$(id -u)/com.geothings.geobingan.weeklysync  # 手動觸發
 pmset -g sched                                                      # 查看 wake schedule
-./uninstall_launchd.sh                                              # 卸載
+./setup/uninstall_launchd.sh                                              # 卸載
 ```
 
 > **為什麼需要 pmset？** macOS launchd `StartCalendarInterval` **不會主動喚醒 Mac**。若 Mac 在排程時間處於睡眠狀態，job 會完全跳過（不像 cron 也不會補跑）。`pmset wakepoweron` 讓 Mac 在排程前自動醒來、launchd 才能準時觸發。
@@ -169,7 +169,7 @@ tail -f logs/weekly_sync_*.log
 
 ## 📋 核心腳本說明
 
-### `sync_permits.py`
+### `geobingan_sync/steps/sync_permits.py`
 從各縣市政府同步建案 PDF 到 Google Drive（支援多城市）
 
 **功能：**
@@ -197,7 +197,7 @@ permit_no,source_url,name
 
 ---
 
-### `upload_pdfs.py`
+### `geobingan_sync/steps/upload_pdfs.py`
 從 Google Drive 上傳最近 7 天的 PDF 到 geoBingAn Backend API
 
 **功能：**
@@ -234,7 +234,7 @@ Body (multipart/form-data):
 
 ---
 
-### `match_permits.py`
+### `geobingan_sync/steps/match_permits.py`
 建案名稱交叉比對工具，整合 6 個資料來源匹配建照號碼與建案名稱
 
 **功能：**

@@ -21,7 +21,9 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-REGISTRY_FILE = Path(__file__).parent / 'state' / 'permit_registry.json'
+from geobingan_sync import REPO_ROOT
+
+REGISTRY_FILE = REPO_ROOT / 'state' / 'permit_registry.json'
 DRIVE_FOLDER_ID_RE = re.compile(r'/folders/([a-zA-Z0-9_-]+)')
 
 

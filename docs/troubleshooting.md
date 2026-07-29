@@ -223,7 +223,7 @@ pmset wake schedule 喚醒 Mac 後，launchd 幾乎立即觸發 job，但此時 
 
 ### 1. 啟用詳細輸出
 ```bash
-PYTHONUNBUFFERED=1 python3 upload_pdfs.py 2>&1 | tee upload.log
+PYTHONUNBUFFERED=1 python3 -m geobingan_sync.steps.upload_pdfs 2>&1 | tee upload.log
 ```
 
 ### 2. 檢查 Token 狀態
