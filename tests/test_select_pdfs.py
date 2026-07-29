@@ -10,7 +10,7 @@ import sys
 from datetime import datetime, timedelta
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from upload_pdfs import select_pdfs_to_upload
+from geobingan_sync.steps.upload_pdfs import select_pdfs_to_upload
 
 CUTOFF = datetime(2026, 7, 1)
 

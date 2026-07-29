@@ -11,7 +11,7 @@ import pytest
 from googleapiclient.errors import HttpError
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from drive_utils import paginate_files_list
+from geobingan_sync.drive_utils import paginate_files_list
 
 
 class _FakeResp:
@@ -99,7 +99,7 @@ def test_retries_exhausted_raises():
 
 def test_top_level_folders_paginate_and_subfolders_fail_closed():
     """drive_utils 兩個舊迴圈收斂到 helper：翻頁到底 + 持久失敗 raise。"""
-    from drive_utils import list_top_level_folders, list_all_subfolders
+    from geobingan_sync.drive_utils import list_top_level_folders, list_all_subfolders
 
     svc = _FakeService([
         {'files': [{'id': 'f1', 'name': 'A'}], 'nextPageToken': 't2'},
@@ -115,8 +115,8 @@ def test_top_level_folders_paginate_and_subfolders_fail_closed():
 
 def test_sync_list_files_recursive_paginates(monkeypatch):
     """#67 本體：來源資料夾兩頁檔案 + 子資料夾遞迴，全數收齊。"""
-    import sync_permits
-    from sync_permits import PermitSync
+    from geobingan_sync.steps import sync_permits
+    from geobingan_sync.steps.sync_permits import PermitSync
 
     sync = PermitSync(city={'name': 'T', 'pdf_list_url': 'https://example.test/x.pdf'})
     svc = _FakeService([
@@ -140,8 +140,8 @@ def test_sync_list_files_recursive_paginates(monkeypatch):
 
 def test_upload_fallback_paginates_per_folder(capsys):
     """upload fallback：批次掃描炸掉後，單一資料夾兩頁 PDF 不得截斷。"""
-    import upload_pdfs
-    from upload_pdfs import list_all_pdfs_with_folder_info
+    from geobingan_sync.steps import upload_pdfs
+    from geobingan_sync.steps.upload_pdfs import list_all_pdfs_with_folder_info
 
     folders = [{'id': 'f1', 'name': '110建字第0001號'}]
     svc = _FakeService([
@@ -160,7 +160,7 @@ def test_upload_fallback_paginates_per_folder(capsys):
 def test_upload_fallback_fails_closed_on_persistent_folder_error(capsys):
     """fallback 中任一資料夾持久失敗 → 整次掃描 raise，
     不得把其餘資料夾的部分結果當完整掃描回傳（review P2）。"""
-    from upload_pdfs import list_all_pdfs_with_folder_info
+    from geobingan_sync.steps.upload_pdfs import list_all_pdfs_with_folder_info
 
     folders = [
         {'id': 'bad', 'name': '110建字第0001號'},

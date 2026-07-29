@@ -11,9 +11,9 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import upload_pdfs
-import weekly_snapshot
-import analyze_decline
+from geobingan_sync.steps import upload_pdfs
+from geobingan_sync.steps import weekly_snapshot
+from geobingan_sync import analyze_decline
 
 PDFS = [
     {'id': 'p1', 'name': '建案A_1150301.pdf', 'folder_name': '110建字第0001號'},

@@ -3,7 +3,7 @@ import sys
 import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from permit_utils import extract_name_from_filename
+from geobingan_sync.permit_utils import extract_name_from_filename
 
 
 class TestExtractNameFromFilename:

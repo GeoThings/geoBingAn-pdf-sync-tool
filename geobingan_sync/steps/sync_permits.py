@@ -10,6 +10,7 @@
 3. [功能保留] 包含隨機跳查、斷點續傳、自動建立資料夾等所有功能。
 """
 import json
+from geobingan_sync import REPO_ROOT
 import os
 import csv
 import re
@@ -35,13 +36,13 @@ import warnings
 # 請確認金鑰路徑是否正確
 SERVICE_ACCOUNT_FILE = os.environ.get(
     'GOOGLE_CREDENTIALS',
-    os.path.join(os.path.dirname(__file__), 'credentials.json')
+    str(REPO_ROOT / 'credentials.json')
 )
 SCOPES = ['https://www.googleapis.com/auth/drive']
 
 # 從 config.py 匯入 Shared Drive ID
 try:
-    from config import SHARED_DRIVE_ID
+    from geobingan_sync.config import SHARED_DRIVE_ID
 except ImportError:
     SHARED_DRIVE_ID = os.environ.get('SHARED_DRIVE_ID', '0AIvp1h-6BZ1oUk9PVA')
 PDF_LIST_URL_DEFAULT = 'https://www-ws.gov.taipei/001/Upload/845/relfile/-1/845/03b35db7-a123-4b29-b881-1cb17fa9c4f2.pdf'
@@ -83,8 +84,8 @@ def get_thread_drive_service():
 MAX_CONCURRENT_PERMITS = 5  # 同時處理的建案數（Google Drive API quota: 12,000 req/min）
 
 
-from config import escape_drive_query as _escape_drive_query
-from permit_utils import normalize_permit as _normalize_permit
+from geobingan_sync.config import escape_drive_query as _escape_drive_query
+from geobingan_sync.permit_utils import normalize_permit as _normalize_permit
 
 
 class PermitSync:
@@ -131,7 +132,7 @@ class PermitSync:
         mapping = {}
         csv_file = Path(self.csv_path)
         if not csv_file.is_absolute():
-            csv_file = Path(__file__).parent / self.csv_path
+            csv_file = REPO_ROOT / self.csv_path
         if not csv_file.exists():
             print(f"❌ CSV 檔案不存在: {csv_file}")
             return mapping
@@ -234,7 +235,7 @@ class PermitSync:
     
     def scan_shared_drive(self) -> Dict[str, str]:
         print(f"\n📂 掃描共享雲端...")
-        from drive_utils import list_top_level_folders
+        from geobingan_sync.drive_utils import list_top_level_folders
         raw_folders = list_top_level_folders(get_drive_service(), self.shared_drive_id)
         return {item['name']: item['id'] for item in raw_folders}
     
@@ -253,7 +254,7 @@ class PermitSync:
         try:
             # 完整翻頁（#67）：來源資料夾 >1000 檔時，未翻頁的單次查詢會
             # 靜默截斷第 1001 項起的檔案與子資料夾，PDF 永遠不會被複製。
-            from drive_utils import paginate_files_list
+            from geobingan_sync.drive_utils import paginate_files_list
             query = f"'{folder_id}' in parents and trashed=false"
             items = paginate_files_list(
                 self._get_svc(),
@@ -530,7 +531,7 @@ class PermitSync:
 
 if __name__ == '__main__':
     import argparse
-    from city_config import get_cities_for_cli
+    from geobingan_sync.city_config import get_cities_for_cli
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--city', default=None, help='City ID or "all"')

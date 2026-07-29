@@ -4,7 +4,8 @@
 # launchd 在 Mac 從睡眠醒來時會自動補跑錯過的排程
 #
 
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# repo root（本腳本位於 setup/ 子目錄）
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 LAUNCH_AGENTS_DIR="$HOME/Library/LaunchAgents"
 PLIST_DIR="$SCRIPT_DIR/launchd"
 

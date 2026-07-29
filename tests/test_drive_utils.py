@@ -3,7 +3,7 @@ import sys
 import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from drive_utils import build_folder_resolver
+from geobingan_sync.drive_utils import build_folder_resolver
 
 
 class TestBuildFolderResolver:

@@ -159,39 +159,30 @@ done
 
 iCloud Drive `Desktop & Documents` 同步是 macOS 預設開啟的、會把 `~/Documents` 整棵樹接管成 FileProvider domain。任何放在裡面的 git repo / venv / 大量小檔案，都會踩到本案的 silent FileProvider throttle。**正確位置 = `~/Developer/` / `~/Code/` / `~/src/` 等不在 iCloud sync root 下的目錄**。
 
-## 模組依賴關係
+## 模組依賴關係（#72 restructure 後）
 
 ```
-run_weekly_sync.sh（orchestrator）
-├── sync_permits.py
-│   ├── city_config.py → cities.json    ← 多城市配置
-│   ├── config.py → .env
-│   └── drive_utils.py                  ← 共用 Drive 掃描
-│
-├── upload_pdfs.py
-│   ├── config.py → .env
-│   ├── jwt_auth.py                     ← 共用 JWT 管理（auto-rotate refresh token）
-│   └── filename_date_parser.py         ← 共用日期解析
-│
-├── match_permits.py
-│   ├── config.py → .env
-│   ├── jwt_auth.py
-│   ├── permit_utils.py                 ← normalize_permit + 名稱提取
-│   ├── drive_utils.py                  ← 共用 Drive 掃描
-│   └── requests.Session                ← API 連線池（TCP/TLS 重用）
-│
-├── generate_permit_tracking_report.py（資料收集 + main）
-│   ├── config.py → .env
-│   ├── jwt_auth.py
-│   ├── permit_utils.py                 ← normalize_permit
-│   ├── drive_utils.py                  ← 共用 Drive 掃描
-│   ├── report_template.py             ← HTML/CSV 報告模板
-│   └── requests.Session                ← API 連線池
-│
-└── generate_weekly_report.py
-    ├── state/permit_registry.json
-    └── Chrome headless（PDF 渲染）
+根目錄（launchd 進入點，路徑不變）
+├── run_weekly_sync.sh / run_friday_report.sh / health_check.py
+├── geobingan_sync/                  ← 共用模組 package
+│   ├── config.py → .env（REPO_ROOT/.env）
+│   ├── city_config.py → data/cities.json
+│   ├── drive_utils.py（paginate_files_list 共用翻頁+retry）
+│   ├── jwt_auth.py / notify.py / permit_utils.py
+│   ├── filename_date_parser.py / sync_status.py / report_template.py
+│   ├── analyze_decline.py（被 weekly_snapshot import，故在 package 內）
+│   └── steps/                       ← pipeline 步驟（shell 以 python3 -m 呼叫）
+│       ├── sync_permits.py / upload_pdfs.py / match_permits.py
+│       ├── generate_permit_tracking_report.py / generate_weekly_report.py
+│       └── record_sync_result.py / network_ready.py / weekly_snapshot.py
+├── tools/cleanup_stale_folders.py   ← 一次性維運工具
+├── setup/                           ← setup_launchd / setup_cron / uninstall_launchd
+└── data/cities.json
 ```
+
+呼叫方式：`python3 -m geobingan_sync.steps.<step>`（CWD＝repo root，
+`./state`、`./logs` 相對路徑不變；credentials/.env/cities.json 以
+`geobingan_sync.REPO_ROOT` 定位、不依賴 CWD）。
 
 ### 獨立可測試模組（零外部服務依賴）
 

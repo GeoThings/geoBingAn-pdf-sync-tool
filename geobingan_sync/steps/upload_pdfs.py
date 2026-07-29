@@ -11,6 +11,7 @@
 6. 【新增】JWT Token 自動刷新
 """
 import json
+from geobingan_sync import REPO_ROOT
 import os
 import sys
 import io
@@ -26,11 +27,11 @@ from googleapiclient.http import MediaIoBaseDownload
 from typing import Dict, List, Optional
 import threading
 import re
-from jwt_auth import decode_jwt_payload, is_token_expired, refresh_access_token, get_valid_token
+from geobingan_sync.jwt_auth import decode_jwt_payload, is_token_expired, refresh_access_token, get_valid_token
 
 # 匯入配置檔案
 try:
-    from config import (
+    from geobingan_sync.config import (
         JWT_TOKEN,
         USER_EMAIL,
         GROUP_ID,
@@ -42,14 +43,14 @@ try:
         MAX_UPLOADS
     )
     try:
-        from config import SHARED_DRIVE_ID
+        from geobingan_sync.config import SHARED_DRIVE_ID
     except ImportError:
         SHARED_DRIVE_ID = os.environ.get('SHARED_DRIVE_ID', '0AIvp1h-6BZ1oUk9PVA')
     print(f"✅ 已載入認證配置（用戶: {USER_EMAIL}）", flush=True)
 except ImportError as e:
     print("❌ 找不到 config.py 或缺少必要設定")
     print(f"   錯誤: {e}")
-    print("   請參考 config.py.example 建立 config.py")
+    print("   請參考 geobingan_sync/config.py.example 建立 geobingan_sync/config.py")
     sys.exit(1)
 
 # 全域變數：當前使用的 Token
@@ -59,7 +60,7 @@ current_access_token = JWT_TOKEN
 # Google Drive 認證
 SERVICE_ACCOUNT_FILE = os.environ.get(
     'GOOGLE_CREDENTIALS',
-    os.path.join(os.path.dirname(__file__), 'credentials.json')
+    str(REPO_ROOT / 'credentials.json')
 )
 SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
 
@@ -107,7 +108,7 @@ def update_config_token(new_token: str, new_refresh_token: str = None):
     更新 .env 中的 JWT_TOKEN 和 REFRESH_TOKEN（透過 config 模組）
     """
     try:
-        from config import update_jwt_token
+        from geobingan_sync.config import update_jwt_token
         update_jwt_token(new_token, new_refresh_token)
         print(f"📝 已更新 .env 中的 Token", flush=True)
     except Exception as e:
@@ -310,7 +311,7 @@ def list_all_folders(service) -> List[Dict]:
     曾因未翻頁截斷資料夾列表，導致 758 個資料夾內的 PDF 被靜默漏傳（#65）。
     翻頁與 429/5xx 重試統一走 drive_utils.paginate_files_list（#67）。
     """
-    from drive_utils import paginate_files_list
+    from geobingan_sync.drive_utils import paginate_files_list
     return paginate_files_list(
         service,
         q="mimeType = 'application/vnd.google-apps.folder' and trashed = false",
@@ -409,7 +410,7 @@ def list_all_pdfs_with_folder_info(service, folders: List[Dict]) -> List[Dict]:
                     print(f"    回退進度: {idx}/{len(folders)} 個資料夾...")
                 try:
                     # 完整翻頁（#67）：單一建案資料夾 >1000 份 PDF 時不可截斷
-                    from drive_utils import paginate_files_list
+                    from geobingan_sync.drive_utils import paginate_files_list
                     fallback_query = (
                         f"'{folder['id']}' in parents and "
                         f"mimeType = 'application/pdf' and trashed = false"
@@ -693,7 +694,7 @@ def select_pdfs_to_upload(all_pdfs: List[Dict], uploaded_files, *, cutoff: datet
         dup_skipped（run 內去重跳過的 unique_id 清單，供 operator 分辨
         良性同名重複 vs 真同名撞檔）。
     """
-    from filename_date_parser import parse_date_from_filename
+    from geobingan_sync.filename_date_parser import parse_date_from_filename
 
     def _filename_date(pdf):
         d = parse_date_from_filename(pdf.get('name', ''))
@@ -894,7 +895,7 @@ def main(city: dict = None, catchup_days: int = None):
 
 if __name__ == '__main__':
     import argparse
-    from city_config import get_cities_for_cli
+    from geobingan_sync.city_config import get_cities_for_cli
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--city', default=None, help='City ID or "all"')

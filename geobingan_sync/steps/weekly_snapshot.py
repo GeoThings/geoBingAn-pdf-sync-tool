@@ -162,7 +162,7 @@ def notify_new_permits(diff):
 
     # LINE Notify
     try:
-        from notify import send_notification
+        from geobingan_sync.notify import send_notification
         send_notification(f'🆕 geoBingAn 新增 {count} 個建案', message)
         print(f"  通知已發送（{count} 個新建案）")
     except Exception as e:
@@ -171,7 +171,7 @@ def notify_new_permits(diff):
     # ClickUp comment
     try:
         import requests
-        from config import CLICKUP_TOKEN as clickup_token
+        from geobingan_sync.config import CLICKUP_TOKEN as clickup_token
         if not clickup_token:
             return
         requests.post(
@@ -187,7 +187,7 @@ def notify_new_permits(diff):
 def _bin_pdfs_by_report_month(pdfs):
     """從檔名解析報告日期，依年月計數。"""
     from collections import Counter
-    from filename_date_parser import parse_date_from_filename
+    from geobingan_sync.filename_date_parser import parse_date_from_filename
     by_month = Counter()
     for p in pdfs:
         dt = parse_date_from_filename(p.get('name', ''))
@@ -256,7 +256,7 @@ def check_monthly_activity_trend(notify: bool = False):
 
     # 自動帶上候選工地（前月活躍、本月歸零），讓告警一觸發就有可調查的對象
     try:
-        from analyze_decline import find_decline_candidates, format_candidates, load_pdfs
+        from geobingan_sync.analyze_decline import find_decline_candidates, format_candidates, load_pdfs
         analyzer_pdfs = load_pdfs()
         if analyzer_pdfs:
             candidates = find_decline_candidates(analyzer_pdfs, last_y, last_m, top=5)
@@ -268,7 +268,7 @@ def check_monthly_activity_trend(notify: bool = False):
 
     if notify:
         try:
-            from notify import send_notification
+            from geobingan_sync.notify import send_notification
             send_notification(
                 f'⚠️ {last_label} 監測報告下滑 {drop_pct:.0f}%',
                 msg,

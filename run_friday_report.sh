@@ -30,7 +30,7 @@ fi
 source "$SCRIPT_DIR/venv/bin/activate"
 
 # 產生總結週報並上傳
-if python3 "$SCRIPT_DIR/generate_weekly_report.py" --type summary --upload 2>&1 | tee -a "$LOG_FILE"; then
+if python3 -m geobingan_sync.steps.generate_weekly_report --type summary --upload 2>&1 | tee -a "$LOG_FILE"; then
     echo "" | tee -a "$LOG_FILE"
     echo "✅ 總結週報已產生並上傳到 ClickUp" | tee -a "$LOG_FILE"
 else

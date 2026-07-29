@@ -8,7 +8,7 @@ import os
 from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from filename_date_parser import parse_date_from_filename, FILENAME_DATE_CUTOFF
+from geobingan_sync.filename_date_parser import parse_date_from_filename, FILENAME_DATE_CUTOFF
 
 
 class TestROCYear7Digits:

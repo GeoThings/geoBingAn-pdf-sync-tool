@@ -32,7 +32,7 @@ load_dotenv()
 
 def check_token():
     """檢查 JWT Token 有效期"""
-    from jwt_auth import decode_jwt_payload
+    from geobingan_sync.jwt_auth import decode_jwt_payload
     refresh = os.getenv('REFRESH_TOKEN', '')
     if not refresh:
         return 'error', 'REFRESH_TOKEN 未設定'
@@ -191,7 +191,7 @@ def main():
         print(f"⚠️  {len(issues)} 個問題需要關注")
         if args.notify:
             try:
-                from notify import send_notification
+                from geobingan_sync.notify import send_notification
                 send_notification(
                     f'⚠️ geoBingAn 健康檢查: {len(issues)} 個問題',
                     '\n'.join(issues),

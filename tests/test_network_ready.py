@@ -3,7 +3,7 @@ import sys
 import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from network_ready import hosts_from_cities, wait_for_dns
+from geobingan_sync.steps.network_ready import hosts_from_cities, wait_for_dns
 
 
 class TestHostsFromCities:

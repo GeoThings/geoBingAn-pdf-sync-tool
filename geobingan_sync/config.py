@@ -14,7 +14,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 # 載入 .env 檔案
-env_path = Path(__file__).parent / '.env'
+from geobingan_sync import REPO_ROOT
+env_path = REPO_ROOT / '.env'
 load_dotenv(env_path)
 
 # JWT Token（會自動刷新）

@@ -85,7 +85,7 @@ cleanup() {
     echo "📝 記錄執行結果..." | tee -a "$LOG_FILE"
 
     # 使用獨立的 Python 腳本處理通知和狀態記錄
-    python3 "$SCRIPT_DIR/record_sync_result.py" 2>&1 | tee -a "$LOG_FILE" || true
+    python3 -m geobingan_sync.steps.record_sync_result 2>&1 | tee -a "$LOG_FILE" || true
 
     # 完成訊息
     echo "" | tee -a "$LOG_FILE"
@@ -135,7 +135,7 @@ python3 -m compileall -q -x 'venv|__pycache__|\.git' "$SCRIPT_DIR" 2>/dev/null |
 
 # 記錄開始執行
 python3 -c "
-from sync_status import SyncStatus
+from geobingan_sync.sync_status import SyncStatus
 status = SyncStatus()
 status.start_run()
 " 2>&1 | tee -a "$LOG_FILE"
@@ -146,8 +146,8 @@ echo "🔑 檢查 Token 有效期..." | tee -a "$LOG_FILE"
 # 暫時關閉 errexit 以取得 Python exit code（非零不代表腳本錯誤）
 set +e
 TOKEN_CHECK=$(python3 -c "
-from jwt_auth import decode_jwt_payload
-from config import REFRESH_TOKEN
+from geobingan_sync.jwt_auth import decode_jwt_payload
+from geobingan_sync.config import REFRESH_TOKEN
 import time, sys
 payload = decode_jwt_payload(REFRESH_TOKEN)
 exp = payload.get('exp', 0)
@@ -169,7 +169,7 @@ if [ $TOKEN_EXIT -eq 2 ]; then
     DAYS=$(echo "$TOKEN_CHECK" | grep -o '[0-9.]*')
     echo "❌ Refresh Token 已過期 ${DAYS} 天，請登入 riskmap.today 更新" | tee -a "$LOG_FILE"
     python3 -c "
-from notify import send_notification
+from geobingan_sync.notify import send_notification
 send_notification('❌ geoBingAn Token 已過期', 'Refresh Token 已過期，請登入 riskmap.today 取得新 Token 並更新 .env')
 " 2>&1 | tee -a "$LOG_FILE" || true
     handle_error "Token 檢查" "Refresh Token 已過期"
@@ -178,7 +178,7 @@ elif [ $TOKEN_EXIT -eq 1 ]; then
     DAYS=$(echo "$TOKEN_CHECK" | grep -o '[0-9.]*')
     echo "⚠️  Refresh Token 將在 ${DAYS} 天後過期，請儘快更新" | tee -a "$LOG_FILE"
     python3 -c "
-from notify import send_notification
+from geobingan_sync.notify import send_notification
 send_notification('⚠️ geoBingAn Token 即將過期', 'Refresh Token 將在 ${DAYS} 天後過期，請登入 riskmap.today 更新 .env 中的 Token')
 " 2>&1 | tee -a "$LOG_FILE" || true
     echo "   繼續執行同步流程..." | tee -a "$LOG_FILE"
@@ -191,7 +191,7 @@ fi
 # 即使逾時也只記警告、不 abort（交由步驟 1 既有錯誤處理）
 echo "" | tee -a "$LOG_FILE"
 set +e
-python3 "$SCRIPT_DIR/network_ready.py" 2>&1 | tee -a "$LOG_FILE"
+python3 -m geobingan_sync.steps.network_ready 2>&1 | tee -a "$LOG_FILE"
 set -e
 
 # 步驟 1: 同步 PDF 從台北市政府到 Google Drive
@@ -199,7 +199,7 @@ STEP1_FAILED=0
 echo "" | tee -a "$LOG_FILE"
 echo "📥 步驟 1/4: 同步 PDF 從台北市政府網站..." | tee -a "$LOG_FILE"
 echo "----------------------------------------" | tee -a "$LOG_FILE"
-if ! python3 "$SCRIPT_DIR/sync_permits.py" 2>&1 | tee -a "$LOG_FILE"; then
+if ! python3 -m geobingan_sync.steps.sync_permits 2>&1 | tee -a "$LOG_FILE"; then
     handle_error "步驟1" "同步 PDF 失敗"
     STEP1_FAILED=1
 fi
@@ -227,7 +227,7 @@ else
     echo "" | tee -a "$LOG_FILE"
     echo "📤 步驟 2/4: 上傳最近 7 天的 PDF 到 Backend..." | tee -a "$LOG_FILE"
     echo "----------------------------------------" | tee -a "$LOG_FILE"
-    if ! python3 "$SCRIPT_DIR/upload_pdfs.py" 2>&1 | tee -a "$LOG_FILE"; then
+    if ! python3 -m geobingan_sync.steps.upload_pdfs 2>&1 | tee -a "$LOG_FILE"; then
         handle_error "步驟2" "上傳 PDF 失敗"
         STEP2_FAILED=1
     fi
@@ -244,14 +244,14 @@ FAILED_COUNT=$(grep -c "上傳失敗" "$LOG_FILE" 2>/dev/null | head -1 | tr -d 
 echo "" | tee -a "$LOG_FILE"
 echo "🔍 步驟 2.5: 建案名稱交叉比對..." | tee -a "$LOG_FILE"
 echo "----------------------------------------" | tee -a "$LOG_FILE"
-if ! python3 "$SCRIPT_DIR/match_permits.py" 2>&1 | tee -a "$LOG_FILE"; then
+if ! python3 -m geobingan_sync.steps.match_permits 2>&1 | tee -a "$LOG_FILE"; then
     echo "⚠️  名稱比對失敗，使用現有 registry 繼續" | tee -a "$LOG_FILE"
 fi
 
 # 儲存快照 + 偵測新建案
 echo "" | tee -a "$LOG_FILE"
 echo "📸 儲存快照 + 偵測新建案..." | tee -a "$LOG_FILE"
-python3 "$SCRIPT_DIR/weekly_snapshot.py" --notify 2>&1 | tee -a "$LOG_FILE" || true
+python3 -m geobingan_sync.steps.weekly_snapshot --notify 2>&1 | tee -a "$LOG_FILE" || true
 
 # 步驟 3: 生成建照監測追蹤報告
 # 如果步驟 2 失敗，跳過報告生成（會使用不完整的資料）
@@ -262,7 +262,7 @@ else
 echo "" | tee -a "$LOG_FILE"
 echo "📊 步驟 3/6: 生成建照監測追蹤報告..." | tee -a "$LOG_FILE"
 echo "----------------------------------------" | tee -a "$LOG_FILE"
-if ! python3 "$SCRIPT_DIR/generate_permit_tracking_report.py" 2>&1 | tee -a "$LOG_FILE"; then
+if ! python3 -m geobingan_sync.steps.generate_permit_tracking_report 2>&1 | tee -a "$LOG_FILE"; then
     handle_error "步驟3" "生成報告失敗"
 fi
 fi  # end STEP2_FAILED check
@@ -310,7 +310,7 @@ echo "" | tee -a "$LOG_FILE"
 if [ "$WEEKDAY" = "1" ]; then
     echo "📄 步驟 5/5: 產生 sync 週報 PDF（週一例行）..." | tee -a "$LOG_FILE"
     echo "----------------------------------------" | tee -a "$LOG_FILE"
-    if python3 "$SCRIPT_DIR/generate_weekly_report.py" --type sync --upload 2>&1 | tee -a "$LOG_FILE"; then
+    if python3 -m geobingan_sync.steps.generate_weekly_report --type sync --upload 2>&1 | tee -a "$LOG_FILE"; then
         echo "✅ 週報已上傳到 ClickUp" | tee -a "$LOG_FILE"
     else
         echo "⚠️  週報產生或上傳失敗（不影響同步結果）" | tee -a "$LOG_FILE"

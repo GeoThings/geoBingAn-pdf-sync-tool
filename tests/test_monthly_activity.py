@@ -8,7 +8,7 @@ import sys
 from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from weekly_snapshot import _bin_pdfs_by_report_month, _months_back
+from geobingan_sync.steps.weekly_snapshot import _bin_pdfs_by_report_month, _months_back
 
 
 class TestMonthsBack:

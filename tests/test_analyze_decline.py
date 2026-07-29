@@ -3,7 +3,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from analyze_decline import _is_real_site, _months_back, find_decline_candidates
+from geobingan_sync.analyze_decline import _is_real_site, _months_back, find_decline_candidates
 
 
 class TestMonthsBack:

@@ -18,7 +18,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 # ClickUp
-from config import CLICKUP_TOKEN
+from geobingan_sync.config import CLICKUP_TOKEN
 WEEKLY_REPORT_TASK_ID = '86ex8u782'
 
 STATE_DIR = './state'
@@ -378,7 +378,7 @@ def main():
 
     # 儲存快照並取得趨勢
     try:
-        from weekly_snapshot import save_snapshot, get_previous_snapshot, compute_diff
+        from geobingan_sync.steps.weekly_snapshot import save_snapshot, get_previous_snapshot, compute_diff
         current_snap = save_snapshot()
         previous_snap = get_previous_snapshot()
         trend = compute_diff(current_snap, previous_snap)
