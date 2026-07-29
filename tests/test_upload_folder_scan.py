@@ -10,8 +10,8 @@ import sys
 import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import upload_pdfs
-from upload_pdfs import list_all_folders, list_all_pdfs_with_folder_info
+from geobingan_sync.steps import upload_pdfs
+from geobingan_sync.steps.upload_pdfs import list_all_folders, list_all_pdfs_with_folder_info
 
 
 class _FakeFilesApi:

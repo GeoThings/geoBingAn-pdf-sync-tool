@@ -22,7 +22,7 @@
 
 ```bash
 # 一鍵安裝（自動移除舊 cron + 安裝 launchd）
-./setup_launchd.sh
+./setup/setup_launchd.sh
 ```
 
 ---
@@ -33,12 +33,12 @@
 
 | 步驟 | 腳本 | 說明 | 失敗行為 |
 |------|------|------|----------|
-| 1 | `sync_permits.py` | 同步 PDF 到 Google Drive（5 thread 並行） | 跳過步驟 2-3 |
-| 2 | `upload_pdfs.py` | 上傳農曆新年後的 PDF 到究平安 | 跳過步驟 3 |
-| 2.5 | `match_permits.py` | 建案名稱交叉比對（6 來源） | 使用現有 registry |
-| 3 | `generate_permit_tracking_report.py` | 生成追蹤報告 HTML/CSV | 繼續步驟 4 |
+| 1 | `geobingan_sync/steps/sync_permits.py` | 同步 PDF 到 Google Drive（5 thread 並行） | 跳過步驟 2-3 |
+| 2 | `geobingan_sync/steps/upload_pdfs.py` | 上傳農曆新年後的 PDF 到究平安 | 跳過步驟 3 |
+| 2.5 | `geobingan_sync/steps/match_permits.py` | 建案名稱交叉比對（6 來源） | 使用現有 registry |
+| 3 | `geobingan_sync/steps/generate_permit_tracking_report.py` | 生成追蹤報告 HTML/CSV | 繼續步驟 4 |
 | 4 | `git push` | 推送報告到 GitHub | — |
-| 5 | `generate_weekly_report.py` | 週報 PDF → ClickUp | 不影響同步 |
+| 5 | `geobingan_sync/steps/generate_weekly_report.py` | 週報 PDF → ClickUp | 不影響同步 |
 
 ---
 
@@ -70,7 +70,7 @@ launchctl kickstart gui/$(id -u)/com.geothings.geobingan.weeklysync
 launchctl kickstart gui/$(id -u)/com.geothings.geobingan.healthcheck
 
 # 卸載全部排程
-./uninstall_launchd.sh
+./setup/uninstall_launchd.sh
 ```
 
 ---
@@ -108,8 +108,8 @@ cat logs/launchd_weeklysync_err.log
 
 ```bash
 # 暫停（卸載）
-./uninstall_launchd.sh
+./setup/uninstall_launchd.sh
 
 # 恢復（重新安裝）
-./setup_launchd.sh
+./setup/setup_launchd.sh
 ```

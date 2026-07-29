@@ -11,7 +11,7 @@ import time
 from unittest.mock import patch, MagicMock
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from jwt_auth import decode_jwt_payload, is_token_expired, refresh_access_token, get_valid_token
+from geobingan_sync.jwt_auth import decode_jwt_payload, is_token_expired, refresh_access_token, get_valid_token
 
 
 def _make_jwt(payload: dict) -> str:
@@ -78,7 +78,7 @@ class TestIsTokenExpired:
 
 
 class TestRefreshAccessToken:
-    @patch('jwt_auth.requests.post')
+    @patch('geobingan_sync.jwt_auth.requests.post')
     def test_success_with_access_key(self, mock_post):
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -90,7 +90,7 @@ class TestRefreshAccessToken:
         assert refresh is None
         mock_post.assert_called_once()
 
-    @patch('jwt_auth.requests.post')
+    @patch('geobingan_sync.jwt_auth.requests.post')
     def test_success_with_access_token_key(self, mock_post):
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -100,7 +100,7 @@ class TestRefreshAccessToken:
         access, refresh = refresh_access_token("refresh_tok", "https://example.com/refresh")
         assert access == "new_token_456"
 
-    @patch('jwt_auth.requests.post')
+    @patch('geobingan_sync.jwt_auth.requests.post')
     def test_success_with_both_tokens(self, mock_post):
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -111,7 +111,7 @@ class TestRefreshAccessToken:
         assert access == "new_access"
         assert refresh == "new_refresh"
 
-    @patch('jwt_auth.requests.post')
+    @patch('geobingan_sync.jwt_auth.requests.post')
     def test_failure_status_code(self, mock_post):
         mock_response = MagicMock()
         mock_response.status_code = 401
@@ -122,7 +122,7 @@ class TestRefreshAccessToken:
         assert access is None
         assert refresh is None
 
-    @patch('jwt_auth.requests.post')
+    @patch('geobingan_sync.jwt_auth.requests.post')
     def test_network_error(self, mock_post):
         mock_post.side_effect = Exception("Connection refused")
 
@@ -130,7 +130,7 @@ class TestRefreshAccessToken:
         assert access is None
         assert refresh is None
 
-    @patch('jwt_auth.requests.post')
+    @patch('geobingan_sync.jwt_auth.requests.post')
     def test_missing_token_in_response(self, mock_post):
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -151,7 +151,7 @@ class TestGetValidToken:
         assert was_refreshed is False
         assert new_refresh is None
 
-    @patch('jwt_auth.refresh_access_token')
+    @patch('geobingan_sync.jwt_auth.refresh_access_token')
     def test_expired_token_refreshed(self, mock_refresh):
         past_exp = int(time.time()) - 100
         old_token = _make_jwt({"exp": past_exp})
@@ -163,7 +163,7 @@ class TestGetValidToken:
         assert new_refresh == "fresh_refresh"
         mock_refresh.assert_called_once_with("refresh", "https://example.com/refresh")
 
-    @patch('jwt_auth.refresh_access_token')
+    @patch('geobingan_sync.jwt_auth.refresh_access_token')
     def test_expired_token_refresh_fails(self, mock_refresh):
         past_exp = int(time.time()) - 100
         old_token = _make_jwt({"exp": past_exp})

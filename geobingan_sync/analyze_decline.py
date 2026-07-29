@@ -6,9 +6,9 @@
 不用人再手寫 query。
 
 也可獨立 CLI 跑：
-    python3 analyze_decline.py                 # 對上一個完整月份分析
-    python3 analyze_decline.py --month 2026-04 # 指定月份
-    python3 analyze_decline.py --top 10        # 顯示前 10 名
+    python3 -m geobingan_sync.analyze_decline                 # 對上一個完整月份分析
+    python3 -m geobingan_sync.analyze_decline --month 2026-04 # 指定月份
+    python3 -m geobingan_sync.analyze_decline --top 10        # 顯示前 10 名
 """
 import argparse
 import json
@@ -19,8 +19,9 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-DRIVE_CACHE_FILE = Path(__file__).parent / 'state' / 'uploaded_to_geobingan_7days.json'  # legacy fallback
-PDF_INVENTORY_FILE = Path(__file__).parent / 'state' / 'pdf_inventory.json'
+from geobingan_sync import REPO_ROOT
+DRIVE_CACHE_FILE = REPO_ROOT / 'state' / 'uploaded_to_geobingan_7days.json'  # legacy fallback
+PDF_INVENTORY_FILE = REPO_ROOT / 'state' / 'pdf_inventory.json'
 
 # 真工地名稱必含的關鍵字（過濾「2026年03月」、「115年1月」這類時間分類資料夾）
 SITE_NAME_KEYWORDS = re.compile(r'(建字|工程|新建|工地|大樓|社區|觀測|監測|案|場)')
@@ -46,7 +47,7 @@ def _is_real_site(folder_name: str) -> bool:
 
 def _parse_filename_date(name: str, folder: str = ''):
     """共用 parser：先檔名，再 folder + 檔名 fallback。"""
-    from filename_date_parser import parse_date_from_filename
+    from geobingan_sync.filename_date_parser import parse_date_from_filename
     d = parse_date_from_filename(name)
     if d is None and folder:
         d = parse_date_from_filename(folder + '/' + name)

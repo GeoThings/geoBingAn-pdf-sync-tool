@@ -19,8 +19,8 @@ import sys
 # 確保可以 import 同目錄的模組
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from sync_status import SyncStatus
-from notify import send_success, send_failure
+from geobingan_sync.sync_status import SyncStatus
+from geobingan_sync.notify import send_success, send_failure
 
 
 def main():

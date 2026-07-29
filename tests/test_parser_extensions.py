@@ -7,7 +7,7 @@ import sys
 from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from filename_date_parser import _month_end, parse_date_from_filename
+from geobingan_sync.filename_date_parser import _month_end, parse_date_from_filename
 
 
 class TestMonthEnd:

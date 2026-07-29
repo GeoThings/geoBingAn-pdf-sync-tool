@@ -8,7 +8,7 @@ import os
 import tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from report_template import generate_html_report, generate_csv_report
+from geobingan_sync.report_template import generate_html_report, generate_csv_report
 
 
 def _sample_permit_data():

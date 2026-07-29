@@ -4,7 +4,7 @@ import os
 import tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from sync_permits import PermitSync
+from geobingan_sync.steps.sync_permits import PermitSync
 
 
 def _write_csv(tmpdir, content):

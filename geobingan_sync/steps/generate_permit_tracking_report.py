@@ -9,6 +9,7 @@
 4. 生成 HTML 互動報告和 CSV 匯出檔
 """
 import csv
+from geobingan_sync import REPO_ROOT
 import json
 import os
 import re
@@ -25,15 +26,15 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 import pypdf
-from jwt_auth import get_valid_token as _jwt_get_valid_token
-from permit_utils import extract_name_from_filename
-from report_template import generate_html_report, generate_csv_report
+from geobingan_sync.jwt_auth import get_valid_token as _jwt_get_valid_token
+from geobingan_sync.permit_utils import extract_name_from_filename
+from geobingan_sync.report_template import generate_html_report, generate_csv_report
 
 import warnings
 
 # 匯入配置
 try:
-    from config import (
+    from geobingan_sync.config import (
         JWT_TOKEN,
         USER_EMAIL,
         GROUP_ID,
@@ -41,7 +42,7 @@ try:
         GEOBINGAN_REFRESH_URL
     )
     try:
-        from config import SHARED_DRIVE_ID
+        from geobingan_sync.config import SHARED_DRIVE_ID
     except ImportError:
         SHARED_DRIVE_ID = os.environ.get('SHARED_DRIVE_ID', '0AIvp1h-6BZ1oUk9PVA')
     print(f"✅ 已載入認證配置（用戶: {USER_EMAIL}）")
@@ -52,7 +53,7 @@ except ImportError as e:
 # ================== 設定區域 ==================
 SERVICE_ACCOUNT_FILE = os.environ.get(
     'GOOGLE_CREDENTIALS',
-    os.path.join(os.path.dirname(__file__), 'credentials.json')
+    str(REPO_ROOT / 'credentials.json')
 )
 SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
 PDF_LIST_URL_DEFAULT = 'https://www-ws.gov.taipei/001/Upload/845/relfile/-1/845/03b35db7-a123-4b29-b881-1cb17fa9c4f2.pdf'
@@ -83,7 +84,7 @@ def get_valid_token() -> str:
     if was_refreshed:
         current_access_token = valid_token
         try:
-            from config import update_jwt_token
+            from geobingan_sync.config import update_jwt_token
             update_jwt_token(valid_token, new_refresh)
         except Exception as e:
             print(f"⚠️  無法更新 .env Token: {e}")
@@ -101,14 +102,14 @@ def scan_google_drive(service) -> Dict[str, dict]:
     """掃描 Google Drive 取得所有建照資料夾"""
     print("\n📂 掃描 Google Drive 建照資料夾...")
 
-    from drive_utils import list_top_level_folders, list_all_subfolders, build_folder_resolver
+    from geobingan_sync.drive_utils import list_top_level_folders, list_all_subfolders, build_folder_resolver
 
     raw_folders = list_top_level_folders(
         service, SHARED_DRIVE_ID,
         fields='nextPageToken, files(id, name, modifiedTime)'
     )
 
-    from permit_utils import normalize_permit as _normalize
+    from geobingan_sync.permit_utils import normalize_permit as _normalize
     permit_folders = {}
     for folder in raw_folders:
         permit_num = _normalize(folder['name'])
@@ -853,7 +854,7 @@ def main(city: dict = None):
         n_404 = sum(1 for s in gov_url_statuses.values() if s == '404')
         print(f"  從 permit_registry 載入 {len(permit_names)} 個建案名稱，{len(alert_data)} 個有即時警戒值，{n_404} 個 URL 失效")
     else:
-        print("  ⚠️ permit_registry.json 不存在，請先執行 python3 match_permits.py")
+        print("  ⚠️ permit_registry.json 不存在，請先執行 python3 -m geobingan_sync.steps.match_permits")
         registry = {}
 
     # 5b. 補充：從 upload_history 提取名稱（permit_registry 沒涵蓋的）
@@ -898,7 +899,7 @@ def main(city: dict = None):
 
 if __name__ == '__main__':
     import argparse
-    from city_config import get_cities_for_cli
+    from geobingan_sync.city_config import get_cities_for_cli
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--city', default=None, help='City ID or "all"')

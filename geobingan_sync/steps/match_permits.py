@@ -26,14 +26,14 @@ from collections import Counter
 
 # 載入設定
 try:
-    from config import (JWT_TOKEN, REFRESH_TOKEN, GEOBINGAN_REFRESH_URL,
+    from geobingan_sync.config import (JWT_TOKEN, REFRESH_TOKEN, GEOBINGAN_REFRESH_URL,
                         GROUP_ID, SHARED_DRIVE_ID)
 except ImportError:
     print("❌ 需要 config.py")
     sys.exit(1)
 
-from jwt_auth import get_valid_token
-from filename_date_parser import parse_date_from_filename
+from geobingan_sync.jwt_auth import get_valid_token
+from geobingan_sync.filename_date_parser import parse_date_from_filename
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
@@ -48,7 +48,7 @@ def get_api_token():
     if was_refreshed:
         JWT_TOKEN = token
         try:
-            from config import update_jwt_token
+            from geobingan_sync.config import update_jwt_token
             update_jwt_token(token, new_refresh)
         except Exception as e:
             print(f"⚠️  無法更新 .env Token: {e}")
@@ -62,7 +62,7 @@ def load_existing_registry() -> dict:
     return {}
 
 
-from permit_utils import normalize_permit
+from geobingan_sync.permit_utils import normalize_permit
 
 
 def extract_name_from_text(text: str) -> str:
@@ -85,7 +85,7 @@ def extract_name_from_text(text: str) -> str:
 def fetch_gov_pdf_data(city: dict = None) -> Dict[str, dict]:
     """從政府 PDF 取得建照號碼 + 承造人/監造人"""
     print("📄 來源 1: 政府 PDF...")
-    from sync_permits import PermitSync
+    from geobingan_sync.steps.sync_permits import PermitSync
     ps = PermitSync(city=city)
     pdf_path = ps.download_pdf_list()
     mapping = ps.parse_pdf_list(pdf_path)
@@ -156,7 +156,7 @@ def fetch_drive_pdf_names(drive_service) -> Dict[str, dict]:
     """批次掃描 Shared Drive 所有 PDF，提取建案名稱"""
     print("📁 來源 3: Drive PDF 檔名...")
 
-    from drive_utils import list_top_level_folders, list_all_subfolders, build_folder_resolver
+    from geobingan_sync.drive_utils import list_top_level_folders, list_all_subfolders, build_folder_resolver
 
     # 頂層資料夾 ID → 建照號碼
     raw_folders = list_top_level_folders(drive_service, SHARED_DRIVE_ID)
@@ -203,7 +203,7 @@ def fetch_drive_pdf_names(drive_service) -> Dict[str, dict]:
             break
 
     # 從檔名提取名稱（投票制：最常出現的名稱）
-    from permit_utils import extract_name_from_filename
+    from geobingan_sync.permit_utils import extract_name_from_filename
     names = {}
     for permit, files in permit_files.items():
         counts = Counter()
@@ -673,7 +673,7 @@ def _write_url_404_csv(registry: dict):
 
 if __name__ == '__main__':
     import argparse
-    from city_config import get_cities_for_cli
+    from geobingan_sync.city_config import get_cities_for_cli
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--city', default=None, help='City ID or "all"')

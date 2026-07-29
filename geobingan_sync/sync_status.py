@@ -8,7 +8,7 @@
 - 保存執行歷史
 
 使用方式：
-    from sync_status import SyncStatus
+    from geobingan_sync.sync_status import SyncStatus
 
     status = SyncStatus()
     status.start_run()
@@ -68,7 +68,8 @@ class SyncStatus:
         if state_dir:
             self.state_dir = Path(state_dir)
         else:
-            self.state_dir = Path(__file__).parent / 'state'
+            from geobingan_sync import REPO_ROOT
+            self.state_dir = REPO_ROOT / 'state'
 
         self.state_dir.mkdir(exist_ok=True)
         self.status_file = self.state_dir / 'sync_status.json'

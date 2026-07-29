@@ -14,7 +14,7 @@ import time
 from urllib.parse import urlparse
 from typing import Callable, List, Tuple
 
-from city_config import get_enabled_cities
+from geobingan_sync.city_config import get_enabled_cities
 
 
 def hosts_from_cities() -> List[str]:

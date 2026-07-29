@@ -4,7 +4,8 @@
 # 磁碟修復後執行此腳本即可啟動全自動化
 #
 
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# repo root（本腳本位於 setup/ 子目錄）
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
 echo "🔧 設定 geoBingAn 自動化排程"
 echo "=========================================="

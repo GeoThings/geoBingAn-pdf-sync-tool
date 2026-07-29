@@ -8,7 +8,8 @@ import json
 import os
 from pathlib import Path
 
-_CITIES_FILE = Path(__file__).parent / 'cities.json'
+from geobingan_sync import REPO_ROOT
+_CITIES_FILE = REPO_ROOT / 'data' / 'cities.json'
 
 
 def load_cities() -> list:
@@ -29,7 +30,7 @@ def get_city(city_id: str) -> dict:
 
 def resolve_city(city: dict) -> dict:
     """Fill in blank shared_drive_id / group_id from .env defaults."""
-    from config import SHARED_DRIVE_ID, GROUP_ID
+    from geobingan_sync.config import SHARED_DRIVE_ID, GROUP_ID
     resolved = dict(city)
     if not resolved.get('shared_drive_id'):
         resolved['shared_drive_id'] = SHARED_DRIVE_ID

@@ -9,8 +9,8 @@ import os
 import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import sync_permits
-from sync_permits import PermitSync
+from geobingan_sync.steps import sync_permits
+from geobingan_sync.steps.sync_permits import PermitSync
 
 
 class _FakeResp:

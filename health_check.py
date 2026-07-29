@@ -32,7 +32,7 @@ load_dotenv()
 
 def check_token():
     """檢查 JWT Token 有效期"""
-    from jwt_auth import decode_jwt_payload
+    from geobingan_sync.jwt_auth import decode_jwt_payload
     refresh = os.getenv('REFRESH_TOKEN', '')
     if not refresh:
         return 'error', 'REFRESH_TOKEN 未設定'
@@ -58,8 +58,8 @@ def check_token():
 def check_pause():
     """偵測 .pause_upload 旗標並提醒暫停時長（stale-pause guard，呼應 #57 silent lock）。
 
-    ≥30 天升級 error：upload_pdfs.py 用 30 天檔名日期窗，暫停超過此窗、恢復時
-    落窗外的報告會被靜默漏掉，須 `upload_pdfs.py --catchup-days N` 補掃。
+    ≥30 天升級 error：python3 -m geobingan_sync.steps.upload_pdfs 用 30 天檔名日期窗，暫停超過此窗、恢復時
+    落窗外的報告會被靜默漏掉，須 `python3 -m geobingan_sync.steps.upload_pdfs --catchup-days N` 補掃。
     """
     flag = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.pause_upload')
     if not os.path.exists(flag):
@@ -67,7 +67,7 @@ def check_pause():
     days = (time.time() - os.path.getmtime(flag)) / 86400
     base = f'上傳已暫停 {days:.1f} 天（.pause_upload；恢復：rm .pause_upload）'
     if days >= 30:
-        return 'error', base + '；⚠️ 已超過 30 天檔名窗，恢復時須 upload_pdfs.py --catchup-days N 補掃避免漏報告'
+        return 'error', base + '；⚠️ 已超過 30 天檔名窗，恢復時須 python3 -m geobingan_sync.steps.upload_pdfs --catchup-days N 補掃避免漏報告'
     return 'warning', base
 
 
@@ -191,7 +191,7 @@ def main():
         print(f"⚠️  {len(issues)} 個問題需要關注")
         if args.notify:
             try:
-                from notify import send_notification
+                from geobingan_sync.notify import send_notification
                 send_notification(
                     f'⚠️ geoBingAn 健康檢查: {len(issues)} 個問題',
                     '\n'.join(issues),

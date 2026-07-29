@@ -6,7 +6,7 @@
 - macOS 系統通知
 
 使用方式：
-    from notify import send_notification, send_success, send_failure
+    from geobingan_sync.notify import send_notification, send_success, send_failure
 
     # 發送一般通知
     send_notification("同步完成", "已處理 100 個檔案")
@@ -24,7 +24,7 @@ from typing import Optional
 
 # 載入設定
 try:
-    from config import LINE_NOTIFY_TOKEN, ENABLE_MACOS_NOTIFY, CLICKUP_TOKEN, HEALTHCHECK_CLICKUP_TASK_ID
+    from geobingan_sync.config import LINE_NOTIFY_TOKEN, ENABLE_MACOS_NOTIFY, CLICKUP_TOKEN, HEALTHCHECK_CLICKUP_TASK_ID
 except ImportError:
     LINE_NOTIFY_TOKEN = os.environ.get('LINE_NOTIFY_TOKEN', '')
     ENABLE_MACOS_NOTIFY = os.environ.get('ENABLE_MACOS_NOTIFY', 'true').lower() == 'true'

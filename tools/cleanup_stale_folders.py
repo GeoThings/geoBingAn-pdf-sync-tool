@@ -6,10 +6,14 @@
 造成 log 噪音不斷增長。
 
 用法：
-    python3 cleanup_stale_folders.py             # dry-run，只列出失效項目
-    python3 cleanup_stale_folders.py --apply     # 實際清掉 source_url，加 source_url_removed_at
-    python3 cleanup_stale_folders.py --limit 50  # 只檢前 50 筆 (測試)
+    python3 tools/cleanup_stale_folders.py             # dry-run，只列出失效項目
+    python3 tools/cleanup_stale_folders.py --apply     # 實際清掉 source_url，加 source_url_removed_at
+    python3 tools/cleanup_stale_folders.py --limit 50  # 只檢前 50 筆 (測試)
 """
+import os
+import sys
+# REPO_ROOT bootstrap：允許 python3 tools/cleanup_stale_folders.py 直接執行
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import argparse
 import json
 import re
@@ -17,7 +21,9 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-REGISTRY_FILE = Path(__file__).parent / 'state' / 'permit_registry.json'
+from geobingan_sync import REPO_ROOT
+
+REGISTRY_FILE = REPO_ROOT / 'state' / 'permit_registry.json'
 DRIVE_FOLDER_ID_RE = re.compile(r'/folders/([a-zA-Z0-9_-]+)')
 
 
@@ -51,7 +57,7 @@ def main():
     args = parser.parse_args()
 
     sys.path.insert(0, str(Path(__file__).parent))
-    from sync_permits import get_drive_service
+    from geobingan_sync.steps.sync_permits import get_drive_service
 
     with open(REGISTRY_FILE, 'r', encoding='utf-8') as f:
         registry = json.load(f)
