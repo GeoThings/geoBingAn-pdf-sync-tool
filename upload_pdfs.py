@@ -684,6 +684,10 @@ def select_pdfs_to_upload(all_pdfs: List[Dict], uploaded_files, *, cutoff: datet
     → 檔名日期解析（解析不到跳過）→ cutoff 日期窗 → max_uploads 上限
     （0 = 不限）。輸入先按 Drive modifiedTime 降序排序，讓上限吃到最新的。
 
+    cutoff 以「日」為粒度：傳入值會正規化到當日 00:00，確保 cutoff 當日的
+    報告（parser 回傳皆為當日 00:00）不會因呼叫端帶時分秒（如
+    datetime.now() - timedelta(days=N)）而被錯誤排除。
+
     Returns:
         (pdfs_to_upload, counts) — counts 含各跳過原因計數與
         dup_skipped（run 內去重跳過的 unique_id 清單，供 operator 分辨
@@ -697,6 +701,7 @@ def select_pdfs_to_upload(all_pdfs: List[Dict], uploaded_files, *, cutoff: datet
             d = parse_date_from_filename(pdf['folder_name'] + '/' + pdf['name'])
         return d
 
+    cutoff = cutoff.replace(hour=0, minute=0, second=0, microsecond=0)
     uploaded = set(uploaded_files)
     exclude = set(exclude)
     counts = {

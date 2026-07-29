@@ -76,14 +76,22 @@ def test_no_date_skipped():
 
 
 def test_no_date_falls_back_to_folder_path():
-    """檔名無日期但 folder/檔名組合可解析 → 不跳過。"""
-    pdfs = [_pdf('報告.pdf', folder='2026年07月')]
-    picked, counts = select_pdfs_to_upload(pdfs, [], cutoff=CUTOFF)
-    assert counts['no_date'] + len(picked) == 1  # 視 parser 支援度，二者擇一
-    # parser 若支援「2026年07月/報告.pdf」則必須被選中而非 no_date
-    from filename_date_parser import parse_date_from_filename
-    if parse_date_from_filename('2026年07月/報告.pdf'):
-        assert len(picked) == 1
+    """檔名單獨無日期、folder/檔名組合可解析（2026/0303…→ 2026-03-03）
+    → 必須被選中且不算 no_date（固定 fallback contract，review finding）。"""
+    pdfs = [_pdf('0303觀測報告.pdf', folder='2026')]
+    picked, counts = select_pdfs_to_upload(pdfs, [], cutoff=datetime(2026, 3, 1))
+    assert [p['name'] for p in picked] == ['0303觀測報告.pdf']
+    assert counts['no_date'] == 0
+
+
+def test_cutoff_time_of_day_normalized():
+    """production cutoff 帶時分秒（datetime.now()-timedelta）時，
+    cutoff 當日 00:00 的報告不得被錯殺（review P2 regression）。"""
+    pdfs = [_pdf('報告_1150701.pdf')]  # 檔名日期 2026-07-01 00:00
+    picked, counts = select_pdfs_to_upload(
+        pdfs, [], cutoff=datetime(2026, 7, 1, 10, 30, 45))
+    assert len(picked) == 1
+    assert counts['too_old'] == 0
 
 
 def test_max_uploads_picks_newest_first():
