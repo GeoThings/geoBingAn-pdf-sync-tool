@@ -189,7 +189,7 @@ iCloud Drive `Desktop & Documents` 同步是 macOS 預設開啟的、會把 `~/D
 | 模組 | 職責 | 測試 |
 |------|------|------|
 | `permit_utils.py` | normalize_permit + 檔名名稱提取（30+ 預編譯 regex） | 16+13 cases |
-| `filename_date_parser.py` | 從 PDF 檔名解析日期（7 種格式） | 21 cases |
+| `filename_date_parser.py` | 從 PDF 檔名解析日期（9 種格式，含裸民國年前綴+MMDD） | 27 cases |
 | `jwt_auth.py` | JWT decode/expire/refresh（thread-safe） | 14 cases |
 | `drive_utils.py` | 共用 Drive 掃描（list folders, resolve subfolder hierarchy） | 8 cases |
 | `report_template.py` | HTML/CSV 報告生成 | 11 cases |
@@ -264,11 +264,11 @@ Shared Drive
     │  （不含根目錄 PDF 與 parent 對不到的 PDF——後兩者僅計數/告警）
     │  → weekly_snapshot 月度趨勢告警 / analyze_decline 的正式資料來源
     │
-    ▼ filename_date_parser 解析檔名日期
-    │
-    ▼ 過濾：檔名日期在 30 天內（rolling；--catchup-days N 可放大窗口補掃）
-    │
-    ▼ 排除已上傳（state/uploaded_to_geobingan_7days.json）+ run 內同名去重
+    ▼ 候選過濾 select_pdfs_to_upload() 純函式（#64）：排除清單 →
+    │  history 去重 → run 內同名去重（記檔名供 operator 分辨）→
+    │  filename_date_parser 解析檔名日期 →
+    │  cutoff 30 天 rolling（正規化當日 00:00；--catchup-days N 可放大補掃）→
+    │  max_uploads
     │
     ▼ 逐一下載 + 上傳到 riskmap.today API（2 秒間隔）
     │
