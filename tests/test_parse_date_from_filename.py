@@ -117,3 +117,36 @@ class TestCutoffBoundary:
         d = parse_date_from_filename("1150216_report.pdf")
         assert d == datetime(2026, 2, 16)
         assert not (d > FILENAME_DATE_CUTOFF)
+
+
+class TestRocPrefixWithMmdd:
+    """裸民國年前綴 + MMDD 分離格式（裕光東湖 case，2026-07-29）
+
+    如「115裕光東湖觀測報告0721.pdf」——年份黏在建案名前、月日在後。
+    此前 parser 解析不到 → 該工地報告永不上傳（no-date backlog 主力之一）。
+    """
+
+    def test_roc_prefix_combines_with_trailing_mmdd(self):
+        assert parse_date_from_filename('115裕光東湖觀測報告0721.pdf') == datetime(2026, 7, 21)
+
+    def test_roc_prefix_combines_with_mmdd_0519(self):
+        assert parse_date_from_filename('115裕光東湖觀測報告0519.pdf') == datetime(2026, 5, 19)
+
+    def test_bare_mmdd_without_year_stays_none(self):
+        """無年份來源時不得瞎猜——同工地曾同報告雙檔名上傳，
+        裸 MMDD 保持 None 也避免與 115 前綴版重複上傳。"""
+        assert parse_date_from_filename('裕光東湖觀測報告0519.pdf') is None
+
+    def test_permit_number_prefix_excluded(self):
+        """「11X建字第…」是建照核發年份、不是報告年份，不得誤組。"""
+        assert parse_date_from_filename('110建字第0286號觀測報告0303.pdf') is None
+
+    def test_existing_folder_year_inference_still_wins(self):
+        """既有的 folder 年份推斷（模式6 前段）不受影響。"""
+        assert parse_date_from_filename('114年/0303觀測報告.pdf') == datetime(2025, 3, 3)
+
+    def test_roc_prefix_range_boundaries(self):
+        """契約 100–130（與模式6 其他年份來源一致）：100/130 收、131 拒。"""
+        assert parse_date_from_filename('100測試案觀測報告0101.pdf') == datetime(2011, 1, 1)
+        assert parse_date_from_filename('130測試案觀測報告0101.pdf') == datetime(2041, 1, 1)
+        assert parse_date_from_filename('131測試案觀測報告0101.pdf') is None
