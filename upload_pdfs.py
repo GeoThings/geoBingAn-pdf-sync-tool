@@ -676,6 +676,73 @@ def flush_state(state: dict):
             _pending_error_saves = 0
 
 
+def select_pdfs_to_upload(all_pdfs: List[Dict], uploaded_files, *, cutoff: datetime,
+                          exclude=(), max_uploads: int = 0):
+    """候選過濾純函式（#64）：從全量 PDF 清單選出本次要上傳的檔案。
+
+    規則（依序）：排除清單 → history 去重（folder/檔名）→ run 內同名去重
+    → 檔名日期解析（解析不到跳過）→ cutoff 日期窗 → max_uploads 上限
+    （0 = 不限）。輸入先按 Drive modifiedTime 降序排序，讓上限吃到最新的。
+
+    Returns:
+        (pdfs_to_upload, counts) — counts 含各跳過原因計數與
+        dup_skipped（run 內去重跳過的 unique_id 清單，供 operator 分辨
+        良性同名重複 vs 真同名撞檔）。
+    """
+    from filename_date_parser import parse_date_from_filename
+
+    def _filename_date(pdf):
+        d = parse_date_from_filename(pdf.get('name', ''))
+        if d is None and pdf.get('folder_name'):
+            d = parse_date_from_filename(pdf['folder_name'] + '/' + pdf['name'])
+        return d
+
+    uploaded = set(uploaded_files)
+    exclude = set(exclude)
+    counts = {
+        'excluded': 0,
+        'already_uploaded': 0,
+        'dup_in_run': 0,
+        'no_date': 0,
+        'too_old': 0,
+        'dup_skipped': [],
+    }
+    picked = []
+    # run 內去重：同一 unique_id（folder/檔名）在 Drive 出現多次（同名多份）時只上傳一次。
+    # history 的 unique_id 也是 folder/檔名 → 跨 run 靠 history 去重，但單一 run 內
+    # history 尚未寫入，故需獨立的 in-run 集合，否則會建出重複報告（2026-07-17 踩過）。
+    seen_this_run = set()
+
+    for pdf in sorted(all_pdfs, key=lambda x: x.get('modifiedTime', ''), reverse=True):
+        if pdf['name'] in exclude:
+            counts['excluded'] += 1
+            continue
+
+        unique_id = f"{pdf['folder_name']}/{pdf['name']}"
+        if unique_id in uploaded:
+            counts['already_uploaded'] += 1
+            continue
+        if unique_id in seen_this_run:
+            counts['dup_in_run'] += 1
+            counts['dup_skipped'].append(unique_id)
+            continue
+
+        fd = _filename_date(pdf)
+        if fd is None:
+            counts['no_date'] += 1
+            continue
+        if fd < cutoff:
+            counts['too_old'] += 1
+            continue
+
+        picked.append(pdf)
+        seen_this_run.add(unique_id)
+        if max_uploads > 0 and len(picked) >= max_uploads:
+            break
+
+    return picked, counts
+
+
 def main(city: dict = None, catchup_days: int = None):
     """主程式
 
@@ -730,10 +797,6 @@ def main(city: dict = None, catchup_days: int = None):
 
     print(f"✅ 找到 {len(all_pdfs)} 個 PDF 檔案")
 
-    # 排序：按 Drive modifiedTime 降序（最新的在前面）。
-    # 不依賴檔名日期解析 — 月報（YYYYMM）、民國年（114年04月）、設計圖等沒解析到的也都要上傳。
-    all_pdfs.sort(key=lambda x: x.get('modifiedTime', ''), reverse=True)
-
     # 日期 cutoff：1 個月（rolling），用「檔名日期」判斷而非 Drive modifiedTime。
     # 原因：modifiedTime 會被「批次回填舊報告」誤導 — 有人 5 月把 2024 年資料一口氣丟進 Drive，
     # modifiedTime 看起來很新但實際是舊報告。檔名日期才是「實際監測日期」的權威來源。
@@ -744,59 +807,23 @@ def main(city: dict = None, catchup_days: int = None):
         print(f"🔄 Catch-up 模式：檔名日期掃描窗放大到 {cutoff_days} 天"
               f"（暫停後補掃；history 去重、不會重傳）")
 
-    def _filename_date(pdf):
-        from filename_date_parser import parse_date_from_filename
-        d = parse_date_from_filename(pdf.get('name', ''))
-        if d is None and pdf.get('folder_name'):
-            d = parse_date_from_filename(pdf['folder_name'] + '/' + pdf['name'])
-        return d
+    # 候選過濾（純函式，見 select_pdfs_to_upload；規則註解與測試在該處）
+    pdfs_to_upload, counts = select_pdfs_to_upload(
+        all_pdfs, state['uploaded_files'],
+        cutoff=cutoff, exclude=EXCLUDE_FILES, max_uploads=MAX_UPLOADS,
+    )
 
-    # 過濾：已上傳的 + 排除清單 + 1 個月外。MAX_UPLOADS > 0 才當上限，0 = 不限。
-    pdfs_to_upload = []
-    excluded_count = 0
-    already_uploaded_count = 0
-    too_old_count = 0
-    no_date_count = 0
-    dup_in_run_count = 0
-    # run 內去重：同一 unique_id（folder/檔名）在 Drive 出現多次（同名多份）時只上傳一次。
-    # history 的 unique_id 也是 folder/檔名 → 跨 run 靠 history 去重，但單一 run 內
-    # history 尚未寫入，故需獨立的 in-run 集合，否則會建出重複報告（2026-07-17 踩過）。
-    seen_this_run = set()
-    for pdf in all_pdfs:
-        if pdf['name'] in EXCLUDE_FILES:
-            excluded_count += 1
-            continue
-
-        unique_id = f"{pdf['folder_name']}/{pdf['name']}"
-        if unique_id in state['uploaded_files']:
-            already_uploaded_count += 1
-            continue
-        if unique_id in seen_this_run:
-            dup_in_run_count += 1
-            continue
-
-        fd = _filename_date(pdf)
-        if fd is None:
-            no_date_count += 1
-            continue
-        if fd < cutoff:
-            too_old_count += 1
-            continue
-
-        pdfs_to_upload.append(pdf)
-        seen_this_run.add(unique_id)
-        if MAX_UPLOADS > 0 and len(pdfs_to_upload) >= MAX_UPLOADS:
-            break
-
-    print(f"  已上傳過: {already_uploaded_count}")
-    if dup_in_run_count > 0:
-        print(f"  本次同名重複（run 內去重）: {dup_in_run_count}")
-    if excluded_count > 0:
-        print(f"  排除清單: {excluded_count}")
-    if too_old_count > 0:
-        print(f"  檔名日期超過 1 個月: {too_old_count}")
-    if no_date_count > 0:
-        print(f"  檔名無法解析日期（待 parser 強化）: {no_date_count}")
+    print(f"  已上傳過: {counts['already_uploaded']}")
+    if counts['dup_in_run'] > 0:
+        print(f"  本次同名重複（run 內去重）: {counts['dup_in_run']}")
+        for uid in counts['dup_skipped'][:10]:
+            print(f"    ↳ 跳過同名: {uid}")
+    if counts['excluded'] > 0:
+        print(f"  排除清單: {counts['excluded']}")
+    if counts['too_old'] > 0:
+        print(f"  檔名日期超過 1 個月: {counts['too_old']}")
+    if counts['no_date'] > 0:
+        print(f"  檔名無法解析日期（待 parser 強化）: {counts['no_date']}")
     print(f"  待上傳: {len(pdfs_to_upload)}" + (f"（上限 {MAX_UPLOADS}）" if MAX_UPLOADS > 0 else "（無上限）"))
 
     if not pdfs_to_upload:
