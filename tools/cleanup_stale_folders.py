@@ -6,9 +6,9 @@
 造成 log 噪音不斷增長。
 
 用法：
-    python3 cleanup_stale_folders.py             # dry-run，只列出失效項目
-    python3 cleanup_stale_folders.py --apply     # 實際清掉 source_url，加 source_url_removed_at
-    python3 cleanup_stale_folders.py --limit 50  # 只檢前 50 筆 (測試)
+    python3 tools/cleanup_stale_folders.py             # dry-run，只列出失效項目
+    python3 tools/cleanup_stale_folders.py --apply     # 實際清掉 source_url，加 source_url_removed_at
+    python3 tools/cleanup_stale_folders.py --limit 50  # 只檢前 50 筆 (測試)
 """
 import os
 import sys

@@ -311,7 +311,7 @@ tail -f logs/weekly_sync_*.log
 **查看執行歷史：**
 ```bash
 # 查看狀態追蹤
-python3 -c "from sync_status import SyncStatus; SyncStatus().print_summary()"
+python3 -c "from geobingan_sync.sync_status import SyncStatus; SyncStatus().print_summary()"
 ```
 
 ---
@@ -356,51 +356,41 @@ ENABLE_MACOS_NOTIFY=false
 
 ```
 geoBingAn-pdf-sync-tool/
-├── sync_permits.py                    # 核心：同步 PDF from 台北市政府
-├── upload_pdfs.py                     # 核心：上傳 PDF to Backend API
-├── match_permits.py                   # 核心：建案名稱 6 來源交叉比對
-├── generate_permit_tracking_report.py # 核心：生成建案追蹤報告（HTML）
-├── generate_weekly_report.py          # 核心：生成週報 PDF + 上傳 ClickUp
-├── run_weekly_sync.sh                 # 核心：週一自動執行腳本
-├── run_friday_report.sh               # 核心：週五總結週報腳本
+├── run_weekly_sync.sh           # 進入點：每日自動同步（launchd 10:00）
+├── run_friday_report.sh         # 進入點：週五總結週報
+├── health_check.py              # 進入點：每日健康檢查（Token / 磁碟 / API）
 │
-├── config.py                    # 設定載入（從 .env 讀取）
-├── filename_date_parser.py      # 檔名日期解析模組（獨立可測試）
-├── jwt_auth.py                  # JWT Token 管理模組（thread-safe）
-├── health_check.py              # 每日健康檢查（Token / 磁碟 / API）
-├── notify.py                    # 通知模組（LINE / macOS）
-├── sync_status.py               # 狀態追蹤模組
-├── record_sync_result.py        # 執行結果記錄
+├── geobingan_sync/              # 共用模組 package
+│   ├── config.py                #   設定載入（REPO_ROOT/.env）
+│   ├── city_config.py           #   多城市設定（data/cities.json）
+│   ├── drive_utils.py           #   Drive 掃描（paginate_files_list 翻頁+retry）
+│   ├── jwt_auth.py              #   JWT Token 管理（thread-safe）
+│   ├── filename_date_parser.py  #   檔名日期解析
+│   ├── permit_utils.py          #   建照號碼正規化 + 名稱提取
+│   ├── notify.py                #   通知模組（LINE / macOS）
+│   ├── sync_status.py           #   狀態追蹤模組
+│   ├── report_template.py       #   HTML/CSV 報告模板
+│   ├── analyze_decline.py       #   月度下滑分析（被 weekly_snapshot 引用）
+│   └── steps/                   #   pipeline 步驟（python3 -m 呼叫）
+│       ├── sync_permits.py      #     同步 PDF from 台北市政府
+│       ├── upload_pdfs.py       #     上傳 PDF to Backend API
+│       ├── match_permits.py     #     建案名稱 6 來源交叉比對
+│       ├── generate_permit_tracking_report.py  # 建案追蹤報告（HTML）
+│       ├── generate_weekly_report.py           # 週報 PDF + ClickUp
+│       ├── record_sync_result.py               # 執行結果記錄
+│       ├── network_ready.py                    # 網路就緒檢查
+│       └── weekly_snapshot.py                  # 週快照 + 月度趨勢告警
 │
-├── .env                         # 環境變數（需自行建立，勿提交）
-├── .env.example                 # 環境變數範本
-├── credentials.json             # Google Drive 金鑰（需自行建立）
-├── requirements.txt             # Python 依賴
-├── README.md                    # 本文件
-├── .gitignore                   # Git 忽略清單
+├── tools/cleanup_stale_folders.py  # 維運工具：清失效 Drive 連結
+├── setup/                       # setup_launchd / setup_cron / uninstall_launchd
+├── data/cities.json             # 多城市設定檔
+├── launchd/                     # launchd plist
 │
-├── state/                       # 狀態追蹤
-│   ├── permit_registry.json             # 建案名稱交叉比對結果（git 追蹤）
-│   ├── upload_history_all.json          # 永久上傳歷史（git 追蹤）
-│   ├── sync_permits_progress.json       # 同步進度
-│   ├── uploaded_to_geobingan_7days.json # 上傳記錄
-│   ├── sync_status.json                 # 執行狀態與歷史
-│   ├── permit_tracking_report.html      # 追蹤報告 (HTML)
-│   └── permit_tracking.csv              # 追蹤報告 (CSV)
-│
+├── .env / credentials.json      # 秘密（需自行建立，勿提交）
+├── state/                       # 狀態追蹤（registry / 上傳歷史 / pdf_inventory…）
 ├── logs/                        # 執行日誌
-│   └── weekly_sync_*.log        # 週期執行日誌
-│
-├── docs/                        # 技術文檔
-│   ├── architecture.md          # 系統架構設計文件
-│   ├── API.md                   # API 說明
-│   ├── cron_setup_guide.md      # Cron 設定指南
-│   ├── troubleshooting.md       # 問題排解指南
-│   └── index.html               # 線上追蹤報告
-│
-└── tests/                       # 自動化測試
-    ├── test_parse_date_from_filename.py  # 日期解析測試 (21 cases)
-    └── test_jwt_auth.py                  # JWT 管理測試 (20 cases)
+├── docs/                        # 技術文檔 + 線上追蹤報告
+└── tests/                       # 自動化測試（187 tests）
 ```
 
 ---
