@@ -26,6 +26,9 @@ def parse_date_from_filename(filename: str) -> Optional[datetime]:
     - 西元年連字號: 2026-02-23
     - 西元年8碼: 20260303
     - 短日期+路徑推斷: 0303觀測報告（從路徑取年份）
+    - 裸民國年前綴+短日期: 115裕光東湖觀測報告0721 / 114.11/璞昌1127觀測報告
+      （排除 11X建字第… 建照號；範圍 100–130）
+    - 民國年月/西元年月（無日）: 114年04月、監測月報202512 → 回傳月底
     回傳 datetime 或 None（無法解析時）
     """
     basename = filename.replace('.pdf', '').replace('.PDF', '')
