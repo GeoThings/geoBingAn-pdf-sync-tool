@@ -110,6 +110,21 @@ def fetch_gov_pdf_data(city: dict = None) -> Dict[str, dict]:
 
 
 # ==================== 來源 2: Drive 來源資料夾名稱 ====================
+def _extract_folder_id_from_url(url: str):
+    """從 Drive URL 取 folder ID（/folders/ID 或 id=ID 兩種格式）。
+    與 sync_permits.PermitSync.extract_folder_id_from_url 同邏輯，供 404
+    快取比對本次 fid 與 prior source_url 是否為同一資料夾。"""
+    if not url:
+        return None
+    m = re.search(r'/folders/([a-zA-Z0-9_-]+)', url)
+    if m:
+        return m.group(1)
+    m = re.search(r'id=([a-zA-Z0-9_-]+)', url)
+    if m:
+        return m.group(1)
+    return None
+
+
 def fetch_source_folder_names(gov_data: dict, drive_service, prior_registry: dict = None):
     """從來源 Google Drive 資料夾名稱提取建案名稱 + 順便記錄 URL 活/死狀態。
 
@@ -122,9 +137,13 @@ def fetch_source_folder_names(gov_data: dict, drive_service, prior_registry: dic
     已知 404 快取（prior_registry）：政府 PDF 凍結後仍持續列著已被監測公司
     刪除的 Drive 資料夾，每次 build 都對這些 folder_id 空打 files().get 只為
     再拿一次 404，log 噪音隨時間累積（見 tools/cleanup_stale_folders.py）。
-    Drive folder_id 一旦 404 即永久失效（ID 不會復活；公司若重建會拿到新
-    ID，而凍結的政府 PDF 不會出現新 ID），故上次已記錄 gov_pdf_url_status
-    == '404' 者本次直接沿用、跳過 API 呼叫，不再噴警告。
+    Drive folder_id 一旦 404 即永久失效（該 ID 不會復活），故上次已記錄
+    gov_pdf_url_status == '404' 者本次沿用、跳過 API 呼叫、不再噴警告。
+
+    ⚠️ 快取鍵必須綁「同一個 folder ID」，不能只綁建照號：若日後同一建照
+    的 source_url 換成新的 Drive folder（新 ID），舊 404 記錄不得套用到新
+    ID，否則有效的新資料夾會被永久誤跳過並錯標 404。故僅在 prior 存的
+    source_url 解析出的 folder ID 與本次 fid 相同時才用快取。
     """
     print("📂 來源 2: Drive 來源資料夾名稱...")
     from googleapiclient.errors import HttpError
@@ -136,8 +155,10 @@ def fetch_source_folder_names(gov_data: dict, drive_service, prior_registry: dic
         fid = info.get('source_folder_id')
         if not fid:
             continue
-        if prior_registry.get(permit, {}).get('gov_pdf_url_status') == '404':
-            # 已確認永久失效：沿用 404，不重打 API、不噴噪音。
+        prior = prior_registry.get(permit, {})
+        prior_fid = _extract_folder_id_from_url(prior.get('source_url', ''))
+        if prior.get('gov_pdf_url_status') == '404' and prior_fid == fid:
+            # 同一 folder ID 已確認永久失效：沿用 404，不重打 API、不噴噪音。
             statuses[permit] = '404'
             skipped_dead += 1
             continue
