@@ -4,12 +4,12 @@
     "name_source": "drive_pdf",
     "pdf_count": 53,
     "source_url": "https://drive.google.com/drive/folders/1GncmHFRp3cpdDrSM5opFS_fkPAkpxqfD",
-    "updated_at": "2026-09-11T10:10:05.437853",
+    "updated_at": "2026-09-11T11:34:19.671020",
     "gov_pdf_url_status": "alive"
   },
   "104建字第0225號": {
     "source_url": "https://drive.google.com/drive/folders/1Ph1Hno7Cpf4CNot3n7mWTeZCGjzo796l",
-    "updated_at": "2026-09-11T10:10:05.440909",
+    "updated_at": "2026-09-11T11:34:19.677604",
     "name": "博物館3期新建工程",
     "name_source": "manual",
     "pdf_count": 173,
@@ -41,7 +41,7 @@
     "sensors": 8,
     "api_match": "石牌市場新建工程",
     "source_url": "https://drive.google.com/drive/folders/1Pcu7nqPoP8nITws6BfTI1xl5aAQaD9tC?usp=sharing",
-    "updated_at": "2026-09-11T10:10:05.442683",
+    "updated_at": "2026-09-11T11:34:19.680912",
     "gov_pdf_url_status": "alive"
   },
   "106建字第0005號": {
@@ -56,7 +56,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 175,
     "source_url": "https://drive.google.com/drive/folders/165GPMaZ9dE1Ln3S2AIwLBQ3aGS8CPqB0?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:05.446467",
+    "updated_at": "2026-09-11T11:34:19.687615",
     "gov_pdf_url_status": "alive"
   },
   "106建字第0111號": {
@@ -64,7 +64,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 99,
     "source_url": "https://drive.google.com/drive/folders/1eTLGTg5ML2NiSABaH-Q_UkAE8vxXYEK8?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:05.450316",
+    "updated_at": "2026-09-11T11:34:19.693980",
     "gov_pdf_url_status": "alive"
   },
   "106建字第0213號": {
@@ -72,7 +72,7 @@
     "name_source": "api_match",
     "pdf_count": 29,
     "source_url": "https://drive.google.com/drive/folders/1uH6f38T3nWyKcGj4zPpD07ztd0jTCK6H?usp=sharing",
-    "updated_at": "2026-09-11T10:10:05.456235",
+    "updated_at": "2026-09-11T11:34:19.702295",
     "address": "台北市北投區三合街一段82巷50弄",
     "stage": "第三層支撐架設 (Erection of 3rd layer struts)",
     "sensors": 80,
@@ -87,22 +87,24 @@
     "name": "承德民生住宅B棟大樓-工地",
     "name_source": "drive_pdf",
     "source_url": "https://drive.google.com/drive/u/2/folders/1QctsYoKcwW_xzUY6P65ZUOWKlmMoU-dR",
-    "updated_at": "2026-09-11T10:10:05.464797",
+    "updated_at": "2026-09-11T11:34:19.712920",
     "pdf_count": 232,
     "gov_pdf_url_status": "alive"
   },
   "107建字第0091號": {
     "name": "承德民生住宅A棟大樓-工地",
     "name_source": "drive_pdf",
-    "pdf_count": 61,
-    "updated_at": "2026-09-11T10:10:05.473168"
+    "pdf_count": 91,
+    "updated_at": "2026-09-11T11:34:19.722157",
+    "source_url": "https://drive.google.com/drive/folders/1Qd0GteOa-6YzmzWErPFc-D9vb9XICIcO?usp=drive_link",
+    "gov_pdf_url_status": "alive"
   },
   "107建字第0092號": {
     "name": "鴻輝建設-台北市北投區崇仰段一小段131地號等住宅",
     "name_source": "api_match",
     "pdf_count": 154,
     "source_url": "https://drive.google.com/drive/folders/1enAB0mRkYnzfMwoO14FGN8alIf1If0y6",
-    "updated_at": "2026-09-11T10:10:05.490820",
+    "updated_at": "2026-09-11T11:34:19.736333",
     "address": "台北市北投區崇仰段一小段131地號",
     "stage": "整地作業",
     "sensors": 26,
@@ -134,7 +136,7 @@
     "name_source": "api_match",
     "pdf_count": 8,
     "source_url": "https://drive.google.com/drive/folders/1GgTJmxPcc4GAIBaF2Z8JlirzzJPxvHhG?usp=sharing",
-    "updated_at": "2026-09-11T10:10:05.505520",
+    "updated_at": "2026-09-11T11:34:19.749280",
     "address": "台北市北投區崇仰段一小段131地號",
     "stage": "整地作業",
     "sensors": 26,
@@ -155,10 +157,10 @@
     }
   },
   "107建字第0200號": {
-    "updated_at": "2026-09-11T10:10:05.505523",
+    "updated_at": "2026-09-11T11:34:19.749282",
     "source_url_removed": "https://drive.google.com/drive/folders/1m7lZtJoqq_TiOesDmf86bIyhR35QBN1p1/30",
     "source_url_removed_at": "2026-05-05T14:50:09",
-    "source_url": "https://drive.google.com/drive/folders/1m7lZtJoqq_TiOesDmf86bIyhR35QBN1p1/30",
+    "source_url": "https://drive.google.com/drive/folders/1m7lZtJoqq_TiOesDmf86bIyhR35QBN1p",
     "gov_pdf_url_status": "404"
   },
   "107建字第0232號": {
@@ -173,7 +175,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 71,
     "source_url": "https://drive.google.com/drive/folders/17LomlYBSVxL81lRhfx8yKv9akiV6AIIO",
-    "updated_at": "2026-09-11T10:10:05.511525",
+    "updated_at": "2026-09-11T11:34:19.754575",
     "gov_pdf_url_status": "alive"
   },
   "108建字第0009號": {
@@ -181,7 +183,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 13,
     "source_url": "https://drive.google.com/drive/u/1/folders/1OEW9ogVwldxcHMGjAxsNTWJd9PmazgnL",
-    "updated_at": "2026-09-11T10:10:05.515426",
+    "updated_at": "2026-09-11T11:34:19.758119",
     "gov_pdf_url_status": "alive"
   },
   "108建字第0038號": {
@@ -195,7 +197,7 @@
     "name": "宏築信義",
     "name_source": "drive_pdf",
     "pdf_count": 11,
-    "updated_at": "2026-09-11T10:10:05.517462",
+    "updated_at": "2026-09-11T11:34:19.759971",
     "source_url_removed": "https://drive.google.com/drive/folders/1TtCcncrR0RO2xmQK2r02nr6u2ilCWij2",
     "source_url_removed_at": "2026-05-05T14:50:09",
     "source_url": "https://drive.google.com/drive/folders/1TtCcncrR0RO2xmQK2r02nr6u2ilCWij2",
@@ -206,7 +208,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 88,
     "source_url": "https://drive.google.com/drive/folders/1FVmg94QIjrN25gCQpGnKu_tvK12nWM2d?usp=sharing",
-    "updated_at": "2026-09-11T10:10:05.519691",
+    "updated_at": "2026-09-11T11:34:19.761591",
     "gov_pdf_url_status": "alive"
   },
   "108建字第0131號": {
@@ -214,7 +216,7 @@
     "name_source": "api_match",
     "pdf_count": 42,
     "source_url": "https://drive.google.com/drive/folders/1RKbLvBiBeMT7d2q8S8_UikJsMA8z4URR?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:05.520222",
+    "updated_at": "2026-09-11T11:34:19.762030",
     "address": "台北市內湖區石潭段四小段",
     "stage": "",
     "sensors": 92,
@@ -238,7 +240,7 @@
     "name": "良茂詠悅監測日報",
     "name_source": "source_folder",
     "source_url": "https://drive.google.com/drive/folders/1MMJ1XSKZzFwwVFow1_iQUvdDkZ1kdvAZ?usp=sharing",
-    "updated_at": "2026-09-11T10:10:05.524404",
+    "updated_at": "2026-09-11T11:34:19.765552",
     "pdf_count": 78,
     "gov_pdf_url_status": "alive"
   },
@@ -246,7 +248,7 @@
     "name": "時詣建設城中段三小段新建工程",
     "name_source": "api_match",
     "source_url": "https://drive.google.com/drive/folders/1UW-vdxB9NDmURZ_Fqtl0ApE07NUmivUS?usp=sharing",
-    "updated_at": "2026-09-11T10:10:05.539427",
+    "updated_at": "2026-09-11T11:34:19.777594",
     "pdf_count": 106,
     "address": "台北市中正區愛國西路/延平南路/中華路一段95巷",
     "stage": "B1F Structure Construction",
@@ -263,7 +265,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 40,
     "source_url": "https://drive.google.com/drive/folders/1vyzvE__wNCObQvnBc26ZYWfzRxvrTnHe?usp=drive_link2/30",
-    "updated_at": "2026-09-11T10:10:05.542399",
+    "updated_at": "2026-09-11T11:34:19.780340",
     "gov_pdf_url_status": "alive"
   },
   "108建字第0207號": {
@@ -271,15 +273,15 @@
     "name_source": "drive_pdf",
     "pdf_count": 121,
     "source_url": "https://drive.google.com/drive/folders/1HKcyGV4VPCo-00CqrPL8N2tGBvji01Ca",
-    "updated_at": "2026-09-11T10:10:05.547737",
+    "updated_at": "2026-09-11T11:34:19.783996",
     "gov_pdf_url_status": "alive"
   },
   "108建字第0211號": {
     "name": "豪豐營造慶山北投案工地",
     "name_source": "drive_pdf",
     "pdf_count": 46,
-    "source_url": "https://drive.google.com/drive/folders/1a64SJ4EF0lwzRRHrheLNFpfihr-9dtZp?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:05.557332",
+    "source_url": "https://drive.google.com/drive/folders/1a64SJ4EF0lwzRRHrheLNFpfihr-9dtZp?usp=drive_link1/37",
+    "updated_at": "2026-09-11T11:34:19.792001",
     "gov_pdf_url_status": "alive"
   },
   "108建字第0212號": {
@@ -287,7 +289,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 12,
     "source_url": "https://drive.google.com/drive/folders/1If-o5EZ3MLur9P_HsRlMIZIudJ5-ZBFc?usp=sharing",
-    "updated_at": "2026-09-11T10:10:05.559549",
+    "updated_at": "2026-09-11T11:34:19.793897",
     "gov_pdf_url_status": "alive"
   },
   "108建字第0252號": {
@@ -295,14 +297,14 @@
     "name_source": "drive_pdf",
     "pdf_count": 43,
     "source_url": "https://drive.google.com/drive/folders/1zcm_shOBNsRASMliiTnAHUQXSDXcUqie?usp=sharing",
-    "updated_at": "2026-09-11T10:10:05.562304",
+    "updated_at": "2026-09-11T11:34:19.795837",
     "gov_pdf_url_status": "alive"
   },
   "109建字第0015號": {
     "name": "紘揚建設109字第0015號(工地安全鑑測數據",
     "name_source": "source_folder",
     "source_url": "https://drive.google.com/drive/folders/1eJAQdp4Wsftvz-PxpB43FLE1fhyCaKMY",
-    "updated_at": "2026-09-11T10:10:05.572250",
+    "updated_at": "2026-09-11T11:34:19.807220",
     "gov_pdf_url_status": "alive"
   },
   "109建字第0016號": {
@@ -310,7 +312,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 54,
     "source_url": "https://drive.google.com/drive/folders/15ogxV8sjyVBMyBOkb_DYO0-ZFaPbmRec?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:05.575590",
+    "updated_at": "2026-09-11T11:34:19.810263",
     "gov_pdf_url_status": "alive"
   },
   "109建字第0019號": {
@@ -318,18 +320,21 @@
     "updated_at": "2026-09-11T10:10:05.575596"
   },
   "109建字第0021號": {
-    "updated_at": "2026-09-11T10:10:05.575602",
+    "updated_at": "2026-09-11T11:34:19.812976",
     "source_url_removed": "https://drive.google.com/drive/folders/1HlWuz3YlkziTYoro7dE6CAqFlKl9VlgO?usp=drive_link",
     "source_url_removed_at": "2026-05-05T14:50:09",
-    "source_url": "https://drive.google.com/drive/folders/1HlWuz3YlkziTYoro7dE6CAqFlKl9VlgO?usp=drive_link",
-    "gov_pdf_url_status": "404"
+    "source_url": "https://drive.google.com/drive/folders/1Mari2VcifQV4O47Y_t0h3iLTYFEXCdSY?usp=sharing",
+    "gov_pdf_url_status": "alive",
+    "name": "恆合-龍泉段",
+    "name_source": "drive_pdf",
+    "pdf_count": 124
   },
   "109建字第0027號": {
     "name": "台肥南港C4辦公大樓新建工程-專案",
     "name_source": "drive_pdf",
     "pdf_count": 124,
     "source_url": "https://drive.google.com/drive/folders/1qsCn7m8TPFU8FHTNLv9hZmPik5s2nFQF",
-    "updated_at": "2026-09-11T10:10:05.584048",
+    "updated_at": "2026-09-11T11:34:19.820642",
     "gov_pdf_url_status": "alive"
   },
   "109建字第0038號": {
@@ -348,26 +353,26 @@
     "name": "帆登天母九五尊邸觀測資料",
     "name_source": "drive_pdf",
     "pdf_count": 37,
-    "updated_at": "2026-09-11T10:10:05.591635",
+    "updated_at": "2026-09-11T11:34:19.827791",
     "source_url_removed": "https://drive.google.com/drive/u/1/folders/15T-pelHn_M5coFj0AYBOHuE4tdWIEF7p",
     "source_url_removed_at": "2026-05-05T14:50:09",
-    "source_url": "https://drive.google.com/drive/u/1/folders/15T-pelHn_M5coFj0AYBOHuE4tdWIEF7p",
-    "gov_pdf_url_status": "404"
+    "source_url": "https://drive.google.com/drive/folders/1LO0xUf2LApN73Mc9TcifUUGQuXwVUb2o",
+    "gov_pdf_url_status": "alive"
   },
   "109建字第0089號": {
     "name": "東禧建設嘉興街住宅新建工程-專案",
     "name_source": "drive_pdf",
     "pdf_count": 113,
     "source_url": "https://drive.google.com/drive/u/3/folders/1SWV4f0jnyEY_sU51K3kn-MFtnm_s2iDU",
-    "updated_at": "2026-09-11T10:10:05.601418",
+    "updated_at": "2026-09-11T11:34:19.836273",
     "gov_pdf_url_status": "alive"
   },
   "109建字第0122號": {
     "name": "國家軍事博物館新建工程",
     "name_source": "drive_pdf",
     "pdf_count": 329,
-    "source_url": "https://drive.google.com/drive/u/1/folders/1SxNRi8H1qYB0BhkODu0U46g7BoJhwZ2H",
-    "updated_at": "2026-09-11T10:10:05.606418",
+    "source_url": "https://drive.google.com/drive/folders/1_8ziEMW6adogTLqOtMBz40XRJv2bnhOE?usp=drive_link2/37",
+    "updated_at": "2026-09-11T11:34:19.840921",
     "gov_pdf_url_status": "alive"
   },
   "109建字第0130號": {
@@ -381,7 +386,7 @@
     "name": "台北市松江路段108巷20號旁住宅大樓",
     "name_source": "manual",
     "pdf_count": 71,
-    "updated_at": "2026-09-11T10:10:05.616044",
+    "updated_at": "2026-09-11T11:34:19.850084",
     "live_alerts": {
       "danger": 0,
       "warning": 1,
@@ -390,14 +395,16 @@
       "details": [
         "有感測器超過警戒值"
       ]
-    }
+    },
+    "source_url": "https://drive.google.com/drive/folders/1PmzytNsEFj1XR_E9ER_9UfsUhXsK8Twy?usp=sharing",
+    "gov_pdf_url_status": "alive"
   },
   "109建字第0143號": {
     "name": "日日禾古蹟",
     "name_source": "drive_pdf",
     "pdf_count": 32,
     "source_url": "https://drive.google.com/drive/folders/1OLiFlhsaFvSPY1_d7PzL60Qa3hf9m1mz",
-    "updated_at": "2026-09-11T10:10:05.619182",
+    "updated_at": "2026-09-11T11:34:19.852817",
     "gov_pdf_url_status": "alive"
   },
   "109建字第0150號": {
@@ -405,7 +412,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 74,
     "source_url": "https://drive.google.com/drive/folders/1SjvPtsMCWulOsObQLTVAF2hBoXbDfHh0",
-    "updated_at": "2026-09-11T10:10:05.622102",
+    "updated_at": "2026-09-11T11:34:19.855548",
     "gov_pdf_url_status": "alive"
   },
   "109建字第0159號": {
@@ -413,14 +420,14 @@
     "name_source": "drive_pdf",
     "pdf_count": 65,
     "source_url": "https://drive.google.com/drive/u/0/folders/1zZkNsNCY2E6Ik51kGIsRBGWosuB-V3Qb",
-    "updated_at": "2026-09-11T10:10:05.624940",
+    "updated_at": "2026-09-11T11:34:19.858291",
     "gov_pdf_url_status": "404"
   },
   "109建字第0170號": {
     "name": "臺北市立大安高級工業職業學校新建綜合教學大樓工程",
     "name_source": "manual",
     "pdf_count": 18,
-    "updated_at": "2026-09-11T10:10:05.643942",
+    "updated_at": "2026-09-11T11:34:19.875835",
     "source_url_removed": "https://drive.google.com/drive/folders/13WxNni7jwo00orW2Wm7BLx4nR3C2wPKW?usp=drive_link",
     "source_url_removed_at": "2026-05-05T14:50:09",
     "source_url": "https://drive.google.com/drive/folders/13WxNni7jwo00orW2Wm7BLx4nR3C2wPKW?usp=drive_link",
@@ -437,14 +444,14 @@
     "name": "監測數據",
     "name_source": "source_folder",
     "source_url": "https://drive.google.com/drive/folders/18Yxtbl8__IWpMvJ7e_0nfRUyh0R6355n?usp=sharing",
-    "updated_at": "2026-09-11T10:10:05.644357",
+    "updated_at": "2026-09-11T11:34:19.875904",
     "gov_pdf_url_status": "alive"
   },
   "109建字第0201號": {
     "name": "松陽福星工地",
     "name_source": "drive_pdf",
     "source_url": "https://drive.google.com/drive/folders/1MBU6YMQVx3nhvs18r7PIXcAU54hZBkw6",
-    "updated_at": "2026-09-11T10:10:05.648235",
+    "updated_at": "2026-09-11T11:34:19.879521",
     "pdf_count": 72,
     "gov_pdf_url_status": "alive"
   },
@@ -460,7 +467,7 @@
     "name_source": "api_match",
     "pdf_count": 3,
     "source_url": "https://drive.google.com/drive/u/0/folders/1NewHkBQflFtYHBftk6aKVWxD2KkFDrHg",
-    "updated_at": "2026-09-11T10:10:05.684213",
+    "updated_at": "2026-09-11T11:34:19.914143",
     "address": "臺北市全區",
     "stage": "RegulationAnnouncement",
     "sensors": 0,
@@ -476,7 +483,7 @@
     "name_source": "manual",
     "pdf_count": 84,
     "source_url": "https://drive.google.com/drive/mobile/folders/1ntp8_mDWKNYQ4sRAYeSHiMzQZ9DmvUE9?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:05.689793",
+    "updated_at": "2026-09-11T11:34:19.919499",
     "gov_pdf_url_status": "alive",
     "live_alerts": {
       "danger": 0,
@@ -507,7 +514,7 @@
     "name_source": "api_match",
     "pdf_count": 21,
     "source_url": "https://drive.google.com/drive/folders/1IGnylubUbNW7EGhRz8Xc0IwLXESTJrQq?usp=sharing",
-    "updated_at": "2026-09-11T10:10:05.720400",
+    "updated_at": "2026-09-11T11:34:19.948658",
     "address": "台北市松山區寶清段",
     "stage": "第四層支撐拆除",
     "sensors": 26,
@@ -530,7 +537,7 @@
     "name_source": "manual",
     "pdf_count": 5,
     "source_url": "https://drive.google.com/drive/folders/1okkOAjedWbF6JJ2A4hste4iqYwX82FmR?usp=sharing",
-    "updated_at": "2026-09-11T10:10:05.724803",
+    "updated_at": "2026-09-11T11:34:19.952961",
     "gov_pdf_url_status": "alive"
   },
   "109建字第0262號": {
@@ -538,7 +545,7 @@
     "name_source": "manual",
     "pdf_count": 182,
     "source_url": "https://drive.google.com/drive/folders/1CQIz8QAS93bJTV20U2oyglSmmVzLTl00?usp=sharing",
-    "updated_at": "2026-09-11T10:10:05.729870",
+    "updated_at": "2026-09-11T11:34:19.957213",
     "gov_pdf_url_status": "alive"
   },
   "109建字第0267號": {
@@ -546,7 +553,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 1,
     "source_url": "https://drive.google.com/drive/folders/1bGEZBYA_VgqT8Ma522GZs9L0EbJADjhT?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:05.731976",
+    "updated_at": "2026-09-11T11:34:19.959139",
     "gov_pdf_url_status": "alive"
   },
   "109建字第0269號": {
@@ -554,7 +561,7 @@
     "name_source": "manual",
     "pdf_count": 36,
     "source_url": "https://drive.google.com/drive/folders/1u-7WB2vCcGqVJEnTZPgUx0eVPF4Bqjmf?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:05.738633",
+    "updated_at": "2026-09-11T11:34:19.965540",
     "address": "台北市北投區三合街一段82巷50弄",
     "stage": "第三層支撐架設 (Erection of 3rd layer struts)",
     "sensors": 80,
@@ -577,7 +584,7 @@
     "name_source": "api_match",
     "pdf_count": 76,
     "source_url": "https://drive.google.com/drive/folders/1HmLOCiKMOiC2jQEeNxzhSedOYxYTZuzK?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:05.750057",
+    "updated_at": "2026-09-11T11:34:19.976348",
     "address": "111臺北市士林區天母里中山北路七段190巷",
     "stage": "Pre-construction",
     "sensors": 1,
@@ -592,7 +599,7 @@
     "name": "璞園樸園案 安全觀測工地監測數值",
     "name_source": "source_folder",
     "source_url": "https://drive.google.com/drive/folders/1TCyt6H8HDyetI_s-aWT3IXstUsHHjBEz?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:05.756503",
+    "updated_at": "2026-09-11T11:34:19.982449",
     "pdf_count": 42,
     "gov_pdf_url_status": "alive"
   },
@@ -600,8 +607,8 @@
     "name": "台大447_教職員宿舍新建工程",
     "name_source": "drive_pdf",
     "pdf_count": 37,
-    "source_url": "https://drive.google.com/drive/folders/1l8ARWVIiYPjksv5HZNXpdVx3cPGgWSzr?usp=sharing109",
-    "updated_at": "2026-09-11T10:10:05.761710",
+    "source_url": "https://drive.google.com/drive/folders/1l8ARWVIiYPjksv5HZNXpdVx3cPGgWSzr?usp=sharing",
+    "updated_at": "2026-09-11T11:34:19.987373",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0006號": {
@@ -616,7 +623,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 43,
     "source_url": "https://drive.google.com/drive/folders/1cU60NrKeplWHKEtnP5DWCKaBKVrwK_X1",
-    "updated_at": "2026-09-11T10:10:05.765984",
+    "updated_at": "2026-09-11T11:34:19.991191",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0016號": {
@@ -624,7 +631,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 100,
     "source_url": "https://drive.google.com/drive/mobile/folders/1EzJV43F0HKrwDZtVqvOB6_08HH47IYbD",
-    "updated_at": "2026-09-11T10:10:05.774394",
+    "updated_at": "2026-09-11T11:34:19.999051",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0017號": {
@@ -632,7 +639,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 10,
     "source_url": "https://drive.google.com/drive/folders/1a23uM1cAwbAUkD9nlY_kflBro3NuOrKV?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:05.777406",
+    "updated_at": "2026-09-11T11:34:20.001822",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0035號": {
@@ -640,7 +647,7 @@
     "name_source": "api_match",
     "pdf_count": 75,
     "source_url": "https://drive.google.com/drive/folders/1-n2PfXkDAQBSoG-PkNtQIatWQHjTvxrB?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:05.792991",
+    "updated_at": "2026-09-11T11:34:20.021042",
     "address": "未標示地址",
     "stage": "",
     "sensors": 35,
@@ -656,7 +663,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 16,
     "source_url": "https://drive.google.com/drive/folders/19OvjxUUOz42rhOAgF7GQE8iMAtEWmQad",
-    "updated_at": "2026-09-11T10:10:05.802634",
+    "updated_at": "2026-09-11T11:34:20.030819",
     "gov_pdf_url_status": "alive",
     "live_alerts": {
       "danger": 0,
@@ -673,7 +680,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 32,
     "source_url": "https://drive.google.com/drive/mobile/folders/1rFGLnbI7zpd6vVZsQjL8QAiQ5U9TULs3",
-    "updated_at": "2026-09-11T10:10:05.804732",
+    "updated_at": "2026-09-11T11:34:20.032784",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0052號": {
@@ -681,7 +688,7 @@
     "name_source": "manual",
     "pdf_count": 30,
     "source_url": "https://drive.google.com/drive/folders/19OjPyfD4RWtS813phXbMp6FqEXXT3-1v?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:05.812901",
+    "updated_at": "2026-09-11T11:34:20.040587",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0056號": {
@@ -695,7 +702,7 @@
     "name": "璞園袖里春",
     "name_source": "drive_pdf",
     "source_url": "https://drive.google.com/drive/folders/1rc8ZdUOyLcH0LSdgQavCVzs_D2vOv9rG",
-    "updated_at": "2026-09-11T10:10:05.824279",
+    "updated_at": "2026-09-11T11:34:20.053904",
     "pdf_count": 75,
     "gov_pdf_url_status": "alive"
   },
@@ -704,7 +711,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 55,
     "source_url": "https://drive.google.com/drive/folders/1VK0s-ElKtrNgmhEaX8YO3mpL_A__HuSo?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:05.827194",
+    "updated_at": "2026-09-11T11:34:20.056661",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0072號": {
@@ -712,11 +719,11 @@
     "name_source": "drive_pdf",
     "pdf_count": 38,
     "source_url": "https://drive.google.com/drive/folders/1z0ucOPzMx3IV-rp9zC3JxOvkTUfBt3sd?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:05.829282",
+    "updated_at": "2026-09-11T11:34:20.058621",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0075號": {
-    "updated_at": "2026-09-11T10:10:05.829284",
+    "updated_at": "2026-09-11T11:34:20.058623",
     "source_url_removed": "https://drive.google.com/drive/folders/10cnZCY0b7fPNQrr6q9Nt88BFX8Jv-F2h?usp=sharing",
     "source_url_removed_at": "2026-05-05T14:50:09",
     "source_url": "https://drive.google.com/drive/folders/10cnZCY0b7fPNQrr6q9Nt88BFX8Jv-F2h?usp=sharing",
@@ -727,7 +734,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 42,
     "source_url": "https://drive.google.com/drive/folders/17IrTTSQeuGBLSkUBQ0GBi-dwuTMD85TK?usp=sharing",
-    "updated_at": "2026-09-11T10:10:05.834501",
+    "updated_at": "2026-09-11T11:34:20.063504",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0086號": {
@@ -735,7 +742,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 137,
     "source_url": "https://drive.google.com/drive/u/0/folders/17vHdYAiUumrVC5cCQpKAOzRIn5DyksaC",
-    "updated_at": "2026-09-11T10:10:05.836551",
+    "updated_at": "2026-09-11T11:34:20.065433",
     "gov_pdf_url_status": "404"
   },
   "110建字第0089號": {
@@ -743,7 +750,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 36,
     "source_url": "https://drive.google.com/drive/u/0/folders/1_a-ZdI4Xw_uE1AQD6zs8FPmzMQa65Dvv",
-    "updated_at": "2026-09-11T10:10:05.840431",
+    "updated_at": "2026-09-11T11:34:20.069114",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0093號": {
@@ -751,14 +758,14 @@
     "name_source": "drive_pdf",
     "pdf_count": 4,
     "source_url": "https://drive.google.com/drive/folders/1pMtfnFfOeMMezabvJfJlFV9RtZ5FISMX?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:05.842518",
+    "updated_at": "2026-09-11T11:34:20.071086",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0099號": {
     "name": "璞承永吉",
     "name_source": "drive_pdf",
     "source_url": "https://drive.google.com/drive/folders/16W9cpeFCjaGHtSO4Lm137Q0YE7EPzW17?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:05.844528",
+    "updated_at": "2026-09-11T11:34:20.073019",
     "pdf_count": 87,
     "gov_pdf_url_status": "alive"
   },
@@ -767,7 +774,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 36,
     "source_url": "https://drive.google.com/drive/folders/1b4NJIwfWYMT3iyHAMtkRrn3rfXX4jzy0",
-    "updated_at": "2026-09-11T10:10:05.858482",
+    "updated_at": "2026-09-11T11:34:20.086407",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0103號": {
@@ -775,15 +782,15 @@
     "name_source": "drive_pdf",
     "pdf_count": 31,
     "source_url": "https://drive.google.com/drive/mobile/folders/1o1hSWkywAwjrs8GrjZ1qbnLWpuQbFnuX?usp=sharing_eil_se_dm&ts=656d74c2",
-    "updated_at": "2026-09-11T10:10:05.866811",
+    "updated_at": "2026-09-11T11:34:20.094288",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0108號": {
     "name": "0707德昌街",
     "name_source": "drive_pdf",
     "pdf_count": 40,
-    "source_url": "https://drive.google.com/drive/folders/1qs3oRqD5VtWk6pIBaQlDW1DJHzDhDRkT?usp=sharing",
-    "updated_at": "2026-09-11T10:10:05.868304",
+    "source_url": "https://drive.google.com/drive/folders/1qs3oRqD5VtWk6pIBaQlDW1DJHzDhDRkT?usp=sharing4/37",
+    "updated_at": "2026-09-11T11:34:20.095677",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0110號": {
@@ -798,7 +805,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 120,
     "source_url": "https://drive.google.com/drive/mobile/folders/1vUt8gylOkbn6JUlyMvY5sJ8-EJ0-8tJ0?usp=drive_link&sort=15&direction=d",
-    "updated_at": "2026-09-11T10:10:05.870322",
+    "updated_at": "2026-09-11T11:34:20.097612",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0116號": {
@@ -806,7 +813,7 @@
     "name_source": "manual",
     "pdf_count": 40,
     "source_url": "https://drive.google.com/drive/folders/1CKPo-JA6NnkR30Y_3CVSYVZ0Ps6iVJVY?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:05.878306",
+    "updated_at": "2026-09-11T11:34:20.105339",
     "gov_pdf_url_status": "404",
     "live_alerts": {
       "danger": 0,
@@ -824,8 +831,8 @@
     "pdf_count": 77,
     "warning_count": 14,
     "action_count": 0,
-    "source_url": "https://drive.google.com/drive/folders/1Y3dXCkxOdDt0XdEaDURHiCjnpuhyTVqv",
-    "updated_at": "2026-09-11T10:10:05.889355",
+    "source_url": "https://drive.google.com/drive/u/0/folders/1Y3dXCkxOdDt0XdEaDURHiCjnpuhyTVqv",
+    "updated_at": "2026-09-11T11:34:20.115617",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0118號": {
@@ -840,7 +847,7 @@
     "name_source": "manual",
     "pdf_count": 33,
     "source_url": "https://drive.google.com/drive/folders/1Jla8U5GQYnR6VpheTSJbuWslxxR_J-aE",
-    "updated_at": "2026-09-11T10:10:05.895593",
+    "updated_at": "2026-09-11T11:34:20.121486",
     "gov_pdf_url_status": "alive",
     "live_alerts": {
       "danger": 0,
@@ -857,14 +864,14 @@
     "name_source": "drive_pdf",
     "pdf_count": 158,
     "source_url": "https://drive.google.com/drive/folders/12lVwGFkXTZX6MfInCpZmZg8Rq5WEdOga?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:05.897637",
+    "updated_at": "2026-09-11T11:34:20.125602",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0143號": {
     "name": "東騰建設序東騰新建工程()No.",
     "name_source": "drive_pdf",
     "pdf_count": 109,
-    "updated_at": "2026-09-11T10:10:05.902831",
+    "updated_at": "2026-09-11T11:34:20.130655",
     "source_url_removed": "https://drive.google.com/drive/folders/15384CAr86RldzBIIogDvgAVqy16Dndwk",
     "source_url_removed_at": "2026-05-05T14:50:09",
     "source_url": "https://drive.google.com/drive/folders/15384CAr86RldzBIIogDvgAVqy16Dndwk",
@@ -879,14 +886,16 @@
     "sensors": 7,
     "api_match": "台北市內湖區康寧段集合住宅新建工程",
     "source_url": "https://drive.google.com/drive/folders/1-8eBElO8CisvnGN6eL0mZhabVBN2VWzm?usp=sharing9/30",
-    "updated_at": "2026-09-11T10:10:05.919764",
+    "updated_at": "2026-09-11T11:34:20.146738",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0150號": {
     "name": "長見中山北路",
     "name_source": "drive_pdf",
-    "pdf_count": 53,
-    "updated_at": "2026-09-11T10:10:05.923583"
+    "pdf_count": 84,
+    "updated_at": "2026-09-11T11:34:20.150417",
+    "source_url": "https://drive.google.com/drive/folders/1WVsOW9xLY2oA4_jp_xlW95v8DbdWmReu?usp=sharing",
+    "gov_pdf_url_status": "alive"
   },
   "110建字第0153號": {
     "updated_at": "2026-09-11T10:10:05.923585",
@@ -898,8 +907,8 @@
   "110建字第0163號": {
     "name": "0163 安全",
     "name_source": "drive_pdf",
-    "source_url": "https://drive.google.com/drive/folders/1Hi-wgk8evHqav5Zsfse8-13ro32Ty_2v?usp=sharing",
-    "updated_at": "2026-09-11T10:10:05.924746",
+    "source_url": "https://drive.google.com/drive/folders/1Hi-wgk8evHqav5Zsfse8-13ro32Ty_2v?usp=drive_link",
+    "updated_at": "2026-09-11T11:34:20.155546",
     "gov_pdf_url_status": "alive",
     "pdf_count": 78
   },
@@ -916,7 +925,7 @@
     "sensors": 44,
     "api_match": "忠孝勤靜大樓新建工程",
     "source_url": "https://drive.google.com/drive/folders/1GmexSWo9PxvXaLxXQC1hKKUT5SNBeOWw?usp=sharing",
-    "updated_at": "2026-09-11T10:10:05.929725",
+    "updated_at": "2026-09-11T11:34:20.160472",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0171號": {
@@ -924,7 +933,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 86,
     "source_url": "https://drive.google.com/drive/folders/1h1l-3URfnFWQV1ytGzpdspRhciThl0FH",
-    "updated_at": "2026-09-11T10:10:05.933516",
+    "updated_at": "2026-09-11T11:34:20.164091",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0172號": {
@@ -936,7 +945,7 @@
     "sensors": 20,
     "api_match": "達永豐盛學新建工程",
     "source_url": "https://drive.google.com/drive/folders/1XJZmqqjOz2AAmf4-xE-umLVJrt4Z1tmi?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:05.936760",
+    "updated_at": "2026-09-11T11:34:20.167260",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0173號": {
@@ -944,14 +953,14 @@
     "name_source": "drive_pdf",
     "pdf_count": 4,
     "source_url": "https://drive.google.com/drive/folders/1yDaP8l3nfMIOpMTCEH-rrZDH8i8a6uPk?usp=sharing",
-    "updated_at": "2026-09-11T10:10:05.939660",
+    "updated_at": "2026-09-11T11:34:20.170078",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0175號": {
     "name": "中山北路六段三玉段危老重",
     "name_source": "api_match",
     "pdf_count": 4,
-    "updated_at": "2026-09-11T10:10:05.956725",
+    "updated_at": "2026-09-11T11:34:20.186347",
     "address": "台北市士林區中山北路六段",
     "stage": "Ground Improvement",
     "sensors": 27,
@@ -959,13 +968,15 @@
     "alert_tone": "normal",
     "alert_message": "無異常記錄",
     "alert_date": "",
-    "api_match": "中山北路六段三玉段危老重建案"
+    "api_match": "中山北路六段三玉段危老重建案",
+    "source_url": "https://drive.google.com/drive/folders/1clc6GxWpcX2WH2F16T3mdSO6wMNGDVYn",
+    "gov_pdf_url_status": "alive"
   },
   "110建字第0176號": {
     "name": "六福豐融商業大樓",
     "name_source": "api_match",
     "source_url": "https://drive.google.com/drive/folders/1nksAzXIA46RhGcB2u5litk_6voS3MOgx",
-    "updated_at": "2026-09-11T10:10:05.960674",
+    "updated_at": "2026-09-11T11:34:20.190134",
     "pdf_count": 148,
     "address": "台北市中山區長春路168號",
     "stage": "連續壁施作中",
@@ -990,15 +1001,15 @@
     "name": "吉宗安東倪辛亥段",
     "name_source": "drive_pdf",
     "pdf_count": 21,
-    "source_url": "https://drive.google.com/drive/folders/1__O23PAo6cNWQMeYPnR3vL61l_kdXWkr?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:05.966176",
+    "source_url": "https://drive.google.com/drive/folders/1__O23PAo6cNWQMeYPnR3vL61l_kdXWkr?usp=drive_link5/37",
+    "updated_at": "2026-09-11T11:34:20.195547",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0185號": {
     "name": "新東陽開封街",
     "name_source": "drive_pdf",
     "source_url": "https://drive.google.com/drive/u/1/folders/1AOPCPWrDOklpTc-24euRkXZmZ7bJMEk8",
-    "updated_at": "2026-09-11T10:10:05.969929",
+    "updated_at": "2026-09-11T11:34:20.199152",
     "pdf_count": 7,
     "gov_pdf_url_status": "alive"
   },
@@ -1006,7 +1017,7 @@
     "name": "年4月古厝",
     "name_source": "drive_pdf",
     "pdf_count": 41,
-    "updated_at": "2026-09-11T10:10:05.971910"
+    "updated_at": "2026-09-11T11:34:20.201082"
   },
   "110建字第0188號": {
     "source_url": "https://drive.google.com/file/d/15oTNpNvUKN537U5Nv2CQfgNzn7F9j-dG/view?usp=drive_link10/30",
@@ -1017,14 +1028,14 @@
     "name_source": "drive_pdf",
     "pdf_count": 11,
     "source_url": "https://drive.google.com/drive/folders/1dgYjd-Y9-wIIpwAUpMkP79x9tI8-G0mL",
-    "updated_at": "2026-09-11T10:10:05.973064",
+    "updated_at": "2026-09-11T11:34:20.202178",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0195號": {
     "name": "龍巖南港工地監測數據",
     "name_source": "source_folder",
     "source_url": "https://drive.google.com/drive/folders/1i8NIDEu91RCwdITCrB8OWzEq1yB4ctSR",
-    "updated_at": "2026-09-11T10:10:05.976715",
+    "updated_at": "2026-09-11T11:34:20.205714",
     "pdf_count": 119,
     "gov_pdf_url_status": "alive"
   },
@@ -1033,14 +1044,14 @@
     "name_source": "manual",
     "pdf_count": 144,
     "source_url": "https://drive.google.com/drive/folders/1GtwhCCVZb3dzPJOqMbVWL60I-Vez05a2?usp=sharing",
-    "updated_at": "2026-09-11T10:10:05.986225",
+    "updated_at": "2026-09-11T11:34:20.214159",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0200號": {
     "name": "114林建字第00288號工地監測報告",
     "name_source": "source_folder",
     "source_url": "https://drive.google.com/drive/folders/1We_peP8M_9jn-LfaI9Aj8p4S-ego5Wtb?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:05.991139",
+    "updated_at": "2026-09-11T11:34:20.218807",
     "gov_pdf_url_status": "alive",
     "pdf_count": 1
   },
@@ -1053,7 +1064,7 @@
     "sensors": 22,
     "api_match": "台北首都都更建設蘭雅段南側基地集合住宅新建工程",
     "source_url": "https://drive.google.com/drive/folders/1nPhZHtDTkqJd7po0XozUy_b7kBN5eJxD?hl=zh-tw",
-    "updated_at": "2026-09-11T10:10:06.008334",
+    "updated_at": "2026-09-11T11:34:20.235053",
     "gov_pdf_url_status": "alive",
     "live_alerts": {
       "danger": 0,
@@ -1070,14 +1081,14 @@
     "name_source": "manual",
     "pdf_count": 58,
     "source_url": "https://drive.google.com/drive/folders/1O6bCfQLsgi_1buw-R7nBgX2poC8Zi1d1",
-    "updated_at": "2026-09-11T10:10:06.011209",
+    "updated_at": "2026-09-11T11:34:20.237730",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0215號": {
     "name": "大湖山莊二十三巷二號",
     "name_source": "api_match",
     "pdf_count": 8,
-    "updated_at": "2026-09-11T10:10:06.023604",
+    "updated_at": "2026-09-11T11:34:20.249216",
     "address": "大湖山莊二十三巷二號",
     "stage": "預壘樁施工作業中",
     "sensors": 36,
@@ -1085,14 +1096,16 @@
     "alert_tone": "normal",
     "alert_message": "無異常記錄",
     "alert_date": "",
-    "api_match": "大湖山莊二十三巷二號新建工程"
+    "api_match": "大湖山莊二十三巷二號新建工程",
+    "source_url": "https://drive.google.com/drive/folders/1YNZ_8hfiWGweNXdEEKd5mFMcpBjT3osz?usp=drive_link",
+    "gov_pdf_url_status": "alive"
   },
   "110建字第0219號": {
     "name": "帆登-廈門街集合住宅新建工程",
     "name_source": "drive_pdf",
     "pdf_count": 72,
     "source_url": "https://drive.google.com/drive/folders/1KVi_QzYyICR8Z_dH_RnUL50LszXmjy9s",
-    "updated_at": "2026-09-11T10:10:06.030432",
+    "updated_at": "2026-09-11T11:34:20.255736",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0221號": {
@@ -1100,7 +1113,7 @@
     "name_source": "manual",
     "pdf_count": 152,
     "source_url": "https://drive.google.com/drive/folders/14ICk37tx6zdP1WYGr575rGiSd2Q_HcAZ?usp=sharing",
-    "updated_at": "2026-09-11T10:10:06.050802",
+    "updated_at": "2026-09-11T11:34:20.274097",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0222號": {
@@ -1114,7 +1127,7 @@
     "warning_count": 1,
     "action_count": 0,
     "source_url": "https://drive.google.com/drive/u/1/folders/1KeiHzadAhbAbO2wX5mquyFIReqRQuhTK",
-    "updated_at": "2026-09-11T10:10:06.053733",
+    "updated_at": "2026-09-11T11:34:20.276913",
     "gov_pdf_url_status": "alive",
     "live_alerts": {
       "danger": 0,
@@ -1130,7 +1143,7 @@
     "name": "翊豐-璞永建設天母段",
     "name_source": "drive_pdf",
     "source_url": "https://drive.google.com/drive/folders/1X1KBxClsSqYsfVkbDCyA-0zPBsaLoLVb?usp=sharing",
-    "updated_at": "2026-09-11T10:10:06.058949",
+    "updated_at": "2026-09-11T11:34:20.281835",
     "pdf_count": 94,
     "gov_pdf_url_status": "alive",
     "live_alerts": {
@@ -1148,7 +1161,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 75,
     "source_url": "https://drive.google.com/drive/folders/1OvnAi2QJKKmi-OO-_eQNimgQcdKyb1ck?usp=drive_link11/30",
-    "updated_at": "2026-09-11T10:10:06.062748",
+    "updated_at": "2026-09-11T11:34:20.285536",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0226號": {
@@ -1156,7 +1169,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 167,
     "source_url": "https://drive.google.com/drive/folders/1N3yueEwbzgqaZooo_uYgsQZP6R8BIaUE?usp=sharing",
-    "updated_at": "2026-09-11T10:10:06.068726",
+    "updated_at": "2026-09-11T11:34:20.291235",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0230號": {
@@ -1164,7 +1177,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 121,
     "source_url": "https://drive.google.com/drive/folders/1mDeAJh8lsl34wrpKBDv7ils57-Y53o4r?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:06.074920",
+    "updated_at": "2026-09-11T11:34:20.297274",
     "gov_pdf_url_status": "alive",
     "live_alerts": {
       "danger": 0,
@@ -1195,7 +1208,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 2,
     "source_url": "https://drive.google.com/drive/folders/1Kv2p9GL1JMjsMlHnTSpLqTOkGP1BlV-3?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:06.077785",
+    "updated_at": "2026-09-11T11:34:20.300037",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0243號": {
@@ -1203,7 +1216,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 199,
     "source_url": "https://drive.google.com/drive/folders/1oPLmnLIPpUR7BdBCjzlJ7y-AaIcbzsVp",
-    "updated_at": "2026-09-11T10:10:06.084903",
+    "updated_at": "2026-09-11T11:34:20.306799",
     "gov_pdf_url_status": "alive",
     "live_alerts": {
       "danger": 0,
@@ -1218,8 +1231,8 @@
   "110建字第0245號": {
     "name": "全陽馥工地監測報告",
     "name_source": "source_folder",
-    "source_url": "https://drive.google.com/drive/folders/1CsJGTzgx-DRYDBA9RH3zJDZNhfjJGaio?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:06.087844",
+    "source_url": "https://drive.google.com/drive/my-drive",
+    "updated_at": "2026-09-11T11:34:20.309666",
     "pdf_count": 73,
     "gov_pdf_url_status": "alive"
   },
@@ -1228,7 +1241,7 @@
     "name_source": "api_match",
     "pdf_count": 15,
     "source_url": "https://drive.google.com/drive/folders/1V2CqRVasAiA_n3pUrvoxCwq0Dn4CeLbC?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:06.090299",
+    "updated_at": "2026-09-11T11:34:20.312970",
     "address": "台北市士林區永平段",
     "stage": "6FL施作",
     "sensors": 136,
@@ -1253,7 +1266,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 31,
     "source_url": "https://drive.google.com/drive/folders/13OE1MG89dtnTPA6UNOoLyxsdfUMg93OQ?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:06.092689",
+    "updated_at": "2026-09-11T11:34:20.314890",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0250號": {
@@ -1261,7 +1274,7 @@
     "name_source": "api_match",
     "pdf_count": 47,
     "source_url": "https://drive.google.com/drive/folders/16vjHbYwQ62X6PFKGycKsVLf1JIjAP6HO?usp=sharing12/30",
-    "updated_at": "2026-09-11T10:10:06.100558",
+    "updated_at": "2026-09-11T11:34:20.322064",
     "address": "臺北市萬華區西園路一段220巷及大理街33巷周邊",
     "stage": "BS版澆置養護",
     "sensors": 68,
@@ -1286,18 +1299,20 @@
     "name_source": "drive_pdf",
     "pdf_count": 62,
     "source_url": "https://drive.google.com/drive/folders/1cyl6ciBi72RLFuHlJK5U5VDsZu9jb_s0?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:06.107329",
+    "updated_at": "2026-09-11T11:34:20.328568",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0256號": {
     "name": "亦安建基建設八德路三段集合住宅",
     "name_source": "api_match",
-    "pdf_count": 31,
+    "pdf_count": 62,
     "address": "八德路三段",
     "stage": "連續壁構築中",
     "sensors": 37,
     "api_match": "亦安建基建設八德路三段集合住宅",
-    "updated_at": "2026-09-11T10:10:06.128647"
+    "updated_at": "2026-09-11T11:34:20.348758",
+    "source_url": "https://drive.google.com/drive/folders/1FIH1haeJCu6jUzvLg05ahOQWIHLYzJXI",
+    "gov_pdf_url_status": "alive"
   },
   "110建字第0257號": {
     "name": "",
@@ -1311,7 +1326,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 53,
     "source_url": "https://drive.google.com/drive/folders/1suRbz1sr9OaeI6xEcvEGcbPFZJ7OGM8Q?usp=sharing",
-    "updated_at": "2026-09-11T10:10:06.137568",
+    "updated_at": "2026-09-11T11:34:20.357291",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0266號": {
@@ -1319,7 +1334,7 @@
     "name_source": "manual",
     "pdf_count": 9,
     "source_url": "https://drive.google.com/drive/folders/1fY9RsYAPAn8pEwH-_K126hncCObH3oeG",
-    "updated_at": "2026-09-11T10:10:06.147453",
+    "updated_at": "2026-09-11T11:34:20.366968",
     "address": "台北市士林區光華段",
     "stage": "",
     "sensors": 28,
@@ -1335,7 +1350,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 4,
     "source_url": "https://drive.google.com/drive/folders/1yh9G2kQ6sRih30ujG5KhYGYF7CfDcXXx",
-    "updated_at": "2026-09-11T10:10:06.149447",
+    "updated_at": "2026-09-11T11:34:20.368898",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0273號": {
@@ -1343,7 +1358,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 91,
     "source_url": "https://drive.google.com/drive/folders/1rVptCORlfI0ST4X5SUAhevk_iQ3B9JQo?usp=sharing",
-    "updated_at": "2026-09-11T10:10:06.154040",
+    "updated_at": "2026-09-11T11:34:20.373328",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0277號": {
@@ -1351,7 +1366,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 9,
     "source_url": "https://drive.google.com/drive/folders/1SdYdAyyXOcOVSKFDsin0D3ba5ee6QPKb",
-    "updated_at": "2026-09-11T10:10:06.156932",
+    "updated_at": "2026-09-11T11:34:20.376172",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0279號": {
@@ -1363,7 +1378,7 @@
     "sensors": 17,
     "api_match": "開誠和境內湖康寧段一小段0276-0000號等4筆新建工程",
     "source_url": "https://drive.google.com/drive/folders/1yIiTmw_wn3OQy3B0HkSirTq7xm7iZO3q?usp=sharing",
-    "updated_at": "2026-09-11T10:10:06.164927",
+    "updated_at": "2026-09-11T11:34:20.383950",
     "gov_pdf_url_status": "alive",
     "live_alerts": {
       "danger": 1,
@@ -1380,7 +1395,7 @@
     "name_source": "api_match",
     "pdf_count": 98,
     "source_url": "https://drive.google.com/drive/folders/1BiLCmIVvuqObmqYmS1_H-E-1ARFxXcAC?usp=drive_link13/30",
-    "updated_at": "2026-09-11T10:10:06.182561",
+    "updated_at": "2026-09-11T11:34:20.400937",
     "address": "台北市中正區南海段",
     "stage": "8F版構築 (8F Slab Construction)",
     "sensors": 25,
@@ -1396,14 +1411,14 @@
     "name_source": "drive_pdf",
     "pdf_count": 45,
     "source_url": "https://drive.google.com/drive/u/1/folders/1T0vexpImx2lVe__XRpNf2bEJ5WM8gKAS",
-    "updated_at": "2026-09-11T10:10:06.185388",
+    "updated_at": "2026-09-11T11:34:20.403719",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0287號": {
     "name": "大同安全監測系統",
     "name_source": "drive_pdf",
     "source_url": "https://drive.google.com/drive/folders/1lX8DZJ9xS5muV-b3wMJBcl6TSoEGEExE?usp=sharing",
-    "updated_at": "2026-09-11T10:10:06.189286",
+    "updated_at": "2026-09-11T11:34:20.407502",
     "pdf_count": 113,
     "gov_pdf_url_status": "alive"
   },
@@ -1412,7 +1427,7 @@
     "name_source": "api_match",
     "pdf_count": 2,
     "source_url": "https://drive.google.com/drive/folders/1N9GLaTk8xTJvdzlXtTXdwETZBxlqPGI_?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:06.197499",
+    "updated_at": "2026-09-11T11:34:20.415330",
     "address": "新北市中和區中正路1194巷1號1F",
     "stage": "structure_construction",
     "sensors": 20,
@@ -1440,14 +1455,16 @@
     "stage": "Diaphragm Wall Complete / Excavation",
     "sensors": 32,
     "api_match": "南京東路B案新建大樓工程",
-    "updated_at": "2026-09-11T10:10:06.208200"
+    "updated_at": "2026-09-11T11:34:20.425417",
+    "source_url": "https://drive.google.com/drive/folders/1luPAAgS4FlxUXUAWMbqJHiJ0j9PrqQf_7/37",
+    "gov_pdf_url_status": "404"
   },
   "110建字第0301號": {
     "name": "臺北市信義區松信社會住宅",
     "name_source": "api_match",
     "pdf_count": 20,
     "source_url": "https://drive.google.com/drive/folders/1oYG7KOWSUpUmAs5R_3JxAaqgqG7nUzrV?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:06.223513",
+    "updated_at": "2026-09-11T11:34:20.439979",
     "address": "臺北市信義區松信路、永吉路180巷、虎林街120巷周邊",
     "stage": "構築中",
     "sensors": 26,
@@ -1461,8 +1478,8 @@
   "110建字第0306號": {
     "name": "",
     "name_source": "",
-    "source_url": "https://drive.google.com/drive/folders/1FTY_b5tm4JddjZgm_61_cN4T5khfQ5Nf?usp=sharing",
-    "updated_at": "2026-09-11T10:10:06.223519",
+    "source_url": "https://drive.google.com/drive/folders/1FTY_b5tm4JddjZgm_61_cN4T5khfQ5Nf?usp=drive_link",
+    "updated_at": "2026-09-11T11:34:20.439985",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0307號": {
@@ -1477,7 +1494,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 86,
     "source_url": "https://drive.google.com/drive/folders/1_yronr9PGA-BZx-bBoHZjHu8TqSfCtsu?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:06.234757",
+    "updated_at": "2026-09-11T11:34:20.449320",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0323號": {
@@ -1493,7 +1510,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 46,
     "source_url": "https://drive.google.com/drive/u/2/folders/1rVwJkxoP0uDI8RIWpmDJ-rTBJcKvCVZy?q=parent",
-    "updated_at": "2026-09-11T10:10:06.236790",
+    "updated_at": "2026-09-11T11:34:20.451247",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0339號": {
@@ -1512,7 +1529,7 @@
     "sensors": 7,
     "api_match": "松信社會住宅新建工程",
     "source_url": "https://drive.google.com/drive/folders/1VPIztffBw_jvpzL1TiMSA9hootcSZEdl?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:06.241716",
+    "updated_at": "2026-09-11T11:34:20.456005",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0342號": {
@@ -1520,7 +1537,7 @@
     "name_source": "api_match",
     "pdf_count": 3,
     "source_url": "https://drive.google.com/drive/folders/1Tjx3Hl1-5JAhq1nA_fMByV3cN9Fi0hno?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:06.250240",
+    "updated_at": "2026-09-11T11:34:20.463960",
     "address": "台北市大同區大龍段二小段698等3筆地號",
     "stage": "Demolition",
     "sensors": 26,
@@ -1544,7 +1561,7 @@
     "name": "助群榮星鄰房監測站",
     "name_source": "source_folder",
     "source_url": "https://drive.google.com/drive/folders/1bu20a3XqQ84Sxzf6X6eZ3T8T91rCiMta?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:06.253760",
+    "updated_at": "2026-09-11T11:34:20.470358",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0357號": {
@@ -1552,11 +1569,11 @@
     "name_source": "drive_pdf",
     "pdf_count": 21,
     "source_url": "https://drive.google.com/drive/folders/14C4o9HrxMUt6YbynRMFNa6WlcdB9qmAi",
-    "updated_at": "2026-09-11T10:10:06.256651",
+    "updated_at": "2026-09-11T11:34:20.473124",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0358號": {
-    "updated_at": "2026-09-11T10:10:06.256654",
+    "updated_at": "2026-09-11T11:34:20.473126",
     "source_url_removed": "https://drive.google.com/drive/folders/1WaJjr_o9mZ9IC9BFDBZvFMZ7NBsP4s38?hl=zh-tw",
     "source_url_removed_at": "2026-05-05T14:50:09",
     "source_url": "https://drive.google.com/drive/folders/1WaJjr_o9mZ9IC9BFDBZvFMZ7NBsP4s38?hl=zh-tw",
@@ -1583,7 +1600,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 285,
     "source_url": "https://drive.google.com/drive/folders/1pFoeUH8VFI7CLtN7DoM_2WA-89qW1KAL?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:06.264352",
+    "updated_at": "2026-09-11T11:34:20.479936",
     "gov_pdf_url_status": "alive",
     "live_alerts": {
       "danger": 0,
@@ -1600,14 +1617,14 @@
     "name_source": "drive_pdf",
     "pdf_count": 23,
     "source_url": "https://drive.google.com/drive/folders/1zzKMR4P2LwkQHYGg78C32OPS8UtcGzs-?usp=drive_link15/30",
-    "updated_at": "2026-09-11T10:10:06.266549",
+    "updated_at": "2026-09-11T11:34:20.481854",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0367號": {
     "name": "嘉泰營造工地監測數據_天母案",
     "name_source": "source_folder",
     "source_url": "https://drive.google.com/drive/folders/1s5EJkNvwRpxDJyjqgo16cN6zLu6q-i64",
-    "updated_at": "2026-09-11T10:10:06.272129",
+    "updated_at": "2026-09-11T11:34:20.486954",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0370號": {
@@ -1615,7 +1632,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 4,
     "source_url": "https://drive.google.com/drive/folders/1iphZEYOd3okAoazPogeYRkLSATxQUh6c?usp=sharing",
-    "updated_at": "2026-09-11T10:10:06.273360",
+    "updated_at": "2026-09-11T11:34:20.488084",
     "gov_pdf_url_status": "404"
   },
   "110建字第0371號": {
@@ -1623,7 +1640,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 4,
     "source_url": "https://drive.google.com/drive/folders/1iphZEYOd3okAoazPogeYRkLSATxQUh6c?usp=sharing",
-    "updated_at": "2026-09-11T10:10:06.274567",
+    "updated_at": "2026-09-11T11:34:20.489203",
     "gov_pdf_url_status": "404"
   },
   "110建字第0372號": {
@@ -1631,7 +1648,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 37,
     "source_url": "https://drive.google.com/drive/folders/1s_M9NTNfhjOgA75UaeuQiUcfMPOALmqg?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:06.279358",
+    "updated_at": "2026-09-11T11:34:20.494125",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0376號": {
@@ -1639,7 +1656,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 30,
     "source_url": "https://drive.google.com/drive/folders/1RDR2olEvtWswOyZbBYxIBsq1oqEOlSFk",
-    "updated_at": "2026-09-11T10:10:06.281575",
+    "updated_at": "2026-09-11T11:34:20.496155",
     "gov_pdf_url_status": "alive"
   },
   "110建字第0377號": {
@@ -1647,7 +1664,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 48,
     "source_url": "https://drive.google.com/drive/folders/1to27QZ2CiZ27KpTVwa8A-Rb-iC40S0hu?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:06.283635",
+    "updated_at": "2026-09-11T11:34:20.498111",
     "gov_pdf_url_status": "alive"
   },
   "111建字第0002號": {
@@ -1660,7 +1677,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 31,
     "source_url": "https://drive.google.com/drive/folders/1zl4Pxp-mb7PAP-uU696yvQySSef543RG?usp=sharing",
-    "updated_at": "2026-09-11T10:10:06.286700",
+    "updated_at": "2026-09-11T11:34:20.504097",
     "gov_pdf_url_status": "alive"
   },
   "111建字第0015號": {
@@ -1668,7 +1685,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 79,
     "source_url": "https://drive.google.com/drive/folders/127Sosisd82Xk4fFiMA1veshnofo02xNh?usp=sharing",
-    "updated_at": "2026-09-11T10:10:06.293716",
+    "updated_at": "2026-09-11T11:34:20.509484",
     "gov_pdf_url_status": "alive"
   },
   "111建字第0016號": {
@@ -1676,7 +1693,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 109,
     "source_url": "https://drive.google.com/drive/folders/1yQEX4_ydjQhIyuHx99MWMQnW4wLe_wE6?usp=sharing16/30",
-    "updated_at": "2026-09-11T10:10:06.299356",
+    "updated_at": "2026-09-11T11:34:20.514749",
     "gov_pdf_url_status": "alive"
   },
   "111建字第0021號": {
@@ -1684,7 +1701,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 114,
     "source_url": "https://drive.google.com/drive/folders/1JSGDaaql_YDL_XpEwSFLWK6sKpqfYZio?usp=sharing",
-    "updated_at": "2026-09-11T10:10:06.301403",
+    "updated_at": "2026-09-11T11:34:20.516706",
     "gov_pdf_url_status": "alive"
   },
   "111建字第0026號": {
@@ -1692,7 +1709,7 @@
     "name_source": "api_match",
     "pdf_count": 75,
     "source_url": "https://drive.google.com/drive/u/0/folders/1u_JX7ygjIiSN6PjBwKQScK13pmIPX9v5",
-    "updated_at": "2026-09-11T10:10:06.326738",
+    "updated_at": "2026-09-11T11:34:20.541325",
     "address": "台北市北投區大業段四小段574地號",
     "stage": "B4F施作",
     "sensors": 50,
@@ -1716,7 +1733,7 @@
     "name": "",
     "name_source": "",
     "source_url": "https://drive.google.com/drive/folders/1IeMgEL6K-0bCvzzToS9l46hAMEOL8GiB",
-    "updated_at": "2026-09-11T10:10:06.326825",
+    "updated_at": "2026-09-11T11:34:20.546372",
     "gov_pdf_url_status": "alive"
   },
   "111建字第0039號": {
@@ -1724,7 +1741,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 25,
     "source_url": "https://drive.google.com/drive/folders/1ABrx7UWfsQqxka01psGHR0ODDeXEOcoZ",
-    "updated_at": "2026-09-11T10:10:06.328874",
+    "updated_at": "2026-09-11T11:34:20.548320",
     "gov_pdf_url_status": "alive"
   },
   "111建字第0047號": {
@@ -1735,21 +1752,23 @@
     "stage": "Excavation/Construction",
     "sensors": 42,
     "api_match": "集順生僑安案新建工程",
-    "updated_at": "2026-09-11T10:10:06.334060"
+    "updated_at": "2026-09-11T11:34:20.553284",
+    "source_url": "https://drive.google.com/drive/folders/12g_pzxJbpPpanxyfg5vyM_iQ2dYFP-2p",
+    "gov_pdf_url_status": "alive"
   },
   "111建字第0051號": {
     "name": "A5010_電梯詳圖",
     "name_source": "drive_pdf",
     "pdf_count": 27,
     "source_url": "https://drive.google.com/drive/folders/1mgDijBKe-UyA_SGUy6wBDPR4l1nLcox6",
-    "updated_at": "2026-09-11T10:10:06.336126",
+    "updated_at": "2026-09-11T11:34:20.555250",
     "gov_pdf_url_status": "404"
   },
   "111建字第0052號": {
     "name": "臺北市信義區松信社會住宅",
     "name_source": "api_match",
     "source_url": "https://drive.google.com/drive/folders/1GA4qPNbgse7bb4QhY5CiqXeqVO7mTFTL?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:06.351181",
+    "updated_at": "2026-09-11T11:34:20.569840",
     "pdf_count": 61,
     "address": "臺北市信義區松信路、永吉路180巷、虎林街120巷周邊",
     "stage": "構築中",
@@ -1764,12 +1783,14 @@
   "111建字第0053號": {
     "name": "大安綠映",
     "name_source": "drive_pdf",
-    "pdf_count": 88,
+    "pdf_count": 109,
     "address": "新北市中和區秀峰街105號1樓",
     "stage": "Excavation/Foundation",
     "sensors": 50,
     "api_match": "大安綠映新建工程",
-    "updated_at": "2026-09-11T10:10:06.352976"
+    "updated_at": "2026-09-11T11:34:20.571531",
+    "source_url": "https://drive.google.com/drive/folders/1-V_RF2HY5tedw9Vz15hfXIVk6E6nFOPf",
+    "gov_pdf_url_status": "alive"
   },
   "111建字第0055號": {
     "updated_at": "2026-09-11T10:10:06.352978",
@@ -1782,16 +1803,16 @@
     "name": "士林宏築",
     "name_source": "drive_pdf",
     "pdf_count": 63,
-    "source_url": "https://drive.google.com/drive/folders/1fGLMZ9Uj-18L4feJCrIRcXuEkPlXBOjl",
-    "updated_at": "2026-09-11T10:10:06.354991",
-    "gov_pdf_url_status": "alive"
+    "source_url": "https://drive.google.com/drive/folders/1fGLMZ9Uj-18L4feJCrIRcXuEkPlXBOjl9/37",
+    "updated_at": "2026-09-11T11:34:20.573478",
+    "gov_pdf_url_status": "404"
   },
   "111建字第0057號": {
     "name": "將捷木柵甲區段B主體工程新建工程",
     "name_source": "manual",
     "pdf_count": 3,
-    "source_url": "https://drive.google.com/drive/folders/1lMtd86DCf_6PpINo-9iT_b0W41AuMc8-?usp=sharing17/30",
-    "updated_at": "2026-09-11T10:10:06.360058",
+    "source_url": "https://drive.google.com/drive/folders/1lMtd86DCf_6PpINo-9iT_b0W41AuMc8-?usp=sharing",
+    "updated_at": "2026-09-11T11:34:20.578355",
     "gov_pdf_url_status": "alive",
     "live_alerts": {
       "danger": 0,
@@ -1808,19 +1829,19 @@
     "name_source": "drive_pdf",
     "pdf_count": 120,
     "source_url": "https://drive.google.com/drive/folders/1uVZRr6p73RDgLpSlJRJAh-v5sAGj6N36",
-    "updated_at": "2026-09-11T10:10:06.365716",
+    "updated_at": "2026-09-11T11:34:20.583733",
     "gov_pdf_url_status": "404"
   },
   "111建字第0059號": {
     "source_url": "https://drive.google.com/drive/folders/1WFZNMyYBPZc37iZu2coIMMksyVEZYIKL?usp=sharing",
-    "updated_at": "2026-09-11T10:10:06.365718",
+    "updated_at": "2026-09-11T11:34:20.583735",
     "gov_pdf_url_status": "alive"
   },
   "111建字第0060號": {
     "name": "嘉鎷",
     "name_source": "drive_pdf",
     "source_url": "https://drive.google.com/drive/folders/1qNjsRzrFIBbcuh7DzaGd6PMuq4SxaIB-",
-    "updated_at": "2026-09-11T10:10:06.366841",
+    "updated_at": "2026-09-11T11:34:20.584802",
     "pdf_count": 26,
     "gov_pdf_url_status": "alive"
   },
@@ -1829,7 +1850,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 41,
     "source_url": "https://drive.google.com/drive/folders/1LXQ3yjdKvovJCZtfS5w1Rfw4xEjlECVz?usp=sharing",
-    "updated_at": "2026-09-11T10:10:06.375582",
+    "updated_at": "2026-09-11T11:34:20.593132",
     "gov_pdf_url_status": "alive"
   },
   "111建字第0062號": {
@@ -1837,7 +1858,7 @@
     "name_source": "manual",
     "pdf_count": 68,
     "source_url": "https://drive.google.com/drive/folders/1VEIob64PV2asTHy2gEEAi--ok0V4kXt2?usp=sharing",
-    "updated_at": "2026-09-11T10:10:06.380782",
+    "updated_at": "2026-09-11T11:34:20.598144",
     "gov_pdf_url_status": "alive"
   },
   "111建字第0065號": {
@@ -1845,18 +1866,18 @@
     "name_source": "manual",
     "pdf_count": 43,
     "source_url": "https://drive.google.com/drive/folders/1KuS4SLBnM984gq_uCWU82qOCwVS37xZ-",
-    "updated_at": "2026-09-11T10:10:06.389014",
+    "updated_at": "2026-09-11T11:34:20.605962",
     "gov_pdf_url_status": "alive"
   },
   "111建字第0068號": {
     "name": "台北市大同區橋北段三小段581地號等十筆土地",
     "name_source": "api_match",
-    "pdf_count": 80,
+    "pdf_count": 88,
     "address": "台北市大同區橋北段三小段581地號",
     "stage": "地下二樓構築",
     "sensors": 76,
     "api_match": "台北市大同區橋北段三小段581地號等十筆土地新建工程",
-    "updated_at": "2026-09-11T10:10:06.403954",
+    "updated_at": "2026-09-11T11:34:20.620559",
     "live_alerts": {
       "danger": 0,
       "warning": 1,
@@ -1865,14 +1886,16 @@
       "details": [
         "有感測器超過警戒值"
       ]
-    }
+    },
+    "source_url": "https://drive.google.com/drive/mobile/folders/1HKackwJyO-oleR-W7T5yVivOvuK-Ui8O?usp=drive_link",
+    "gov_pdf_url_status": "alive"
   },
   "111建字第0069號": {
     "name": "財團法人中華基督教長老會台北信友堂",
     "name_source": "api_match",
     "pdf_count": 113,
     "source_url": "https://drive.google.com/drive/folders/1fe9LEF_S3e4835ery7FZNG5iz4jzeHNT?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:06.428558",
+    "updated_at": "2026-09-11T11:34:20.644994",
     "address": "台北市",
     "stage": "Construction",
     "sensors": 30,
@@ -1895,51 +1918,57 @@
     "name_source": "drive_pdf",
     "pdf_count": 65,
     "source_url": "https://drive.google.com/drive/folders/1ldQiGJDrG_B-fjvVTGtjYgozGVBVz1M5",
-    "updated_at": "2026-09-11T10:10:06.432382",
+    "updated_at": "2026-09-11T11:34:20.648676",
     "gov_pdf_url_status": "alive"
   },
   "111建字第0080號": {
     "name": "職能發展學院工地",
     "name_source": "drive_pdf",
     "pdf_count": 394,
-    "updated_at": "2026-09-11T10:10:06.438028"
+    "updated_at": "2026-09-11T11:34:20.654174",
+    "source_url": "https://drive.google.com/drive/mobile/folders/1itXdBpi8k3sLjreBDaND5SfZHngm0V0_?usp=drive_link",
+    "gov_pdf_url_status": "alive"
   },
   "111建字第0082號": {
     "name": "新光南東大樓",
     "name_source": "source_folder",
-    "source_url": "https://drive.google.com/drive/folders/12EN-vt7jrwKNdc_Hm8vJKuwBmbPl2n8k?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:06.440640",
+    "source_url": "https://drive.google.com/drive/u/2/folders/12EN-vt7jrwKNdc_Hm8vJKuwBmbPl2n8k",
+    "updated_at": "2026-09-11T11:34:20.656666",
     "gov_pdf_url_status": "alive"
   },
   "111建字第0083號": {
     "name": "南港調車場都市更新案(單元二",
     "name_source": "api_match",
-    "pdf_count": 28,
+    "pdf_count": 39,
     "address": "台北市南港區",
     "stage": "B3F Excavation",
     "sensors": 142,
     "api_match": "南港調車場都市更新案(單元二)新建工程",
-    "updated_at": "2026-09-11T10:10:06.458125"
+    "updated_at": "2026-09-11T11:34:20.673736",
+    "source_url": "https://drive.google.com/drive/u/3/folders/10JZ6vPAVYws54lekXyVoH9BPJWuKYh2J",
+    "gov_pdf_url_status": "alive"
   },
   "111建字第0086號": {
     "name": "台北市士林區華岡段",
     "name_source": "drive_pdf",
     "pdf_count": 3,
-    "source_url": "https://drive.google.com/drive/folders/1UtZivOo0hr0Hjz72_1Hy6tzjXv31LUfh?usp=sharing",
-    "updated_at": "2026-09-11T10:10:06.464565",
+    "source_url": "https://drive.google.com/drive/folders/1UtZivOo0hr0Hjz72_1Hy6tzjXv31LUfh?usp=sharing10/37",
+    "updated_at": "2026-09-11T11:34:20.679982",
     "gov_pdf_url_status": "alive"
   },
   "111建字第0091號": {
     "name": "維昌臨沂",
     "name_source": "drive_pdf",
-    "pdf_count": 70,
-    "updated_at": "2026-09-11T10:10:06.466599"
+    "pdf_count": 78,
+    "updated_at": "2026-09-11T11:34:20.681935",
+    "source_url": "https://drive.google.com/drive/folders/1suHTSgdTas5VAlqQ6IVVb1tCOUj08gNq",
+    "gov_pdf_url_status": "alive"
   },
   "111建字第0092號": {
     "name": "八德采邑大樓新建工程",
     "name_source": "api_match",
-    "source_url": "https://drive.google.com/drive/folders/10OgjdporSI-7ZP7bl-KYRCZ2GCv7mMMh?usp=drive_link18/30",
-    "updated_at": "2026-09-11T10:10:06.472410",
+    "source_url": "https://drive.google.com/drive/folders/10OgjdporSI-7ZP7bl-KYRCZ2GCv7mMMh?usp=drive_link",
+    "updated_at": "2026-09-11T11:34:20.687655",
     "pdf_count": 53,
     "address": "台北市松山區八德路四段17弄",
     "stage": "Excavation/Construction",
@@ -1956,7 +1985,7 @@
     "name_source": "api_match",
     "pdf_count": 96,
     "source_url": "https://drive.google.com/drive/folders/1byzveZ1HkXB6-1v8Bkf8xRAh8StwLtZF?usp=sharing",
-    "updated_at": "2026-09-11T10:10:06.475782",
+    "updated_at": "2026-09-11T11:34:20.704345",
     "address": "文林北路5巷",
     "stage": "Construction",
     "sensors": 53,
@@ -1971,7 +2000,7 @@
     "name": "",
     "name_source": "",
     "source_url": "https://drive.google.com/drive/folders/18TbW1z_RPGFV7dDfNz6inIlUqbjyFb4z",
-    "updated_at": "2026-09-11T10:10:06.475856",
+    "updated_at": "2026-09-11T11:34:20.704421",
     "gov_pdf_url_status": "alive"
   },
   "111建字第0097號": {
@@ -1983,7 +2012,7 @@
     "sensors": 32,
     "api_match": "璞園喆里東新建工程",
     "source_url": "https://drive.google.com/drive/folders/1rrE4CNLRSjQ1svA3XfaaU2eg_Nsnn721?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:06.478785",
+    "updated_at": "2026-09-11T11:34:20.707319",
     "gov_pdf_url_status": "alive",
     "live_alerts": {
       "danger": 0,
@@ -1999,7 +2028,7 @@
     "name": "同助營造-蓮園心邑",
     "name_source": "api_match",
     "source_url": "https://drive.google.com/drive/mobile/folders/1k-5l89VU3vaT4wLRL8ke1DTlgQmIWEIV",
-    "updated_at": "2026-09-11T10:10:06.484086",
+    "updated_at": "2026-09-11T11:34:20.712131",
     "pdf_count": 5,
     "address": "新北市板橋區龍泉街55巷28弄1號1樓",
     "stage": "3F柱牆模板組立",
@@ -2025,7 +2054,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 40,
     "source_url": "https://drive.google.com/drive/folders/1kaQuUUikwmjBWtgq_DY8nmz_Nro5UnqU",
-    "updated_at": "2026-09-11T10:10:06.485610",
+    "updated_at": "2026-09-11T11:34:20.713506",
     "gov_pdf_url_status": "alive"
   },
   "111建字第0111號": {
@@ -2033,7 +2062,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 93,
     "source_url": "https://drive.google.com/drive/u/1/folders/1FtcmX395Yf9NznSe1QVEPXj_QEYsPtl7",
-    "updated_at": "2026-09-11T10:10:06.494396",
+    "updated_at": "2026-09-11T11:34:20.721963",
     "gov_pdf_url_status": "alive"
   },
   "111建字第0112號": {
@@ -2049,15 +2078,15 @@
     "name": "~禾進-吉美合江街",
     "name_source": "drive_pdf",
     "pdf_count": 7,
-    "source_url": "https://drive.google.com/drive/folders/1LWfb2znIPI-JY9QXlwYNq7QFA8JsWW7n",
-    "updated_at": "2026-09-11T10:10:06.499203",
-    "gov_pdf_url_status": "alive"
+    "source_url": "https://drive.google.com/drive/folders/1LWfb2znIPI-JY9QXlwYNq7QFA8JsWW7n11/37",
+    "updated_at": "2026-09-11T11:34:20.726490",
+    "gov_pdf_url_status": "404"
   },
   "111建字第0117號": {
     "name": "臺灣戲曲學院_內湖校區「劇藝教學大樓新建工程」車道區基地觀測系統",
     "name_source": "api_match",
-    "source_url": "https://drive.google.com/drive/folders/1CGhH-wHVv_Lsx9VYh1frEj7s7X9AwprM?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:06.536935",
+    "source_url": "https://drive.google.com/drive/folders/1QqB2LzFLhiU_qd3xBi655x4PEwoEeOpc?usp=drive_link",
+    "updated_at": "2026-09-11T11:34:20.760723",
     "pdf_count": 444,
     "address": "台北市內湖區",
     "stage": "Excavation/Construction",
@@ -2070,27 +2099,29 @@
     "gov_pdf_url_status": "alive"
   },
   "111建字第0118號": {
-    "updated_at": "2026-09-11T10:10:06.540892",
+    "updated_at": "2026-09-11T11:34:20.764471",
     "name": "和暘豪景工地",
     "name_source": "drive_pdf",
     "pdf_count": 65,
     "source_url_removed": "https://drive.google.com/drive/folders/1_bw-nSnG1_7KUYvOlDTVNTadKotXshIs19/30",
     "source_url_removed_at": "2026-05-05T14:50:09",
-    "source_url": "https://drive.google.com/drive/folders/1_bw-nSnG1_7KUYvOlDTVNTadKotXshIs19/30",
-    "gov_pdf_url_status": "404"
+    "source_url": "https://drive.google.com/drive/folders/1_bw-nSnG1_7KUYvOlDTVNTadKotXshIs",
+    "gov_pdf_url_status": "alive"
   },
   "111建字第0119號": {
     "name": "松隆路案",
     "name_source": "drive_pdf",
     "pdf_count": 37,
-    "updated_at": "2026-09-11T10:10:06.543335"
+    "updated_at": "2026-09-11T11:34:20.766405",
+    "source_url": "https://drive.google.com/drive/folders/1Awtk8rVEtNYQ3-y3QmiExlLBgI65kj64",
+    "gov_pdf_url_status": "alive"
   },
   "111建字第0120號": {
     "name": "東匯工地",
     "name_source": "drive_pdf",
     "pdf_count": 62,
     "source_url": "https://drive.google.com/drive/folders/1vtlC0Ijy0FawBk7p-vB2D7K-oDoZk409?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:06.545676",
+    "updated_at": "2026-09-11T11:34:20.768324",
     "gov_pdf_url_status": "alive"
   },
   "111建字第0121號": {
@@ -2112,8 +2143,8 @@
   "111建字第0122號": {
     "name": "中鹿營造-豐裕興業天母段集合住宅",
     "name_source": "api_match",
-    "pdf_count": 341,
-    "updated_at": "2026-09-11T10:10:06.564501",
+    "pdf_count": 346,
+    "updated_at": "2026-09-11T11:34:20.782646",
     "address": "台北市天母段",
     "stage": "B1F 頂版施作",
     "sensors": 34,
@@ -2130,14 +2161,16 @@
       "details": [
         "有感測器超過警戒值"
       ]
-    }
+    },
+    "source_url": "https://drive.google.com/drive/folders/1H_RiQuy8g722NWo79UwxZQ4AuAkFhCla?dmr=1&ec=wgc-drive-hero-goto",
+    "gov_pdf_url_status": "alive"
   },
   "111建字第0123號": {
     "name": "國泰蒔美",
     "name_source": "drive_pdf",
     "pdf_count": 60,
     "source_url": "https://drive.google.com/drive/folders/1QH9KCrrjV2lcwgmSWF_EBN_i19NJytvW?usp=sharing",
-    "updated_at": "2026-09-11T10:10:06.566626",
+    "updated_at": "2026-09-11T11:34:20.784604",
     "gov_pdf_url_status": "alive"
   },
   "111建字第0125號": {
@@ -2145,7 +2178,7 @@
     "name_source": "api_match",
     "pdf_count": 6,
     "source_url": "https://drive.google.com/drive/folders/1pNQPKrXX78MrtIa0R06qW5fcsmXJJLQg",
-    "updated_at": "2026-09-11T10:10:06.575853",
+    "updated_at": "2026-09-11T11:34:20.793415",
     "address": "植福路/堤頂大道二段",
     "stage": "第一階開挖",
     "sensors": 30,
@@ -2170,14 +2203,14 @@
     "name_source": "drive_pdf",
     "pdf_count": 34,
     "source_url": "https://drive.google.com/drive/folders/1GVBceaKBOPBzaJ6uwQIHhhfOZt56RxiC",
-    "updated_at": "2026-09-11T10:10:06.577900",
+    "updated_at": "2026-09-11T11:34:20.795349",
     "gov_pdf_url_status": "alive"
   },
   "111建字第0129號": {
     "name": "隆雲心仝聚安全監測報告",
     "name_source": "source_folder",
     "source_url": "https://drive.google.com/drive/folders/178R76JsnLTepEea26MqHZAOUa-USxk2O",
-    "updated_at": "2026-09-11T10:10:06.580818",
+    "updated_at": "2026-09-11T11:34:20.797941",
     "pdf_count": 105,
     "gov_pdf_url_status": "alive",
     "live_alerts": {
@@ -2195,7 +2228,7 @@
     "name_source": "api_match",
     "pdf_count": 24,
     "source_url": "https://drive.google.com/drive/folders/14xpHQEacCCIGMN4rTzfyYHHszl9eEKcu?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:06.632037",
+    "updated_at": "2026-09-11T11:34:20.847365",
     "address": "臺北市萬華區",
     "stage": "",
     "sensors": 115,
@@ -2207,18 +2240,21 @@
     "gov_pdf_url_status": "alive"
   },
   "111建字第0131號": {
-    "updated_at": "2026-09-11T10:10:06.632053",
+    "updated_at": "2026-09-11T11:34:20.848485",
     "source_url_removed": "https://drive.google.com/drive/folders/1lREcyhd6lC8TyOAa8MD8yNrMiUVJXoR4?usp=sharing",
     "source_url_removed_at": "2026-05-05T14:50:09",
-    "source_url": "https://drive.google.com/drive/folders/1lREcyhd6lC8TyOAa8MD8yNrMiUVJXoR4?usp=sharing",
-    "gov_pdf_url_status": "404"
+    "source_url": "https://drive.google.com/drive/folders/1T2Ps_X6cepsrgIuUIBKeHq8rt1lbwNIB",
+    "gov_pdf_url_status": "alive",
+    "name": "29-115.1.",
+    "name_source": "drive_pdf",
+    "pdf_count": 20
   },
   "111建字第0132號": {
     "name": "福德路18號旅館觀測平面圖",
     "name_source": "drive_pdf",
     "pdf_count": 65,
     "source_url": "https://drive.google.com/drive/folders/1JrrXrpbhWYWCxj5wePciFzZEpejN50AK?usp=sharing",
-    "updated_at": "2026-09-11T10:10:06.638500",
+    "updated_at": "2026-09-11T11:34:20.854782",
     "gov_pdf_url_status": "alive"
   },
   "111建字第0133號": {
@@ -2226,20 +2262,22 @@
     "name_source": "drive_pdf",
     "pdf_count": 1,
     "source_url": "https://drive.google.com/drive/u/0/folders/1BlEMRkmTQNTBivUjMYwVcgB12v-00lkI",
-    "updated_at": "2026-09-11T10:10:06.642431",
+    "updated_at": "2026-09-11T11:34:20.858504",
     "gov_pdf_url_status": "404"
   },
   "111建字第0136號": {
     "name": "金源南昌",
     "name_source": "drive_pdf",
-    "pdf_count": 105,
-    "updated_at": "2026-09-11T10:10:06.644576"
+    "pdf_count": 109,
+    "updated_at": "2026-09-11T11:34:20.860429",
+    "source_url": "https://drive.google.com/drive/folders/1dJe5vdwTWYf0765dGlkQIxJc-0tub8Wq",
+    "gov_pdf_url_status": "alive"
   },
   "111建字第0137號": {
     "name": "M08 恆悅麗山",
     "name_source": "api_match",
     "source_url": "https://drive.google.com/drive/folders/1LkVF6Ocz5H-i4RlVH6XzxVJfaJ1ef3a8?usp=sharing",
-    "updated_at": "2026-09-11T10:10:06.646388",
+    "updated_at": "2026-09-11T11:34:20.862165",
     "pdf_count": 181,
     "address": "台北市內湖區",
     "stage": "",
@@ -2254,18 +2292,18 @@
   "111建字第0140號": {
     "name": "文昌217店鋪",
     "name_source": "drive_pdf",
-    "pdf_count": 213,
-    "updated_at": "2026-09-11T10:10:06.648428",
+    "pdf_count": 269,
+    "updated_at": "2026-09-11T11:34:20.864123",
     "source_url_removed": "https://drive.google.com/drive/folders/1ZE_eoVKW_cyeHN_cxTc0Ph5seZxVsEbo20/30",
     "source_url_removed_at": "2026-05-05T14:50:09",
-    "source_url": "https://drive.google.com/drive/folders/1ZE_eoVKW_cyeHN_cxTc0Ph5seZxVsEbo20/30",
-    "gov_pdf_url_status": "404"
+    "source_url": "https://drive.google.com/drive/folders/1ZE_eoVKW_cyeHN_cxTc0Ph5seZxVsEbo",
+    "gov_pdf_url_status": "alive"
   },
   "111建字第0142號": {
     "name": "寶鉅-雅祥段113.",
     "name_source": "drive_pdf",
-    "pdf_count": 80,
-    "updated_at": "2026-09-11T10:10:06.651335",
+    "pdf_count": 94,
+    "updated_at": "2026-09-11T11:34:20.866888",
     "live_alerts": {
       "danger": 0,
       "warning": 1,
@@ -2274,7 +2312,9 @@
       "details": [
         "有感測器超過警戒值"
       ]
-    }
+    },
+    "source_url": "https://drive.google.com/drive/folders/189LXnk3nCbiRHL8AcrAxQIonzVPGQkqm?usp=drive_link12/37",
+    "gov_pdf_url_status": "alive"
   },
   "111建字第0146號": {
     "name": "南京阿曼",
@@ -2285,7 +2325,7 @@
     "sensors": 30,
     "api_match": "南京阿曼新建工程",
     "source_url": "https://drive.google.com/drive/folders/1rguUIOWNFc3GmquDjCrR1kuPCxOsJy1v?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:06.653122",
+    "updated_at": "2026-09-11T11:34:20.870515",
     "gov_pdf_url_status": "alive"
   },
   "111建字第0147號": {
@@ -2293,7 +2333,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 33,
     "source_url": "https://drive.google.com/drive/u/1/folders/1Bwz3SW_WWlM-z8aWyCbuyFMdUDMCMQUi",
-    "updated_at": "2026-09-11T10:10:06.655105",
+    "updated_at": "2026-09-11T11:34:20.872449",
     "gov_pdf_url_status": "alive"
   },
   "111建字第0149號": {
@@ -2304,7 +2344,7 @@
     "gov_pdf_url_status": "404"
   },
   "111建字第0153號": {
-    "updated_at": "2026-09-11T10:10:06.655109",
+    "updated_at": "2026-09-11T11:34:20.872451",
     "source_url_removed": "https://drive.google.com/drive/u/1/folders/1Og0ah_iOEt8RxhRD-eiPJscmjWeUuaN1",
     "source_url_removed_at": "2026-05-05T14:50:09",
     "source_url": "https://drive.google.com/drive/u/1/folders/1Og0ah_iOEt8RxhRD-eiPJscmjWeUuaN1",
@@ -2315,14 +2355,14 @@
     "name_source": "drive_pdf",
     "pdf_count": 138,
     "source_url": "https://drive.google.com/drive/u/1/folders/1C72qlcLuLdqFAVhI9-cy_gPOknMfDIiF",
-    "updated_at": "2026-09-11T10:10:06.657112",
+    "updated_at": "2026-09-11T11:34:20.874388",
     "gov_pdf_url_status": "alive"
   },
   "111建字第0158號": {
     "name": "根基營造萬華區直興段",
     "name_source": "api_match",
     "source_url": "https://drive.google.com/drive/u/2/folders/1IJ12rSGeuIAQVeUXA_DixMoepOaHJ4pn",
-    "updated_at": "2026-09-11T10:10:06.669235",
+    "updated_at": "2026-09-11T11:34:20.886215",
     "pdf_count": 44,
     "address": "台北市萬華區直興段",
     "stage": "四樓版構築",
@@ -2339,7 +2379,7 @@
     "name_source": "api_match",
     "pdf_count": 46,
     "source_url": "https://drive.google.com/drive/folders/1_13JraYoIdK37sMGJ1Litkoze9GnP882",
-    "updated_at": "2026-09-11T10:10:06.683010",
+    "updated_at": "2026-09-11T11:34:20.902149",
     "address": "台北市復興段",
     "stage": "10FL (10th Floor Construction)",
     "sensors": 36,
@@ -2355,41 +2395,47 @@
     "name_source": "manual",
     "pdf_count": 31,
     "source_url": "https://drive.google.com/drive/folders/1_CSvVcrGmYJSuKmRbfGGLXh5hch7iLaH?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:06.687473",
+    "updated_at": "2026-09-11T11:34:20.906406",
     "gov_pdf_url_status": "alive"
   },
   "111建字第0167號": {
     "name": "安家秀新建工程",
     "name_source": "manual",
-    "pdf_count": 108,
-    "updated_at": "2026-09-11T10:10:06.688866"
+    "pdf_count": 123,
+    "updated_at": "2026-09-11T11:34:20.907737",
+    "source_url": "https://drive.google.com/drive/folders/1eDA1wRousytcPHRYoY817c4tub4bS5zy",
+    "gov_pdf_url_status": "alive"
   },
   "111建字第0175號": {
     "name": "地藏悲願基金會文林北路大樓新建工程監測案",
     "name_source": "manual",
     "pdf_count": 87,
-    "updated_at": "2026-09-11T10:10:06.699580"
+    "updated_at": "2026-09-11T11:34:20.918112",
+    "source_url": "https://drive.google.com/drive/folders/1Mo6MSqspmA65TMjADsQAeP4-Q4Ohndjm",
+    "gov_pdf_url_status": "alive"
   },
   "111建字第0181號": {
     "name": "簡美-中山區",
     "name_source": "drive_pdf",
     "pdf_count": 99,
-    "updated_at": "2026-09-11T10:10:06.702472"
+    "updated_at": "2026-09-11T11:34:20.920864",
+    "source_url": "https://drive.google.com/drive/u/0/folders/1pfKIoDgx6Um0gdlU8OQJcrtEdDLDMgqq13/37",
+    "gov_pdf_url_status": "404"
   },
   "111建字第0182號": {
     "name": "康home案安全",
     "name_source": "drive_pdf",
     "pdf_count": 54,
     "source_url": "https://drive.google.com/drive/folders/1D5snK1fjaot4x5ugQZbpmYggkPtLqu5m",
-    "updated_at": "2026-09-11T10:10:06.704480",
+    "updated_at": "2026-09-11T11:34:20.922810",
     "gov_pdf_url_status": "alive"
   },
   "111建字第0183號": {
     "name": "安全鑑測",
     "name_source": "drive_pdf",
     "pdf_count": 2,
-    "source_url": "https://drive.google.com/drive/folders/103ULiaWrFxLLwfEa_5Nyz_L6axGW-nT9?usp=drive_link21/30",
-    "updated_at": "2026-09-11T10:10:06.706462",
+    "source_url": "https://drive.google.com/drive/folders/103ULiaWrFxLLwfEa_5Nyz_L6axGW-nT9?usp=drive_link",
+    "updated_at": "2026-09-11T11:34:20.924750",
     "gov_pdf_url_status": "alive"
   },
   "111建字第0185號": {
@@ -2397,7 +2443,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 72,
     "source_url": "https://drive.google.com/drive/folders/1a0CdaSjQEPxm8XLgDBNiwyRNvdsCWPzZ",
-    "updated_at": "2026-09-11T10:10:06.711264",
+    "updated_at": "2026-09-11T11:34:20.929341",
     "gov_pdf_url_status": "alive"
   },
   "111建字第0186號": {
@@ -2405,7 +2451,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 38,
     "source_url": "https://drive.google.com/drive/folders/1ePcccnJdMf5uc7MSuCIgkbzHFSMGz--y?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:06.714241",
+    "updated_at": "2026-09-11T11:34:20.932186",
     "gov_pdf_url_status": "alive"
   },
   "111建字第0188號": {
@@ -2419,15 +2465,15 @@
     "name": "長虹虹創科技工地監測數據",
     "name_source": "source_folder",
     "source_url": "https://drive.google.com/drive/folders/1JY5D89TFugxY8JzYeEwGFTjMVsCks3b4",
-    "updated_at": "2026-09-11T10:10:06.719908",
+    "updated_at": "2026-09-11T11:34:20.937675",
     "pdf_count": 26,
     "gov_pdf_url_status": "alive"
   },
   "111建字第0191號": {
     "name": "中瑋建設向陽段19-2等地號集合住宅",
     "name_source": "api_match",
-    "pdf_count": 79,
-    "updated_at": "2026-09-11T10:10:06.740025",
+    "pdf_count": 81,
+    "updated_at": "2026-09-11T11:34:20.956516",
     "address": "向陽段19-2等地號",
     "stage": "7F版鋼筋綁紮",
     "sensors": 36,
@@ -2435,10 +2481,12 @@
     "alert_tone": "normal",
     "alert_message": "無異常記錄",
     "alert_date": "",
-    "api_match": "中瑋建設向陽段19-2等地號集合住宅新建工程"
+    "api_match": "中瑋建設向陽段19-2等地號集合住宅新建工程",
+    "source_url": "https://drive.google.com/drive/folders/1mSteYjfbybqkmJiaU9Gwi0SlabPdPbm6",
+    "gov_pdf_url_status": "alive"
   },
   "111建字第0192號": {
-    "updated_at": "2026-09-11T10:10:06.740034",
+    "updated_at": "2026-09-11T11:34:20.956518",
     "source_url_removed": "https://drive.google.com/drive/folders/1_xZYBOwaY9jH3vLut-KFgLafgMiB05se?usp=sharing",
     "source_url_removed_at": "2026-05-05T14:50:09",
     "source_url": "https://drive.google.com/drive/folders/1_xZYBOwaY9jH3vLut-KFgLafgMiB05se?usp=sharing",
@@ -2449,15 +2497,15 @@
     "name_source": "drive_pdf",
     "pdf_count": 106,
     "source_url": "https://drive.google.com/drive/folders/1lvDt_r3DvYk1wUoZ0IQbw_hjeGsLVJEZ",
-    "updated_at": "2026-09-11T10:10:06.741238",
+    "updated_at": "2026-09-11T11:34:20.957603",
     "gov_pdf_url_status": "alive"
   },
   "111建字第0208號": {
     "name": "開揚-大安區金華段",
     "name_source": "drive_pdf",
     "pdf_count": 168,
-    "source_url": "https://drive.google.com/drive/folders/1ERaMeo4cLgP2r0rPqEiYUGwfGJKl4giU?usp=sharing",
-    "updated_at": "2026-09-11T10:10:06.745616",
+    "source_url": "https://drive.google.com/drive/folders/1ERaMeo4cLgP2r0rPqEiYUGwfGJKl4giU",
+    "updated_at": "2026-09-11T11:34:20.961855",
     "gov_pdf_url_status": "alive",
     "live_alerts": {
       "danger": 0,
@@ -2472,35 +2520,39 @@
   "111建字第0212號": {
     "name": "宏普陽明",
     "name_source": "drive_pdf",
-    "pdf_count": 55,
-    "updated_at": "2026-09-11T10:10:06.747671"
+    "pdf_count": 64,
+    "updated_at": "2026-09-11T11:34:20.963795",
+    "source_url": "https://drive.google.com/drive/u/0/folders/1SBIpbf4roxypBnoSiWGTER2wowQ7Pun7",
+    "gov_pdf_url_status": "alive"
   },
   "111建字第0220號": {
     "name": "常殷金泰段-(全文)綠建築專章報告書",
     "name_source": "drive_pdf",
     "pdf_count": 6,
     "source_url": "https://drive.google.com/drive/folders/11E-gLQ5IhjrV8WeeKmQrwVmc09Skqwtv",
-    "updated_at": "2026-09-11T10:10:06.758318",
+    "updated_at": "2026-09-11T11:34:20.974115",
     "gov_pdf_url_status": "404"
   },
   "111建字第0227號": {
     "name": "第六十二次",
     "name_source": "drive_pdf",
     "pdf_count": 62,
-    "updated_at": "2026-09-11T10:10:06.761316"
+    "updated_at": "2026-09-11T11:34:20.976912",
+    "source_url": "https://drive.google.com/drive/u/1/folders/11-HFXV7VR2zK_3njQQWe8joxVYRvLifP14/37",
+    "gov_pdf_url_status": "404"
   },
   "111建字第0228號": {
     "name": "",
     "name_source": "",
     "source_url": "https://drive.google.com/drive/folders/18fcoPcUMUygnwF04GuErKWcB4WQOxt4v",
-    "updated_at": "2026-09-11T10:10:06.761324",
+    "updated_at": "2026-09-11T11:34:20.976918",
     "gov_pdf_url_status": "alive"
   },
   "111建字第0232號": {
     "name": "寶信營造軟橋段",
     "name_source": "drive_pdf",
     "pdf_count": 12,
-    "updated_at": "2026-09-11T10:10:06.762953",
+    "updated_at": "2026-09-11T11:34:20.983053",
     "source_url_removed": "https://drive.google.com/drive/folders/1zH24RnG1mCWW4IQGU3G8Sw2Sw-6YejVg22/30",
     "source_url_removed_at": "2026-05-05T14:50:09",
     "source_url": "https://drive.google.com/drive/folders/1zH24RnG1mCWW4IQGU3G8Sw2Sw-6YejVg22/30",
@@ -2520,7 +2572,7 @@
     "name_source": "api_match",
     "pdf_count": 23,
     "source_url": "https://drive.google.com/drive/folders/1xQEVGDQ1OlpxZ7yyXFVfcl8QSKC71W9q?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:06.770857",
+    "updated_at": "2026-09-11T11:34:20.990422",
     "address": "臺北市萬華區西園路一段220巷及大理街33巷周邊",
     "stage": "BS版澆置養護",
     "sensors": 68,
@@ -2549,7 +2601,7 @@
     "sensors": 117,
     "api_match": "南港轉運站新建工程",
     "source_url": "https://drive.google.com/drive/u/1/folders/1avw7dtpkPsg4xNGdRLnhqDbdeuYPTPgk",
-    "updated_at": "2026-09-11T10:10:06.774392",
+    "updated_at": "2026-09-11T11:34:20.993672",
     "gov_pdf_url_status": "alive"
   },
   "111建字第0243號": {
@@ -2557,7 +2609,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 20,
     "source_url": "https://drive.google.com/drive/folders/1-IlMAg2DDWgTugAsIratq17ciCoOe2-Y?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:06.779053",
+    "updated_at": "2026-09-11T11:34:20.997559",
     "gov_pdf_url_status": "alive"
   },
   "111建字第0245號": {
@@ -2565,7 +2617,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 92,
     "source_url": "https://drive.google.com/drive/folders/1hWZvTTadJIhLIrLAzdw0aN9ZpsHZtv1K?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:06.789866",
+    "updated_at": "2026-09-11T11:34:21.007712",
     "gov_pdf_url_status": "alive"
   },
   "111建字第0246號": {
@@ -2573,7 +2625,7 @@
     "name_source": "api_match",
     "pdf_count": 99,
     "source_url": "https://drive.google.com/drive/folders/1rJBcUX7MtCYwKj8qnkw2qn0OjqHzS6-F",
-    "updated_at": "2026-09-11T10:10:06.806244",
+    "updated_at": "2026-09-11T11:34:21.021601",
     "address": "未標示地址",
     "stage": "",
     "sensors": 35,
@@ -2587,12 +2639,14 @@
   "111建字第0249號": {
     "name": "華誼建設信義雙星二期",
     "name_source": "api_match",
-    "pdf_count": 114,
+    "pdf_count": 168,
     "address": "台北市信義區基隆路二段39巷/吳興街8巷",
     "stage": "",
     "sensors": 29,
     "api_match": "華誼建設信義雙星二期新建工程",
-    "updated_at": "2026-09-11T10:10:06.818715"
+    "updated_at": "2026-09-11T11:34:21.033188",
+    "source_url": "https://drive.google.com/drive/folders/1rBVwpUu9OHecWYVSHaamUlfFgZx7EIAu",
+    "gov_pdf_url_status": "alive"
   },
   "111建字第0251號": {
     "name": "敦北都更案工地監測數據",
@@ -2613,14 +2667,16 @@
   "111建字第0252號": {
     "name": "建照資料",
     "name_source": "drive_pdf",
-    "pdf_count": 82,
-    "updated_at": "2026-09-11T10:10:06.823870"
+    "pdf_count": 86,
+    "updated_at": "2026-09-11T11:34:21.035151",
+    "source_url": "https://drive.google.com/drive/folders/1wsMDIJk4nykTxT-p0-LEteO3xRppbV1B?usp=drive_link",
+    "gov_pdf_url_status": "alive"
   },
   "111建字第0253號": {
     "name": "雅祥段",
     "name_source": "source_folder",
     "source_url": "https://drive.google.com/drive/folders/1EjE5dyDdcC2vR-Bpw4i2jJz9CXL4jKN0",
-    "updated_at": "2026-09-11T10:10:06.824184",
+    "updated_at": "2026-09-11T11:34:21.035459",
     "gov_pdf_url_status": "alive",
     "live_alerts": {
       "danger": 0,
@@ -2636,7 +2692,7 @@
     "name": "111-0256號呈居天母上城新建工程",
     "name_source": "source_folder",
     "source_url": "https://drive.google.com/drive/u/0/folders/1yrlWUyhT6-0GpAorwfxHHvNy2-FEkiFw",
-    "updated_at": "2026-09-11T10:10:06.829091",
+    "updated_at": "2026-09-11T11:34:21.040092",
     "pdf_count": 45,
     "gov_pdf_url_status": "alive"
   },
@@ -2649,7 +2705,7 @@
     "sensors": 7,
     "api_match": "台北市中山區民權東路二段22號新建工程-毗鄰捷運設施安全監測系統",
     "source_url": "https://drive.google.com/drive/folders/1Nnb5T-zsqS1h_a0TMLreJBdr6gElvrt5?usp=sharing",
-    "updated_at": "2026-09-11T10:10:06.829578",
+    "updated_at": "2026-09-11T11:34:21.040558",
     "gov_pdf_url_status": "alive",
     "live_alerts": {
       "danger": 1,
@@ -2665,7 +2721,7 @@
     "name": "第一果菜市場",
     "name_source": "drive_pdf",
     "source_url": "https://drive.google.com/drive/folders/1yFb2f_q2SzJja-hRYeP1yYiuE-B5O901?usp=sharing",
-    "updated_at": "2026-09-11T10:10:06.833442",
+    "updated_at": "2026-09-11T11:34:21.044290",
     "pdf_count": 1421,
     "gov_pdf_url_status": "alive"
   },
@@ -2674,7 +2730,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 19,
     "source_url": "https://drive.google.com/drive/folders/1qM3QiUl43F5Vfy_-UE_ytokdWfzA5iZB",
-    "updated_at": "2026-09-11T10:10:06.835492",
+    "updated_at": "2026-09-11T11:34:21.046233",
     "gov_pdf_url_status": "404"
   },
   "111建字第0272號": {
@@ -2685,7 +2741,9 @@
     "stage": "Construction",
     "sensors": 64,
     "api_match": "力方越集合住宅新建工程",
-    "updated_at": "2026-09-11T10:10:06.842171"
+    "updated_at": "2026-09-11T11:34:21.052644",
+    "source_url": "https://drive.google.com/drive/folders/1b4nPCz6hM96E-FsOoqnKeOVc4PrHktJr15/37",
+    "gov_pdf_url_status": "404"
   },
   "111建字第0273號": {
     "name": "",
@@ -2699,7 +2757,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 133,
     "source_url": "https://drive.google.com/drive/folders/1d1AF-yWvGb755ucczAIuGc-A4KVwk0we?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:06.844188",
+    "updated_at": "2026-09-11T11:34:21.054572",
     "gov_pdf_url_status": "alive"
   },
   "111建字第0282號": {
@@ -2711,7 +2769,7 @@
     "sensors": 92,
     "api_match": "內湖區石潭段四小段新建工程",
     "source_url": "https://drive.google.com/drive/u/1/folders/1lttL1n1PBdAmuhF-wzic859-JqSZleGq",
-    "updated_at": "2026-09-11T10:10:06.869960",
+    "updated_at": "2026-09-11T11:34:21.078965",
     "gov_pdf_url_status": "404",
     "live_alerts": {
       "danger": 1,
@@ -2727,7 +2785,7 @@
     "name": "金盟營造-工地監測數據(該資料庫由承造人金盟營造自行維護並即時更新數據",
     "name_source": "source_folder",
     "source_url": "https://drive.google.com/drive/folders/1JMw6QKQoGY5sXq_5w6RqmbZSvziXDqEP",
-    "updated_at": "2026-09-11T10:10:06.893723",
+    "updated_at": "2026-09-11T11:34:21.101336",
     "pdf_count": 70,
     "gov_pdf_url_status": "alive"
   },
@@ -2736,7 +2794,7 @@
     "name_source": "api_match",
     "pdf_count": 62,
     "source_url": "https://drive.google.com/drive/folders/1MQAVSnTqsT5kjwlDZJMOMZYcvdVd8pw1",
-    "updated_at": "2026-09-11T10:10:06.909299",
+    "updated_at": "2026-09-11T11:34:21.116277",
     "address": "台北市臨沂段",
     "stage": "",
     "sensors": 7,
@@ -2750,8 +2808,8 @@
   "111建字第0292號": {
     "name": "首鋼橋北段二小段",
     "name_source": "drive_pdf",
-    "pdf_count": 8,
-    "updated_at": "2026-09-11T10:10:06.912941",
+    "pdf_count": 32,
+    "updated_at": "2026-09-11T11:34:21.119783",
     "live_alerts": {
       "danger": 0,
       "warning": 1,
@@ -2760,14 +2818,16 @@
       "details": [
         "有感測器超過警戒值"
       ]
-    }
+    },
+    "source_url": "https://drive.google.com/drive/folders/1BgV0xruVfX8WAar5pJIeOC7Flnfen8Q5",
+    "gov_pdf_url_status": "alive"
   },
   "111建字第0306號": {
     "name": "平菁街監測報表",
     "name_source": "drive_pdf",
     "pdf_count": 2,
     "source_url": "https://drive.google.com/drive/folders/1asOZpwrnAXcaswYJCExlnkombShgOAKH?usp=sharing",
-    "updated_at": "2026-09-11T10:10:06.919133",
+    "updated_at": "2026-09-11T11:34:21.125722",
     "gov_pdf_url_status": "alive"
   },
   "111建字第0307號": {
@@ -2779,7 +2839,7 @@
     "sensors": 50,
     "api_match": "新總陽建設北投區大業段四小段574地號商辦大樓新建工程",
     "source_url": "https://drive.google.com/drive/folders/1XXNhTjAKTx72JMXfIjY_2CixPigOzE2d",
-    "updated_at": "2026-09-11T10:10:06.944240",
+    "updated_at": "2026-09-11T11:34:21.150045",
     "gov_pdf_url_status": "alive",
     "live_alerts": {
       "danger": 0,
@@ -2792,39 +2852,41 @@
     }
   },
   "111建字第0311號": {
-    "updated_at": "2026-09-11T10:10:06.960439",
+    "updated_at": "2026-09-11T11:34:21.165716",
     "name": "台北市南港區南港段二小段671-6等52筆地號新建工程",
     "name_source": "api_match",
     "address": "台北市南港區南港段二小段671-6等52筆地號",
-    "pdf_count": 253,
+    "pdf_count": 289,
     "source_url_removed": "https://drive.google.com/drive/folders/1GvGZrO5Aa39lMzPAnV3oRwcKvmct8prH",
     "source_url_removed_at": "2026-05-05T14:50:09",
-    "source_url": "https://drive.google.com/drive/folders/1GvGZrO5Aa39lMzPAnV3oRwcKvmct8prH",
-    "gov_pdf_url_status": "404"
+    "source_url": "https://drive.google.com/drive/folders/1leHhDQX6HSnOgMlG3FS0pRNS3X8Rr-IS",
+    "gov_pdf_url_status": "alive"
   },
   "111建字第0312號": {
     "name": "高福-芝玉路觀測",
     "name_source": "drive_pdf",
-    "pdf_count": 30,
-    "updated_at": "2026-09-11T10:10:06.963461"
+    "pdf_count": 76,
+    "updated_at": "2026-09-11T11:34:21.168644",
+    "source_url": "https://drive.google.com/drive/folders/1bVuID7j5iPn4FZmHAXiTsdx5et-3xOny",
+    "gov_pdf_url_status": "alive"
   },
   "111建字第0313號": {
     "name": "士科潤山工地",
     "name_source": "drive_pdf",
     "source_url": "https://drive.google.com/drive/folders/1zhjp6c5J9dKJ5MF6tpJE5MDtqcOM4t-W",
-    "updated_at": "2026-09-11T10:10:06.967345",
+    "updated_at": "2026-09-11T11:34:21.172340",
     "pdf_count": 79,
     "gov_pdf_url_status": "alive"
   },
   "111建字第0315號": {
     "name": "嘉磐日光",
     "name_source": "drive_pdf",
-    "pdf_count": 25,
+    "pdf_count": 102,
     "address": "光明路",
     "stage": "施工中",
     "sensors": 35,
     "api_match": "嘉磐日光新建工程",
-    "updated_at": "2026-09-11T10:10:06.968381",
+    "updated_at": "2026-09-11T11:34:21.173354",
     "live_alerts": {
       "danger": 0,
       "warning": 1,
@@ -2833,14 +2895,16 @@
       "details": [
         "有感測器超過警戒值"
       ]
-    }
+    },
+    "source_url": "https://drive.google.com/drive/folders/1CzlEhx-rWJylAHluYM3S6eTNcYMLiWdo",
+    "gov_pdf_url_status": "alive"
   },
   "111建字第0316號": {
     "name": "富裔松平段_景觀工程施工圖",
     "name_source": "drive_pdf",
     "pdf_count": 164,
     "source_url": "https://drive.google.com/drive/folders/1hqMmDbBzZ_jyl6WJ0RMUGfJgz59WEl0r?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:06.976149",
+    "updated_at": "2026-09-11T11:34:21.180868",
     "gov_pdf_url_status": "alive"
   },
   "111建字第0318號": {
@@ -2848,7 +2912,7 @@
     "name_source": "manual",
     "pdf_count": 62,
     "source_url": "https://drive.google.com/drive/folders/1_N09uewYRllQW_e3yVg3KMadamLeHYnE?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:06.988856",
+    "updated_at": "2026-09-11T11:34:21.192402",
     "gov_pdf_url_status": "alive",
     "live_alerts": {
       "danger": 0,
@@ -2864,14 +2928,16 @@
     "name": "振家實業大同區平陽街傳承大樓",
     "name_source": "manual",
     "pdf_count": 86,
-    "updated_at": "2026-09-11T10:10:06.999429"
+    "updated_at": "2026-09-11T11:34:21.202636",
+    "source_url": "https://drive.google.com/drive/folders/1dUDYD-tcFZGxyFlodA_ge7r0sPvlIi9J?usp=sharing",
+    "gov_pdf_url_status": "alive"
   },
   "111建字第0333號": {
     "name": "大昕建設",
     "name_source": "drive_pdf",
     "pdf_count": 109,
     "source_url": "https://drive.google.com/drive/u/0/folders/1n1lnxqQrMIg0qTtH0KoHgITX28K1_KY1",
-    "updated_at": "2026-09-11T10:10:07.001483",
+    "updated_at": "2026-09-11T11:34:21.204546",
     "gov_pdf_url_status": "alive"
   },
   "111建字第0336號": {
@@ -2879,7 +2945,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 47,
     "source_url": "https://drive.google.com/drive/folders/1-UdnjGlZxvENlvAegcOcx_670odEDFDp",
-    "updated_at": "2026-09-11T10:10:07.015047",
+    "updated_at": "2026-09-11T11:34:21.217590",
     "gov_pdf_url_status": "alive"
   },
   "111建字第0340號": {
@@ -2894,7 +2960,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 56,
     "source_url": "https://drive.google.com/drive/folders/1qfpUvkkaqhfPcdHzdg_xEAU2iIv7GSyk",
-    "updated_at": "2026-09-11T10:10:07.022288",
+    "updated_at": "2026-09-11T11:34:21.224225",
     "gov_pdf_url_status": "alive"
   },
   "111建字第0351號": {
@@ -2902,7 +2968,7 @@
     "name_source": "api_match",
     "pdf_count": 2,
     "source_url": "https://drive.google.com/drive/folders/16rah3Jl_Pk-bB5VPF1-GPbszrUgcId5B",
-    "updated_at": "2026-09-11T10:10:07.039766",
+    "updated_at": "2026-09-11T11:34:21.241079",
     "address": "台北市士林區中山北路六段",
     "stage": "Ground Improvement",
     "sensors": 27,
@@ -2918,24 +2984,24 @@
     "name_source": "drive_pdf",
     "pdf_count": 47,
     "source_url": "https://drive.google.com/drive/folders/1Dz1k6TqXi5PZzxIRbSk0_uPGSkL8LAs6?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:07.042725",
+    "updated_at": "2026-09-11T11:34:21.243825",
     "gov_pdf_url_status": "alive"
   },
   "111建字第1688號": {
     "name": "",
     "name_source": "",
-    "source_url": "https://drive.google.com/drive/folders/1M9zFfE2TipljAGvKI0Ariur57yq-Gm6R?usp=drive_link25/30",
-    "updated_at": "2026-09-11T10:10:07.042733",
+    "source_url": "https://drive.google.com/drive/folders/1M9zFfE2TipljAGvKI0Ariur57yq-Gm6R?usp=drive_link",
+    "updated_at": "2026-09-11T11:34:21.255221",
     "gov_pdf_url_status": "alive"
   },
   "111建字第5688號": {
     "name": "世久松湖量測報表",
     "name_source": "drive_pdf",
     "pdf_count": 117,
-    "updated_at": "2026-09-11T10:10:07.047574",
+    "updated_at": "2026-09-11T11:34:21.258880",
     "source_url_removed": "https://drive.google.com/drive/u/0/folders/167jbMwJ4dhd_jf8o4vehepT_GaKoJEnV111",
     "source_url_removed_at": "2026-05-05T14:50:09",
-    "source_url": "https://drive.google.com/drive/u/0/folders/167jbMwJ4dhd_jf8o4vehepT_GaKoJEnV111",
+    "source_url": "https://drive.google.com/drive/u/0/folders/167jbMwJ4dhd_jf8o4vehepT_GaKoJEnV",
     "gov_pdf_url_status": "404"
   },
   "112建字第0002號": {
@@ -2946,8 +3012,8 @@
     "stage": "連續壁施作 (Diaphragm Wall Construction)",
     "sensors": 24,
     "api_match": "大安區懷生段三小段集合住宅新建工程",
-    "source_url": "https://drive.google.com/drive/folders/1NjK5dGmYTuuodx_5xW15uOsg9Z3VkaN3",
-    "updated_at": "2026-09-11T10:10:07.059636",
+    "source_url": "https://drive.google.com/drive/folders/1NjK5dGmYTuuodx_5xW15uOsg9Z3VkaN3?usp=drive_link",
+    "updated_at": "2026-09-11T11:34:21.270413",
     "gov_pdf_url_status": "alive",
     "live_alerts": {
       "danger": 0,
@@ -2963,7 +3029,7 @@
     "name": "佶鴻建設南港玉成段案集合住宅",
     "name_source": "source_folder",
     "source_url": "https://drive.google.com/drive/folders/1hs39xJEwv4ISVilr0L_KHtq1tzcd4qND",
-    "updated_at": "2026-09-11T10:10:07.069216",
+    "updated_at": "2026-09-11T11:34:21.289751",
     "gov_pdf_url_status": "alive"
   },
   "112建字第0018號": {
@@ -2971,7 +3037,7 @@
     "name_source": "api_match",
     "pdf_count": 82,
     "source_url": "https://drive.google.com/drive/folders/17Lbb9IPICaiFwPEghZD9BQjC_UihmVti",
-    "updated_at": "2026-09-11T10:10:07.069491",
+    "updated_at": "2026-09-11T11:34:21.290015",
     "address": "台北市北投區奇岩段",
     "stage": "地上層構築",
     "sensors": 45,
@@ -2998,14 +3064,14 @@
     "warning_count": 0,
     "action_count": 4,
     "source_url": "https://drive.google.com/drive/folders/12I7nleHxoJglF7P98CFmQIPaAtgZorNq?usp=sharing",
-    "updated_at": "2026-09-11T10:10:07.073636",
+    "updated_at": "2026-09-11T11:34:21.293988",
     "gov_pdf_url_status": "alive"
   },
   "112建字第0030號": {
     "name": "台北市萬華區青年段一小段196.197及200地號店鋪集合住宅",
     "name_source": "api_match",
     "pdf_count": 43,
-    "updated_at": "2026-09-11T10:10:07.092136",
+    "updated_at": "2026-09-11T11:34:21.311870",
     "address": "台北市萬華區",
     "stage": "7FL",
     "sensors": 36,
@@ -3022,7 +3088,9 @@
       "details": [
         "有感測器超過警戒值"
       ]
-    }
+    },
+    "source_url": "https://drive.google.com/drive/folders/1sF-BqNXt_kVbSopJsVxzaQZQknmlGdS-?usp=sharing",
+    "gov_pdf_url_status": "alive"
   },
   "112建字第0031號": {
     "name": "裕光東湖",
@@ -3033,36 +3101,42 @@
     "sensors": 41,
     "api_match": "裕光東湖新建工程",
     "source_url": "https://drive.google.com/drive/folders/18pX_DuGmug05kPEkc9C44IbM4h1kjKam?usp=sharing",
-    "updated_at": "2026-09-11T10:10:07.093890",
+    "updated_at": "2026-09-11T11:34:21.313552",
     "gov_pdf_url_status": "alive"
   },
   "112建字第0033號": {
     "name": "仁愛醫護大樓",
     "name_source": "api_match",
-    "pdf_count": 124,
+    "pdf_count": 144,
     "address": "台北市仁愛路/龍江路",
     "stage": "old_structure_demolition",
     "sensors": 61,
     "api_match": "仁愛醫護大樓新建工程",
-    "updated_at": "2026-09-11T10:10:07.098938"
+    "updated_at": "2026-09-11T11:34:21.318391",
+    "source_url": "https://drive.google.com/drive/folders/1GEuEEvKVsCCbkuF9srs9olkSnjPDoVF2?usp=drive_link",
+    "gov_pdf_url_status": "alive"
   },
   "112建字第0037號": {
     "name": "家居安曼監測資料",
     "name_source": "drive_pdf",
-    "pdf_count": 39,
-    "updated_at": "2026-09-11T10:10:07.102905"
+    "pdf_count": 51,
+    "updated_at": "2026-09-11T11:34:21.322209",
+    "source_url": "https://drive.google.com/drive/folders/1DRcXBePUBV8tsQW0BuW9ajGqQa0NFezA",
+    "gov_pdf_url_status": "alive"
   },
   "112建字第0040號": {
     "name": "安全系統",
     "name_source": "drive_pdf",
-    "pdf_count": 52,
-    "updated_at": "2026-09-11T10:10:07.104948"
+    "pdf_count": 112,
+    "updated_at": "2026-09-11T11:34:21.324162",
+    "source_url": "https://drive.google.com/drive/folders/1pupOSxk-POnpe0vnXrpedUBXtZdfqE17",
+    "gov_pdf_url_status": "alive"
   },
   "112建字第0041號": {
     "name": "全樂建設-士林區永平段案",
     "name_source": "api_match",
     "pdf_count": 41,
-    "updated_at": "2026-09-11T10:10:07.107403",
+    "updated_at": "2026-09-11T11:34:21.326576",
     "address": "台北市士林區永平段",
     "stage": "6FL施作",
     "sensors": 136,
@@ -3073,8 +3147,8 @@
     "api_match": "全樂建設-士林區永平段案新建工程",
     "source_url_removed": "https://drive.google.com/drive/folders/18qxY_9G6nle52cCyq2xDfjSBI_Ne631w26/30",
     "source_url_removed_at": "2026-05-05T14:50:09",
-    "source_url": "https://drive.google.com/drive/folders/18qxY_9G6nle52cCyq2xDfjSBI_Ne631w26/30",
-    "gov_pdf_url_status": "404",
+    "source_url": "https://drive.google.com/drive/folders/18qxY_9G6nle52cCyq2xDfjSBI_Ne631w",
+    "gov_pdf_url_status": "alive",
     "live_alerts": {
       "danger": 1,
       "warning": 0,
@@ -3090,7 +3164,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 47,
     "source_url": "https://drive.google.com/drive/folders/1JAbs_4E5aLyAvdafIcrv26tWZIfFNvyo",
-    "updated_at": "2026-09-11T10:10:07.112450",
+    "updated_at": "2026-09-11T11:34:21.331430",
     "gov_pdf_url_status": "404",
     "live_alerts": {
       "danger": 0,
@@ -3107,21 +3181,23 @@
     "name_source": "drive_pdf",
     "pdf_count": 28,
     "source_url": "https://drive.google.com/drive/folders/1Xn63FTmlc8eY5ikKIVmCNwxqxskmShcD",
-    "updated_at": "2026-09-11T10:10:07.121822",
+    "updated_at": "2026-09-11T11:34:21.340655",
     "gov_pdf_url_status": "alive"
   },
   "112建字第0051號": {
     "name": "",
     "name_source": "",
     "source_url": "https://drive.google.com/drive/folders/1n_A64Y3C03-yvY01a_e7MkJ2D3maGoqL?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:07.121831",
+    "updated_at": "2026-09-11T11:34:21.340662",
     "gov_pdf_url_status": "alive"
   },
   "112建字第0052號": {
     "name": "台北市復興段危老案住宅新建工程",
     "name_source": "manual",
     "pdf_count": 49,
-    "updated_at": "2026-09-11T10:10:07.129791"
+    "updated_at": "2026-09-11T11:34:21.348295",
+    "source_url": "https://drive.google.com/drive/folders/1pKgfP1SVp1_ZjQN-17z1OdA7JQKTMkIr20/37",
+    "gov_pdf_url_status": "404"
   },
   "112建字第0055號": {
     "name": "新建工程114.2.11",
@@ -3129,21 +3205,25 @@
     "pdf_count": 39,
     "warning_count": 1,
     "action_count": 0,
-    "updated_at": "2026-09-11T10:10:07.131116"
+    "updated_at": "2026-09-11T11:34:21.351414",
+    "source_url": "https://drive.google.com/drive/folders/1xRSijU77ypf4QOcLl0i86Z181UyC4LlN",
+    "gov_pdf_url_status": "alive"
   },
   "112建字第0056號": {
     "name": "利晉緯成-安全監測系統量測",
     "name_source": "drive_pdf",
     "pdf_count": 357,
     "source_url": "https://drive.google.com/drive/folders/17NxMM-a7-SzNAWRUJJ019BRQSg7_gjQL?usp=sharing",
-    "updated_at": "2026-09-11T10:10:07.138895",
+    "updated_at": "2026-09-11T11:34:21.358807",
     "gov_pdf_url_status": "alive"
   },
   "112建字第0059號": {
     "name": "北側基地集合住宅新建工程工地",
     "name_source": "drive_pdf",
-    "pdf_count": 18,
-    "updated_at": "2026-09-11T10:10:07.147189"
+    "pdf_count": 25,
+    "updated_at": "2026-09-11T11:34:21.366951",
+    "source_url": "https://drive.google.com/drive/folders/1NPEW3bRVZvj64Z_j1JTSAwlkyx7eLVRg",
+    "gov_pdf_url_status": "alive"
   },
   "112建字第0062號": {
     "name": "萬薪-伊邸集合住宅",
@@ -3153,8 +3233,8 @@
     "stage": "",
     "sensors": 25,
     "api_match": "萬薪-伊邸集合住宅新建工程",
-    "source_url": "https://drive.google.com/drive/folders/1Cbo-un1phhz0mI2RqtIlJDSGDvp9RHjY?usp=sharing",
-    "updated_at": "2026-09-11T10:10:07.155648",
+    "source_url": "https://drive.google.com/drive/folders/1Cbo-un1phhz0mI2RqtIlJDSGDvp9RHjY",
+    "updated_at": "2026-09-11T11:34:21.375205",
     "gov_pdf_url_status": "alive"
   },
   "112建字第0068號": {
@@ -3162,7 +3242,7 @@
     "name_source": "drive_pdf",
     "pdf_count": 41,
     "source_url": "https://drive.google.com/drive/mobile/folders/1vRiVJtEJFhkj8HzZinCSjIpTgLWeLIqM?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:07.157635",
+    "updated_at": "2026-09-11T11:34:21.377123",
     "gov_pdf_url_status": "alive"
   },
   "112建字第0071號": {
@@ -3173,13 +3253,17 @@
     "stage": "地上七樓版 RC 澆置中",
     "sensors": 10,
     "api_match": "北投新民段集合住宅新建工程",
-    "updated_at": "2026-09-11T10:10:07.168006"
+    "updated_at": "2026-09-11T11:34:21.386984",
+    "source_url": "https://drive.google.com/drive/folders/1xLZ2DFz9LGQo0duPAbu4N6T85t_g0323?usp=sharing",
+    "gov_pdf_url_status": "alive"
   },
   "112建字第0079號": {
     "name": "建字0079",
     "name_source": "drive_pdf",
-    "pdf_count": 2,
-    "updated_at": "2026-09-11T10:10:07.169146"
+    "pdf_count": 16,
+    "updated_at": "2026-09-11T11:34:21.388966",
+    "source_url": "https://drive.google.com/drive/folders/1l6FVXE-oKNc9aO2QmqgE8iGjeg4ibr4F?usp=sharing",
+    "gov_pdf_url_status": "alive"
   },
   "112建字第0080號": {
     "name": "天母段三小段39、40等二筆地號",
@@ -3189,8 +3273,8 @@
     "stage": "四樓構築中 (4th Floor Construction)",
     "sensors": 31,
     "api_match": "天母段三小段39、40等二筆地號新建工程",
-    "source_url": "https://drive.google.com/drive/mobile/folders/1aO8sIOvT-WwFfE3lVdlvKOZrQOgTvngm?usp=sharing",
-    "updated_at": "2026-09-11T10:10:07.179037",
+    "source_url": "https://drive.google.com/drive/mobile/folders/1aO8sIOvT-WwFfE3lVdlvKOZrQOgTvngm?usp=sharing21/37",
+    "updated_at": "2026-09-11T11:34:21.398381",
     "gov_pdf_url_status": "alive",
     "live_alerts": {
       "danger": 0,
@@ -3205,8 +3289,8 @@
   "112建字第0081號": {
     "name": "禾碩建設文林路",
     "name_source": "api_match",
-    "pdf_count": 35,
-    "updated_at": "2026-09-11T10:10:07.185973",
+    "pdf_count": 38,
+    "updated_at": "2026-09-11T11:34:21.404954",
     "address": "台北市士林區文林路",
     "stage": "地上層構築",
     "sensors": 28,
@@ -3214,13 +3298,15 @@
     "alert_tone": "normal",
     "alert_message": "無異常記錄",
     "alert_date": "",
-    "api_match": "禾碩建設文林路新建工程"
+    "api_match": "禾碩建設文林路新建工程",
+    "source_url": "https://drive.google.com/drive/folders/1GnMNCSoDv4EA6gyxPPFkFlzk0fPaZ0Z7",
+    "gov_pdf_url_status": "alive"
   },
   "112建字第0083號": {
     "name": "夏沐時新建工程",
     "name_source": "api_match",
-    "pdf_count": 79,
-    "updated_at": "2026-09-11T10:10:07.186820",
+    "pdf_count": 80,
+    "updated_at": "2026-09-11T11:34:21.405762",
     "address": "臺北市北投區西安街二段及立農街一段257巷周邊",
     "stage": "地上層構築",
     "sensors": 27,
@@ -3237,19 +3323,23 @@
       "details": [
         "有感測器超過警戒值"
       ]
-    }
+    },
+    "source_url": "https://drive.google.com/drive/u/1/folders/1_Ny2fAERRDJlUjgcoPvz0o3YiWCV6s2G",
+    "gov_pdf_url_status": "alive"
   },
   "112建字第0087號": {
     "name": "北士科服務中心監測日報",
     "name_source": "drive_pdf",
-    "pdf_count": 325,
-    "updated_at": "2026-09-11T10:10:07.193607"
+    "pdf_count": 336,
+    "updated_at": "2026-09-11T11:34:21.414314",
+    "source_url": "https://drive.google.com/drive/folders/1TGxIokRGCqMIoIfTVWpV136WJakRy1RE",
+    "gov_pdf_url_status": "alive"
   },
   "112建字第0092號": {
     "name": "財盛光復北美仁段總結",
     "name_source": "drive_pdf",
     "source_url": "https://drive.google.com/drive/folders/1p5h_cTzy7p0IMaDAG79CTnqLdvT8tLev",
-    "updated_at": "2026-09-11T10:10:07.196972",
+    "updated_at": "2026-09-11T11:34:21.417568",
     "pdf_count": 63,
     "gov_pdf_url_status": "alive",
     "live_alerts": {
@@ -3265,8 +3355,8 @@
   "112建字第0096號": {
     "name": "品嘉建設內湖新明路",
     "name_source": "api_match",
-    "pdf_count": 54,
-    "updated_at": "2026-09-11T10:10:07.207826",
+    "pdf_count": 57,
+    "updated_at": "2026-09-11T11:34:21.427791",
     "address": "台北市內湖區新明路",
     "stage": "地上層構築",
     "sensors": 26,
@@ -3274,37 +3364,39 @@
     "alert_tone": "normal",
     "alert_message": "無異常記錄",
     "alert_date": "",
-    "api_match": "品嘉建設內湖新明路新建工程"
+    "api_match": "品嘉建設內湖新明路新建工程",
+    "source_url": "https://drive.google.com/drive/folders/1o1xe_iH-0wpg9tgCP40rMzsiRLjVpWJa",
+    "gov_pdf_url_status": "alive"
   },
   "112建字第0097號": {
     "name": "No29",
     "name_source": "drive_pdf",
     "pdf_count": 147,
     "source_url": "https://drive.google.com/drive/folders/19c8NoRSLfyCu7nml3_Gts2T0rjogSqKR?usp=sharing",
-    "updated_at": "2026-09-11T10:10:07.208964",
+    "updated_at": "2026-09-11T11:34:21.428891",
     "gov_pdf_url_status": "alive"
   },
   "112建字第0098號": {
     "name": "1169 建國工程-臺北大學建國校區新建工程",
     "name_source": "drive_pdf",
     "source_url": "https://drive.google.com/drive/folders/1oZnNugJokbQvTsLVE-5Fo2_HUCtS_Qc2",
-    "updated_at": "2026-09-11T10:10:07.216660",
+    "updated_at": "2026-09-11T11:34:21.436434",
     "pdf_count": 125,
     "gov_pdf_url_status": "alive"
   },
   "112建字第0100號": {
     "name": "通化段四小段336地號",
     "name_source": "drive_pdf",
-    "pdf_count": 45,
+    "pdf_count": 52,
     "address": "通化段四小段336地號 (近安和路二段)",
     "stage": "superstructure_construction",
     "sensors": 43,
     "api_match": "通化段四小段336地號新建工程",
-    "updated_at": "2026-09-11T10:10:07.225156",
+    "updated_at": "2026-09-11T11:34:21.444721",
     "source_url_removed": "https://drive.google.com/drive/u/0/folders/1oqUFJxxPRddWxyLevvEHe504ltsyX2Nj27/30",
     "source_url_removed_at": "2026-05-05T14:50:09",
-    "source_url": "https://drive.google.com/drive/u/0/folders/1oqUFJxxPRddWxyLevvEHe504ltsyX2Nj27/30",
-    "gov_pdf_url_status": "404"
+    "source_url": "https://drive.google.com/drive/folders/1oqUFJxxPRddWxyLevvEHe504ltsyX2Nj",
+    "gov_pdf_url_status": "alive"
   },
   "112建字第0105號": {
     "name": "",
@@ -3312,29 +3404,29 @@
     "warning_count": 1,
     "action_count": 0,
     "source_url": "https://drive.google.com/drive/u/1/folders/1ufTMMiIGTZS2IJ4OuguX9e5rr3uwdCyA",
-    "updated_at": "2026-09-11T10:10:07.225162",
+    "updated_at": "2026-09-11T11:34:21.444727",
     "gov_pdf_url_status": "alive"
   },
   "112建字第0108號": {
     "name": "士科大院.工地",
     "name_source": "drive_pdf",
-    "source_url": "https://drive.google.com/drive/u/4/folders/1oS6QrNF4zMP7a5Cn4T0894BWHpTcSVT8",
-    "updated_at": "2026-09-11T10:10:07.231891",
+    "source_url": "https://drive.google.com/drive/u/4/folders/1oS6QrNF4zMP7a5Cn4T0894BWHpTcSVT822/37",
+    "updated_at": "2026-09-11T11:34:21.451353",
     "pdf_count": 112,
-    "gov_pdf_url_status": "alive"
+    "gov_pdf_url_status": "404"
   },
   "112建字第0116號": {
     "name": "",
     "name_source": "",
     "source_url": "https://drive.google.com/drive/folders/14iQ1J_xqGt5GuieXN5JqGdkUiuI1zVmt?q=sharedwith",
-    "updated_at": "2026-09-11T10:10:07.231896",
+    "updated_at": "2026-09-11T11:34:21.464763",
     "gov_pdf_url_status": "alive"
   },
   "112建字第0117號": {
     "name": "國泰承真新建工程",
     "name_source": "manual",
-    "pdf_count": 219,
-    "updated_at": "2026-09-11T10:10:07.233678",
+    "pdf_count": 220,
+    "updated_at": "2026-09-11T11:34:21.466540",
     "address": "台北市內湖區潭美段五小段61地號",
     "stage": "地下室開挖與支撐",
     "sensors": 34,
@@ -3342,13 +3434,15 @@
     "alert_tone": "normal",
     "alert_message": "無異常記錄",
     "alert_date": "",
-    "api_match": "國泰承真新建工程"
+    "api_match": "國泰承真新建工程",
+    "source_url": "https://drive.google.com/drive/folders/1hRg7qT1F3t7iphBBF0FB5YKWXZWOPzst",
+    "gov_pdf_url_status": "alive"
   },
   "112建字第0118號": {
     "name": "全球人壽新總部大樓新建工程",
     "name_source": "api_match",
     "source_url": "https://drive.google.com/drive/folders/1_-XCzv_-rWk9jVsemv7QEjszc8lrGMUE?usp=sharing",
-    "updated_at": "2026-09-11T10:10:07.245997",
+    "updated_at": "2026-09-11T11:34:21.477576",
     "pdf_count": 389,
     "address": "富錦街/未開闢道路周邊 (依圖面資訊)",
     "stage": "Diaphragm Wall Construction (連續壁施作)",
@@ -3364,7 +3458,7 @@
     "name": "全球人壽新總部大樓新建工程",
     "name_source": "api_match",
     "source_url": "https://drive.google.com/drive/folders/1_-XCzv_-rWk9jVsemv7QEjszc8lrGMUE?usp=sharing",
-    "updated_at": "2026-09-11T10:10:07.257358",
+    "updated_at": "2026-09-11T11:34:21.488558",
     "pdf_count": 389,
     "address": "富錦街/未開闢道路周邊 (依圖面資訊)",
     "stage": "Diaphragm Wall Construction (連續壁施作)",
@@ -3377,14 +3471,26 @@
     "gov_pdf_url_status": "alive"
   },
   "112建字第0125號": {
-    "source_url": "https://drive.google.com/drive/my-drive?lfhs=2&q=sharedwith",
-    "updated_at": "2026-09-11T10:10:07.257362"
+    "source_url": "https://drive.google.com/drive/folders/1jonouWGIlazMUnfHorKeVMS15Pbtzsrg?usp=sharing",
+    "updated_at": "2026-09-11T11:34:21.502223",
+    "name": "萬華區漢中段住商華廈",
+    "name_source": "api_match",
+    "pdf_count": 27,
+    "address": "台北市萬華區隆昌街130號旁",
+    "stage": "第一階開挖完成，第一層水平支撐施作",
+    "sensors": 11,
+    "alert_label": "正常",
+    "alert_tone": "normal",
+    "alert_message": "無異常記錄",
+    "alert_date": "",
+    "api_match": "萬華區漢中段住商華廈新建工程",
+    "gov_pdf_url_status": "alive"
   },
   "112建字第0126號": {
     "name": "揚昇君悅大樓新建工程 / 睦昇建設台北市復興南路敦化段三小段552地號28筆住宅",
     "name_source": "api_match",
     "source_url": "https://drive.google.com/drive/folders/1epjHinDvgjgpLGKuSLOeRdmATeOs8Trv?usp=sharing",
-    "updated_at": "2026-09-11T10:10:07.302784",
+    "updated_at": "2026-09-11T11:34:21.544769",
     "pdf_count": 115,
     "address": "台北市復興南路敦化段三小段552地號",
     "stage": "Construction",
@@ -3399,14 +3505,18 @@
   "112建字第0138號": {
     "name": "鄉林中山賦工地檢測報告",
     "name_source": "drive_pdf",
-    "pdf_count": 90,
-    "updated_at": "2026-09-11T10:10:07.313582"
+    "pdf_count": 96,
+    "updated_at": "2026-09-11T11:34:21.554946",
+    "source_url": "https://drive.google.com/drive/folders/1NTBcBejRT0l9jbPd5VOL3DtiB9WPg3Ra?usp=drive_link",
+    "gov_pdf_url_status": "alive"
   },
   "112建字第0140號": {
     "name": "博愛賦御",
     "name_source": "drive_pdf",
-    "pdf_count": 97,
-    "updated_at": "2026-09-11T10:10:07.315583"
+    "pdf_count": 106,
+    "updated_at": "2026-09-11T11:34:21.557728",
+    "source_url": "https://drive.google.com/drive/folders/1lOUSjfZxkrjSBYEwQ3kTbVXfqRyDyMYQ",
+    "gov_pdf_url_status": "alive"
   },
   "112建字第0146號": {
     "name": "天母鑲玉",
@@ -3417,14 +3527,14 @@
     "sensors": 39,
     "api_match": "天母鑲玉新建工程",
     "source_url": "https://drive.google.com/drive/folders/1nsS1fUy2eicaeh8PKCrC5AjIE3qMlBoK",
-    "updated_at": "2026-09-11T10:10:07.317341",
+    "updated_at": "2026-09-11T11:34:21.559465",
     "gov_pdf_url_status": "alive"
   },
   "112建字第0156號": {
     "name": "允升營造-北投區致遠一路二段112巷集合住宅",
     "name_source": "api_match",
-    "pdf_count": 67,
-    "updated_at": "2026-09-11T10:10:07.317706",
+    "pdf_count": 75,
+    "updated_at": "2026-09-11T11:34:21.559830",
     "address": "臺北市北投區致遠一路二段112巷",
     "stage": "結構體施作",
     "sensors": 20,
@@ -3441,19 +3551,23 @@
       "details": [
         "有感測器超過行動值"
       ]
-    }
+    },
+    "source_url": "https://drive.google.com/drive/folders/1A84zLJ2kHkTPfGbLEAs4-MLyqd4v16Q-?usp=sharing",
+    "gov_pdf_url_status": "alive"
   },
   "112建字第0158號": {
     "name": "懷德街47號",
     "name_source": "drive_pdf",
-    "pdf_count": 16,
-    "updated_at": "2026-09-11T10:10:07.319737"
+    "pdf_count": 40,
+    "updated_at": "2026-09-11T11:34:21.561770",
+    "source_url": "https://drive.google.com/drive/folders/1mB-rvvAu9GGW6q8voSrz7S0FRb9hzTBq?hl=zh_TW",
+    "gov_pdf_url_status": "alive"
   },
   "112建字第0162號": {
     "name": "華固時代置地",
     "name_source": "drive_pdf",
     "pdf_count": 31,
-    "updated_at": "2026-09-11T10:10:07.323674",
+    "updated_at": "2026-09-11T11:34:21.565486",
     "source_url_removed": "https://drive.google.com/drive/folders/1R5z2t8sPkJh5LumCkrmxs11UgsLreBYm28/30",
     "source_url_removed_at": "2026-05-05T14:50:09",
     "source_url": "https://drive.google.com/drive/folders/1R5z2t8sPkJh5LumCkrmxs11UgsLreBYm28/30",
@@ -3462,14 +3576,16 @@
   "112建字第0163號": {
     "name": "保強里哲",
     "name_source": "drive_pdf",
-    "pdf_count": 14,
-    "updated_at": "2026-09-11T10:10:07.325679"
+    "pdf_count": 47,
+    "updated_at": "2026-09-11T11:34:21.567420",
+    "source_url": "https://drive.google.com/drive/folders/19SychdsivdBARz3x5trS4kXXCWS8TV-M",
+    "gov_pdf_url_status": "alive"
   },
   "112建字第0165號": {
     "name": "基泰大直新建工程",
     "name_source": "api_match",
     "pdf_count": 19,
-    "updated_at": "2026-09-11T10:10:07.328373",
+    "updated_at": "2026-09-11T11:34:21.570062",
     "address": "台北市中山區大直街94巷",
     "stage": "第二階開挖",
     "sensors": 69,
@@ -3477,14 +3593,16 @@
     "alert_tone": "normal",
     "alert_message": "無異常記錄",
     "alert_date": "",
-    "api_match": "基泰大直新建工程監測案"
+    "api_match": "基泰大直新建工程監測案",
+    "source_url": "https://drive.google.com/drive/u/0/mobile/folders/1-bBF1dZy_-duX6mBHNa3VIhJXvZByTvd?usp=sharing",
+    "gov_pdf_url_status": "alive"
   },
   "112建字第0167號": {
     "name": "展宜常閑",
     "name_source": "api_match",
     "pdf_count": 2,
     "source_url": "https://drive.google.com/drive/folders/1aw_d374I8HoCoifPRelDuZnD5s4akTqF",
-    "updated_at": "2026-09-11T10:10:07.330091",
+    "updated_at": "2026-09-11T11:34:21.571762",
     "address": "磺溪街88巷",
     "stage": "導溝施作中",
     "sensors": 37,
@@ -3499,7 +3617,9 @@
     "name": "松旭-中山區量測報表",
     "name_source": "drive_pdf",
     "pdf_count": 7,
-    "updated_at": "2026-09-11T10:10:07.334865"
+    "updated_at": "2026-09-11T11:34:21.576455",
+    "source_url": "https://drive.google.com/drive/folders/1TzBVSt0Gnrm3uJyUBHlUcBNnhe6nGHS924/37",
+    "gov_pdf_url_status": "404"
   },
   "112建字第0177號": {
     "name": "台北市大同區雙連段三小段99等22筆地號新建工程",
@@ -3507,7 +3627,7 @@
     "warning_count": 1,
     "action_count": 3,
     "source_url": "https://drive.google.com/drive/folders/1kSHes6escvpssMDPOFSfUyTaH-EtbDJj?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:07.335925",
+    "updated_at": "2026-09-11T11:34:21.589618",
     "address": "台北市大同區雙連段三小段99等22筆地號",
     "stage": "鋼構施作",
     "sensors": 152,
@@ -3526,12 +3646,12 @@
   "112建字第0178號": {
     "name": "內湖區石潭段四小段",
     "name_source": "api_match",
-    "pdf_count": 39,
+    "pdf_count": 51,
     "address": "台北市內湖區石潭段四小段",
     "stage": "",
     "sensors": 92,
     "api_match": "內湖區石潭段四小段新建工程",
-    "updated_at": "2026-09-11T10:10:07.336407",
+    "updated_at": "2026-09-11T11:34:21.590074",
     "live_alerts": {
       "danger": 1,
       "warning": 0,
@@ -3540,13 +3660,15 @@
       "details": [
         "有感測器超過行動值"
       ]
-    }
+    },
+    "source_url": "https://drive.google.com/drive/folders/147HN19ValPaNP03NDDVaZKg0KTqzYSGB?usp=drive_link",
+    "gov_pdf_url_status": "alive"
   },
   "112建字第0179號": {
     "name": "台北市信義區吳興街一小段510等地號住宅",
     "name_source": "api_match",
-    "pdf_count": 2,
-    "updated_at": "2026-09-11T10:10:07.361093",
+    "pdf_count": 3,
+    "updated_at": "2026-09-11T11:34:21.614190",
     "address": "台北市信義區吳興街一小段510等地號",
     "stage": "舊結構拆除",
     "sensors": 28,
@@ -3554,49 +3676,57 @@
     "alert_tone": "normal",
     "alert_message": "無異常記錄",
     "alert_date": "",
-    "api_match": "台北市信義區吳興街一小段510等地號住宅新建工程"
+    "api_match": "台北市信義區吳興街一小段510等地號住宅新建工程",
+    "source_url": "https://drive.google.com/drive/u/2/folders/1mzjl9jPF4mhAHHP6yeNf-1Ao5nS1yqr7",
+    "gov_pdf_url_status": "alive"
   },
   "112建字第0187號": {
     "name": "福林案量測報表",
     "name_source": "drive_pdf",
     "pdf_count": 51,
-    "updated_at": "2026-09-11T10:10:07.363958",
+    "updated_at": "2026-09-11T11:34:21.616970",
     "source_url_removed": "https://drive.google.com/drive/folders/1vhDIayQjGfZuWdgqvDN_O4_w5icG4FzQ?usp=sharing",
     "source_url_removed_at": "2026-05-05T14:50:09",
-    "source_url": "https://drive.google.com/drive/folders/1vhDIayQjGfZuWdgqvDN_O4_w5icG4FzQ?usp=sharing",
-    "gov_pdf_url_status": "404"
+    "source_url": "https://drive.google.com/drive/folders/1mlOMgCqtiU-WN-RQcVvw1xly--kNQLIh?usp=sharing",
+    "gov_pdf_url_status": "alive"
   },
   "112建字第0189號": {
     "name": "城甲士林",
     "name_source": "drive_pdf",
     "pdf_count": 33,
-    "source_url": "https://drive.google.com/drive/mobile/folders/1-7J2sIgwSQLfA40W_VQ5SflBsTDGCEyd",
-    "updated_at": "2026-09-11T10:10:07.365977",
+    "source_url": "https://drive.google.com/drive/folders/1VgsZpibTfCRc6mScErjwBDfzHtXXvxT-?usp=sharing",
+    "updated_at": "2026-09-11T11:34:21.618892",
     "gov_pdf_url_status": "alive"
   },
   "112建字第0191號": {
     "name": "建照資料",
     "name_source": "drive_pdf",
-    "pdf_count": 36,
-    "updated_at": "2026-09-11T10:10:07.368024"
+    "pdf_count": 77,
+    "updated_at": "2026-09-11T11:34:21.627262",
+    "source_url": "https://drive.google.com/drive/folders/1A0xxKR8ZuQbDZelrkn8yFRBGu6FLSOa6?usp=drive_link",
+    "gov_pdf_url_status": "alive"
   },
   "112建字第0205號": {
     "name": "寶信-洲美段",
     "name_source": "drive_pdf",
     "pdf_count": 39,
-    "updated_at": "2026-09-11T10:10:07.370904"
+    "updated_at": "2026-09-11T11:34:21.630039",
+    "source_url": "https://drive.google.com/drive/u/0/folders/1ymuguup9pBkicxZK3EehWJ7dLnuCp2Gz",
+    "gov_pdf_url_status": "alive"
   },
   "112建字第0209號": {
     "name": "西園路總結",
     "name_source": "drive_pdf",
-    "pdf_count": 32,
-    "updated_at": "2026-09-11T10:10:07.373830"
+    "pdf_count": 38,
+    "updated_at": "2026-09-11T11:34:21.638348",
+    "source_url": "https://drive.google.com/drive/folders/1ydOjdqm86BDyn-ejwEyqEGSVkm3MqrHc",
+    "gov_pdf_url_status": "alive"
   },
   "112建字第0216號": {
     "name": "建案安全監測告示牌規劃標準",
     "name_source": "api_match",
-    "pdf_count": 107,
-    "updated_at": "2026-09-11T10:10:07.387968",
+    "pdf_count": 113,
+    "updated_at": "2026-09-11T11:34:21.654227",
     "address": "未標示地址",
     "stage": "",
     "sensors": 35,
@@ -3604,25 +3734,31 @@
     "alert_tone": "normal",
     "alert_message": "無異常記錄",
     "alert_date": "",
-    "api_match": "建案安全監測告示牌規劃標準"
+    "api_match": "建案安全監測告示牌規劃標準",
+    "source_url": "https://drive.google.com/drive/folders/1irrMA72qQs8HPahW2YwaWF3_jFyeLeh8?usp=sharing",
+    "gov_pdf_url_status": "alive"
   },
   "112建字第0218號": {
     "name": "金源雲承",
     "name_source": "drive_pdf",
-    "pdf_count": 70,
-    "updated_at": "2026-09-11T10:10:07.389991"
+    "pdf_count": 76,
+    "updated_at": "2026-09-11T11:34:21.656176",
+    "source_url": "https://drive.google.com/drive/u/0/folders/1YXb_E7io9RrptbAZsPnrwPzrY63C9jEP",
+    "gov_pdf_url_status": "alive"
   },
   "112建字第0219號": {
     "name": "鼎真觀測數據",
     "name_source": "drive_pdf",
-    "pdf_count": 39,
-    "updated_at": "2026-09-11T10:10:07.391155"
+    "pdf_count": 41,
+    "updated_at": "2026-09-11T11:34:21.657269",
+    "source_url": "https://drive.google.com/drive/folders/1uMnllYSsvuKojWexVvxaw6hnEB6dssvI",
+    "gov_pdf_url_status": "alive"
   },
   "112建字第0220號": {
     "name": "大安區金華段298等地號",
     "name_source": "api_match",
-    "pdf_count": 89,
-    "updated_at": "2026-09-11T10:10:07.398476",
+    "pdf_count": 105,
+    "updated_at": "2026-09-11T11:34:21.664364",
     "address": "大安區金華段298等地號",
     "stage": "4FL樑版鋼筋綁紮",
     "sensors": 36,
@@ -3639,14 +3775,19 @@
       "details": [
         "有感測器超過警戒值"
       ]
-    }
+    },
+    "source_url": "https://drive.google.com/drive/folders/1k90bj71WJYLvhmuVaR7uEs0LHH1eBStc",
+    "gov_pdf_url_status": "alive"
   },
   "112建字第0222號": {
-    "updated_at": "2026-09-11T10:10:07.398484",
+    "updated_at": "2026-09-11T11:34:21.689611",
     "source_url_removed": "https://drive.google.com/drive/u/1/folders/1ofptYQa2cPGDTGDjZyPinAnqGXl3uEqo",
     "source_url_removed_at": "2026-05-05T14:50:09",
-    "source_url": "https://drive.google.com/drive/u/1/folders/1ofptYQa2cPGDTGDjZyPinAnqGXl3uEqo",
-    "gov_pdf_url_status": "404"
+    "source_url": "https://drive.google.com/drive/folders/1GPHWCUGha6GC9pEZmd4O0mm14_YgBiwH?usp=sharing",
+    "gov_pdf_url_status": "alive",
+    "name": "中山改建暨大安至中山161kV線潛盾洞道新建統包工程中山DS及電纜涵洞監測日報",
+    "name_source": "drive_pdf",
+    "pdf_count": 81
   },
   "112建字第0227號": {
     "name": "永陞韶光",
@@ -3656,25 +3797,31 @@
     "stage": "construction",
     "sensors": 52,
     "api_match": "永陞韶光新建工程",
-    "updated_at": "2026-09-11T10:10:07.400218"
+    "updated_at": "2026-09-11T11:34:21.691302",
+    "source_url": "https://drive.google.com/drive/folders/1Do_FoA7dbPWOcc8qeyh2o4wUQnPsvNRn26/37",
+    "gov_pdf_url_status": "404"
   },
   "112建字第0232號": {
     "name": "新倫文山",
     "name_source": "drive_pdf",
     "pdf_count": 2,
-    "updated_at": "2026-09-11T10:10:07.402216"
+    "updated_at": "2026-09-11T11:34:21.693253",
+    "source_url": "https://drive.google.com/drive/folders/1Y8ymQBOPyANvbSWL1fDXpwX0xsYqzS8W?usp=drive_link",
+    "gov_pdf_url_status": "alive"
   },
   "112建字第0235號": {
     "name": "士林區福順段一小段集合住宅新建工程",
     "name_source": "manual",
     "pdf_count": 19,
-    "updated_at": "2026-09-11T10:10:07.411657"
+    "updated_at": "2026-09-11T11:34:21.702598",
+    "source_url": "https://drive.google.com/drive/folders/17Oe-rsY8vVgTu8Ymxda_5g6HLEZeJCYZ",
+    "gov_pdf_url_status": "404"
   },
   "112建字第0238號": {
     "name": "璞真宇見新建工程",
     "name_source": "manual",
-    "pdf_count": 60,
-    "updated_at": "2026-09-11T10:10:07.413516",
+    "pdf_count": 109,
+    "updated_at": "2026-09-11T11:34:21.704393",
     "live_alerts": {
       "danger": 0,
       "warning": 1,
@@ -3683,13 +3830,15 @@
       "details": [
         "有感測器超過警戒值"
       ]
-    }
+    },
+    "source_url": "https://drive.google.com/drive/folders/1_z6FLAfMXX5PJ3cXPjZ-8eGO_eysjGJA",
+    "gov_pdf_url_status": "alive"
   },
   "112建字第0243號": {
     "name": "新潤建設北投區軟橋段66.67.68等地號集合住宅新建工程",
     "name_source": "manual",
     "pdf_count": 40,
-    "updated_at": "2026-09-11T10:10:07.415915",
+    "updated_at": "2026-09-11T11:34:21.712350",
     "source_url_removed": "https://drive.google.com/drive/folders/15Hf21ENWke_9PLv5osa4LM46En-Md_9z?usp=sharing",
     "source_url_removed_at": "2026-05-05T14:50:09",
     "source_url": "https://drive.google.com/drive/folders/15Hf21ENWke_9PLv5osa4LM46En-Md_9z?usp=sharing",
@@ -3708,33 +3857,39 @@
     "name": "永碁中山北路",
     "name_source": "drive_pdf",
     "pdf_count": 19,
-    "updated_at": "2026-09-11T10:10:07.419644"
+    "updated_at": "2026-09-11T11:34:21.720712",
+    "source_url": "https://drive.google.com/drive/folders/1eb0DkNSfMTy3Lj7iTQu8Bi0lEFY06On3?usp=drive_link",
+    "gov_pdf_url_status": "alive"
   },
   "112建字第0252號": {
     "name": "建字0252號_整體進度",
     "name_source": "drive_pdf",
     "pdf_count": 83,
     "source_url": "https://drive.google.com/drive/u/0/folders/1-nbQX4j9D8reISZt5Vr7L11Ue9sHzKNF",
-    "updated_at": "2026-09-11T10:10:07.424389",
+    "updated_at": "2026-09-11T11:34:21.734756",
     "gov_pdf_url_status": "alive"
   },
   "112建字第0257號": {
     "name": "禾進誼德",
     "name_source": "drive_pdf",
     "pdf_count": 52,
-    "updated_at": "2026-09-11T10:10:07.426359"
+    "updated_at": "2026-09-11T11:34:21.736713",
+    "source_url": "https://drive.google.com/drive/folders/1hHu-plqnn3yvg-Vm8tNyNGhe-xC5QGqZ",
+    "gov_pdf_url_status": "alive"
   },
   "112建字第0262號": {
     "name": "",
     "name_source": "",
     "pdf_count": 102,
-    "updated_at": "2026-09-11T10:10:07.427705"
+    "updated_at": "2026-09-11T11:34:21.738027",
+    "source_url": "https://drive.google.com/drive/folders/1IK_3fvJQ7VPVtyfbmO9J8X05o_6q5Ru227/37",
+    "gov_pdf_url_status": "404"
   },
   "112建字第0268號": {
     "name": "至善路案(璞真上善)安全觀測系統工程",
     "name_source": "manual",
-    "pdf_count": 57,
-    "updated_at": "2026-09-11T10:10:07.433130",
+    "pdf_count": 89,
+    "updated_at": "2026-09-11T11:34:21.743416",
     "live_alerts": {
       "danger": 0,
       "warning": 1,
@@ -3743,17 +3898,19 @@
       "details": [
         "有感測器超過警戒值"
       ]
-    }
+    },
+    "source_url": "https://drive.google.com/drive/folders/1OWvz1IpV4TsAtPeBWPMkG3AIdZ5axZ1S?usp=drive_link",
+    "gov_pdf_url_status": "alive"
   },
   "112建字第0269號": {
     "name": "宗盛建設台北市士林區永新段二小段55等12筆地號集合住宅",
     "name_source": "api_match",
-    "pdf_count": 78,
+    "pdf_count": 92,
     "address": "台北市士林區永新段二小段55等12筆地號",
     "stage": "第三層支撐拆除中",
     "sensors": 75,
     "api_match": "宗盛建設台北市士林區永新段二小段55等12筆地號集合住宅新建工程",
-    "updated_at": "2026-09-11T10:10:07.461891",
+    "updated_at": "2026-09-11T11:34:21.772190",
     "live_alerts": {
       "danger": 0,
       "warning": 1,
@@ -3762,24 +3919,28 @@
       "details": [
         "有感測器超過警戒值"
       ]
-    }
+    },
+    "source_url": "https://drive.google.com/drive/folders/1aTbfJiXgAvqKMrEjR_F9rRtl3TwHpXMs",
+    "gov_pdf_url_status": "alive"
   },
   "112建字第0276號": {
     "name": "廣鐿德惠段",
     "name_source": "drive_pdf",
     "pdf_count": 40,
     "source_url": "https://drive.google.com/drive/folders/17kHnvAZwBjznE9fKfwcvIe1wk6TGTTDE?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:07.464836",
+    "updated_at": "2026-09-11T11:34:21.787761",
     "gov_pdf_url_status": "alive"
   },
   "112建字第0278號": {
     "name": "北側基地集合住宅新建工程工地",
     "name_source": "drive_pdf",
-    "pdf_count": 18,
-    "updated_at": "2026-09-11T10:10:07.472898"
+    "pdf_count": 25,
+    "updated_at": "2026-09-11T11:34:21.795762",
+    "source_url": "https://drive.google.com/drive/folders/1NPEW3bRVZvj64Z_j1JTSAwlkyx7eLVRg",
+    "gov_pdf_url_status": "alive"
   },
   "112建字第0280號": {
-    "updated_at": "2026-09-11T10:10:07.472901",
+    "updated_at": "2026-09-11T11:34:21.795763",
     "source_url_removed": "https://drive.google.com/drive/folders/1wQqtIhV9LY02T4c6NNdz49I4_J2h8ETx?usp=sharing",
     "source_url_removed_at": "2026-05-05T14:50:09",
     "source_url": "https://drive.google.com/drive/folders/1wQqtIhV9LY02T4c6NNdz49I4_J2h8ETx?usp=sharing",
@@ -3789,7 +3950,7 @@
     "name": "合矩建設合矩青澄",
     "name_source": "api_match",
     "source_url": "https://drive.google.com/drive/folders/1ItaGndUOi6YeNz6sjLqArb5afn8K-PpW?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:07.481300",
+    "updated_at": "2026-09-11T11:34:21.807683",
     "pdf_count": 70,
     "address": "台北市士林區延平北路五段83巷",
     "stage": "excavation",
@@ -3805,15 +3966,15 @@
     "name": "金朋敦北",
     "name_source": "drive_pdf",
     "pdf_count": 83,
-    "source_url": "https://drive.google.com/drive/folders/1HcR-FhAHfcBC90iUHJyDW2WFksDHN7An?usp=sharing29/30",
-    "updated_at": "2026-09-11T10:10:07.483238",
-    "gov_pdf_url_status": "alive"
+    "source_url": "https://drive.google.com/drive/folders/1JlUXJeOrxHkZfTncijsaT68K-gc_7Ak628/37",
+    "updated_at": "2026-09-11T11:34:21.819993",
+    "gov_pdf_url_status": "404"
   },
   "113建字第0007號": {
     "name": "臺北市北投區桃源段四小段 159、164、164-1、165 等 4 筆地號",
     "name_source": "api_match",
-    "pdf_count": 176,
-    "updated_at": "2026-09-11T10:10:07.494208",
+    "pdf_count": 191,
+    "updated_at": "2026-09-11T11:34:21.833027",
     "address": "臺北市北投區桃源段",
     "stage": "R2構築 (R2 Structure Construction)",
     "sensors": 16,
@@ -3830,69 +3991,87 @@
       "details": [
         "有感測器超過警戒值"
       ]
-    }
+    },
+    "source_url": "https://drive.google.com/drive/folders/1RoMVBF8ylAbaiFDBJau9AIDy83j1g5za",
+    "gov_pdf_url_status": "alive"
   },
   "113建字第0008號": {
     "name": "長春段-捷運暨基地監測",
     "name_source": "drive_pdf",
-    "pdf_count": 56,
-    "updated_at": "2026-09-11T10:10:07.500233"
+    "pdf_count": 93,
+    "updated_at": "2026-09-11T11:34:21.838890",
+    "source_url": "https://drive.google.com/drive/folders/1YSaUjOvllLghNJjFDudhNvEHUlfU3ou2",
+    "gov_pdf_url_status": "alive"
   },
   "113建字第0026號": {
     "name": "佳元開發民生東路當代美術館新建工程",
     "name_source": "manual",
-    "pdf_count": 57,
-    "updated_at": "2026-09-11T10:10:07.512805"
+    "pdf_count": 112,
+    "updated_at": "2026-09-11T11:34:21.849377",
+    "source_url": "https://drive.google.com/drive/folders/1BdXp2yoFC4rwG2g3qU6fer0peSV84bM9",
+    "gov_pdf_url_status": "alive"
   },
   "113建字第0030號": {
     "name": "J-PARK A案",
     "name_source": "drive_pdf",
-    "pdf_count": 18,
-    "updated_at": "2026-09-11T10:10:07.514043"
+    "pdf_count": 78,
+    "updated_at": "2026-09-11T11:34:21.865204",
+    "source_url": "https://drive.google.com/drive/folders/1YBCnEsPQg5kqTipJHjBGw2Fl6RqVKfu6?usp=drive_link",
+    "gov_pdf_url_status": "alive"
   },
   "113建字第0031號": {
     "name": "大中華建設泰順街",
     "name_source": "api_match",
-    "pdf_count": 20,
+    "pdf_count": 50,
     "address": "泰順街",
     "stage": "Excavation",
     "sensors": 27,
     "api_match": "大中華建設泰順街新建工程",
-    "updated_at": "2026-09-11T10:10:07.523377"
+    "updated_at": "2026-09-11T11:34:21.873814",
+    "source_url": "https://drive.google.com/drive/folders/1pXviVGWEFEJo6KIuS0JUTTC39ELy1MQn?usp=sharing",
+    "gov_pdf_url_status": "alive"
   },
   "113建字第0041號": {
     "name": "恆合-錦西街",
     "name_source": "drive_pdf",
-    "pdf_count": 81,
-    "updated_at": "2026-09-11T10:10:07.527851"
+    "pdf_count": 126,
+    "updated_at": "2026-09-11T11:34:21.885303",
+    "source_url": "https://drive.google.com/drive/folders/1MhblTF5my9uwdU2eEIatR8KnFoFpeRTO?usp=sharing",
+    "gov_pdf_url_status": "alive"
   },
   "113建字第0045號": {
     "name": "高福內湖",
     "name_source": "drive_pdf",
-    "pdf_count": 13,
-    "updated_at": "2026-09-11T10:10:07.529907"
+    "pdf_count": 59,
+    "updated_at": "2026-09-11T11:34:21.887223",
+    "source_url": "https://drive.google.com/drive/folders/1NdQrlNpGpW2s97O-ppZzFgVA2I3oPCBP",
+    "gov_pdf_url_status": "alive"
   },
   "113建字第0049號": {
     "name": "M07--安全觀測監測報表",
     "name_source": "drive_pdf",
-    "pdf_count": 33,
-    "updated_at": "2026-09-11T10:10:07.531414"
+    "pdf_count": 57,
+    "updated_at": "2026-09-11T11:34:21.906520",
+    "source_url": "https://drive.google.com/drive/folders/11z2HbRhSfm4IWFJvKYnOW5eHrxhquUmc",
+    "gov_pdf_url_status": "alive"
   },
   "113建字第0051號": {
     "name": "安全支撐平面剖面觀測圖",
     "name_source": "drive_pdf",
     "pdf_count": 12,
-    "updated_at": "2026-09-11T10:10:07.538079"
+    "updated_at": "2026-09-11T11:34:21.912921",
+    "source_url": "https://drive.google.com/drive/folders/1UIW4yNECKpXjIS_Z-jguqRtvc7-o72wz?usp=sharing",
+    "gov_pdf_url_status": "404"
   },
   "113建字第0056號": {
     "name": "中鹿營造-豐裕興業天母段集合住宅",
     "name_source": "api_match",
-    "pdf_count": 13,
+    "pdf_count": 30,
     "address": "台北市天母段",
     "stage": "B1F 頂版施作",
     "sensors": 34,
     "api_match": "中鹿營造-豐裕興業天母段集合住宅新建工程",
-    "updated_at": "2026-09-11T10:10:07.555195",
+    "updated_at": "2026-09-11T11:34:21.936186",
     "live_alerts": {
       "danger": 0,
       "warning": 1,
@@ -3901,17 +4080,19 @@
       "details": [
         "有感測器超過警戒值"
       ]
-    }
+    },
+    "source_url": "https://drive.google.com/drive/folders/1Qahu281uHCMPF5FdlZOtodclPRWJ4uW0?usp=sharing",
+    "gov_pdf_url_status": "alive"
   },
   "113建字第0061號": {
     "name": "台大敏盛護理健康大樓捐贈案",
     "name_source": "api_match",
-    "pdf_count": 21,
+    "pdf_count": 53,
     "address": "未提供",
     "stage": "施工中",
     "sensors": 28,
     "api_match": "台大敏盛護理健康大樓捐贈案",
-    "updated_at": "2026-09-11T10:10:07.557567",
+    "updated_at": "2026-09-11T11:34:21.938299",
     "live_alerts": {
       "danger": 1,
       "warning": 0,
@@ -3920,17 +4101,19 @@
       "details": [
         "多項感測器嚴重超標"
       ]
-    }
+    },
+    "source_url": "https://drive.google.com/drive/folders/1MPpFhtsNT0Nfd2ARzOMTQ_u6EGwDmWZY?usp=sharing",
+    "gov_pdf_url_status": "alive"
   },
   "113建字第0062號": {
     "name": "台北市中山區民權東路二段22號",
     "name_source": "api_match",
-    "pdf_count": 81,
+    "pdf_count": 114,
     "address": "台北市中山區民權東路二段22號",
     "stage": "excavation",
     "sensors": 114,
     "api_match": "台北市中山區民權東路二段22號新建工程",
-    "updated_at": "2026-09-11T10:10:07.557830",
+    "updated_at": "2026-09-11T11:34:21.938545",
     "live_alerts": {
       "danger": 1,
       "warning": 0,
@@ -3939,13 +4122,15 @@
       "details": [
         "有感測器超過行動值"
       ]
-    }
+    },
+    "source_url": "https://drive.google.com/drive/folders/1_Ic8Cy0EaVFdhtS4NTh4ritRT07fO3X0",
+    "gov_pdf_url_status": "alive"
   },
   "113建字第0080號": {
     "name": "欣暘溪柏林",
     "name_source": "api_match",
-    "pdf_count": 33,
-    "updated_at": "2026-09-11T10:10:07.561825",
+    "pdf_count": 92,
+    "updated_at": "2026-09-11T11:34:21.950303",
     "address": "新北市板橋區龍泉街55巷28弄1號1F (監測單位地址)",
     "stage": "連續壁施作 (Diaphragm Wall Construction)",
     "sensors": 38,
@@ -3953,13 +4138,15 @@
     "alert_tone": "normal",
     "alert_message": "無異常記錄",
     "alert_date": "",
-    "api_match": "欣暘溪柏林新建工程"
+    "api_match": "欣暘溪柏林新建工程",
+    "source_url": "https://drive.google.com/drive/folders/1SXAW81TP9OvgjUdSLyrG-KJinB8-vf_q?usp=drive_link",
+    "gov_pdf_url_status": "alive"
   },
   "113建字第0087號": {
     "name": "滙源中山段",
     "name_source": "drive_pdf",
-    "pdf_count": 25,
-    "updated_at": "2026-09-11T10:10:07.563924",
+    "pdf_count": 52,
+    "updated_at": "2026-09-11T11:34:21.952185",
     "live_alerts": {
       "danger": 0,
       "warning": 1,
@@ -3968,29 +4155,35 @@
       "details": [
         "有感測器超過警戒值"
       ]
-    }
+    },
+    "source_url": "https://drive.google.com/drive/folders/1KNidU8niDTWUFX4e2qugZRI6ZKWqcSZJ",
+    "gov_pdf_url_status": "alive"
   },
   "113建字第0091號": {
     "name": "恆悅麗山",
     "name_source": "api_match",
-    "pdf_count": 18,
+    "pdf_count": 50,
     "address": "台北市內湖區 (根據地圖內湖路一段判斷)",
     "stage": "Foundation/Excavation",
     "sensors": 60,
     "api_match": "恆悅麗山新建工程",
-    "updated_at": "2026-09-11T10:10:07.565946"
+    "updated_at": "2026-09-11T11:34:21.958979",
+    "source_url": "https://drive.google.com/drive/folders/1ojRpmuFIMntvM_XfizpwQXMBF7l8cC0p",
+    "gov_pdf_url_status": "alive"
   },
   "113建字第0098號": {
     "name": "金藏奧斯卡",
     "name_source": "drive_pdf",
-    "pdf_count": 208,
-    "updated_at": "2026-09-11T10:10:07.568855"
+    "pdf_count": 244,
+    "updated_at": "2026-09-11T11:34:21.963741",
+    "source_url": "https://drive.google.com/drive/folders/1tNu47PurAO9qTnu-hVmOIQyb_sFkj3-V",
+    "gov_pdf_url_status": "alive"
   },
   "113建字第0099號": {
     "name": "文山區木柵段新建工程",
     "name_source": "drive_pdf",
-    "pdf_count": 33,
-    "updated_at": "2026-09-11T10:10:07.572154",
+    "pdf_count": 90,
+    "updated_at": "2026-09-11T11:34:21.966901",
     "live_alerts": {
       "danger": 0,
       "warning": 1,
@@ -3999,14 +4192,16 @@
       "details": [
         "有感測器超過警戒值"
       ]
-    }
+    },
+    "source_url": "https://drive.google.com/drive/u/1/folders/1XtOKMAlWDGdzTjP8iMsWandFwZvyXL2Z",
+    "gov_pdf_url_status": "alive"
   },
   "113建字第0120號": {
     "name": "台北市士林區蘭雅段新",
     "name_source": "api_match",
     "pdf_count": 34,
     "source_url": "https://drive.google.com/drive/folders/1xGCsHHVkA7U6WWGOBKBoqAFG197WOKKr?usp=drive_link",
-    "updated_at": "2026-09-11T10:10:07.579129",
+    "updated_at": "2026-09-11T11:34:21.973807",
     "address": "台北市士林區",
     "stage": "第一階段開挖完成",
     "sensors": 58,
@@ -4029,18 +4224,20 @@
   "113建字第0121號": {
     "name": "中華電信濱江資料中心",
     "name_source": "drive_pdf",
-    "pdf_count": 62,
+    "pdf_count": 126,
     "address": "新北市中和區中正路1194巷1號1F",
     "stage": "Initial/Baseline",
     "sensors": 25,
     "api_match": "中華電信濱江資料中心新建工程",
-    "updated_at": "2026-09-11T10:10:07.591702"
+    "updated_at": "2026-09-11T11:34:21.985414",
+    "source_url": "https://drive.google.com/drive/mobile/folders/1d2qO8HXyVm4k48TztnZiTfp5JmzMCXr7",
+    "gov_pdf_url_status": "alive"
   },
   "113建字第0143號": {
     "name": "大安區懷生段新建工程",
     "name_source": "api_match",
     "pdf_count": 27,
-    "updated_at": "2026-09-11T10:10:07.598648",
+    "updated_at": "2026-09-11T11:34:21.996031",
     "address": "臺北市大安區懷生段",
     "stage": "地上層構築",
     "sensors": 22,
@@ -4057,13 +4254,15 @@
       "details": [
         "有感測器超過警戒值"
       ]
-    }
+    },
+    "source_url": "https://drive.google.com/drive/folders/1YziBVvbkiutTbv5iIopigIHyUT28hG5K32/37",
+    "gov_pdf_url_status": "404"
   },
   "113建字第0153號": {
     "name": "璞真建設南港區南港段新建工程 (瓶蓋工廠",
     "name_source": "api_match",
-    "pdf_count": 125,
-    "updated_at": "2026-09-11T10:10:07.618689",
+    "pdf_count": 324,
+    "updated_at": "2026-09-11T11:34:22.017287",
     "address": "台北市南港區南港路二段",
     "stage": "",
     "sensors": 24,
@@ -4071,34 +4270,40 @@
     "alert_tone": "normal",
     "alert_message": "無異常記錄",
     "alert_date": "",
-    "api_match": "璞真建設南港區南港段新建工程 (瓶蓋工廠)"
+    "api_match": "璞真建設南港區南港段新建工程 (瓶蓋工廠)",
+    "source_url": "https://drive.google.com/drive/mobile/folders/1k8ndAGhf0C4Q8MyxuaFPVt6EkgQ08g2I",
+    "gov_pdf_url_status": "alive"
   },
   "113建字第0182號": {
     "name": "長見振家雙城街",
     "name_source": "drive_pdf",
-    "pdf_count": 23,
-    "updated_at": "2026-09-11T10:10:07.623737"
+    "pdf_count": 40,
+    "updated_at": "2026-09-11T11:34:22.053232",
+    "source_url": "https://drive.google.com/drive/folders/1lwfSpmEQjluqq2oz6y4D3bDWBz1roc_q?usp=sharing",
+    "gov_pdf_url_status": "alive"
   },
   "113建字第0186號": {
     "name": "大湖山莊二十三巷二號",
     "name_source": "api_match",
-    "pdf_count": 2,
+    "pdf_count": 18,
     "address": "大湖山莊二十三巷二號",
     "stage": "預壘樁施工作業中",
     "sensors": 36,
     "api_match": "大湖山莊二十三巷二號新建工程",
-    "updated_at": "2026-09-11T10:10:07.636058"
+    "updated_at": "2026-09-11T11:34:22.064841",
+    "source_url": "https://drive.google.com/drive/folders/1u-RJf2vCPK2pVdyAQz342xiA_81Qr8wB?usp=drive_link",
+    "gov_pdf_url_status": "alive"
   },
   "113建字第0187號": {
     "name": "凌霄好室社會住宅新建統包",
     "name_source": "api_match",
-    "pdf_count": 214,
+    "pdf_count": 264,
     "address": "未詳列 (參見圖紙座標)",
     "stage": "Pre-Construction/Planning",
     "sensors": 114,
     "api_match": "凌霄好室社會住宅新建統包工程",
-    "source_url": "https://drive.google.com/drive/folders/1OYsVzj8rOVcgOkAXsqFHwjfvG9aHx0Ts",
-    "updated_at": "2026-09-11T10:10:07.636928",
+    "source_url": "https://drive.google.com/drive/folders/1_3EvQb4zlIJ-5GNUfKZ8BLysuAKnewfg",
+    "updated_at": "2026-09-11T11:34:22.065677",
     "gov_pdf_url_status": "alive",
     "live_alerts": {
       "danger": 1,
@@ -4114,7 +4319,7 @@
     "name": "臺北市士林區「芝山安居」社會住宅新建統包",
     "name_source": "api_match",
     "pdf_count": 34,
-    "updated_at": "2026-09-11T10:10:07.641348",
+    "updated_at": "2026-09-11T11:34:22.071651",
     "address": "臺北市士林區福華路128巷周邊",
     "stage": "施工中",
     "sensors": 10,
@@ -4140,24 +4345,28 @@
   "113建字第0208號": {
     "name": "J-PARK B案",
     "name_source": "drive_pdf",
-    "pdf_count": 22,
-    "updated_at": "2026-09-11T10:10:07.642576"
+    "pdf_count": 91,
+    "updated_at": "2026-09-11T11:34:22.072765",
+    "source_url": "https://drive.google.com/drive/folders/1-5Y7oiqM6ScgQakcagel0GDZyvFbR3EZ?usp=drive_link",
+    "gov_pdf_url_status": "alive"
   },
   "113建字第0218號": {
     "name": "建字0218號-工地基本資料",
     "name_source": "drive_pdf",
-    "pdf_count": 74,
-    "updated_at": "2026-09-11T10:10:07.649595"
+    "pdf_count": 123,
+    "updated_at": "2026-09-11T11:34:22.084652",
+    "source_url": "https://drive.google.com/drive/folders/1Kv2Vz4bbm6l6Ecp8lOr374vvVMFToJBW",
+    "gov_pdf_url_status": "alive"
   },
   "113建字第0248號": {
     "name": "富德納骨塔設施",
     "name_source": "api_match",
-    "pdf_count": 134,
+    "pdf_count": 141,
     "address": "",
     "stage": "",
     "sensors": 58,
     "api_match": "富德納骨塔設施新建工程",
-    "updated_at": "2026-09-11T10:10:07.651592",
+    "updated_at": "2026-09-11T11:34:22.096121",
     "alert_label": "危險",
     "alert_tone": "danger",
     "alert_message": "多項感測器嚴重超標",
@@ -4170,13 +4379,15 @@
       "details": [
         "多項感測器嚴重超標"
       ]
-    }
+    },
+    "source_url": "https://drive.google.com/drive/folders/1kqzCdBmm4XK2yBWRa-vsJPsdvFqHfFaG",
+    "gov_pdf_url_status": "alive"
   },
   "113建字第0259號": {
     "name": "遠百寶慶重建",
     "name_source": "api_match",
-    "pdf_count": 9,
-    "updated_at": "2026-09-11T10:10:07.656750",
+    "pdf_count": 16,
+    "updated_at": "2026-09-11T11:34:22.100912",
     "address": "台北市中正區城中段三小段23等4筆土地",
     "stage": "舊結構拆除",
     "sensors": 67,
@@ -4184,33 +4395,39 @@
     "alert_tone": "normal",
     "alert_message": "無異常記錄",
     "alert_date": "",
-    "api_match": "遠百寶慶重建工程"
+    "api_match": "遠百寶慶重建工程",
+    "source_url": "https://drive.google.com/drive/folders/1-5_CFLlZcyI6lNn7D8cnbB2sCphqBcib?usp=drive_link",
+    "gov_pdf_url_status": "alive"
   },
   "113建字第5688號": {
     "name": "富金四平街",
     "name_source": "drive_pdf",
     "pdf_count": 30,
-    "updated_at": "2026-09-11T10:10:07.659634"
+    "updated_at": "2026-09-11T11:34:22.103721",
+    "source_url": "https://drive.google.com/drive/folders/1hgmIgfE1l6E-UNWKdaoCYCF-ePDdu70734/37",
+    "gov_pdf_url_status": "404"
   },
   "113建字第8888號": {
     "name": "富品建設松山區寶清段一小段582等10筆地住商大樓",
     "name_source": "api_match",
-    "pdf_count": 23,
+    "pdf_count": 41,
     "address": "台北市松山區寶清段",
     "stage": "Foundation Excavation",
     "sensors": 41,
     "api_match": "富品建設松山區寶清段一小段582等10筆地住商大樓新建工程",
-    "updated_at": "2026-09-11T10:10:07.690536"
+    "updated_at": "2026-09-11T11:34:22.134024",
+    "source_url": "https://drive.google.com/drive/folders/1qxVkWLyGxCw0-GjI-jdGZa__837A7cOE?usp=drive_link",
+    "gov_pdf_url_status": "alive"
   },
   "113建字第8899號": {
     "name": "達永雅祥段吉祥如藝",
     "name_source": "api_match",
-    "pdf_count": 26,
+    "pdf_count": 57,
     "address": "基隆路一段及永吉路交叉口附近",
     "stage": "連續壁施作",
     "sensors": 53,
     "api_match": "達永雅祥段吉祥如藝新建工程",
-    "updated_at": "2026-09-11T10:10:07.700521",
+    "updated_at": "2026-09-11T11:34:22.143591",
     "live_alerts": {
       "danger": 0,
       "warning": 1,
@@ -4219,7 +4436,9 @@
       "details": [
         "有感測器超過警戒值"
       ]
-    }
+    },
+    "source_url": "https://drive.google.com/drive/folders/15ZMDEKlpEHs2dftHG0r7c9gIcnYQKtk0?usp=drive_link113",
+    "gov_pdf_url_status": "alive"
   },
   "114建字第0017號": {
     "name": "台北市中山區長安段二小段580-1、581、582地號住宅",
@@ -4229,17 +4448,17 @@
     "stage": "",
     "sensors": 23,
     "api_match": "台北市中山區長安段二小段580-1、581、582地號住宅新建工程",
-    "updated_at": "2026-09-11T10:10:07.724108"
+    "updated_at": "2026-09-11T11:34:22.166367"
   },
   "114建字第0022號": {
     "name": "AR1 軟橋段(20F/B5)住宅新建工程",
     "name_source": "manual",
-    "pdf_count": 12,
+    "pdf_count": 82,
     "address": "台北市松山區或內湖區 (推斷)",
     "stage": "連續壁施作",
     "sensors": 36,
     "api_match": "松湖E/S地下變電所新建工程 (連續壁階段)",
-    "updated_at": "2026-09-11T10:10:07.724910",
+    "updated_at": "2026-09-11T11:34:22.167166",
     "live_alerts": {
       "danger": 1,
       "warning": 0,
@@ -4248,13 +4467,15 @@
       "details": [
         "有感測器超過行動值"
       ]
-    }
+    },
+    "source_url": "https://drive.google.com/drive/mobile/folders/10bXcG4UxC3UbGDHr-z7PniRobiMyPVXS?dmr=1&ec=wgc-drive-hero-goto",
+    "gov_pdf_url_status": "alive"
   },
   "114建字第0052號": {
     "name": "財團法人中華經濟研究院興建院舍大樓統包",
     "name_source": "api_match",
-    "pdf_count": 1,
-    "updated_at": "2026-09-11T10:10:07.753696",
+    "pdf_count": 41,
+    "updated_at": "2026-09-11T11:34:22.217092",
     "address": "台北市大安區長興街75號 (推測)",
     "stage": "土方開挖 (Earthwork Excavation)",
     "sensors": 40,
@@ -4262,7 +4483,9 @@
     "alert_tone": "normal",
     "alert_message": "無異常記錄",
     "alert_date": "",
-    "api_match": "財團法人中華經濟研究院興建院舍大樓統包工程"
+    "api_match": "財團法人中華經濟研究院興建院舍大樓統包工程",
+    "source_url": "https://drive.google.com/drive/folders/1V7UZtmlrRavIPEINTS5d65TuwjstC6SK?usp=drive_link35/37",
+    "gov_pdf_url_status": "alive"
   },
   "114建字第0059號": {
     "name": "成功市場改建",
@@ -4272,13 +4495,15 @@
     "stage": "導溝構築 (Guide Trench Construction)",
     "sensors": 50,
     "api_match": "成功市場改建工程",
-    "updated_at": "2026-09-11T10:10:07.758646"
+    "updated_at": "2026-09-11T11:34:22.226235"
   },
   "109建字第0285號": {
     "name": "松山",
     "name_source": "drive_pdf",
     "pdf_count": 116,
-    "updated_at": "2026-09-11T10:10:05.739852"
+    "updated_at": "2026-09-11T11:34:19.966606",
+    "source_url": "https://drive.google.com/drive/folders/1gJlP90yhuBlEz2Xhh6xpLme-ooOJBmDj?usp=sharing",
+    "gov_pdf_url_status": "alive"
   },
   "110建字第0053號": {
     "name": "士林開發城心曜曜",
@@ -4292,12 +4517,14 @@
     "alert_message": "無異常記錄",
     "alert_date": "",
     "api_match": "士林開發城心曜曜新建工程",
-    "updated_at": "2026-09-11T10:10:05.821293"
+    "updated_at": "2026-09-11T11:34:20.048568",
+    "source_url": "https://drive.google.com/drive/u/2/folders/1TO7tDrysSRkMyREr2TED8ZDKTVHmXf5D",
+    "gov_pdf_url_status": "alive"
   },
   "111建字第0277號": {
     "name": "台北市信義區吳興街一小段510等地號住宅",
     "name_source": "api_match",
-    "pdf_count": 189,
+    "pdf_count": 204,
     "address": "台北市信義區吳興街一小段510等地號",
     "stage": "舊結構拆除",
     "sensors": 28,
@@ -4306,24 +4533,30 @@
     "alert_message": "無異常記錄",
     "alert_date": "",
     "api_match": "台北市信義區吳興街一小段510等地號住宅新建工程",
-    "updated_at": "2026-09-11T10:10:06.869461"
+    "updated_at": "2026-09-11T11:34:21.078506",
+    "source_url": "https://drive.google.com/drive/folders/17s2awxUHpc-GXaJ9y1IXRgICaKg-oHTt",
+    "gov_pdf_url_status": "alive"
   },
   "111建字第0300號": {
     "name": "鄰台鐵高鐵設施",
     "name_source": "drive_pdf",
     "pdf_count": 62,
-    "updated_at": "2026-09-11T10:10:06.917683"
+    "updated_at": "2026-09-11T11:34:21.124342",
+    "source_url": "https://drive.google.com/drive/folders/1uBdrfjU7QPyS2W2JsrTfGSw2BaBtjrsz",
+    "gov_pdf_url_status": "alive"
   },
   "111建字第0308號": {
     "name": "鄰台鐵高鐵設施",
     "name_source": "drive_pdf",
     "pdf_count": 62,
-    "updated_at": "2026-09-11T10:10:06.948938"
+    "updated_at": "2026-09-11T11:34:21.154626",
+    "source_url": "https://drive.google.com/drive/folders/1uBdrfjU7QPyS2W2JsrTfGSw2BaBtjrsz",
+    "gov_pdf_url_status": "alive"
   },
   "111建字第0317號": {
     "name": "圓山富璟住宅新建工程",
     "name_source": "api_match",
-    "pdf_count": 136,
+    "pdf_count": 178,
     "address": "福港街210巷",
     "stage": "中間樁施作完成",
     "sensors": 100,
@@ -4332,7 +4565,7 @@
     "alert_message": "有感測器超過行動值",
     "alert_date": "2026-03-02",
     "api_match": "圓山富璟住宅新建工程監測案",
-    "updated_at": "2026-09-11T10:10:06.977066",
+    "updated_at": "2026-09-11T11:34:21.181735",
     "live_alerts": {
       "danger": 1,
       "warning": 0,
@@ -4341,19 +4574,25 @@
       "details": [
         "有感測器超過行動值"
       ]
-    }
+    },
+    "source_url": "https://drive.google.com/drive/folders/15a8gtZgQ-y3pZ4BRqcM8eOC5-zhCLvob",
+    "gov_pdf_url_status": "alive"
   },
   "111建字第0345號": {
     "name": "中山晶綻",
     "name_source": "drive_pdf",
-    "pdf_count": 54,
-    "updated_at": "2026-09-11T10:10:07.017189"
+    "pdf_count": 64,
+    "updated_at": "2026-09-11T11:34:21.219545",
+    "source_url": "https://drive.google.com/drive/folders/1T12qPXIWCxGQLj7OwHZMdlgg6jZtX-qo",
+    "gov_pdf_url_status": "alive"
   },
   "111建字第0347號": {
     "name": "國土大將",
     "name_source": "drive_pdf",
-    "pdf_count": 281,
-    "updated_at": "2026-09-11T10:10:07.019282"
+    "pdf_count": 315,
+    "updated_at": "2026-09-11T11:34:21.221476",
+    "source_url": "https://drive.google.com/drive/folders/1Jn9aJdBXfJjdbZbjmOaC1AQkb66PWMXg",
+    "gov_pdf_url_status": "alive"
   },
   "112建字第0021號": {
     "name": "C棟新建工程",
@@ -4367,18 +4606,22 @@
     "alert_message": "無異常記錄",
     "alert_date": "",
     "api_match": "C棟新建工程監測案",
-    "updated_at": "2026-09-11T10:10:07.069668"
+    "updated_at": "2026-09-11T11:34:21.290180",
+    "source_url": "https://drive.google.com/drive/u/1/folders/1unymTUqmE9trxZQ2LJoN4qEBkoDVjC1l19/37",
+    "gov_pdf_url_status": "404"
   },
   "112建字第0107號": {
     "name": "吉宗-新生北",
     "name_source": "drive_pdf",
-    "pdf_count": 1,
-    "updated_at": "2026-09-11T10:10:07.228041"
+    "pdf_count": 2,
+    "updated_at": "2026-09-11T11:34:21.447583",
+    "source_url": "https://drive.google.com/drive/folders/1B9iLZ0cOOqBlRH3TXu22X5StaA9JbGiR?usp=sharing",
+    "gov_pdf_url_status": "alive"
   },
   "112建字第0133號": {
     "name": "天母樺園新建工程",
     "name_source": "api_match",
-    "pdf_count": 103,
+    "pdf_count": 108,
     "address": "台北市榮華三路/明德路267巷",
     "stage": "Structural Work (5F Columns/Walls, 6FL Beam/Slab)",
     "sensors": 53,
@@ -4387,13 +4630,15 @@
     "alert_message": "無異常記錄",
     "alert_date": "",
     "api_match": "天母樺園新建工程監測案",
-    "updated_at": "2026-09-11T10:10:07.305390"
+    "updated_at": "2026-09-11T11:34:21.547250",
+    "source_url": "https://drive.google.com/drive/folders/1W2xyCTSEhZo3sh2mlmd_45QIoo7Ow66D",
+    "gov_pdf_url_status": "alive"
   },
   "112建字第0135號": {
     "name": "大龍段",
     "name_source": "drive_pdf",
-    "pdf_count": 69,
-    "updated_at": "2026-09-11T10:10:07.306790",
+    "pdf_count": 139,
+    "updated_at": "2026-09-11T11:34:21.548497",
     "live_alerts": {
       "danger": 0,
       "warning": 1,
@@ -4402,13 +4647,15 @@
       "details": [
         "有感測器超過警戒值"
       ]
-    }
+    },
+    "source_url": "https://drive.google.com/drive/folders/10-YKgXXxb81k62Slm-VmJwWebTiqm5tg",
+    "gov_pdf_url_status": "alive"
   },
   "113建字第0025號": {
     "name": "兩廳院",
     "name_source": "drive_pdf",
-    "pdf_count": 82,
-    "updated_at": "2026-09-11T10:10:07.501384",
+    "pdf_count": 235,
+    "updated_at": "2026-09-11T11:34:21.839960",
     "live_alerts": {
       "danger": 1,
       "warning": 0,
@@ -4417,12 +4664,14 @@
       "details": [
         "有感測器超過行動值"
       ]
-    }
+    },
+    "source_url": "https://drive.google.com/drive/folders/1eSlDubXf4KVfcMBAswE1bMdwi7S9S6Xb",
+    "gov_pdf_url_status": "alive"
   },
   "113建字第0136號": {
     "name": "真實和光新建工程",
     "name_source": "api_match",
-    "pdf_count": 13,
+    "pdf_count": 51,
     "address": "台灣 (依據電話區碼02推測)",
     "stage": "initial_baseline",
     "sensors": 21,
@@ -4431,12 +4680,810 @@
     "alert_message": "無異常記錄",
     "alert_date": "",
     "api_match": "真實和光新建工程監測案",
-    "updated_at": "2026-09-11T10:10:07.594298"
+    "updated_at": "2026-09-11T11:34:21.991702",
+    "source_url": "https://drive.google.com/drive/folders/1VYkonhYqhN9BEPy7VQ1hTwKHQwr1G4sx",
+    "gov_pdf_url_status": "alive"
   },
   "113建字第0188號": {
     "name": "宏林TOP31-捷運報告",
     "name_source": "drive_pdf",
-    "pdf_count": 59,
-    "updated_at": "2026-09-11T10:10:07.639161"
+    "pdf_count": 60,
+    "updated_at": "2026-09-11T11:34:22.067657",
+    "source_url": "https://drive.google.com/drive/folders/1eUdgQzmSt7IOmsV3fKbBXLkClP379lop?usp=drive_link33/37",
+    "gov_pdf_url_status": "alive"
+  },
+  "109建字第0001號": {
+    "name": "北城羅斯福",
+    "name_source": "drive_pdf",
+    "pdf_count": 90,
+    "source_url": "https://drive.google.com/drive/mobile/folders/1W6Jm2TYWZJt704aq9troqowxSFIekZ2M",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:19.798555"
+  },
+  "109建字第0246號": {
+    "source_url": "https://drive.google.com/drive/folders/1sDPQ9ilRYX9-wN4Ql3OGzo_dpa4EON8u",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:19.919501"
+  },
+  "110建字第0023號": {
+    "name": "博愛花苑安全監測系統",
+    "name_source": "drive_pdf",
+    "pdf_count": 63,
+    "source_url": "https://drive.google.com/drive/mobile/folders/1uObuDLm5WsCfiCQkVfsR8ej6mzS25ZDH",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:20.007262"
+  },
+  "110建字第0038號": {
+    "name": "北投監測資料",
+    "name_source": "source_folder",
+    "source_url": "https://drive.google.com/drive/u/2/folders/1VMSJkQQWyK5wI_n3X6fbbDONDWe-hHkZ",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:20.021898"
+  },
+  "110建字第0055號": {
+    "name": "敦南霖園工地監測數據",
+    "name_source": "source_folder",
+    "source_url": "https://drive.google.com/drive/folders/1kJ6MyK8pQTEdzv_J_Vt4Py5J-6kv86md?usp=drive_link",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:20.051072"
+  },
+  "110建字第0126號": {
+    "name": "龍欣",
+    "name_source": "drive_pdf",
+    "pdf_count": 69,
+    "source_url": "https://drive.google.com/drive/folders/1_c6VQM-4JeT1RwYLH8DNKgiazuFjyO7a?usp=sharing",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:20.122568"
+  },
+  "110建字第0129號": {
+    "name": "關渡",
+    "name_source": "drive_pdf",
+    "pdf_count": 18,
+    "source_url": "https://drive.google.com/drive/mobile/folders/1i7_erwlUzttMvjDDqf1kGovn4fAyU13e",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:20.123631"
+  },
+  "110建字第0156號": {
+    "name": "晶展-110-0156號-蔡華平農舍新建工程-監測",
+    "name_source": "source_folder",
+    "source_url": "https://drive.google.com/drive/folders/1ouA1BW2St6cjjF89EdTdndGtQdSl8Rp8?usp=drive_link",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:20.154421"
+  },
+  "110建字第0231號": {
+    "source_url": "https://drive.google.com/drive/folders/1m54XFks7vzXtfX3TNSYmhSSz2K-fUceA6/37",
+    "gov_pdf_url_status": "404",
+    "updated_at": "2026-09-11T11:34:20.297276"
+  },
+  "110建字第0351號": {
+    "name": "觀測-廣朋峰源案",
+    "name_source": "drive_pdf",
+    "pdf_count": 72,
+    "source_url": "https://drive.google.com/drive/folders/1Mcg_8KZHFmuNFNW85QDdWBDlPyRagUpm",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:20.466936"
+  },
+  "111建字第0005號": {
+    "name": "達欣文萃",
+    "name_source": "api_match",
+    "pdf_count": 186,
+    "address": "",
+    "stage": "連續壁施作中",
+    "sensors": 38,
+    "alert_label": "正常",
+    "alert_tone": "normal",
+    "alert_message": "無異常記錄",
+    "alert_date": "",
+    "api_match": "達欣文萃新建工程",
+    "source_url": "https://drive.google.com/drive/u/0/mobile/folders/1TJeaRbAPrLtJzxgXfxRWbH5BemAzG54p",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:20.501253"
+  },
+  "111建字第0027號": {
+    "name": "寶國建經大龍街工地",
+    "name_source": "source_folder",
+    "source_url": "https://drive.google.com/drive/folders/14sVbfhp3Y793EC-z_ZpyP5F5tRioA5k2",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:20.546286"
+  },
+  "111建字第0093號": {
+    "name": "時詣建設城中段三小段新建工程",
+    "name_source": "api_match",
+    "pdf_count": 138,
+    "address": "台北市中正區愛國西路/延平南路/中華路一段95巷",
+    "stage": "B1F Structure Construction",
+    "sensors": 16,
+    "alert_label": "正常",
+    "alert_tone": "normal",
+    "alert_message": "無異常記錄",
+    "alert_date": "",
+    "api_match": "時詣建設城中段三小段新建工程監測案",
+    "source_url": "https://drive.google.com/drive/folders/1_ZF0dVLCWuyC3VVQGDYA1bdg-jtl1clS",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:20.701102"
+  },
+  "111建字第0143號": {
+    "name": "三星北醫",
+    "name_source": "drive_pdf",
+    "pdf_count": 76,
+    "source_url": "https://drive.google.com/drive/folders/1W8jZTyMim1Ow3N2g1TmzTHtudqm3-t_u",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:20.868800"
+  },
+  "111建字第0160號": {
+    "name": "金藏士東路",
+    "name_source": "drive_pdf",
+    "pdf_count": 24,
+    "source_url": "https://drive.google.com/drive/folders/1BhfrgOe5Vzq8qDl4zILY0rSg4IC6qRVf",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:20.888994"
+  },
+  "111建字第0231號": {
+    "name": "富麗京旺文山萃",
+    "name_source": "drive_pdf",
+    "pdf_count": 67,
+    "source_url": "https://drive.google.com/drive/folders/1-0ITEQERxDKK0PfQykcsB0sp382XZtN6",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:20.981527"
+  },
+  "111建字第0298號": {
+    "name": "",
+    "name_source": "",
+    "source_url": "https://drive.google.com/drive/folders/1bgAAIuTyIOFSHKuEQLAhEGGWImvCQkVU",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:21.119789"
+  },
+  "111建字第0321號": {
+    "source_url": "https://drive.google.com/drive/u/0/folders/1zv_K3CmnWYuLQl0DUiOIDFF637ld5rKL17/37",
+    "gov_pdf_url_status": "404",
+    "updated_at": "2026-09-11T11:34:21.192404"
+  },
+  "111建字第0363號": {
+    "name": "北投區奇岩三小段11.22地號集合住宅新建工程工地",
+    "name_source": "source_folder",
+    "source_url": "https://drive.google.com/drive/folders/1N07lVUXyZH-7ZjzAaZfAb_mBE4_a78DG",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:21.255216"
+  },
+  "112建字第0006號": {
+    "name": "逢昌營造",
+    "name_source": "source_folder",
+    "source_url": "https://drive.google.com/drive/folders/1IZuUa3a6ZeikNFKGI1Z31jiI8m9Hs1Z5?usp=drive_link",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:21.271268"
+  },
+  "112建字第0008號": {
+    "name": "良茂建設金泰段大樓新建工程-專案",
+    "name_source": "drive_pdf",
+    "pdf_count": 47,
+    "source_url": "https://drive.google.com/drive/folders/1JlDxkoY7-O6KZ5RfXccmkrBqVKRZMCIH",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:21.280397"
+  },
+  "112建字第0053號": {
+    "name": "將捷之琚",
+    "name_source": "drive_pdf",
+    "pdf_count": 116,
+    "source_url": "https://drive.google.com/drive/folders/1OS8B-5YAU1Mhw1VZIdELkt9WTsYrz9C5",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:21.350197"
+  },
+  "112建字第0057號": {
+    "name": "114",
+    "name_source": "source_folder",
+    "source_url": "https://drive.google.com/drive/u/0/folders/1XKi9gQ1DoWcoGBeDJCVVmq6Flesw-OOV?ths=true",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:21.358886"
+  },
+  "112建字第0078號": {
+    "name": "逢昌營造",
+    "name_source": "source_folder",
+    "source_url": "https://drive.google.com/drive/folders/1azwTdXadlBWN0XasHRFoWODNiW0J0FG2?usp=drive_link",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:21.387838"
+  },
+  "112建字第0085號": {
+    "name": "大安昕居",
+    "name_source": "drive_pdf",
+    "pdf_count": 61,
+    "source_url": "https://drive.google.com/drive/folders/1pe1d8pgplgvoXuMZA_G-Dfhz3YQXeMM6?usp=drive_link",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:21.407703"
+  },
+  "112建字第0111號": {
+    "name": "萬華區漢中段住商華廈",
+    "name_source": "api_match",
+    "pdf_count": 163,
+    "address": "台北市萬華區隆昌街130號旁",
+    "stage": "第一階開挖完成，第一層水平支撐施作",
+    "sensors": 11,
+    "alert_label": "正常",
+    "alert_tone": "normal",
+    "alert_message": "無異常記錄",
+    "alert_date": "",
+    "api_match": "萬華區漢中段住商華廈新建工程",
+    "source_url": "https://drive.google.com/drive/folders/1bI3RcYCTNXP9DBizVe6NZpzraFrVtC44?usp=sharing",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:21.464759"
+  },
+  "112建字第0119號": {
+    "source_url": "https://drive.google.com/drive/folders/1aCFVjEcAiGgmxV6DojvHxUeFaNEfP0d3",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:21.477578"
+  },
+  "112建字第0139號": {
+    "name": "逢昌營造",
+    "name_source": "source_folder",
+    "source_url": "https://drive.google.com/drive/folders/1qnOvvfYMD5htTsteFsT1wjjqKqHvrNP9?usp=drive_link",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:21.555784"
+  },
+  "112建字第0172號": {
+    "name": "冠洋",
+    "name_source": "drive_pdf",
+    "pdf_count": 43,
+    "source_url": "https://drive.google.com/drive/folders/1x1Q7V9NTF77gvw2T92Buy-wC6TJ8TqYJ",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:21.577515"
+  },
+  "112建字第0173號": {
+    "name": "誠美知寓集合住宅新建工程案",
+    "name_source": "api_match",
+    "pdf_count": 66,
+    "address": "新北市永和區",
+    "stage": "",
+    "sensors": 36,
+    "alert_label": "正常",
+    "alert_tone": "normal",
+    "alert_message": "無異常記錄",
+    "alert_date": "",
+    "api_match": "誠美知寓集合住宅新建工程案",
+    "source_url": "https://drive.google.com/drive/folders/1p8yCXfAmMx43DTIKuE9NYBiLsUjA28t_?usp=drive_link",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:21.588600"
+  },
+  "112建字第0190號": {
+    "name": "世國南港玉成段住宅",
+    "name_source": "drive_pdf",
+    "pdf_count": 167,
+    "source_url": "https://drive.google.com/drive/u/2/folders/1GULg7rs9STsyDN5CN-0el5oeMPjzcEpM",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:21.625307"
+  },
+  "112建字第0203號": {
+    "source_url": "https://drive.google.com/drive/folders/13x7YDZoo5Z9Ku4hVuQaetkCCAwK5IQAz25/37",
+    "gov_pdf_url_status": "404",
+    "updated_at": "2026-09-11T11:34:21.627264"
+  },
+  "112建字第0207號": {
+    "name": "國新中山區金泰段",
+    "name_source": "drive_pdf",
+    "pdf_count": 19,
+    "source_url": "https://drive.google.com/drive/folders/1LmKuAKJUNc8f7GGXB9MQfPC9lRIo3sGt?sort=15&direction=d",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:21.635588"
+  },
+  "112建字第0208號": {
+    "name": "",
+    "name_source": "",
+    "source_url": "https://drive.google.com/drive/folders/1nh7Iv8agYnw3li5FPXbkQprrxagu5alN",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:21.635593"
+  },
+  "112建字第0215號": {
+    "name": "森仰大樓",
+    "name_source": "drive_pdf",
+    "pdf_count": 45,
+    "source_url": "https://drive.google.com/drive/folders/11jLVBFqcqvisx7i21LKrrp16-oLrLVSd",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:21.640276"
+  },
+  "112建字第0240號": {
+    "name": "吾雙",
+    "name_source": "drive_pdf",
+    "pdf_count": 127,
+    "source_url": "https://drive.google.com/drive/folders/1odMeH5WhhV3Q9Thrlp7S7UvwG9Q5z8ol?usp=sharing",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:21.705454"
+  },
+  "112建字第0241號": {
+    "name": "德行東路案量測報表",
+    "name_source": "drive_pdf",
+    "pdf_count": 1,
+    "source_url": "https://drive.google.com/drive/folders/1POqYsYWfd2gg07lES5DR418pQ7u16Ur9",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:21.710030"
+  },
+  "112建字第0245號": {
+    "name": "中山區長春段",
+    "name_source": "drive_pdf",
+    "pdf_count": 60,
+    "source_url": "https://drive.google.com/drive/u/1/folders/1GqU51phP26An03JOOwj2JZD7d3Ti-m9s",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:21.717046"
+  },
+  "112建字第0250號": {
+    "name": "三總重症醫療大樓工程113年5月安全",
+    "name_source": "drive_pdf",
+    "pdf_count": 140,
+    "source_url": "https://drive.google.com/drive/folders/1XlPS-A50ZgHvui8RDrHEEGHw9uiUJ1ZM",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:21.730093"
+  },
+  "112建字第0273號": {
+    "name": "建成開發北投集合住宅",
+    "name_source": "api_match",
+    "pdf_count": 57,
+    "address": "台北市北投區",
+    "stage": "Structural Construction (9F)",
+    "sensors": 36,
+    "alert_label": "正常",
+    "alert_tone": "normal",
+    "alert_message": "無異常記錄",
+    "alert_date": "",
+    "api_match": "建成開發北投集合住宅新建工程",
+    "source_url": "https://drive.google.com/drive/folders/1rNdJL8AeRNEGUoCxBMX6CCAuqXbuoZQI",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:21.785005"
+  },
+  "112建字第0277號": {
+    "name": "",
+    "name_source": "",
+    "source_url": "https://drive.google.com/drive/folders/1kKPRDg3ePngluKLrpyGnvveeLAzKCG2W",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:21.787766"
+  },
+  "112建字第0283號": {
+    "name": "資訊服務大樓",
+    "name_source": "drive_pdf",
+    "pdf_count": 109,
+    "source_url": "https://drive.google.com/drive/folders/1-xpLN7VqJe8-YsILNWxt7rHhQFhdR5aW?usp=sharing",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:21.799443"
+  },
+  "112建字第0292號": {
+    "name": "台北市信義區雅祥段四小段735地號等44筆土地都市更新會新建工程_安全觀測資料",
+    "name_source": "source_folder",
+    "live_alerts": {
+      "danger": 0,
+      "warning": 1,
+      "total": 1,
+      "latest_date": "2026-03-02",
+      "details": [
+        "有感測器超過警戒值"
+      ]
+    },
+    "source_url": "https://drive.google.com/drive/folders/1AmfE9yU8Nx5KMgiCqtWY6BtXN5bzltv3?usp=drive_link",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:21.818095"
+  },
+  "112建字第8888號": {
+    "name": "M08 恆悅麗山",
+    "name_source": "api_match",
+    "pdf_count": 201,
+    "address": "台北市內湖區",
+    "stage": "",
+    "sensors": 70,
+    "alert_label": "正常",
+    "alert_tone": "normal",
+    "alert_message": "無異常記錄",
+    "alert_date": "",
+    "api_match": "M08 恆悅麗山新建工程",
+    "source_url": "https://drive.google.com/drive/folders/1QGwr_8VJGqsBaV700HpmvnIaWseBWio-?usp=sharing",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:21.822935"
+  },
+  "113建字第0006號": {
+    "source_url": "https://drive.google.com/drive/folders/129_ugF-j0eW5BzQ3He9EV_RiCWqldCDV?usp=drive_link",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:21.822936"
+  },
+  "113建字第0027號": {
+    "name": "廣門建設永新四小段(社中街案)觀測資料夾",
+    "name_source": "source_folder",
+    "source_url": "https://drive.google.com/drive/folders/1uL7BETCuMruKi5UidRBLS0KpA8MC7cxM?usp=sharing",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:21.860828"
+  },
+  "113建字第0028號": {
+    "name": "文山安家湛安全監測",
+    "name_source": "source_folder",
+    "source_url": "https://drive.google.com/drive/folders/12pLCAn-itNi79tzz9FJ1BFaG5Y-uYvnK?usp=drive_link",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:21.864080"
+  },
+  "113建字第0038號": {
+    "name": "朋記建設政大段集合住宅新建工程安全觀測系統",
+    "name_source": "source_folder",
+    "source_url": "https://drive.google.com/drive/folders/1o_OHGbijzIBnp1z_kRF5klBXIqU-ro2f",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:21.882407"
+  },
+  "113建字第0040號": {
+    "source_url": "https://drive.google.com/file/d/12CC3p-zMsFIItUqMaAClbeIhfEgcxR_H/view?usp=drive_link",
+    "updated_at": "2026-09-11T11:34:21.882409"
+  },
+  "113建字第0048號": {
+    "name": "峰麗開發台北市文山區萬慶段三小段297地號",
+    "name_source": "api_match",
+    "pdf_count": 95,
+    "address": "台北市文山區萬慶段三小段297地號",
+    "stage": "地梁施作 (Ground Beam Construction)",
+    "sensors": 35,
+    "alert_label": "正常",
+    "alert_tone": "normal",
+    "alert_message": "無異常記錄",
+    "alert_date": "",
+    "api_match": "峰麗開發台北市文山區萬慶段三小段297地號新建工程",
+    "live_alerts": {
+      "danger": 0,
+      "warning": 1,
+      "total": 1,
+      "latest_date": "2026-01-13",
+      "details": [
+        "有感測器超過警戒值"
+      ]
+    },
+    "source_url": "https://drive.google.com/drive/folders/1vtgYvjSnMOeCpzudS6g-ZycusUbxu7Uk",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:21.905400"
+  },
+  "113建字第0052號": {
+    "name": "富邦人壽承德大樓北基地新建工程統包",
+    "name_source": "source_folder",
+    "source_url": "https://drive.google.com/drive/folders/10CVbL9_FWF7bZIxtR-tb1ieX9S04HiTl",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:21.921580"
+  },
+  "113建字第0066號": {
+    "name": "克強運動館",
+    "name_source": "drive_pdf",
+    "pdf_count": 101,
+    "source_url": "https://drive.google.com/drive/folders/18ca4NhmmjHuubl6Vd7O-_hdz2UDf5Q0z?usp=sharing",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:21.941250"
+  },
+  "113建字第0073號": {
+    "name": "國美瑞安0709監測案報表",
+    "name_source": "drive_pdf",
+    "pdf_count": 93,
+    "source_url": "https://drive.google.com/drive/folders/1_NBGskn14NDVKrCHtM8VuRcGvlrd7N4t?usp=sharing",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:21.944247"
+  },
+  "113建字第0075號": {
+    "name": "萬堡南海段",
+    "name_source": "drive_pdf",
+    "pdf_count": 17,
+    "source_url": "https://drive.google.com/drive/folders/13wnBIqKAfA66TB5fRrL2fXA6Z0QyLJuu",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:21.947016"
+  },
+  "113建字第0088號": {
+    "name": "樺輝沐畇鄰房鑑測站",
+    "name_source": "source_folder",
+    "source_url": "https://drive.google.com/drive/folders/11cZ9Lm2fJqZqquwByHIJund3JluRvPQG",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:21.957308"
+  },
+  "113建字第0093號": {
+    "name": "清誠 信義",
+    "name_source": "drive_pdf",
+    "pdf_count": 75,
+    "source_url": "https://drive.google.com/drive/folders/1eFm1HiKkaCnQHX5jlMmmlsXLY2xNXwB1",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:21.960927"
+  },
+  "113建字第0095號": {
+    "source_url": "https://drive.google.com/drive/folders/1Dbm56H_QvqD0H95G4g2JE7RdbaIIQ0gi31/37",
+    "gov_pdf_url_status": "404",
+    "updated_at": "2026-09-11T11:34:21.960928"
+  },
+  "113建字第0125號": {
+    "source_url": "https://drive.google.com/drive/folders/1Rbs2wrQXNMVrH_3WRcal1ei9S8XEqr_T?usp=drive_link",
+    "gov_pdf_url_status": "404",
+    "updated_at": "2026-09-11T11:34:21.985416"
+  },
+  "113建字第0130號": {
+    "name": "中正段()NO 4 - 簽證版",
+    "name_source": "drive_pdf",
+    "pdf_count": 84,
+    "source_url": "https://drive.google.com/drive/folders/1hhm4PwwZr0U_0zpMgrcjIcvCfoCfM4fk",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:21.989176"
+  },
+  "113建字第0140號": {
+    "name": "雲端監測數據庫",
+    "name_source": "source_folder",
+    "source_url": "https://drive.google.com/drive/folders/1vLMW2J2s-R3YtyQ_9lbqqUQWqc4_RnBE",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:21.992047"
+  },
+  "113建字第0147號": {
+    "name": "寶鉅南港",
+    "name_source": "drive_pdf",
+    "pdf_count": 147,
+    "source_url": "https://drive.google.com/drive/folders/1SzBd9_XsEgowNgSmD_T_IMISk3y01sQO",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:21.997949"
+  },
+  "113建字第0155號": {
+    "name": "山輝-延吉段",
+    "name_source": "source_folder",
+    "source_url": "https://drive.google.com/drive/folders/125eIRaGvbEFRAY0BTAF4iaOwmNIfeDRu",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:22.018918"
+  },
+  "113建字第0158號": {
+    "name": "冠德建設台電南港(AR-1-2)都更開發商辦大樓新建工程()鄰房",
+    "name_source": "drive_pdf",
+    "pdf_count": 97,
+    "live_alerts": {
+      "danger": 0,
+      "warning": 1,
+      "total": 1,
+      "latest_date": "2026-01-20",
+      "details": [
+        "有感測器超過警戒值"
+      ]
+    },
+    "source_url": "https://drive.google.com/drive/folders/1CSexOK5lKQYu1zBCMT6WKqkQCjWNq0Qn",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:22.032379"
+  },
+  "113建字第0159號": {
+    "name": "冠德建設台電南港(AR-1-2)都更開發商辦大樓新建工程()鄰房",
+    "name_source": "drive_pdf",
+    "pdf_count": 97,
+    "live_alerts": {
+      "danger": 0,
+      "warning": 1,
+      "total": 1,
+      "latest_date": "2026-01-20",
+      "details": [
+        "有感測器超過警戒值"
+      ]
+    },
+    "source_url": "https://drive.google.com/drive/folders/1CSexOK5lKQYu1zBCMT6WKqkQCjWNq0Qn",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:22.045664"
+  },
+  "113建字第0171號": {
+    "name": "同興毅聯Win",
+    "name_source": "drive_pdf",
+    "pdf_count": 19,
+    "source_url": "https://drive.google.com/drive/u/0/folders/1EI9FBgbH_23xu6nWZeg4cSdvhBeiE9Do?hl=zh-TW",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:22.047609"
+  },
+  "113建字第0175號": {
+    "name": "臨沂段",
+    "name_source": "drive_pdf",
+    "pdf_count": 33,
+    "source_url": "https://drive.google.com/drive/folders/1-m0nefwG4_Uju6h2WanpPN6cbQonqPqX",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:22.048679"
+  },
+  "113建字第0196號": {
+    "name": "金藏瑞閣",
+    "name_source": "drive_pdf",
+    "pdf_count": 12,
+    "source_url": "https://drive.google.com/drive/folders/1XC22Dzju3QKaTuCb_tYg-1ZjS4qr8rHc?usp=sharing",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:22.069580"
+  },
+  "113建字第0212號": {
+    "name": "久年松芮新建工程觀測紀錄表",
+    "name_source": "drive_pdf",
+    "pdf_count": 33,
+    "source_url": "https://drive.google.com/drive/folders/1maoYvXzGw4NFfuMKpUaVHpiA7gHhZGJ1",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:22.077841"
+  },
+  "113建字第0221號": {
+    "name": "北投軟橋段集合住宅",
+    "name_source": "api_match",
+    "pdf_count": 44,
+    "address": "台北市北投區",
+    "stage": "",
+    "sensors": 46,
+    "alert_label": "危險",
+    "alert_tone": "danger",
+    "alert_message": "有感測器超過行動值",
+    "alert_date": "2026-01-13",
+    "api_match": "北投軟橋段集合住宅新建工程",
+    "live_alerts": {
+      "danger": 1,
+      "warning": 0,
+      "total": 1,
+      "latest_date": "2026-01-13",
+      "details": [
+        "有感測器超過行動值"
+      ]
+    },
+    "source_url": "https://drive.google.com/drive/folders/1lbO5EuuuzNZVA3viDrVSfzJAuYjyPlgM",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:22.086524"
+  },
+  "113建字第0223號": {
+    "name": "城甲營造--安全觀測-士林大百齡",
+    "name_source": "source_folder",
+    "source_url": "https://drive.google.com/drive/folders/1jYc3eP2t4TIKYh_CVq-fdJzvf1s-9WBa?usp=sharing",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:22.091486"
+  },
+  "113建字第0236號": {
+    "name": "森騰-桃源段",
+    "name_source": "drive_pdf",
+    "pdf_count": 3,
+    "source_url": "https://drive.google.com/drive/folders/1tGpscRTX_WrOcWDk1PxUjlskhFn3j6VH?usp=drive_link",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:22.094262"
+  },
+  "114建字第0011號": {
+    "source_url": "https://drive.google.com/drive/folders/1tN62ujxBC9CzRbB6sf_JIFd5N7T5eGLY",
+    "gov_pdf_url_status": "404",
+    "updated_at": "2026-09-11T11:34:22.143593"
+  },
+  "114建字第0028號": {
+    "name": "常殷大直金泰段",
+    "name_source": "drive_pdf",
+    "pdf_count": 20,
+    "source_url": "https://drive.google.com/drive/mobile/folders/12s04jC_-fezfzY3a39QH-8NFg0mmwAfj?q=sharedwith",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:22.171775"
+  },
+  "114建字第0041號": {
+    "name": "",
+    "name_source": "",
+    "pdf_count": 18,
+    "source_url": "https://drive.google.com/drive/folders/1kmOGP-T5wxWCgZyt4tTTqTn5GorHqtuO",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:22.175831"
+  },
+  "114建字第0049號": {
+    "name": "長虹建設-台北市內湖區西湖段四小段220-1、220-2、236-1地號",
+    "name_source": "source_folder",
+    "source_url": "https://drive.google.com/drive/folders/1pjcncLI-pHkLgRAZJdyaaQLsCpCUK9GG",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:22.189107"
+  },
+  "114建字第0058號": {
+    "name": "昇宏昌北投案樹沐新建工程觀測報告",
+    "name_source": "source_folder",
+    "source_url": "https://drive.google.com/drive/folders/1yHRxKiUysUGN7P6jaVz0-__dFOI3j29y?usp=sharing",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:22.221329"
+  },
+  "114建字第0062號": {
+    "name": "地球營造-台北市內湖區康寧段集合住宅",
+    "name_source": "api_match",
+    "pdf_count": 7,
+    "address": "台北市內湖區康寧段",
+    "stage": "結構體施作",
+    "sensors": 7,
+    "alert_label": "正常",
+    "alert_tone": "normal",
+    "alert_message": "無異常記錄",
+    "alert_date": "",
+    "api_match": "地球營造-台北市內湖區康寧段集合住宅新建工程",
+    "source_url": "https://drive.google.com/drive/folders/1D6Zh6uD0DbSAQ-RnYpCa94PkPEqQujFe",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:22.251548"
+  },
+  "114建字第0064號": {
+    "name": "修德國小活動中心興建工程",
+    "name_source": "source_folder",
+    "source_url": "https://drive.google.com/drive/mobile/folders/1v_Z4g70VEI7ff9s8hAaUGDO0SLGxb1a-",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:22.257481"
+  },
+  "114建字第0077號": {
+    "name": "借用道路執照函文",
+    "name_source": "drive_pdf",
+    "pdf_count": 2,
+    "source_url": "https://drive.google.com/drive/folders/15osG6EFMulEuaCVfRjkXDuisKF2YQKYk",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:22.262911"
+  },
+  "114建字第0086號": {
+    "name": "聯美萃居工地",
+    "name_source": "drive_pdf",
+    "pdf_count": 8,
+    "source_url": "https://drive.google.com/drive/u/1/mobile/folders/1aGyxfedyHhGi5QE3ynP0-PBEWb7XG84I?sort=13&direction=a",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:22.266664"
+  },
+  "114建字第0091號": {
+    "name": "同興毅聯首馥",
+    "name_source": "drive_pdf",
+    "pdf_count": 20,
+    "source_url": "https://drive.google.com/drive/u/1/folders/13F89BOn5XfWGjZ_ywPSZpI03Q_r5Gk4-",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:22.270396"
+  },
+  "114建字第0096號": {
+    "name": "0823台北市瑞安段二小段499等10筆地號新建案",
+    "name_source": "drive_pdf",
+    "pdf_count": 2,
+    "source_url": "https://drive.google.com/drive/folders/1Ua3wXNVGlrIXuBLYaD0ik8alTWRLn5GB?usp=drive_link",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:22.283520"
+  },
+  "114建字第0101號": {
+    "name": "鄉林北投案",
+    "name_source": "drive_pdf",
+    "pdf_count": 62,
+    "source_url": "https://drive.google.com/drive/folders/1c0TOc2AEZvR3aUeF4HuLEO2vmr1d9cNY",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:22.286322"
+  },
+  "114建字第0106號": {
+    "name": "No.19-緯創資通第二總部大樓新建工程(土建及裝修工程)安全觀測",
+    "name_source": "drive_pdf",
+    "pdf_count": 15,
+    "source_url": "https://drive.google.com/drive/folders/117WDzjNhhzZDBdwEW22XaAq4QsszBGxQ",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:22.299090"
+  },
+  "114建字第0119號": {
+    "name": "54",
+    "name_source": "source_folder",
+    "source_url": "https://drive.google.com/drive/mobile/folders/10DrHT9dwfnLZ6GkIwOPcnepo8iEtOt_D?usp=drive_link36/37",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:22.299158"
+  },
+  "114建字第0129號": {
+    "name": "佇慧監測資料",
+    "name_source": "source_folder",
+    "source_url": "https://drive.google.com/drive/folders/1Ogurip2JYqP3hYWoNOtFMINfynY4kUPv",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:22.300046"
+  },
+  "114建字第0149號": {
+    "name": "旭日實驗教育機構大樓0429",
+    "name_source": "drive_pdf",
+    "pdf_count": 1,
+    "source_url": "https://drive.google.com/drive/folders/15FK6E4nKmwdca23gzntix_USE5nGb1Gl?usp=drive_link",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:22.307547"
+  },
+  "114建字第0158號": {
+    "name": "",
+    "name_source": "",
+    "source_url": "https://drive.google.com/drive/folders/1noJnt3N4ZLIcdzz1toBAFGYC56-EZCzm?usp=sharing",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:22.307617"
+  },
+  "114建字第0170號": {
+    "name": "E-軟橋安全",
+    "name_source": "drive_pdf",
+    "pdf_count": 20,
+    "source_url": "https://drive.google.com/drive/folders/1-r7zg7DqAK3XnmhuAcSDaEW95KJNP_lF?usp=sharing",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:22.309555"
+  },
+  "114建字第0178號": {
+    "name": "士林教會-安全",
+    "name_source": "drive_pdf",
+    "pdf_count": 19,
+    "source_url": "https://drive.google.com/drive/folders/1XcUYXLEu_smHKfkESLMzhInC6AkijmSp",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:22.313248"
+  },
+  "114建字第0198號": {
+    "name": "中河文山華興段",
+    "name_source": "drive_pdf",
+    "pdf_count": 12,
+    "source_url": "https://drive.google.com/drive/folders/1PNrwOl5ZvD97Z3ywxeMu21DmuPMwW97t",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:22.317772"
+  },
+  "114建字第0215號": {
+    "name": "52",
+    "name_source": "source_folder",
+    "source_url": "https://drive.google.com/drive/folders/1fdZjI-r4gvhJ26ocszlhiL1w6-b97OVc",
+    "gov_pdf_url_status": "alive",
+    "updated_at": "2026-09-11T11:34:22.317839"
   }
 }
