@@ -5,6 +5,7 @@
       "name": "台北市",
       "enabled": true,
       "source_type": "pdf",
+      "list_page_url": "https://cmo.gov.taipei/cp.aspx?n=DDC36EA7C18D67F2",
       "pdf_list_url": "https://www-ws.gov.taipei/001/Upload/845/relfile/-1/845/03b35db7-a123-4b29-b881-1cb17fa9c4f2.pdf",
       "shared_drive_id": "",
       "group_id": ""
