@@ -190,34 +190,46 @@ class PermitSync:
         # retry-with-backoff 防 transient 網路/DNS 失敗（#59）— 配合 network_ready.py
         # 的 post-wake gate，雙層防禦：probe 等 DNS ready，此處再吸收 mid-run blip
         print("📥 下載建案列表 PDF...")
-        # 優先從發布頁動態解析最新清單連結；失敗則 fallback 回靜態 pdf_list_url
-        list_url = self.pdf_list_url
+        # 候選 URL 依序嘗試：先動態解析的最新清單，失效再退回靜態 pdf_list_url。
+        # 動態 URL 可能解析成功卻已失效（政府又換檔→404/500 或回傳 HTML 錯誤頁），
+        # 所以每個候選各自 retry，耗盡後換下一個，而非卡死在動態 URL。
+        candidates = []
         if self.list_page_url:
             resolved = resolve_list_pdf_url(self.list_page_url)
             if resolved:
-                list_url, fname = resolved
-                print(f"🔗 動態解析到最新清單：{fname or list_url}")
+                dyn_url, fname = resolved
+                print(f"🔗 動態解析到最新清單：{fname or dyn_url}")
+                candidates.append(('動態', dyn_url))
             else:
                 print("⚠️  發布頁動態解析失敗，改用靜態 pdf_list_url（可能非最新版）")
+        if self.pdf_list_url and self.pdf_list_url not in [u for _, u in candidates]:
+            candidates.append(('靜態', self.pdf_list_url))
+
+        pdf_path = '/tmp/permit_list.pdf'
         last_err = None
-        for attempt in range(1, max_attempts + 1):
-            try:
-                with warnings.catch_warnings():
-                    warnings.filterwarnings('ignore', category=urllib3.exceptions.InsecureRequestWarning)
-                    response = requests.get(list_url, headers={'User-Agent': 'Mozilla/5.0'},
-                                            verify=False, timeout=30)
-                pdf_path = '/tmp/permit_list.pdf'
-                with open(pdf_path, 'wb') as f:
-                    f.write(response.content)
-                print(f"✅ 列表已下載: {len(response.content)} bytes")
-                return pdf_path
-            except Exception as e:
-                last_err = e
-                if attempt < max_attempts:
-                    wait = 5 * attempt
-                    print(f"⚠️  下載失敗（第 {attempt}/{max_attempts} 次）: {e}；{wait}s 後重試")
-                    time.sleep(wait)
-        print(f"❌ 下載失敗（已重試 {max_attempts} 次）: {last_err}")
+        for label, url in candidates:
+            for attempt in range(1, max_attempts + 1):
+                try:
+                    with warnings.catch_warnings():
+                        warnings.filterwarnings('ignore', category=urllib3.exceptions.InsecureRequestWarning)
+                        response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'},
+                                                verify=False, timeout=30)
+                    # 驗 HTTP 狀態 + 內容真的是 PDF（擋 HTTP 200 的 HTML 錯誤頁）
+                    response.raise_for_status()
+                    if not response.content[:5].startswith(b'%PDF'):
+                        raise ValueError(f'回應非 PDF（前 16 bytes: {response.content[:16]!r}）')
+                    with open(pdf_path, 'wb') as f:
+                        f.write(response.content)
+                    print(f"✅ 列表已下載（{label}）: {len(response.content)} bytes")
+                    return pdf_path
+                except Exception as e:
+                    last_err = e
+                    if attempt < max_attempts:
+                        wait = 5 * attempt
+                        print(f"⚠️  下載失敗（{label} 第 {attempt}/{max_attempts} 次）: {e}；{wait}s 後重試")
+                        time.sleep(wait)
+            print(f"⚠️  {label} URL 重試耗盡，改試下一個候選…")
+        print(f"❌ 下載失敗（所有候選皆失敗）: {last_err}")
         sys.exit(1)
     
     def parse_pdf_list(self, pdf_path: str) -> Dict[str, str]:

@@ -17,6 +17,9 @@ class _FakeResp:
     def __init__(self, content=b'%PDF-1.4 fake'):
         self.content = content
 
+    def raise_for_status(self):
+        pass
+
 
 class _FakeRequests:
     """script 為 list，元素是 _FakeResp（回傳）或 Exception 實例（raise）。"""
