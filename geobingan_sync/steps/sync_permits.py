@@ -88,12 +88,52 @@ from geobingan_sync.config import escape_drive_query as _escape_drive_query
 from geobingan_sync.permit_utils import normalize_permit as _normalize_permit
 
 
+def resolve_list_pdf_url(page_url: str, timeout: int = 30):
+    """從建管處「建築工地監測數據雲端資料庫清單」發布頁動態解析當前清單 PDF 連結。
+
+    頁面以 `Download.ashx?u=<base64 檔案路徑>&n=<base64 檔名>` 連結提供清單；政府
+    改版時會換成新 relfile 路徑（檔名常帶民國日期，如 表單回復_1150902.pdf），所以
+    寫死 pdf_list_url 會一直抓到舊版。此處抓頁面、取出該 PDF 下載連結。
+
+    回傳 (absolute_url, filename) 或 None（任何失敗都回 None，由呼叫端 fallback
+    到設定的靜態 pdf_list_url，確保 nightly 不會因頁面改版而中斷）。
+    """
+    import base64
+    import urllib.parse
+    try:
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=urllib3.exceptions.InsecureRequestWarning)
+            resp = requests.get(page_url, headers={'User-Agent': 'Mozilla/5.0'},
+                                timeout=timeout, verify=False)
+        resp.raise_for_status()
+        html = resp.text
+        # 取頁面上所有 Download.ashx 連結，挑檔名/路徑為 PDF 的第一個
+        for raw in re.findall(r'href="([^"]*Download\.ashx\?[^"]*)"', html):
+            href = raw.replace('&amp;', '&')
+            fname = ''
+            m = re.search(r'[?&]n=([^&]+)', href)
+            if m:
+                try:
+                    fname = base64.b64decode(urllib.parse.unquote(m.group(1)) + '==').decode('utf-8', 'ignore')
+                except Exception:
+                    fname = ''
+            if fname.lower().endswith('.pdf') or '.pdf' in href.lower():
+                return urllib.parse.urljoin(page_url, href), fname
+        return None
+    except Exception:
+        return None
+
+
 class PermitSync:
     def __init__(self, city: dict = None):
         self.city = city or {}
         self.city_name = self.city.get('name', '台北市')
         self.source_type = self.city.get('source_type', 'pdf')
         self.pdf_list_url = self.city.get('pdf_list_url') or PDF_LIST_URL_DEFAULT
+        # 發布頁 URL：政府會不定期把清單換成新檔（新 relfile 路徑），寫死
+        # pdf_list_url 會一直抓到舊版清單。有設 list_page_url 時，download_pdf_list
+        # 會先從發布頁動態解析當前清單連結，解析失敗才 fallback 回 pdf_list_url。
+        self.list_page_url = self.city.get('list_page_url', '')
         self.csv_path = self.city.get('csv_path', '')
         self.shared_drive_id = self.city.get('shared_drive_id') or SHARED_DRIVE_ID
         self.target_folders = {}
@@ -150,24 +190,46 @@ class PermitSync:
         # retry-with-backoff 防 transient 網路/DNS 失敗（#59）— 配合 network_ready.py
         # 的 post-wake gate，雙層防禦：probe 等 DNS ready，此處再吸收 mid-run blip
         print("📥 下載建案列表 PDF...")
+        # 候選 URL 依序嘗試：先動態解析的最新清單，失效再退回靜態 pdf_list_url。
+        # 動態 URL 可能解析成功卻已失效（政府又換檔→404/500 或回傳 HTML 錯誤頁），
+        # 所以每個候選各自 retry，耗盡後換下一個，而非卡死在動態 URL。
+        candidates = []
+        if self.list_page_url:
+            resolved = resolve_list_pdf_url(self.list_page_url)
+            if resolved:
+                dyn_url, fname = resolved
+                print(f"🔗 動態解析到最新清單：{fname or dyn_url}")
+                candidates.append(('動態', dyn_url))
+            else:
+                print("⚠️  發布頁動態解析失敗，改用靜態 pdf_list_url（可能非最新版）")
+        if self.pdf_list_url and self.pdf_list_url not in [u for _, u in candidates]:
+            candidates.append(('靜態', self.pdf_list_url))
+
+        pdf_path = '/tmp/permit_list.pdf'
         last_err = None
-        for attempt in range(1, max_attempts + 1):
-            try:
-                with warnings.catch_warnings():
-                    warnings.filterwarnings('ignore', category=urllib3.exceptions.InsecureRequestWarning)
-                    response = requests.get(self.pdf_list_url, verify=False, timeout=30)
-                pdf_path = '/tmp/permit_list.pdf'
-                with open(pdf_path, 'wb') as f:
-                    f.write(response.content)
-                print(f"✅ 列表已下載: {len(response.content)} bytes")
-                return pdf_path
-            except Exception as e:
-                last_err = e
-                if attempt < max_attempts:
-                    wait = 5 * attempt
-                    print(f"⚠️  下載失敗（第 {attempt}/{max_attempts} 次）: {e}；{wait}s 後重試")
-                    time.sleep(wait)
-        print(f"❌ 下載失敗（已重試 {max_attempts} 次）: {last_err}")
+        for label, url in candidates:
+            for attempt in range(1, max_attempts + 1):
+                try:
+                    with warnings.catch_warnings():
+                        warnings.filterwarnings('ignore', category=urllib3.exceptions.InsecureRequestWarning)
+                        response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'},
+                                                verify=False, timeout=30)
+                    # 驗 HTTP 狀態 + 內容真的是 PDF（擋 HTTP 200 的 HTML 錯誤頁）
+                    response.raise_for_status()
+                    if not response.content[:5].startswith(b'%PDF'):
+                        raise ValueError(f'回應非 PDF（前 16 bytes: {response.content[:16]!r}）')
+                    with open(pdf_path, 'wb') as f:
+                        f.write(response.content)
+                    print(f"✅ 列表已下載（{label}）: {len(response.content)} bytes")
+                    return pdf_path
+                except Exception as e:
+                    last_err = e
+                    if attempt < max_attempts:
+                        wait = 5 * attempt
+                        print(f"⚠️  下載失敗（{label} 第 {attempt}/{max_attempts} 次）: {e}；{wait}s 後重試")
+                        time.sleep(wait)
+            print(f"⚠️  {label} URL 重試耗盡，改試下一個候選…")
+        print(f"❌ 下載失敗（所有候選皆失敗）: {last_err}")
         sys.exit(1)
     
     def parse_pdf_list(self, pdf_path: str) -> Dict[str, str]:
