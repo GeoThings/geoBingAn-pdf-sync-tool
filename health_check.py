@@ -187,7 +187,8 @@ def run_health_check(checks=None, notify=False, alert_state=None, now=None, send
     from geobingan_sync.alert_state import AlertState, format_events
 
     checks = checks if checks is not None else DEFAULT_CHECKS
-    alert_state = alert_state or AlertState()
+    # 獨立 namespace：不與 record_sync_result 共用狀態，免得互相誤判恢復
+    alert_state = alert_state or AlertState(namespace='healthcheck')
     now = now or _dt.now()
     icons = {'ok': '✅', 'warning': '⚠️', 'error': '❌'}
     issues = []
@@ -207,30 +208,38 @@ def run_health_check(checks=None, notify=False, alert_state=None, now=None, send
             current[name] = (status, message)
 
     print("=" * 50)
-    # 只有真的要通知才持久化；乾跑/手動檢查唯讀，免得悄悄把問題標成「已看過」
-    events = alert_state.process(current, now=now) if notify else alert_state.plan(current, now=now)
     if issues:
         print(f"⚠️  {len(issues)} 個問題需要關注")
     else:
         print("✅ 所有檢查通過")
 
-    if not events:
-        if issues:
+    if not notify:
+        # 乾跑/手動檢查唯讀：只算不寫，免得悄悄把問題標成「已看過」
+        events = alert_state.plan(current, now=now)
+        if events:
+            print(f"  （乾跑）將通知事件：{[e.kind + ':' + e.key for e in events]}")
+        elif issues:
             print(f"  （{len(issues)} 個問題持續中，已抑制重複通知）")
         return issues, events
 
-    title, body, needs_mention = format_events(events, now)
-    print(f"  通知事件：{[e.kind + ':' + e.key for e in events]}")
-    if notify:
-        try:
-            if send is None:
-                from geobingan_sync.notify import send_notification
-                send = lambda t, b, m: send_notification(t, b, use_clickup=True, mention=m)
-            send(title, body, needs_mention)
-            print("  通知已發送" + ("（已 @）" if needs_mention else ""))
-        except Exception as e:
-            print(f"  通知發送失敗: {e}")
+    if send is None:
+        send = clickup_send
+    # plan → send → commit：ClickUp 真的送達才落狀態；失敗保留舊狀態、下輪重試
+    events, delivered = alert_state.process(current, send=send, now=now)
+    if not events:
+        if issues:
+            print(f"  （{len(issues)} 個問題持續中，已抑制重複通知）")
+    else:
+        print(f"  通知事件：{[e.kind + ':' + e.key for e in events]}")
+        print("  通知已送達" if delivered else "  通知未送達，下輪重試")
     return issues, events
+
+
+def clickup_send(title, body, mention):
+    """預設發送器：回傳 ClickUp 通道是否真的成功（其他通道不算數）。"""
+    from geobingan_sync.notify import send_notification
+    results = send_notification(title, body, use_clickup=True, mention=mention)
+    return any(ch == 'ClickUp' and ok for ch, ok in (results or []))
 
 
 def main():

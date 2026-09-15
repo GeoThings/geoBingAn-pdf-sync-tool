@@ -14,7 +14,7 @@ T0 = datetime(2026, 9, 15, 8, 0)
 def _run(checks, st, now, sent):
     return health_check.run_health_check(
         checks=checks, notify=True, alert_state=st, now=now,
-        send=lambda t, b, m: sent.append((t, b, m)))
+        send=lambda t, b, m: sent.append((t, b, m)) or True)
 
 
 def test_one_comment_per_run_and_mention_only_on_error(tmp_path):
@@ -53,6 +53,7 @@ def test_check_exception_becomes_error(tmp_path):
 def test_sync_failure_then_recovery(tmp_path):
     st = AlertState(tmp_path / 's.json'); sent = []
     send = lambda t, b, m: sent.append((t, b, m))
+    send = lambda t, b, m: sent.append((t, b, m)) or True
     notify_sync_outcome('failure', 'No space left', alert_state=st, now=T0, send=send)
     notify_sync_outcome('failure', 'No space left', alert_state=st, now=T0 + timedelta(days=1), send=send)
     notify_sync_outcome('success', '', alert_state=st, now=T0 + timedelta(days=2), send=send)
@@ -68,3 +69,26 @@ def test_dry_run_does_not_persist_state(tmp_path):
     assert not path.exists() and sent == []          # 乾跑：不寫檔、不發
     _run(checks, st, T0, sent)
     assert path.exists() and len(sent) == 1           # 真跑才 seed + 發
+
+
+def test_send_failure_does_not_commit_and_refires(tmp_path):
+    """review P1：ClickUp 未送達 → 狀態不落地，下一輪同一事件重發。"""
+    path = tmp_path / 's.json'; st = AlertState(path)
+    checks = [('JWT Token', lambda: ('error', '已過期'))]
+    calls = []
+    health_check.run_health_check(checks=checks, notify=True, alert_state=st, now=T0,
+                                  send=lambda t, b, m: calls.append(1) or False)
+    assert not path.exists() and len(calls) == 1
+    health_check.run_health_check(checks=checks, notify=True, alert_state=st, now=T0 + timedelta(hours=1),
+                                  send=lambda t, b, m: calls.append(1) or True)
+    assert path.exists() and len(calls) == 2           # 重試並成功後才 commit
+
+
+def test_health_and_sync_interleave_without_false_recovery(tmp_path):
+    """review P1：health 與 sync 交錯執行，不互相誤發 ✅。"""
+    hc = AlertState(tmp_path / 'hc.json'); sy = AlertState(tmp_path / 'sy.json'); sent = []
+    ok = lambda t, b, m: sent.append((t, b, m)) or True
+    _run([('上傳暫停', lambda: ('warning', 'p'))], hc, T0, sent)
+    notify_sync_outcome('success', '', alert_state=sy, now=T0 + timedelta(hours=2), send=ok)
+    _run([('上傳暫停', lambda: ('warning', 'p'))], hc, T0 + timedelta(days=1), sent)
+    assert len(sent) == 1 and not any('已恢復' in b for _, b, _ in sent)

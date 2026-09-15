@@ -10,7 +10,7 @@
 import json
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 LEVEL_RANK = {'warning': 1, 'error': 2}
 DEFAULT_REMIND_DAYS = 7
@@ -106,13 +106,21 @@ def format_events(events: List[AlertEvent], now: datetime) -> Tuple[str, str, bo
     return title, '\n'.join(lines), needs_mention
 
 
-class AlertState:
-    """state/alert_state.json 的讀寫。"""
+SendFn = Callable[[str, str, bool], bool]   # send(title, body, needs_mention) -> 是否送達
 
-    def __init__(self, path: Optional[Path] = None):
+
+class AlertState:
+    """告警狀態的讀寫，一個 producer 一個 namespace（各自獨立檔）。
+
+    為何要分檔：health_check 與 record_sync_result 各自只知道自己的 key；若共用
+    一份狀態，任一方都會把對方的 key 當成「已恢復」刪掉並誤發 ✅（review P1）。
+    """
+
+    def __init__(self, path: Optional[Path] = None, namespace: str = 'default'):
         if path is None:
-            path = Path(__file__).resolve().parent.parent / 'state' / 'alert_state.json'
+            path = Path(__file__).resolve().parent.parent / 'state' / f'alert_state_{namespace}.json'
         self.path = Path(path)
+        self.namespace = namespace
 
     def load(self) -> Dict[str, dict]:
         try:
@@ -136,10 +144,30 @@ class AlertState:
         events, _ = plan_alerts(self.load(), current, now, remind_days)
         return events
 
-    def process(self, current: Dict[str, Tuple[str, str]], now: Optional[datetime] = None,
-                remind_days: int = DEFAULT_REMIND_DAYS) -> List[AlertEvent]:
-        """讀狀態 → plan → 寫狀態 → 回傳要發的事件（真正發送時用）。"""
+    def process(self, current: Dict[str, Tuple[str, str]], send: SendFn,
+                now: Optional[datetime] = None,
+                remind_days: int = DEFAULT_REMIND_DAYS) -> Tuple[List[AlertEvent], bool]:
+        """plan → send → commit：只有 send 回報成功才寫入新狀態（含 last_sent）。
+
+        發送失敗（回傳 falsy 或拋例外）時保留舊狀態，下一輪會再產生同樣的事件重試，
+        不會被當成「已發過」壓 7 天（review P1）。沒有事件時只更新 last_seen/message。
+
+        Returns:
+            (events, delivered)
+        """
         now = now or datetime.now()
         events, new_state = plan_alerts(self.load(), current, now, remind_days)
-        self.save(new_state)
-        return events
+        if not events:
+            self.save(new_state)
+            return events, True
+        title, body, needs_mention = format_events(events, now)
+        try:
+            delivered = bool(send(title, body, needs_mention))
+        except Exception as e:
+            print(f"  告警發送例外（狀態不落地，下輪重試）: {e}")
+            delivered = False
+        if delivered:
+            self.save(new_state)
+        else:
+            print(f"  告警未送達（{self.namespace}），保留舊狀態、下輪重試")
+        return events, delivered
