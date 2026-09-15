@@ -211,12 +211,12 @@ def check_parse_backlog(now=None):
         return 'warning', f'解析積壓檢查失敗: {e}'
 
 
-def check_budget():
-    """本月解析估算成本 vs MONTHLY_BUDGET_USD：≥70% warning、≥90% error。"""
+def check_budget(path=None):
+    """本月解析估算成本 vs MONTHLY_BUDGET_USD：≥70% warning、≥90% error。path 可注入供測試。"""
     from geobingan_sync.budget import MonthlyBudget, budget_level
     from geobingan_sync.config import COST_PER_REPORT_USD, MONTHLY_BUDGET_USD
     try:
-        m = MonthlyBudget(cost_per_report=COST_PER_REPORT_USD).load()
+        m = MonthlyBudget(path=path, cost_per_report=COST_PER_REPORT_USD).load()
         level, ratio = budget_level(float(m.get('est_usd', 0)), MONTHLY_BUDGET_USD)
         msg = f"本月({m['month']})已傳 {m['uploaded']} 份 ≈ US${float(m.get('est_usd', 0)):.2f} / 上限 US${MONTHLY_BUDGET_USD:.0f}（{ratio:.0%}）"
         if level != 'ok':

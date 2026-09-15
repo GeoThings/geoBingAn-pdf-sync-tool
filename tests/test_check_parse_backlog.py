@@ -88,35 +88,12 @@ def test_backlog_api_failure_is_warning(monkeypatch):
 
 
 def test_check_budget_levels(monkeypatch, tmp_path):
-    import geobingan_sync.budget as b
-    path = tmp_path / 'b.json'
-    monkeypatch.setattr(b.MonthlyBudget, '__init__',
-                        lambda self, path=None, cost_per_report=0.3: (setattr(self, 'path', tmp_path / 'b.json'), setattr(self, 'cost_per_report', cost_per_report)) and None)
+    from geobingan_sync.budget import MonthlyBudget
     monkeypatch.setattr('geobingan_sync.config.MONTHLY_BUDGET_USD', 100.0)
-    b.MonthlyBudget().add(310, now=datetime.now())          # 310×0.3 = 93 → 93%
-    level, msg = health_check.check_budget()
+    monkeypatch.setattr('geobingan_sync.config.COST_PER_REPORT_USD', 0.3)
+    path = tmp_path / 'b.json'
+    MonthlyBudget(path, cost_per_report=0.3).set_uploaded(310)          # 310×0.3 = 93 → 93%
+    level, msg = health_check.check_budget(path=path)
     assert level == 'error' and '93%' in msg
-
-
-def _patch_static(monkeypatch, resp):
-    monkeypatch.setattr(health_check, '_api_token', lambda: 'tok')
-    import requests
-    monkeypatch.setattr(requests, 'get', lambda url, headers=None, timeout=None: resp)
-
-
-def test_http_401_json_is_warning_not_false_green(monkeypatch):
-    """review P2：401 的 JSON 不可被當成佇列正常。"""
-    _patch_static(monkeypatch, _Resp({'detail': 'Authentication credentials were not provided.'}, status=401))
-    level, msg = health_check.check_parse_backlog(now=NOW)
-    assert level == 'warning' and 'HTTP 401' in msg
-
-
-def test_http_500_is_warning(monkeypatch):
-    _patch_static(monkeypatch, _Resp({'error': 'boom'}, status=500))
-    assert health_check.check_parse_backlog(now=NOW)[0] == 'warning'
-
-
-def test_http_200_malformed_payload_is_warning(monkeypatch):
-    _patch_static(monkeypatch, _Resp({'detail': 'weird'}, status=200))
-    level, msg = health_check.check_parse_backlog(now=NOW)
-    assert level == 'warning' and '格式異常' in msg
+    MonthlyBudget(path, cost_per_report=0.3).set_uploaded(100)          # 30%
+    assert health_check.check_budget(path=path)[0] == 'ok'

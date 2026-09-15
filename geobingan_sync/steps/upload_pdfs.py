@@ -834,28 +834,30 @@ def main(city: dict = None, catchup_days: int = None, yes: bool = False):
         print(f"  檔名無法解析日期（待 parser 強化）: {counts['no_date']}")
     print(f"  待上傳: {len(pdfs_to_upload)}" + (f"（上限 {MAX_UPLOADS}）" if MAX_UPLOADS > 0 else "（無上限）"))
 
-    # 解析預算守門：印估算、本月累計；單次超過門檻需 --yes（夜間配合 MAX_UPLOADS 不會觸發）
+    # 解析預算守門（review P1×2：先預留後退還、跨程序鎖）
     from geobingan_sync.budget import budget_gate, monthly_gate, MonthlyBudget
     from geobingan_sync.config import COST_PER_REPORT_USD, MONTHLY_BUDGET_USD, BUDGET_CONFIRM_USD
-    month = MonthlyBudget(cost_per_report=COST_PER_REPORT_USD).load()
+    mb = MonthlyBudget(cost_per_report=COST_PER_REPORT_USD)
+    month = mb.load()
     print(f"  💰 本月({month['month']})已傳 {month['uploaded']} 份 ≈ US${month['est_usd']:.2f} / 上限 US${MONTHLY_BUDGET_USD:.0f}")
-    # 月上限（review P1）：投影＝本月已用＋本次；超過則自動裁切到剩餘預算可容納的份數，--yes 才可覆寫
-    allowed, month_msg = monthly_gate(len(pdfs_to_upload), float(month.get('est_usd', 0)),
+    # 1) 無副作用預覽可放行份數 → 2) 單次門檻先擋（此時尚未計入，擋下不會殘留預留）
+    preview_allowed, _ = monthly_gate(len(pdfs_to_upload), float(month.get('est_usd', 0)),
                                       MONTHLY_BUDGET_USD, COST_PER_REPORT_USD, yes)
-    if month_msg:
-        print(f"  💰 {month_msg}")
-    if pdfs_to_upload and allowed <= 0:
-        print(f"\n🛑 已擋下：{month_msg}")
-        sys.exit(3)
-    if allowed < len(pdfs_to_upload):
-        pdfs_to_upload = pdfs_to_upload[:allowed]   # 已依 Drive 修改時間降序，裁切保留最新
-        print(f"  待上傳（裁切後）: {len(pdfs_to_upload)}")
-    # 單次門檻：擋人為大批次
-    ok, gate_msg = budget_gate(len(pdfs_to_upload), COST_PER_REPORT_USD, BUDGET_CONFIRM_USD, yes)
+    ok, gate_msg = budget_gate(min(len(pdfs_to_upload), preview_allowed), COST_PER_REPORT_USD, BUDGET_CONFIRM_USD, yes)
     print(f"  💰 {gate_msg}")
-    if pdfs_to_upload and not ok:
+    if pdfs_to_upload and preview_allowed > 0 and not ok:
         print(f"\n🛑 已擋下：{gate_msg}")
         sys.exit(3)
+    # 3) 鎖內原子預留：讀餘額→算份數→立刻計入（中斷時已成功份數不會漏記；重疊程序不會吃到同一筆餘額）
+    reserved, month_msg, month = mb.reserve(len(pdfs_to_upload), MONTHLY_BUDGET_USD, COST_PER_REPORT_USD, yes)
+    if month_msg:
+        print(f"  💰 {month_msg}")
+    if pdfs_to_upload and reserved <= 0:
+        print(f"\n🛑 已擋下：{month_msg}")
+        sys.exit(3)
+    if reserved < len(pdfs_to_upload):
+        pdfs_to_upload = pdfs_to_upload[:reserved]   # 已依 Drive 修改時間降序，裁切保留最新
+        print(f"  待上傳（裁切後）: {len(pdfs_to_upload)}")
 
     if not pdfs_to_upload:
         print(f"\n⚠️  所有 PDF 都已上傳過了！")
@@ -885,28 +887,29 @@ def main(city: dict = None, catchup_days: int = None, yes: bool = False):
     success_count = 0
     error_count = 0
 
-    for idx, pdf in enumerate(pdfs_to_upload, 1):
-        result = process_single_pdf(service, pdf, state, idx, len(pdfs_to_upload))
+    try:
+        for idx, pdf in enumerate(pdfs_to_upload, 1):
+            result = process_single_pdf(service, pdf, state, idx, len(pdfs_to_upload))
 
-        if result['success']:
-            success_count += 1
-        else:
-            error_count += 1
+            if result['success']:
+                success_count += 1
+            else:
+                error_count += 1
 
-        # 速率控制：等待避免觸發 API 限制（除了最後一個）
-        if idx < len(pdfs_to_upload):
-            print(f"  ⏳ 等待 {DELAY_BETWEEN_UPLOADS} 秒（避免 API 速率限制）...", flush=True)
-            time.sleep(DELAY_BETWEEN_UPLOADS)
+            # 速率控制：等待避免觸發 API 限制（除了最後一個）
+            if idx < len(pdfs_to_upload):
+                print(f"  ⏳ 等待 {DELAY_BETWEEN_UPLOADS} 秒（避免 API 速率限制）...", flush=True)
+                time.sleep(DELAY_BETWEEN_UPLOADS)
+    finally:
+        # 退還「預留 − 實際成功」（含 Ctrl-C/例外；已成功的份數留在帳上）。kill -9 則保守多算，不會低估。
+        try:
+            month = mb.release(reserved - success_count)
+            print(f"💰 本月累計 {month['uploaded']} 份 ≈ US${month['est_usd']:.2f} / 上限 US${MONTHLY_BUDGET_USD:.0f}")
+        except Exception as e:
+            print(f"⚠️  月累計退還失敗（保守多算，不影響上傳）: {e}")
 
     # 寫入所有剩餘的狀態變更
     flush_state(state)
-
-    # 記錄本月累計（health_check 每日依 MONTHLY_BUDGET_USD 檢查並告警）
-    try:
-        mb = MonthlyBudget(cost_per_report=COST_PER_REPORT_USD).add(success_count)
-        print(f"💰 本月累計 {mb['uploaded']} 份 ≈ US${mb['est_usd']:.2f} / 上限 US${MONTHLY_BUDGET_USD:.0f}")
-    except Exception as e:
-        print(f"⚠️  月累計寫入失敗（不影響上傳）: {e}")
 
     # 最終統計
     print("\n" + "=" * 60)
