@@ -170,7 +170,7 @@ if [ $TOKEN_EXIT -eq 2 ]; then
     echo "❌ Refresh Token 已過期 ${DAYS} 天，請登入 riskmap.today 更新" | tee -a "$LOG_FILE"
     python3 -c "
 from geobingan_sync.notify import send_notification
-send_notification('❌ geoBingAn Token 已過期', 'Refresh Token 已過期，請登入 riskmap.today 取得新 Token 並更新 .env')
+send_notification('❌ geoBingAn Token 已過期', 'Refresh Token 已過期，請登入 riskmap.today 取得新 Token 並更新 .env', use_clickup=True, mention=True)
 " 2>&1 | tee -a "$LOG_FILE" || true
     handle_error "Token 檢查" "Refresh Token 已過期"
     exit 1
@@ -179,7 +179,7 @@ elif [ $TOKEN_EXIT -eq 1 ]; then
     echo "⚠️  Refresh Token 將在 ${DAYS} 天後過期，請儘快更新" | tee -a "$LOG_FILE"
     python3 -c "
 from geobingan_sync.notify import send_notification
-send_notification('⚠️ geoBingAn Token 即將過期', 'Refresh Token 將在 ${DAYS} 天後過期，請登入 riskmap.today 更新 .env 中的 Token')
+send_notification('⚠️ geoBingAn Token 即將過期', 'Refresh Token 將在 ${DAYS} 天後過期，請登入 riskmap.today 更新 .env 中的 Token', use_clickup=True)
 " 2>&1 | tee -a "$LOG_FILE" || true
     echo "   繼續執行同步流程..." | tee -a "$LOG_FILE"
 else

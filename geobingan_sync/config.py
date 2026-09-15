@@ -44,6 +44,8 @@ SHARED_DRIVE_ID = os.environ.get('SHARED_DRIVE_ID', '')
 # ClickUp
 CLICKUP_TOKEN = os.environ.get('CLICKUP_TOKEN', '')
 HEALTHCHECK_CLICKUP_TASK_ID = os.environ.get('HEALTHCHECK_CLICKUP_TASK_ID', '')
+# error 級告警要 @ 的 ClickUp user id（留空=不 @）；ClickUp 只對被 @ 的人推播，純留言沒人看得到
+ALERT_MENTION_USER_ID = os.environ.get('ALERT_MENTION_USER_ID', '')
 
 # 通知設定
 LINE_NOTIFY_TOKEN = os.environ.get('LINE_NOTIFY_TOKEN', '')
