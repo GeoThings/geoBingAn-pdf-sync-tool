@@ -212,20 +212,19 @@ permit_no,source_url,name
 ---
 
 ### `geobingan_sync/steps/upload_pdfs.py`
-從 Google Drive 上傳最近 7 天的 PDF 到 geoBingAn Backend API
+依**檔名日期 30 天滾動窗**，從 Google Drive 上傳 PDF 到 geoBingAn Backend API
 
 **功能：**
 - 掃描 Google Drive 中的建案 PDF
-- 過濾最近 7 天更新的檔案
+- 依**檔名日期**（非 Drive 修改時間）過濾 30 天滾動窗；`--catchup-days N` 可放大窗口補掃
 - 呼叫 Backend API `/api/reports/construction-reports/upload/` 上傳 PDF
 - 自動建立 Report（後端 LLM 解析；provider-neutral，預設 gpt-5.5 + 備援鏈）
 - JWT Token 自動刷新（過期前 5 分鐘）
-- 智慧快取機制避免重複掃描
+- 每次完整翻頁掃描（舊的 24h 掃描快取已移除）；靠永久 history 去重，不會重傳
 - 避免重複上傳
 
 **設定（.env）：**
 ```bash
-DAYS_AGO=7                      # 檔名日期 30 天窗
 MAX_UPLOADS=15                  # 夜間每日上限（0=不限）
 DELAY_BETWEEN_UPLOADS=2         # 上傳間隔 2 秒
 COST_PER_REPORT_USD=0.3         # 單筆解析估算成本
@@ -315,7 +314,7 @@ python3 -m geobingan_sync.steps.generate_permit_tracking_report
 
 **執行順序：**
 1. `sync_permits.py` - 同步最新 PDF 到 Google Drive
-2. `upload_pdfs.py` - 上傳最近 7 天的 PDF 到 Backend
+2. `upload_pdfs.py` - 上傳檔名日期 30 天窗內的 PDF 到 Backend（含解析預算守門）
 3. `match_permits.py` - 建案名稱交叉比對（6 來源）
 4. `generate_permit_tracking_report.py` - 生成追蹤報告
 5. Git push - 更新線上報告
@@ -441,7 +440,7 @@ geoBingAn-pdf-sync-tool/
 ```
 
 ### `state/uploaded_to_geobingan_7days.json`
-記錄最近 7 天上傳的 PDF
+本機的近期上傳記錄（檔名中的 `7days` 為歷史遺留，與實際窗口無關；跨機器的去重以 git 追蹤的 `upload_history_all.json` 為準）
 ```json
 {
   "uploaded_files": [
@@ -481,7 +480,7 @@ geoBingAn-pdf-sync-tool/
 ### 重置狀態
 
 ```bash
-# 清除上傳記錄（重新上傳最近 7 天的檔案）
+# 清除本機近期上傳記錄（去重仍以 git 追蹤的 upload_history_all.json 為準，不會因此重傳）
 rm state/uploaded_to_geobingan_7days.json
 
 # 清除同步記錄（重新同步所有建案）

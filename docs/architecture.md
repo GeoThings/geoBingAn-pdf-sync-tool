@@ -31,7 +31,7 @@
 
 ### 自動化排程（macOS launchd）
 
-使用 `launchd` 而非 `cron`：Mac 從睡眠醒來時自動補跑錯過的排程。
+使用 `launchd` 而非 `cron`。**注意：`StartCalendarInterval` 不會主動喚醒 Mac，睡眠期間錯過的排程也不保證補跑**，因此必須搭配 `sudo pmset repeat wakepoweron MTWRFSU 07:55:00`（詳見下方 wake-from-sleep 段）。
 
 | 時間 | LaunchAgent | 內容 |
 |------|-------------|------|
@@ -551,7 +551,7 @@ get_valid_token(current_token, refresh_token, refresh_url)
 config.py (from .env)  →  環境變數  →  硬編碼預設值
 ```
 
-所有設定值（`SHARED_DRIVE_ID`、`DAYS_AGO`、`MAX_UPLOADS`、`DELAY_BETWEEN_UPLOADS`、`CLICKUP_TOKEN`）統一由 `config.py` 從 `.env` 載入，各腳本 import 使用，不再有本地硬編碼覆蓋。多城市配置由 `city_config.py` 從 `cities.json` 載入，空白欄位自動回退到 `.env` 預設值。
+所有設定值（`SHARED_DRIVE_ID`、`MAX_UPLOADS`、`DELAY_BETWEEN_UPLOADS`、`CLICKUP_TOKEN`、預算相關的 `COST_PER_REPORT_USD`／`MONTHLY_BUDGET_USD`／`BUDGET_CONFIRM_USD`；`DAYS_AGO` 為歷史遺留、未參與日期窗計算——cutoff 固定 30 天或由 `--catchup-days` 覆蓋）統一由 `config.py` 從 `.env` 載入，各腳本 import 使用，不再有本地硬編碼覆蓋。多城市配置由 `city_config.py` 從 `cities.json` 載入，空白欄位自動回退到 `.env` 預設值。
 
 ## 測試策略
 

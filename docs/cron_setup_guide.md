@@ -2,7 +2,9 @@
 
 **最後更新：** 2026-09-15
 
-> 已從 cron 遷移到 launchd。launchd 是 macOS 原生排程系統，Mac 從睡眠醒來時會自動補跑錯過的任務（cron 不會）。
+> 已從 cron 遷移到 launchd（macOS 原生排程系統）。
+>
+> ⚠️ **launchd 的 `StartCalendarInterval` 不會主動喚醒 Mac，睡眠期間錯過的排程也不保證補跑**，因此**必須**搭配 `sudo pmset repeat wakepoweron MTWRFSU 07:55:00` 讓機器在排程前醒來。（2026-05 事故即因缺少 wake schedule 導致排程整段跳過。）
 
 ---
 
@@ -100,7 +102,7 @@ cat logs/launchd_weeklysync_err.log
 | 問題 | 解決方案 |
 |------|----------|
 | 排程沒執行 | `launchctl list \| grep geobingan` 確認已載入 |
-| Mac 睡眠漏跑 | launchd 會在醒來後自動補跑（這是選擇 launchd 的原因） |
+| Mac 睡眠漏跑 | launchd **不會**主動喚醒、也不保證補跑；確認 `pmset -g sched` 有 07:55 wakepoweron，否則重設 |
 | Token 過期 | JWT 自動刷新 + 寫回 .env；Refresh Token 7 天過期需手動更新 |
 | 腳本失敗 | 查看 `logs/` 目錄和 `logs/launchd_*_err.log` |
 
