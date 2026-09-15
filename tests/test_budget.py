@@ -95,33 +95,33 @@ class _FakeMB:
     """預留時會「放行很多」的假帳本，用來證明門檻不可能被預留結果放大。"""
     def __init__(self): self.calls = []
     def reserve(self, n, budget, cost, yes):
-        self.calls.append(n); return n, '假預留全數放行', {}
+        self.calls.append(n); return n, '假預留全數放行', {'month': '2026-09'}
 
 
 def test_gate_checks_original_count_before_any_reservation():
     """review TOCTOU：100 份未帶 --yes 必須在預留之前就被擋，reserve 不得被呼叫。"""
     mb = _FakeMB()
-    allowed, msgs, blocked = gate_and_reserve(mb, 100, 100.0, 0.3, 15.0, yes=False)
+    allowed, msgs, blocked, _ = gate_and_reserve(mb, 100, 100.0, 0.3, 15.0, yes=False)
     assert allowed == 0 and blocked and '超過確認門檻' in blocked
     assert mb.calls == []                                   # 尚未預留，不需退還
-    allowed, msgs, blocked = gate_and_reserve(mb, 15, 100.0, 0.3, 15.0, yes=False)
+    allowed, msgs, blocked, _ = gate_and_reserve(mb, 15, 100.0, 0.3, 15.0, yes=False)
     assert allowed == 15 and blocked is None and mb.calls == [15]
-    allowed, _, blocked = gate_and_reserve(mb, 100, 100.0, 0.3, 15.0, yes=True)   # --yes 才放行大批次
+    allowed, _, blocked, _ = gate_and_reserve(mb, 100, 100.0, 0.3, 15.0, yes=True)   # --yes 才放行大批次
     assert allowed == 100 and blocked is None
 
 
 def test_gate_and_reserve_with_real_ledger_trims(tmp_path):
     mb = MonthlyBudget(tmp_path / 'b.json', cost_per_report=0.3)
     mb.set_uploaded(327)                                    # 已用 98.1
-    allowed, msgs, blocked = gate_and_reserve(mb, 15, 100.0, 0.3, 15.0, yes=False)
+    allowed, msgs, blocked, _ = gate_and_reserve(mb, 15, 100.0, 0.3, 15.0, yes=False)
     assert allowed == 6 and blocked is None                 # 門檻對 15 份（4.5 美元）通過，預留裁成 6
-    allowed, msgs, blocked = gate_and_reserve(mb, 15, 100.0, 0.3, 15.0, yes=False)
+    allowed, msgs, blocked, _ = gate_and_reserve(mb, 15, 100.0, 0.3, 15.0, yes=False)
     assert allowed == 0 and '已擋下' in blocked              # 餘額耗盡
 
 
 class _LedgerMB:
     def __init__(self): self.releases = []
-    def release(self, n): self.releases.append(n); return {'uploaded': -1}
+    def release(self, n, now=None, month=None): self.releases.append(n); return {'uploaded': -1}
     def load(self): return {'uploaded': -1}
 
 
@@ -154,3 +154,31 @@ def test_ledger_normal_completion_with_real_ledger(tmp_path):
     for r in ({'success': True},) * 4 + ({'success': False, 'error': 'rejected'}, {'success': False, 'error': 'unknown'}):
         L.begin_item(); L.settle(r)
     assert L.close()['uploaded'] == 5                 # 6 預留 − 1 明確拒絕 = 5（未知那份保留）
+
+
+def test_release_from_old_month_does_not_touch_new_month(tmp_path):
+    """review P1 跨月：9 月預留，10 月已有其他程序預留，9 月 ledger 結算不得改動 10 月數字。"""
+    mb = MonthlyBudget(tmp_path / 'b.json', cost_per_report=0.3)
+    sep = datetime(2026, 9, 30, 23, 59); oct1 = datetime(2026, 10, 1, 0, 5)
+    reserved_a, _, data_a = mb.reserve(15, 100.0, 0.3, yes=False, now=sep)
+    ledger_a = ReservationLedger(mb, reserved_a, month=data_a['month'])
+    assert ledger_a.month == '2026-09'
+    reserved_b, _, data_b = mb.reserve(15, 100.0, 0.3, yes=False, now=oct1)     # 程序 B：10 月帳本
+    assert data_b['month'] == '2026-10' and data_b['uploaded'] == 15
+    # 程序 A 在 10 月收到明確拒絕、並結束（3 份未嘗試）→ 對 10 月帳本必須 no-op
+    ledger_a.begin_item(); ledger_a.settle({'success': False, 'error': 'rejected'})
+    ledger_a.begin_item(); ledger_a.settle({'success': True})
+    mb.release(20, now=oct1, month='2026-09')       # 直接呼叫也 no-op
+    ledger_a.close()                                 # 退還 13 份未嘗試 → 對 10 月帳本必須 no-op
+    raw = mb._read_raw()                             # 檔案實際內容才是不變量（close 的回傳只是當下月份的顯示視圖）
+    assert raw['month'] == '2026-10' and raw['uploaded'] == 15
+
+
+def test_release_same_month_before_rollover_applies(tmp_path):
+    mb = MonthlyBudget(tmp_path / 'b.json', cost_per_report=0.3)
+    sep = datetime(2026, 9, 30, 23, 59)
+    reserved, _, data = mb.reserve(15, 100.0, 0.3, yes=False, now=sep)
+    L = ReservationLedger(mb, reserved, month=data['month'])
+    L.begin_item(); L.settle({'success': False, 'error': 'rejected'})
+    assert mb.load(now=sep)['uploaded'] == 14                                    # 同月正常扣減
+    assert L.close()['uploaded'] == 0                                            # 退還 14 份未嘗試

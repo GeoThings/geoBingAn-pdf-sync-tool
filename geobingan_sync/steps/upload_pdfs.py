@@ -845,8 +845,8 @@ def main(city: dict = None, catchup_days: int = None, yes: bool = False):
     mb = MonthlyBudget(cost_per_report=COST_PER_REPORT_USD)
     month = mb.load()
     print(f"  💰 本月({month['month']})已傳 {month['uploaded']} 份 ≈ US${month['est_usd']:.2f} / 上限 US${MONTHLY_BUDGET_USD:.0f}")
-    reserved, budget_msgs, blocked = gate_and_reserve(mb, len(pdfs_to_upload), MONTHLY_BUDGET_USD,
-                                                      COST_PER_REPORT_USD, BUDGET_CONFIRM_USD, yes)
+    reserved, budget_msgs, blocked, reserved_month = gate_and_reserve(
+        mb, len(pdfs_to_upload), MONTHLY_BUDGET_USD, COST_PER_REPORT_USD, BUDGET_CONFIRM_USD, yes)
     for m in budget_msgs:
         print(f"  💰 {m}")
     if pdfs_to_upload and blocked:
@@ -885,7 +885,7 @@ def main(city: dict = None, catchup_days: int = None, yes: bool = False):
     error_count = 0
     # 預留預設視為已消耗：只對「確定零成本」的失敗（下載失敗/後端明確拒絕）立即退 1 份；
     # 結束（含中斷）只退還從未嘗試的份數。成功後才中斷、或結果不明，都保留在帳上（保守高估）。
-    ledger = ReservationLedger(mb, reserved)
+    ledger = ReservationLedger(mb, reserved, month=reserved_month)   # 退還只作用於預留當月，跨月 no-op
 
     try:
         for idx, pdf in enumerate(pdfs_to_upload, 1):

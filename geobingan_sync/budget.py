@@ -104,13 +104,18 @@ class MonthlyBudget:
             finally:
                 fcntl.flock(lf.fileno(), fcntl.LOCK_UN)
 
-    def _read(self, now: datetime) -> dict:
-        month = now.strftime('%Y-%m')
+    def _read_raw(self) -> dict:
+        """讀檔案實際內容（不依現在時間換月），供跨月判斷用。"""
         try:
             with open(self.path, encoding='utf-8') as f:
                 data = json.load(f)
+            return data if isinstance(data, dict) else {}
         except (FileNotFoundError, json.JSONDecodeError):
-            data = {}
+            return {}
+
+    def _read(self, now: datetime) -> dict:
+        month = now.strftime('%Y-%m')
+        data = self._read_raw()
         if data.get('month') != month:
             data = {'month': month, 'uploaded': 0, 'est_usd': 0.0}
         return data
@@ -150,11 +155,24 @@ class MonthlyBudget:
                 data = self._write(data, now)
             return allowed, msg, data
 
-    def release(self, unused: int, now: Optional[datetime] = None) -> dict:
-        """退還未用到的預留（預留 − 實際成功）。"""
+    def release(self, unused: int, now: Optional[datetime] = None,
+                month: Optional[str] = None) -> dict:
+        """退還未用到的預留，綁定預留所屬月份（review P1 跨月）。
+
+        鎖內先讀檔案實際儲存的月份：與 month 相同才扣減；帳本已切到新月份則 no-op
+        （不重建舊月、不動新月的額度）。month=None 時退回舊行為（扣當月）。
+        """
+        now = now or datetime.now()
         if unused <= 0:
             return self.load(now)
-        return self.add(-int(unused), now)
+        with self._locked():
+            if month is not None:
+                stored = self._read_raw().get('month')
+                if stored != month:
+                    return self._read(now)          # 舊月預留跨月退還 → 不動任何數字
+            data = self._read(now)
+            data['uploaded'] = int(data.get('uploaded', 0)) - int(unused)
+            return self._write(data, now)
 
     def set_uploaded(self, n: int, now: Optional[datetime] = None) -> dict:
         """明確設定本月份數（換機/重建時的初始化：python -m geobingan_sync.budget --set N）。"""
@@ -176,9 +194,10 @@ class ReservationLedger:
     """
     REFUNDABLE = frozenset({'download_failed', 'rejected'})
 
-    def __init__(self, mb: 'MonthlyBudget', reserved: int):
+    def __init__(self, mb: 'MonthlyBudget', reserved: int, month: Optional[str] = None):
         self.mb = mb
         self.reserved = max(0, int(reserved))
+        self.month = month                      # 預留所屬月份；退還只作用於同月帳本
         self.attempted = 0
         self.refunded = 0
 
@@ -189,14 +208,14 @@ class ReservationLedger:
         if result.get('success'):
             return False
         if result.get('error') in self.REFUNDABLE:
-            self.mb.release(1)
+            self.mb.release(1, month=self.month)
             self.refunded += 1
             return True
         return False
 
     def close(self) -> dict:
         unused = self.reserved - self.attempted
-        return self.mb.release(unused) if unused > 0 else self.mb.load()
+        return self.mb.release(unused, month=self.month) if unused > 0 else self.mb.load()
 
 
 def gate_and_reserve(mb: 'MonthlyBudget', n_requested: int, monthly_budget: float,
@@ -205,19 +224,19 @@ def gate_and_reserve(mb: 'MonthlyBudget', n_requested: int, monthly_budget: floa
 
     單次門檻對「原始請求量」檢查而非對預覽份數：預留結果永遠 ≤ 原始請求量，
     所以另一程序在中途退還額度或跨月，都不可能讓放行份數超過已確認的量。
-    門檻擋下時尚未預留，不需退還。回 (允許份數, 訊息列表, 擋下原因或 None)。
+    門檻擋下時尚未預留，不需退還。回 (允許份數, 訊息列表, 擋下原因或 None, 預留所屬月份)。
     """
     msgs = []
     ok, gate_msg = budget_gate(n_requested, cost_per_report, confirm_threshold, yes)
     msgs.append(gate_msg)
     if n_requested > 0 and not ok:
-        return 0, msgs, gate_msg
-    allowed, month_msg, _ = mb.reserve(n_requested, monthly_budget, cost_per_report, yes)
+        return 0, msgs, gate_msg, None
+    allowed, month_msg, data = mb.reserve(n_requested, monthly_budget, cost_per_report, yes)
     if month_msg:
         msgs.append(month_msg)
     if n_requested > 0 and allowed <= 0:
-        return 0, msgs, month_msg
-    return allowed, msgs, None
+        return 0, msgs, month_msg, data.get('month')
+    return allowed, msgs, None, data.get('month')
 
 
 def _cli():
