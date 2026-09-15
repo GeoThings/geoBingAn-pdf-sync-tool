@@ -834,26 +834,18 @@ def main(city: dict = None, catchup_days: int = None, yes: bool = False):
         print(f"  檔名無法解析日期（待 parser 強化）: {counts['no_date']}")
     print(f"  待上傳: {len(pdfs_to_upload)}" + (f"（上限 {MAX_UPLOADS}）" if MAX_UPLOADS > 0 else "（無上限）"))
 
-    # 解析預算守門（review P1×2：先預留後退還、跨程序鎖）
-    from geobingan_sync.budget import budget_gate, monthly_gate, MonthlyBudget
+    # 解析預算守門：單次門檻（對原始請求量）→ 鎖內原子預留 → 上傳 → finally 退還未用
+    from geobingan_sync.budget import gate_and_reserve, MonthlyBudget
     from geobingan_sync.config import COST_PER_REPORT_USD, MONTHLY_BUDGET_USD, BUDGET_CONFIRM_USD
     mb = MonthlyBudget(cost_per_report=COST_PER_REPORT_USD)
     month = mb.load()
     print(f"  💰 本月({month['month']})已傳 {month['uploaded']} 份 ≈ US${month['est_usd']:.2f} / 上限 US${MONTHLY_BUDGET_USD:.0f}")
-    # 1) 無副作用預覽可放行份數 → 2) 單次門檻先擋（此時尚未計入，擋下不會殘留預留）
-    preview_allowed, _ = monthly_gate(len(pdfs_to_upload), float(month.get('est_usd', 0)),
-                                      MONTHLY_BUDGET_USD, COST_PER_REPORT_USD, yes)
-    ok, gate_msg = budget_gate(min(len(pdfs_to_upload), preview_allowed), COST_PER_REPORT_USD, BUDGET_CONFIRM_USD, yes)
-    print(f"  💰 {gate_msg}")
-    if pdfs_to_upload and preview_allowed > 0 and not ok:
-        print(f"\n🛑 已擋下：{gate_msg}")
-        sys.exit(3)
-    # 3) 鎖內原子預留：讀餘額→算份數→立刻計入（中斷時已成功份數不會漏記；重疊程序不會吃到同一筆餘額）
-    reserved, month_msg, month = mb.reserve(len(pdfs_to_upload), MONTHLY_BUDGET_USD, COST_PER_REPORT_USD, yes)
-    if month_msg:
-        print(f"  💰 {month_msg}")
-    if pdfs_to_upload and reserved <= 0:
-        print(f"\n🛑 已擋下：{month_msg}")
+    reserved, budget_msgs, blocked = gate_and_reserve(mb, len(pdfs_to_upload), MONTHLY_BUDGET_USD,
+                                                      COST_PER_REPORT_USD, BUDGET_CONFIRM_USD, yes)
+    for m in budget_msgs:
+        print(f"  💰 {m}")
+    if pdfs_to_upload and blocked:
+        print(f"\n🛑 已擋下：{blocked}")
         sys.exit(3)
     if reserved < len(pdfs_to_upload):
         pdfs_to_upload = pdfs_to_upload[:reserved]   # 已依 Drive 修改時間降序，裁切保留最新

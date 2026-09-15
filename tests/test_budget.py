@@ -4,7 +4,7 @@ import sys
 from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from geobingan_sync.budget import estimate_cost, budget_gate, budget_level, monthly_gate, MonthlyBudget
+from geobingan_sync.budget import estimate_cost, budget_gate, budget_level, monthly_gate, gate_and_reserve, MonthlyBudget
 
 
 def test_estimate_and_gate():
@@ -89,3 +89,31 @@ def test_reserve_is_atomic_across_processes(tmp_path):
     assert sum(allowed) == 10, allowed
     assert MonthlyBudget(path, cost_per_report=0.3).load()['uploaded'] == 10
     assert not list(tmp_path.glob('*.tmp'))                        # 無殘留暫存檔
+
+
+class _FakeMB:
+    """預留時會「放行很多」的假帳本，用來證明門檻不可能被預留結果放大。"""
+    def __init__(self): self.calls = []
+    def reserve(self, n, budget, cost, yes):
+        self.calls.append(n); return n, '假預留全數放行', {}
+
+
+def test_gate_checks_original_count_before_any_reservation():
+    """review TOCTOU：100 份未帶 --yes 必須在預留之前就被擋，reserve 不得被呼叫。"""
+    mb = _FakeMB()
+    allowed, msgs, blocked = gate_and_reserve(mb, 100, 100.0, 0.3, 15.0, yes=False)
+    assert allowed == 0 and blocked and '超過確認門檻' in blocked
+    assert mb.calls == []                                   # 尚未預留，不需退還
+    allowed, msgs, blocked = gate_and_reserve(mb, 15, 100.0, 0.3, 15.0, yes=False)
+    assert allowed == 15 and blocked is None and mb.calls == [15]
+    allowed, _, blocked = gate_and_reserve(mb, 100, 100.0, 0.3, 15.0, yes=True)   # --yes 才放行大批次
+    assert allowed == 100 and blocked is None
+
+
+def test_gate_and_reserve_with_real_ledger_trims(tmp_path):
+    mb = MonthlyBudget(tmp_path / 'b.json', cost_per_report=0.3)
+    mb.set_uploaded(327)                                    # 已用 98.1
+    allowed, msgs, blocked = gate_and_reserve(mb, 15, 100.0, 0.3, 15.0, yes=False)
+    assert allowed == 6 and blocked is None                 # 門檻對 15 份（4.5 美元）通過，預留裁成 6
+    allowed, msgs, blocked = gate_and_reserve(mb, 15, 100.0, 0.3, 15.0, yes=False)
+    assert allowed == 0 and '已擋下' in blocked              # 餘額耗盡

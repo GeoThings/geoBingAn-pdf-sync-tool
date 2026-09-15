@@ -165,6 +165,27 @@ class MonthlyBudget:
             return self._write(data, now)
 
 
+def gate_and_reserve(mb: 'MonthlyBudget', n_requested: int, monthly_budget: float,
+                     cost_per_report: float, confirm_threshold: float, yes: bool):
+    """單次門檻 → 原子預留，順序固定（review TOCTOU）。
+
+    單次門檻對「原始請求量」檢查而非對預覽份數：預留結果永遠 ≤ 原始請求量，
+    所以另一程序在中途退還額度或跨月，都不可能讓放行份數超過已確認的量。
+    門檻擋下時尚未預留，不需退還。回 (允許份數, 訊息列表, 擋下原因或 None)。
+    """
+    msgs = []
+    ok, gate_msg = budget_gate(n_requested, cost_per_report, confirm_threshold, yes)
+    msgs.append(gate_msg)
+    if n_requested > 0 and not ok:
+        return 0, msgs, gate_msg
+    allowed, month_msg, _ = mb.reserve(n_requested, monthly_budget, cost_per_report, yes)
+    if month_msg:
+        msgs.append(month_msg)
+    if n_requested > 0 and allowed <= 0:
+        return 0, msgs, month_msg
+    return allowed, msgs, None
+
+
 def _cli():
     import argparse
     from geobingan_sync.config import COST_PER_REPORT_USD, MONTHLY_BUDGET_USD
