@@ -1,6 +1,6 @@
 # 排程設定指南（macOS launchd）
 
-**最後更新：** 2026-04-20
+**最後更新：** 2026-09-15
 
 > 已從 cron 遷移到 launchd。launchd 是 macOS 原生排程系統，Mac 從睡眠醒來時會自動補跑錯過的任務（cron 不會）。
 
@@ -10,11 +10,13 @@
 
 | 時間 | LaunchAgent | 內容 |
 |------|-------------|------|
-| 每日 08:00 | `com.geothings.geobingan.healthcheck` | Token/磁碟/同步狀態/API 檢查 |
-| 週一 09:00 | `com.geothings.geobingan.weeklysync` | 完整同步流程（7 步驟） |
-| 週五 18:00 | `com.geothings.geobingan.fridayreport` | 總結週報 PDF → ClickUp |
+| 每日 08:00 | `com.geothings.geobingan.healthcheck` | 8 項檢查：Token／磁碟／同步狀態／API／launchd／上傳暫停／解析積壓／解析預算；異常去重後貼 ClickUp，error 級 @ |
+| 每日 10:00 | `com.geothings.geobingan.weeklysync` | 完整同步流程；週一加產 sync 週報 PDF → ClickUp |
+| 週五 17:00 | `com.geothings.geobingan.fridayreport` | 總結週報 PDF → ClickUp |
 
-**預計耗時：** ~16 分鐘（週一完整同步）
+**預計耗時：** ~15–25 分鐘（全量翻頁掃描後的正常水位；納入大量新案後首次可達 ~60 分鐘）
+
+> 需搭配 `sudo pmset repeat wakepoweron MTWRFSU 07:55:00`，否則 Mac 睡眠時排程不會觸發。
 
 ---
 
@@ -34,7 +36,7 @@
 | 步驟 | 腳本 | 說明 | 失敗行為 |
 |------|------|------|----------|
 | 1 | `geobingan_sync/steps/sync_permits.py` | 同步 PDF 到 Google Drive（5 thread 並行） | 跳過步驟 2-3 |
-| 2 | `geobingan_sync/steps/upload_pdfs.py` | 上傳農曆新年後的 PDF 到究平安 | 跳過步驟 3 |
+| 2 | `geobingan_sync/steps/upload_pdfs.py` | 上傳檔名日期 30 天窗內的 PDF 到究平安（每日上限 `MAX_UPLOADS`、解析預算守門；有 `.pause_upload` 旗標則跳過本步） | 跳過步驟 3 |
 | 2.5 | `geobingan_sync/steps/match_permits.py` | 建案名稱交叉比對（6 來源） | 使用現有 registry |
 | 3 | `geobingan_sync/steps/generate_permit_tracking_report.py` | 生成追蹤報告 HTML/CSV | 繼續步驟 4 |
 | 4 | `git push` | 推送報告到 GitHub | — |
