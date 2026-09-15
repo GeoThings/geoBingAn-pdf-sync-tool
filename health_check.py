@@ -117,6 +117,115 @@ def check_api():
         return 'error', f'API 無法連線: {e}'
 
 
+STALE_HOURS = 6
+ANCIENT_HOURS = 24 * 7   # 超過 7 天視為陳年積壓，不驅動燈號
+MAX_PAGES = 5            # 每種狀態最多掃 5 頁 × 200
+
+
+def _api_token():
+    """取得可用 JWT（過期則用 refresh token 換發，並寫回 .env，與 match_permits 相同作法）。"""
+    from geobingan_sync.jwt_auth import get_valid_token
+    from geobingan_sync import config
+    token, was_refreshed, new_refresh = get_valid_token(config.JWT_TOKEN, config.REFRESH_TOKEN,
+                                                        config.GEOBINGAN_REFRESH_URL)
+    if was_refreshed and token:
+        try:
+            config.update_jwt_token(token, new_refresh)
+        except Exception:
+            pass
+    return token
+
+
+def count_stale_reports(pages, now, stale_hours=STALE_HOURS, ancient_hours=ANCIENT_HOURS):
+    """純函式：pages 為 API 回傳的 results 列表們。
+
+    回 dict：total、recent（stale_hours ≤ 年齡 < ancient_hours，該跑完卻沒跑＝新事故訊號）、
+    ancient（≥ ancient_hours 的陳年積壓，只註記不驅動燈號，否則舊帳會讓告警永遠紅燈、
+    蓋掉新事故）、recent_oldest_h。
+    """
+    from datetime import timezone
+    out = {'total': 0, 'recent': 0, 'ancient': 0, 'recent_oldest_h': 0.0}
+    for results in pages:
+        for r in results:
+            out['total'] += 1
+            ts = r.get('updated_at') or r.get('created_at')
+            if not ts:
+                continue
+            try:
+                t = datetime.fromisoformat(ts.replace('Z', '+00:00'))
+            except ValueError:
+                continue
+            if t.tzinfo is None:
+                t = t.replace(tzinfo=timezone.utc)
+            hours = (now - t).total_seconds() / 3600
+            if hours >= ancient_hours:
+                out['ancient'] += 1
+            elif hours >= stale_hours:
+                out['recent'] += 1
+                out['recent_oldest_h'] = max(out['recent_oldest_h'], hours)
+    return out
+
+
+def check_parse_backlog(now=None):
+    """後端解析積壓：近 7 天內卡住 ≥6h 的報告 → 告警（對應 9/14 事故：預算爆掉後 116 份卡一整天沒人知）。
+
+    燈號只看「近期停滯」：error＝≥20 份或最舊 ≥24h；warning＝1–19 份；ok＝0。
+    陳年積壓（>7 天）只在訊息註記，避免舊帳讓告警永遠紅燈、蓋掉新事故。
+    掃描上限 MAX_PAGES×200，達上限標「≥」。API/認證失敗只回 warning（token 到期另有 check_token）。
+    """
+    import requests
+    from datetime import timezone
+    from geobingan_sync.config import GEOBINGAN_BASE_URL
+    try:
+        token = _api_token()
+        if not token:
+            return 'warning', '解析積壓檢查略過：無可用 JWT'
+        base = GEOBINGAN_BASE_URL.rstrip('/')
+        h = {'Authorization': f'Bearer {token}'}
+        pages, capped = [], False
+        for status in ('pending', 'processing'):
+            url = f'{base}/api/reports/construction-reports/?parse_status={status}&page_size=200'
+            for i in range(MAX_PAGES):
+                resp = requests.get(url, headers=h, timeout=20)
+                resp.raise_for_status()                      # 401/500 不可變成假綠燈（review P2）
+                d = resp.json()
+                if not isinstance(d, dict) or not isinstance(d.get('results'), list):
+                    raise ValueError(f'backlog 回應格式異常: {str(d)[:120]}')
+                pages.append(d['results'])
+                url = d.get('next')
+                if not url:
+                    break
+                if i == MAX_PAGES - 1:
+                    capped = True
+        now = now or datetime.now(timezone.utc)
+        c = count_stale_reports(pages, now)
+        ge = '≥' if capped else ''
+        note = f'；另有陳年積壓 {ge}{c["ancient"]} 份（>{ANCIENT_HOURS // 24} 天，未計入燈號）' if c['ancient'] else ''
+        if c['recent'] == 0:
+            return 'ok', f'近期解析佇列正常（未完成共 {ge}{c["total"]}{note}）'
+        msg = (f'{c["recent"]} 份近期解析停滯 ≥{STALE_HOURS}h（最舊 {c["recent_oldest_h"]:.0f}h）'
+               f'— 疑 worker 停擺或 OpenAI 預算上限，請查 PROD-348 類狀況{note}')
+        level = 'error' if (c['recent'] >= 20 or c['recent_oldest_h'] >= 24) else 'warning'
+        return level, msg
+    except Exception as e:
+        return 'warning', f'解析積壓檢查失敗: {e}'
+
+
+def check_budget(path=None):
+    """本月解析估算成本 vs MONTHLY_BUDGET_USD：≥70% warning、≥90% error。path 可注入供測試。"""
+    from geobingan_sync.budget import MonthlyBudget, budget_level
+    from geobingan_sync.config import COST_PER_REPORT_USD, MONTHLY_BUDGET_USD
+    try:
+        m = MonthlyBudget(path=path, cost_per_report=COST_PER_REPORT_USD).load()
+        level, ratio = budget_level(float(m.get('est_usd', 0)), MONTHLY_BUDGET_USD)
+        msg = f"本月({m['month']})已傳 {m['uploaded']} 份 ≈ US${float(m.get('est_usd', 0)):.2f} / 上限 US${MONTHLY_BUDGET_USD:.0f}（{ratio:.0%}）"
+        if level != 'ok':
+            msg += '；請與 slayer 確認預算餘裕再上傳'
+        return level, msg
+    except Exception as e:
+        return 'warning', f'預算檢查失敗: {e}'
+
+
 def check_launchd_jobs():
     """檢查三個 launchd 排程 job 的最後執行狀態。
 
@@ -164,6 +273,8 @@ DEFAULT_CHECKS = [
     ('API 連線', check_api),
     ('排程 Job', check_launchd_jobs),
     ('上傳暫停', check_pause),
+    ('解析積壓', check_parse_backlog),
+    ('解析預算', check_budget),
 ]
 
 

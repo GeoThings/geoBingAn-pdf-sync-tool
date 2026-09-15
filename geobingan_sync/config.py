@@ -56,6 +56,11 @@ DAYS_AGO = int(os.environ.get('DAYS_AGO', '7'))
 MAX_UPLOADS = int(os.environ.get('MAX_UPLOADS', '0'))
 DELAY_BETWEEN_UPLOADS = float(os.environ.get('DELAY_BETWEEN_UPLOADS', '2'))
 
+# 解析預算守門（後端解析成本受 OpenAI 專案花費上限硬性節制；9/14 一次傳 178 份即打爆）
+COST_PER_REPORT_USD = float(os.environ.get('COST_PER_REPORT_USD', '0.3'))   # 單筆解析估算成本
+MONTHLY_BUDGET_USD = float(os.environ.get('MONTHLY_BUDGET_USD', '100'))     # 與 slayer 對齊的月上限
+BUDGET_CONFIRM_USD = float(os.environ.get('BUDGET_CONFIRM_USD', '15'))      # 單次上傳估算超過此值需 --yes
+
 
 def update_jwt_token(new_token: str, new_refresh_token: str = None):
     """

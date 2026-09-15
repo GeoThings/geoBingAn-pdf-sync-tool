@@ -489,6 +489,12 @@ def download_pdf(service, file_id: str, file_name: str, max_retries: int = 3) ->
 def upload_to_geobingan(pdf_content: bytes, file_name: str, project_code: str,
                         max_retries: int = 3) -> Optional[dict]:
     """
+    回傳（預算結算依此分類）：
+    - dict：成功，或可能已送達（502/504、逾時/連線錯誤重試耗盡）→ 視為已消耗
+    - False：確定無解析成本 —— 4xx 明確拒絕、或 401 換發失敗根本沒再送
+    - None：結果不明 —— 任何 5xx（含 503 重試耗盡、401 換發後重試得到 5xx）、未知例外；
+      5xx 可能發生在後端已建報告/已進佇列之後，保守視為已消耗（review P1）
+    
     上傳 PDF 到 geoBingAn API 進行分析（含重試機制）
 
     使用 construction-reports/upload/ 端點（與網頁上傳相同）
@@ -564,7 +570,7 @@ def upload_to_geobingan(pdf_content: bytes, file_name: str, project_code: str,
                     continue
                 else:
                     print(f"  ❌ 伺服器不可用 (503)，已重試 {max_retries} 次")
-                    return None
+                    return None    # 5xx：結果不明，保守視為已消耗
             elif response.status_code == 401:
                 # Token 過期，嘗試刷新並重試
                 print(f"  ⚠️  Token 已過期，嘗試刷新...")
@@ -589,13 +595,15 @@ def upload_to_geobingan(pdf_content: bytes, file_name: str, project_code: str,
                         return result
                     else:
                         print(f"  ❌ 重試失敗 ({retry_response.status_code})")
-                        return None
+                        # 4xx 明確拒絕→False；5xx 結果不明→None
+                        return False if 400 <= retry_response.status_code < 500 else None
                 else:
                     print(f"  ❌ Token 刷新失敗，無法繼續上傳")
-                    return None
+                    return False   # 未送出，無成本
             else:
                 print(f"  ❌ API 錯誤 ({response.status_code}): {response.text[:300]}")
-                return None
+                # 4xx 明確拒絕→False（無成本）；5xx 可能已建報告/進佇列→None（結果不明，保守計入）
+                return False if 400 <= response.status_code < 500 else None
 
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
             # 連線超時或連線錯誤 - 重試
@@ -621,13 +629,17 @@ def upload_to_geobingan(pdf_content: bytes, file_name: str, project_code: str,
     return None
 
 
-def process_single_pdf(service, pdf: Dict, state: dict, idx: int, total: int) -> Dict:
+def process_single_pdf(service, pdf: Dict, state: dict, idx: int, total: int,
+                       before_upload=None) -> Dict:
     """
     處理單個 PDF 的下載和上傳（可用於並行處理）
 
     狀態檔案採批次寫入策略：每 BATCH_SAVE_INTERVAL 次變更才寫入一次，
     減少大型狀態檔案的 I/O 次數。呼叫者應在所有處理完成後呼叫
     flush_state() 確保最後的變更被寫入。
+
+    before_upload: 下載完成、第一個 HTTP POST 之前呼叫的 callback；回 False 表示不可送出
+        （預算帳本跨月），此時回傳 error='month_rolled_over'，不寫 error 也不寫去重歷史。
 
     Returns:
         Dict with keys: success (bool), pdf (Dict), result (Optional[dict])
@@ -640,6 +652,10 @@ def process_single_pdf(service, pdf: Dict, state: dict, idx: int, total: int) ->
     pdf_content = download_pdf(service, pdf['id'], pdf['name'])
     if not pdf_content:
         return {'success': False, 'pdf': pdf, 'result': None, 'error': 'download_failed'}
+
+    # 月份守門要在這一刻（下載已完成、POST 尚未送出）：下載可能耗時數分鐘，之前檢查會有時間窗
+    if before_upload is not None and not before_upload():
+        return {'success': False, 'pdf': pdf, 'result': None, 'error': 'month_rolled_over'}
 
     # 上傳
     result = upload_to_geobingan(pdf_content, pdf['name'], pdf['folder_name'])
@@ -665,7 +681,9 @@ def process_single_pdf(service, pdf: Dict, state: dict, idx: int, total: int) ->
             if _pending_error_saves >= BATCH_SAVE_INTERVAL:
                 save_state(state)
                 _pending_error_saves = 0
-        return {'success': False, 'pdf': pdf, 'result': None, 'error': 'upload_failed'}
+        # 預算結算用分類：False=後端明確拒絕（可退預留）；None=結果不明（保守視為已消耗）
+        kind = 'rejected' if result is False else 'unknown'
+        return {'success': False, 'pdf': pdf, 'result': None, 'error': kind}
 
 
 def flush_state(state: dict):
@@ -749,8 +767,10 @@ def select_pdfs_to_upload(all_pdfs: List[Dict], uploaded_files, *, cutoff: datet
     return picked, counts
 
 
-def main(city: dict = None, catchup_days: int = None):
+def main(city: dict = None, catchup_days: int = None, yes: bool = False):
     """主程式
+
+    yes: 估算解析成本超過 BUDGET_CONFIRM_USD 時的明確確認（防人為大批次打爆後端預算）。
 
     catchup_days: 覆蓋預設 30 天檔名日期 cutoff（暫停後補掃用）。上傳去重靠
     git-tracked history（idempotent），放大掃描窗不會重複上傳，只會補回暫停
@@ -832,6 +852,23 @@ def main(city: dict = None, catchup_days: int = None):
         print(f"  檔名無法解析日期（待 parser 強化）: {counts['no_date']}")
     print(f"  待上傳: {len(pdfs_to_upload)}" + (f"（上限 {MAX_UPLOADS}）" if MAX_UPLOADS > 0 else "（無上限）"))
 
+    # 解析預算守門：單次門檻（對原始請求量）→ 鎖內原子預留 → 上傳 → finally 退還未用
+    from geobingan_sync.budget import gate_and_reserve, MonthlyBudget, ReservationLedger
+    from geobingan_sync.config import COST_PER_REPORT_USD, MONTHLY_BUDGET_USD, BUDGET_CONFIRM_USD
+    mb = MonthlyBudget(cost_per_report=COST_PER_REPORT_USD)
+    month = mb.load()
+    print(f"  💰 本月({month['month']})已傳 {month['uploaded']} 份 ≈ US${month['est_usd']:.2f} / 上限 US${MONTHLY_BUDGET_USD:.0f}")
+    reserved, budget_msgs, blocked, reserved_month = gate_and_reserve(
+        mb, len(pdfs_to_upload), MONTHLY_BUDGET_USD, COST_PER_REPORT_USD, BUDGET_CONFIRM_USD, yes)
+    for m in budget_msgs:
+        print(f"  💰 {m}")
+    if pdfs_to_upload and blocked:
+        print(f"\n🛑 已擋下：{blocked}")
+        sys.exit(3)
+    if reserved < len(pdfs_to_upload):
+        pdfs_to_upload = pdfs_to_upload[:reserved]   # 已依 Drive 修改時間降序，裁切保留最新
+        print(f"  待上傳（裁切後）: {len(pdfs_to_upload)}")
+
     if not pdfs_to_upload:
         print(f"\n⚠️  所有 PDF 都已上傳過了！")
         print("\n如要重新上傳，請刪除狀態檔案:")
@@ -859,19 +896,35 @@ def main(city: dict = None, catchup_days: int = None):
 
     success_count = 0
     error_count = 0
+    # 預留預設視為已消耗：只對「確定零成本」的失敗（下載失敗/後端明確拒絕）立即退 1 份；
+    # 結束（含中斷）只退還從未嘗試的份數。成功後才中斷、或結果不明，都保留在帳上（保守高估）。
+    ledger = ReservationLedger(mb, reserved, month=reserved_month)   # 退還只作用於預留當月，跨月 no-op
 
-    for idx, pdf in enumerate(pdfs_to_upload, 1):
-        result = process_single_pdf(service, pdf, state, idx, len(pdfs_to_upload))
+    try:
+        for idx, pdf in enumerate(pdfs_to_upload, 1):
+            # 月份守門由 before_upload 在 POST 前一刻執行（下載之後）；跨月則該項目不送、不寫歷史
+            result = process_single_pdf(service, pdf, state, idx, len(pdfs_to_upload),
+                                        before_upload=ledger.begin_item)
+            if result.get('error') == 'month_rolled_over':
+                print(f"\n⏹️  已跨月（預留屬 {ledger.month}），停止本批次；剩餘 {len(pdfs_to_upload) - idx + 1} 份待下次執行於新月份重新預留")
+                break
+            ledger.settle(result)
 
-        if result['success']:
-            success_count += 1
-        else:
-            error_count += 1
+            if result['success']:
+                success_count += 1
+            else:
+                error_count += 1
 
-        # 速率控制：等待避免觸發 API 限制（除了最後一個）
-        if idx < len(pdfs_to_upload):
-            print(f"  ⏳ 等待 {DELAY_BETWEEN_UPLOADS} 秒（避免 API 速率限制）...", flush=True)
-            time.sleep(DELAY_BETWEEN_UPLOADS)
+            # 速率控制：等待避免觸發 API 限制（除了最後一個）
+            if idx < len(pdfs_to_upload):
+                print(f"  ⏳ 等待 {DELAY_BETWEEN_UPLOADS} 秒（避免 API 速率限制）...", flush=True)
+                time.sleep(DELAY_BETWEEN_UPLOADS)
+    finally:
+        try:
+            month = ledger.close()
+            print(f"💰 本月累計 {month['uploaded']} 份 ≈ US${month['est_usd']:.2f} / 上限 US${MONTHLY_BUDGET_USD:.0f}")
+        except Exception as e:
+            print(f"⚠️  月累計結算失敗（保守多算，不影響上傳）: {e}")
 
     # 寫入所有剩餘的狀態變更
     flush_state(state)
@@ -902,12 +955,14 @@ if __name__ == '__main__':
     parser.add_argument('--catchup-days', type=int, default=None,
                         help='暫停後補掃：用 N 天檔名日期窗取代預設 30 天'
                              '（history 去重、不會重傳；恢復 .pause_upload 後用一次）')
+    parser.add_argument('--yes', action='store_true',
+                        help='估算解析成本超過 BUDGET_CONFIRM_USD 時仍執行（請先與後端確認預算餘裕）')
     args = parser.parse_args()
 
     cities = get_cities_for_cli(args.city)
     try:
         for city in cities:
-            main(city=city, catchup_days=args.catchup_days)
+            main(city=city, catchup_days=args.catchup_days, yes=args.yes)
     except KeyboardInterrupt:
         print("\n\n👋 使用者中斷執行")
         sys.exit(0)
