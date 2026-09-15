@@ -37,7 +37,7 @@
 - ✅ 建管處清單動態抓取（從發布頁解析當前 PDF 連結，失效自動退回靜態網址；PR #78）
 - ✅ 告警確實送達：ClickUp 留言＋error 級 @ 人、去重/升級/每 7 天提醒/恢復通知（PR #79）
 - ✅ 解析預算守門：每日上限、單次門檻需 --yes、月上限先預留後退還（PR #80）
-- ✅ 健康檢查 8 項：Token／磁碟／同步狀態／API／launchd／上傳暫停／解析積壓／解析預算
+- ✅ 健康檢查 10 項：Token／磁碟／同步狀態／API／launchd／上傳暫停／解析積壓／解析預算／清單新鮮度／來源資料夾
 - ✅ 自動化測試（pytest, 265 cases, GitHub Actions CI）
 - ✅ 多城市支援（cities.json 配置，PDF 或 CSV 資料來源）
 - ✅ Refresh Token 自動輪替（API 回傳新 token 時自動寫回 .env）
@@ -154,7 +154,7 @@ python3 health_check.py
 sudo pmset repeat wakepoweron MTWRFSU 07:55:00
 
 # 排程內容：
-# 每日 08:00 — 健康檢查 8 項（Token/磁碟/同步/API/launchd/上傳暫停/解析積壓/解析預算）
+# 每日 08:00 — 健康檢查 10 項（含清單新鮮度、來源資料夾失效）
 # 每日 10:00 — 完整同步（核心 PDF 同步 + 上傳 + 報告 + Git push）
 #              週一額外產 sync 週報 PDF 上傳 ClickUp
 # 週五 17:00 — 總結週報（summary 週報 PDF）
@@ -185,6 +185,7 @@ tail -f logs/weekly_sync_*.log
 **功能：**
 - 支援兩種資料來源：政府 PDF 列表（`source_type: pdf`）或 CSV 匯入（`source_type: csv`）
 - **清單動態抓取（PR #78）**：先從建管處發布頁（`list_page_url`）解析當前的清單 PDF 連結再下載；解析失敗、非 2xx 或內容非 PDF 時自動退回靜態 `pdf_list_url`。政府改版會換 relfile 路徑，寫死網址曾讓工具同步過期清單 8 個月（351 → 440 筆）
+- **清單指紋**：每次同步記錄清單檔名／建照數／內容 hash；內容變更時發資訊性通知（新增 N 筆／移除 M 筆），**退回靜態備援或 >60 天未更新則由健康檢查告警**——否則上面那個 fallback 會靜默退化回原本的 bug
 - 解析建案代碼和 Google Drive 連結
 - 自動建立資料夾並複製 PDF 到共享雲端（5 thread 並行）
 - 斷點續傳、增量同步
@@ -374,11 +375,13 @@ python3 -c "from geobingan_sync.sync_status import SyncStatus; SyncStatus().prin
 
 | 事件 | 等級 | 內容 |
 |------|------|------|
-| 健康檢查異常（8 項） | warning / error | 一輪一則彙整；error 才 @ |
+| 健康檢查異常（10 項） | warning / error | 一輪一則彙整；error 才 @ |
 | 同步執行失敗 | error | 錯誤訊息；連日失敗每 7 天提醒；恢復時通知 |
 | Refresh Token 過期／即將過期 | error / warning | 請至 riskmap 重新登入更新 `.env` |
 | 解析積壓（近 7 天停滯 ≥6h） | warning / error（≥20 份或最舊 ≥24h） | 疑後端 worker 停擺或 OpenAI 預算上限 |
 | 解析預算（本月估算 vs 月上限） | ≥70% warning／≥90% error | 請與後端確認預算再上傳 |
+| 清單新鮮度 | error（退回靜態備援）／warning（>60 天未更新） | 動態解析失效時會靜默同步過期清單，必須知道 |
+| 來源資料夾由活轉死 | error | 近 7 天新失效＝資料流失訊號（對應 111建字第0311號 253 份消失） |
 
 ---
 
@@ -400,6 +403,7 @@ geoBingAn-pdf-sync-tool/
 │   ├── notify.py                #   通知模組（ClickUp 留言 + @ mention；macOS 輔助）
 │   ├── alert_state.py           #   告警去重/升級狀態機（plan→send→commit、namespace 分檔）
 │   ├── budget.py                #   解析預算守門（估算/門檻/月上限帳本/預留退還）
+│   ├── list_fingerprint.py      #   政府清單指紋（更新偵測／靜態退回／停更）
 │   ├── sync_status.py           #   狀態追蹤模組
 │   ├── report_template.py       #   HTML/CSV 報告模板
 │   ├── analyze_decline.py       #   月度下滑分析（被 weekly_snapshot 引用）
@@ -422,7 +426,7 @@ geoBingAn-pdf-sync-tool/
 ├── state/                       # 狀態追蹤（registry / 上傳歷史 / pdf_inventory…）
 ├── logs/                        # 執行日誌
 ├── docs/                        # 技術文檔 + 線上追蹤報告
-└── tests/                       # 自動化測試（265 tests）
+└── tests/                       # 自動化測試（293 tests）
 ```
 
 ---

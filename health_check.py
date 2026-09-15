@@ -226,6 +226,54 @@ def check_budget(path=None):
         return 'warning', f'預算檢查失敗: {e}'
 
 
+DEATH_WINDOW_DAYS = 7
+
+
+def check_list_freshness(path=None, now=None):
+    """政府清單新鮮度：動態解析失效（退回靜態舊清單）→ error；長期未更新 → warning。
+
+    PR #78 的 fallback 只印 log，沒有告警——建管處改版導致解析失效時，我們會
+    靜默同步過期清單（原本 8 個月沒發現的情境）。path/now 可注入供測試。
+    """
+    from geobingan_sync.list_fingerprint import ListFingerprint, assess
+    try:
+        return assess(ListFingerprint(path=path).load(), now=now)
+    except Exception as e:
+        return 'warning', f'清單指紋檢查失敗: {e}'
+
+
+def check_folder_deaths(path=None, now=None, window_days=DEATH_WINDOW_DAYS):
+    """來源資料夾由活轉死：近 N 天內新發生的失效 → error（資料流失訊號）。
+
+    對應 111建字第0311號：253 份監測報告的來源資料夾被刪、數月後才發現。
+    舊的失效只留在紀錄裡、不驅動燈號，避免舊帳讓告警永遠紅燈。
+    """
+    from datetime import datetime as _dt, timedelta
+    from geobingan_sync.steps.match_permits import FOLDER_DEATHS_FILE
+    try:
+        p = path or FOLDER_DEATHS_FILE
+        try:
+            with open(p, encoding='utf-8') as f:
+                log = json.load(f)
+        except FileNotFoundError:
+            return 'ok', '無來源資料夾失效紀錄'
+        except json.JSONDecodeError as e:
+            # 損毀不可當成「無紀錄」的綠燈——那正是這個檢查要防的無聲流失
+            return 'warning', f'失效紀錄檔損毀、無法判讀（{e}）；請檢查 state/folder_deaths.json'
+        now = now or _dt.now()
+        cutoff = (now - timedelta(days=window_days)).strftime('%Y-%m-%d')
+        recent = [d for d in (log.get('deaths') or []) if str(d.get('detected', '')) >= cutoff]
+        if not recent:
+            total = len(log.get('deaths') or [])
+            return 'ok', f'近 {window_days} 天無新增失效（歷史累計 {total} 個）'
+        pdfs = sum(int(d.get('pdf_count') or 0) for d in recent)
+        names = '、'.join(f"{d.get('permit')}" for d in recent[:3])
+        return 'error', (f'{len(recent)} 個來源資料夾近 {window_days} 天內失效（影響約 {pdfs} 份 PDF）：'
+                         f'{names}{"…" if len(recent) > 3 else ""}——請向監測公司/建管處確認去向')
+    except Exception as e:
+        return 'warning', f'失效資料夾檢查失敗: {e}'
+
+
 def check_launchd_jobs():
     """檢查三個 launchd 排程 job 的最後執行狀態。
 
@@ -275,6 +323,8 @@ DEFAULT_CHECKS = [
     ('上傳暫停', check_pause),
     ('解析積壓', check_parse_backlog),
     ('解析預算', check_budget),
+    ('清單新鮮度', check_list_freshness),
+    ('來源資料夾', check_folder_deaths),
 ]
 
 

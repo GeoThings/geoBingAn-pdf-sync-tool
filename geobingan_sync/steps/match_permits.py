@@ -399,6 +399,8 @@ def build_registry(city: dict = None):
     # 載入現有 registry
     registry = load_existing_registry()
     print(f"現有 registry: {len(registry)} 筆\n")
+    # 先留存上一輪的來源資料夾狀態，稍後偵測「本來活著、這次 404」（資料流失訊號）
+    prior_url_statuses = {p: e.get('gov_pdf_url_status') for p, e in registry.items()}
 
     # 取得所有來源
     gov_data = fetch_gov_pdf_data(city=city)
@@ -670,14 +672,135 @@ def build_registry(city: dict = None):
     for src, count in source_counts.most_common():
         print(f"    {src}: {count}")
 
-    # 儲存
-    os.makedirs(os.path.dirname(REGISTRY_FILE), exist_ok=True)
-    with open(REGISTRY_FILE, 'w', encoding='utf-8') as f:
-        json.dump(registry, f, indent=2, ensure_ascii=False)
+    # 儲存：先持久化「由活轉死」事件，成功後才提交 registry（fail-closed，見函式說明）
+    commit_registry_with_deaths(registry, prior_url_statuses)
     print(f"\n✅ 已儲存到 {REGISTRY_FILE}")
 
     # 列管 PDF URL 失效清單 — 給建管處請求更新政府 PDF 用
     _write_url_404_csv(registry)
+
+
+FOLDER_DEATHS_FILE = './state/folder_deaths.json'
+
+
+def detect_folder_deaths(prior_statuses: dict, registry: dict) -> list:
+    """找出「上一輪明確 alive、這一輪 404」的建案（純函式，便於測試）。
+
+    只認 alive→404 這個轉變：
+    - 首次出現就 404（prior 無紀錄）不算——那是既有的歷史失效，不是新的資料流失。
+    - error→404 不算——error 可能只是暫時性 API 失敗。
+    對應 111建字第0311號 事故：253 份監測報告的來源資料夾被刪、數月後才發現。
+    """
+    deaths = []
+    for permit, info in sorted(registry.items()):
+        if info.get('gov_pdf_url_status') != '404':
+            continue
+        if prior_statuses.get(permit) != 'alive':
+            continue
+        deaths.append({
+            'permit': permit,
+            'name': info.get('name') or info.get('api_match', ''),
+            'pdf_count': info.get('pdf_count', 0),
+            'source_url': info.get('source_url') or info.get('source_url_removed', ''),
+        })
+    return deaths
+
+
+def _atomic_write_json(path: str, data, label: str):
+    """PID 暫存檔 + os.replace 原子寫入，避免中斷留下半份 JSON。"""
+    d = os.path.dirname(path)
+    if d:
+        os.makedirs(d, exist_ok=True)
+    tmp = f'{path}.{os.getpid()}.tmp'
+    with open(tmp, 'w', encoding='utf-8') as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+    os.replace(tmp, path)
+
+
+def _death_key(d: dict) -> tuple:
+    """事件去重鍵：同一建案 + 同一來源連結 = 同一次失效。**刻意不含日期**。
+
+    排程每日執行，所以「death 已寫、registry 提交失敗」的重試必然發生在隔天；
+    鍵裡若含 detected，隔日重跑會被當成新事件再 append，去重只在同一天有效
+    （review P2）。同一個 Drive folder 一旦 404 就是永久失效，隔天再偵測到仍是
+    同一次 transition。若該建案日後換成新的 folder URL 又失效，URL 不同會自然
+    形成新事件。
+
+    取捨：同一 folder ID 被刪除→還原→再刪除會被視為同一次（去重掉）。已刪除的
+    Drive 資料夾實務上不會以相同 ID 復活，而每日重複告警的噪音代價更高。
+    """
+    return (d.get('permit'), d.get('source_url', ''))
+
+
+def append_folder_deaths(deaths: list, deaths_file: str = None, now=None) -> list:
+    """把新失效附加到 folder_deaths.json（原子寫入）。失敗一律 raise，不吞例外。
+
+    以 (permit, source_url) 去重（不含日期，見 _death_key）：death 已寫入但 registry
+    提交失敗時，下一輪（通常是隔天）prior 仍是 alive、會再次偵測到同一次死亡；
+    沒有去重就會累積重複事件、讓 health_check 誇大失效數與受影響 PDF 數。
+
+    讀到損毀 JSON 時 raise 而非重置成空陣列——靜默重置會把歷史失效紀錄整份丟掉，
+    正是這個功能要防的「無聲流失」。
+
+    Returns: 實際新增（未被去重掉）的事件清單。
+    """
+    from datetime import datetime as _dt
+    path = deaths_file or FOLDER_DEATHS_FILE
+    now = now or _dt.now()
+    try:
+        with open(path, encoding='utf-8') as f:
+            log = json.load(f)
+        if not isinstance(log, dict):
+            raise ValueError('folder_deaths.json 內容不是物件')
+    except FileNotFoundError:
+        log = {'deaths': []}
+    except json.JSONDecodeError as e:
+        raise ValueError(f'folder_deaths.json 損毀（拒絕覆寫以免丟失歷史紀錄）: {e}')
+
+    today = now.strftime('%Y-%m-%d')
+    existing = {_death_key(d) for d in (log.get('deaths') or [])}
+    appended = []
+    for raw in deaths:
+        d = dict(raw)
+        d['detected'] = today
+        key = _death_key(d)
+        if key in existing:
+            continue
+        existing.add(key)
+        appended.append(d)
+    if appended:
+        log['deaths'] = (log.get('deaths') or []) + appended
+        _atomic_write_json(path, log, 'folder_deaths')
+    return appended
+
+
+def commit_registry_with_deaths(registry: dict, prior_statuses: dict,
+                                registry_file: str = None, deaths_file: str = None,
+                                now=None) -> list:
+    """先持久化「由活轉死」事件，成功後才提交 registry（fail-closed）。
+
+    順序很關鍵（review P1）：若先寫 registry、後記 death，中間中斷或記錄失敗時
+    registry 已把該建案存成 404，下一輪讀到的 prior 就是 404，而 detect 只認
+    alive→404——這次死亡將**永遠**偵測不到，正好破壞本功能要防的無聲流失。
+    因此 death 寫入失敗就不提交 registry：下一輪 prior 仍是 alive，可重新偵測。
+    反向的情況（death 寫入成功、registry 提交失敗）由 append_folder_deaths 的
+    事件去重吸收，重跑不會累積重複事件。
+
+    Returns: 本輪實際新增的失效事件（重跑時為空）。
+    """
+    reg_path = registry_file or REGISTRY_FILE
+    deaths = detect_folder_deaths(prior_statuses, registry)
+    appended = []
+    if deaths:
+        # 失敗 raise → 不寫 registry；重跑時同一事件會被去重，不重複累積
+        appended = append_folder_deaths(deaths, deaths_file=deaths_file, now=now)
+        if appended:
+            total_pdfs = sum(d.get('pdf_count', 0) for d in appended)
+            print(f"\n🔴 來源資料夾新失效 {len(appended)} 個（影響約 {total_pdfs} 份 PDF）：")
+            for d in appended[:5]:
+                print(f"    {d['permit']} {d.get('name', '')}（{d.get('pdf_count', 0)} 份）")
+    _atomic_write_json(reg_path, registry, 'registry')
+    return appended
 
 
 def _write_url_404_csv(registry: dict):
