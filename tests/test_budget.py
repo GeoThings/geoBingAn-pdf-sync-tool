@@ -4,7 +4,7 @@ import sys
 from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from geobingan_sync.budget import estimate_cost, budget_gate, budget_level, monthly_gate, gate_and_reserve, MonthlyBudget
+from geobingan_sync.budget import estimate_cost, budget_gate, budget_level, monthly_gate, gate_and_reserve, MonthlyBudget, ReservationLedger
 
 
 def test_estimate_and_gate():
@@ -117,3 +117,40 @@ def test_gate_and_reserve_with_real_ledger_trims(tmp_path):
     assert allowed == 6 and blocked is None                 # 門檻對 15 份（4.5 美元）通過，預留裁成 6
     allowed, msgs, blocked = gate_and_reserve(mb, 15, 100.0, 0.3, 15.0, yes=False)
     assert allowed == 0 and '已擋下' in blocked              # 餘額耗盡
+
+
+class _LedgerMB:
+    def __init__(self): self.releases = []
+    def release(self, n): self.releases.append(n); return {'uploaded': -1}
+    def load(self): return {'uploaded': -1}
+
+
+def test_ledger_refunds_only_definite_zero_cost_failures():
+    mb = _LedgerMB(); L = ReservationLedger(mb, reserved=4)
+    for r in ({'success': True}, {'success': False, 'error': 'download_failed'},
+              {'success': False, 'error': 'rejected'}, {'success': False, 'error': 'unknown'}):
+        L.begin_item(); L.settle(r)
+    L.close()
+    assert mb.releases == [1, 1]                      # 成功/未知不退；下載失敗、明確拒絕各退 1；全數已嘗試→close 不退
+
+
+def test_ledger_interrupt_keeps_attempted_items_charged():
+    """review P1：API 成功後、settle 前中斷 → 該份不退；只退從未嘗試的。"""
+    mb = _LedgerMB(); L = ReservationLedger(mb, reserved=6)
+    L.begin_item(); L.settle({'success': True})
+    L.begin_item(); L.settle({'success': True})
+    L.begin_item()                                    # 第 3 份：API 已受理但尚未 settle 就中斷
+    try:
+        raise KeyboardInterrupt
+    except KeyboardInterrupt:
+        L.close()
+    assert mb.releases == [3]                         # 只退 6-3=3 份從未嘗試的；第 3 份保留在帳上
+
+
+def test_ledger_normal_completion_with_real_ledger(tmp_path):
+    mb = MonthlyBudget(tmp_path / 'b.json', cost_per_report=0.3)
+    reserved, _, _ = mb.reserve(6, 100.0, 0.3, yes=False)
+    L = ReservationLedger(mb, reserved)
+    for r in ({'success': True},) * 4 + ({'success': False, 'error': 'rejected'}, {'success': False, 'error': 'unknown'}):
+        L.begin_item(); L.settle(r)
+    assert L.close()['uploaded'] == 5                 # 6 預留 − 1 明確拒絕 = 5（未知那份保留）

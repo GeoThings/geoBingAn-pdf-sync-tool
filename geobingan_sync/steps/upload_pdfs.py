@@ -489,6 +489,9 @@ def download_pdf(service, file_id: str, file_name: str, max_retries: int = 3) ->
 def upload_to_geobingan(pdf_content: bytes, file_name: str, project_code: str,
                         max_retries: int = 3) -> Optional[dict]:
     """
+    回傳：成功/可能已送達→dict；後端明確拒絕或未送出→False（確定無解析成本）；
+    未知例外→None（結果不明，預算採保守視為已消耗）。
+    
     上傳 PDF 到 geoBingAn API 進行分析（含重試機制）
 
     使用 construction-reports/upload/ 端點（與網頁上傳相同）
@@ -564,7 +567,7 @@ def upload_to_geobingan(pdf_content: bytes, file_name: str, project_code: str,
                     continue
                 else:
                     print(f"  ❌ 伺服器不可用 (503)，已重試 {max_retries} 次")
-                    return None
+                    return False   # 明確未受理，無成本
             elif response.status_code == 401:
                 # Token 過期，嘗試刷新並重試
                 print(f"  ⚠️  Token 已過期，嘗試刷新...")
@@ -589,13 +592,13 @@ def upload_to_geobingan(pdf_content: bytes, file_name: str, project_code: str,
                         return result
                     else:
                         print(f"  ❌ 重試失敗 ({retry_response.status_code})")
-                        return None
+                        return False   # 後端明確拒絕，無成本
                 else:
                     print(f"  ❌ Token 刷新失敗，無法繼續上傳")
-                    return None
+                    return False   # 未送出，無成本
             else:
                 print(f"  ❌ API 錯誤 ({response.status_code}): {response.text[:300]}")
-                return None
+                return False   # 後端明確拒絕（非 2xx），無成本
 
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
             # 連線超時或連線錯誤 - 重試
@@ -665,7 +668,9 @@ def process_single_pdf(service, pdf: Dict, state: dict, idx: int, total: int) ->
             if _pending_error_saves >= BATCH_SAVE_INTERVAL:
                 save_state(state)
                 _pending_error_saves = 0
-        return {'success': False, 'pdf': pdf, 'result': None, 'error': 'upload_failed'}
+        # 預算結算用分類：False=後端明確拒絕（可退預留）；None=結果不明（保守視為已消耗）
+        kind = 'rejected' if result is False else 'unknown'
+        return {'success': False, 'pdf': pdf, 'result': None, 'error': kind}
 
 
 def flush_state(state: dict):
@@ -835,7 +840,7 @@ def main(city: dict = None, catchup_days: int = None, yes: bool = False):
     print(f"  待上傳: {len(pdfs_to_upload)}" + (f"（上限 {MAX_UPLOADS}）" if MAX_UPLOADS > 0 else "（無上限）"))
 
     # 解析預算守門：單次門檻（對原始請求量）→ 鎖內原子預留 → 上傳 → finally 退還未用
-    from geobingan_sync.budget import gate_and_reserve, MonthlyBudget
+    from geobingan_sync.budget import gate_and_reserve, MonthlyBudget, ReservationLedger
     from geobingan_sync.config import COST_PER_REPORT_USD, MONTHLY_BUDGET_USD, BUDGET_CONFIRM_USD
     mb = MonthlyBudget(cost_per_report=COST_PER_REPORT_USD)
     month = mb.load()
@@ -878,10 +883,15 @@ def main(city: dict = None, catchup_days: int = None, yes: bool = False):
 
     success_count = 0
     error_count = 0
+    # 預留預設視為已消耗：只對「確定零成本」的失敗（下載失敗/後端明確拒絕）立即退 1 份；
+    # 結束（含中斷）只退還從未嘗試的份數。成功後才中斷、或結果不明，都保留在帳上（保守高估）。
+    ledger = ReservationLedger(mb, reserved)
 
     try:
         for idx, pdf in enumerate(pdfs_to_upload, 1):
+            ledger.begin_item()
             result = process_single_pdf(service, pdf, state, idx, len(pdfs_to_upload))
+            ledger.settle(result)
 
             if result['success']:
                 success_count += 1
@@ -893,12 +903,11 @@ def main(city: dict = None, catchup_days: int = None, yes: bool = False):
                 print(f"  ⏳ 等待 {DELAY_BETWEEN_UPLOADS} 秒（避免 API 速率限制）...", flush=True)
                 time.sleep(DELAY_BETWEEN_UPLOADS)
     finally:
-        # 退還「預留 − 實際成功」（含 Ctrl-C/例外；已成功的份數留在帳上）。kill -9 則保守多算，不會低估。
         try:
-            month = mb.release(reserved - success_count)
+            month = ledger.close()
             print(f"💰 本月累計 {month['uploaded']} 份 ≈ US${month['est_usd']:.2f} / 上限 US${MONTHLY_BUDGET_USD:.0f}")
         except Exception as e:
-            print(f"⚠️  月累計退還失敗（保守多算，不影響上傳）: {e}")
+            print(f"⚠️  月累計結算失敗（保守多算，不影響上傳）: {e}")
 
     # 寫入所有剩餘的狀態變更
     flush_state(state)

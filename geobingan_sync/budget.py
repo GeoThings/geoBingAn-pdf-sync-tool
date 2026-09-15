@@ -165,6 +165,40 @@ class MonthlyBudget:
             return self._write(data, now)
 
 
+class ReservationLedger:
+    """把預留當成「已消耗」，只對確定零成本的項目退還（review P1：成功後中斷不可退）。
+
+    - begin_item()：項目一進入處理即視為已嘗試（已消耗）。
+    - settle(result)：只有 error ∈ REFUNDABLE（下載失敗＝沒打 API；後端明確拒絕＝沒建報告）
+      才立即退 1 份；成功或結果不明（逾時/未知例外）都保留。
+    - close()：只退還「預留 − 已嘗試」＝從未嘗試的份數。任何在 settle 之前的中斷都不會
+      退還該項目（方向安全，最壞多算）。
+    """
+    REFUNDABLE = frozenset({'download_failed', 'rejected'})
+
+    def __init__(self, mb: 'MonthlyBudget', reserved: int):
+        self.mb = mb
+        self.reserved = max(0, int(reserved))
+        self.attempted = 0
+        self.refunded = 0
+
+    def begin_item(self) -> None:
+        self.attempted += 1
+
+    def settle(self, result: dict) -> bool:
+        if result.get('success'):
+            return False
+        if result.get('error') in self.REFUNDABLE:
+            self.mb.release(1)
+            self.refunded += 1
+            return True
+        return False
+
+    def close(self) -> dict:
+        unused = self.reserved - self.attempted
+        return self.mb.release(unused) if unused > 0 else self.mb.load()
+
+
 def gate_and_reserve(mb: 'MonthlyBudget', n_requested: int, monthly_budget: float,
                      cost_per_report: float, confirm_threshold: float, yes: bool):
     """單次門檻 → 原子預留，順序固定（review TOCTOU）。
