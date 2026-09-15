@@ -186,27 +186,32 @@ class MonthlyBudget:
 class ReservationLedger:
     """把預留當成「已消耗」，只對確定零成本的項目退還（review P1：成功後中斷不可退）。
 
-    - begin_item()：項目一進入處理即視為已嘗試（已消耗）；若已跨月回 False，批次須停止。
-    - settle(result)：只有 error ∈ REFUNDABLE（下載失敗＝沒打 API；後端明確拒絕＝沒建報告）
-      才立即退 1 份；成功或結果不明（逾時/未知例外）都保留。
+    - begin_item()：在 POST 前一刻呼叫，通過即視為已嘗試（已消耗）；若已跨月回 False，批次須停止。
+    - settle(result)：只有 error ∈ REFUNDABLE（後端明確拒絕＝沒建報告）才立即退 1 份；
+      下載失敗未進入已嘗試、由 close() 退還；成功或結果不明（逾時/未知例外）都保留。
     - close()：只退還「預留 − 已嘗試」＝從未嘗試的份數。任何在 settle 之前的中斷都不會
       退還該項目（方向安全，最壞多算）。
     """
-    REFUNDABLE = frozenset({'download_failed', 'rejected'})
+    # 只有「後端明確拒絕」需要即時退款：下載失敗的項目從未呼叫 begin_item（未計入已嘗試），
+    # close() 會把它當作未嘗試退還，若這裡再退會重複。
+    REFUNDABLE = frozenset({'rejected'})
 
-    def __init__(self, mb: 'MonthlyBudget', reserved: int, month: Optional[str] = None):
+    def __init__(self, mb: 'MonthlyBudget', reserved: int, month: Optional[str] = None,
+                 clock=None):
         self.mb = mb
         self.reserved = max(0, int(reserved))
         self.month = month                      # 預留所屬月份；退還只作用於同月帳本
+        self.clock = clock or datetime.now      # 可注入時鐘（測試模擬下載期間跨月）
         self.attempted = 0
         self.refunded = 0
 
     def begin_item(self, now: Optional[datetime] = None) -> bool:
-        """項目送出前呼叫。回 True 表示可送出並已計入已嘗試；回 False 表示已跨月，
-        本批次應停止（review P1：跨月後送出的成本應占用新月額度，不可再用舊月預留；
-        剩餘項目不在去重歷史裡，下次執行會在新月份重新預留）。"""
+        """在「下載完成、第一個 HTTP POST 之前」呼叫（作為 process_single_pdf 的 before_upload）。
+        回 True 表示可送出並已計入已嘗試；回 False 表示已跨月，本批次應停止
+        （review P1：跨月後送出的成本應占用新月額度，不可再用舊月預留；該項目不寫 error/歷史，
+        剩餘項目下次執行會在新月份重新預留）。"""
         if self.month is not None:
-            now = now or datetime.now()
+            now = now or self.clock()
             if now.strftime('%Y-%m') != self.month:
                 return False
         self.attempted += 1

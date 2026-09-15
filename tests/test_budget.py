@@ -127,11 +127,13 @@ class _LedgerMB:
 
 def test_ledger_refunds_only_definite_zero_cost_failures():
     mb = _LedgerMB(); L = ReservationLedger(mb, reserved=4)
-    for r in ({'success': True}, {'success': False, 'error': 'download_failed'},
-              {'success': False, 'error': 'rejected'}, {'success': False, 'error': 'unknown'}):
-        L.begin_item(); L.settle(r)
-    L.close()
-    assert mb.releases == [1, 1]                      # 成功/未知不退；下載失敗、明確拒絕各退 1；全數已嘗試→close 不退
+    # 協定：begin_item 在 POST 前呼叫；下載失敗的項目不會呼叫 begin_item
+    L.begin_item(); L.settle({'success': True})
+    L.settle({'success': False, 'error': 'download_failed'})          # 未 begin → 不即時退，留給 close
+    L.begin_item(); L.settle({'success': False, 'error': 'rejected'}) # 明確拒絕 → 即時退 1
+    L.begin_item(); L.settle({'success': False, 'error': 'unknown'})  # 結果不明 → 保留
+    L.close()                                                          # 4 預留 − 3 已嘗試 = 退 1（下載失敗那份）
+    assert mb.releases == [1, 1]
 
 
 def test_ledger_interrupt_keeps_attempted_items_charged():
@@ -204,3 +206,47 @@ def test_begin_item_refuses_after_month_rollover_and_new_month_ledger_counts_lat
 def test_begin_item_without_month_is_legacy_always_true():
     L = ReservationLedger(_LedgerMB(), reserved=3)
     assert L.begin_item(now=datetime(2030, 1, 1)) is True and L.attempted == 1
+
+
+def test_month_guard_right_before_post_blocks_after_slow_download(tmp_path, monkeypatch):
+    """review P1：下載開始於 9 月、完成時已 10 月 → upload_to_geobingan 不得被呼叫、attempted 不增、
+    不寫 error/歷史；下次能在 10 月重新預留。"""
+    import geobingan_sync.steps.upload_pdfs as up
+    mb = MonthlyBudget(tmp_path / 'b.json', cost_per_report=0.3)
+    sep = datetime(2026, 9, 30, 23, 59, 59); oct1 = datetime(2026, 10, 1, 0, 3)
+    reserved, _, data = mb.reserve(15, 100.0, 0.3, yes=False, now=sep)
+    clock = {'now': sep}
+    L = ReservationLedger(mb, reserved, month=data['month'], clock=lambda: clock['now'])
+    posted = []
+    def slow_download(service, fid, name):
+        clock['now'] = oct1                         # 下載期間跨月
+        return b'%PDF'
+    monkeypatch.setattr(up, 'download_pdf', slow_download)
+    monkeypatch.setattr(up, 'upload_to_geobingan', lambda c, n, f: posted.append(n) or {'id': 'x'})
+    monkeypatch.setattr(up, 'save_state', lambda state: None)
+    monkeypatch.setattr(up, 'add_to_history', lambda uid: None)
+    state = {'uploaded_files': [], 'errors': []}
+    r = up.process_single_pdf(None, {'id': 'f', 'name': 'a.pdf', 'folder_name': 'X'}, state, 1, 1,
+                              before_upload=L.begin_item)
+    assert r['error'] == 'month_rolled_over' and posted == [] and L.attempted == 0
+    assert state['uploaded_files'] == [] and state['errors'] == []
+    L.close()                                       # 9 月未嘗試 15 份：檔案仍 9 月 → 退 9 月，不動 10 月
+    assert mb._read_raw()['month'] == '2026-09' and mb._read_raw()['uploaded'] == 0
+    reserved2, _, data2 = mb.reserve(15, 100.0, 0.3, yes=False, now=oct1)
+    assert data2['month'] == '2026-10' and reserved2 == 15
+
+
+def test_month_guard_same_month_allows_post(tmp_path, monkeypatch):
+    import geobingan_sync.steps.upload_pdfs as up
+    mb = MonthlyBudget(tmp_path / 'b.json', cost_per_report=0.3)
+    sep = datetime(2026, 9, 30, 23, 0)
+    reserved, _, data = mb.reserve(2, 100.0, 0.3, yes=False, now=sep)
+    L = ReservationLedger(mb, reserved, month=data['month'], clock=lambda: sep)
+    posted = []
+    monkeypatch.setattr(up, 'download_pdf', lambda s, f, n: b'%PDF')
+    monkeypatch.setattr(up, 'upload_to_geobingan', lambda c, n, f: posted.append(n) or {'id': 'x'})
+    monkeypatch.setattr(up, 'save_state', lambda state: None)
+    monkeypatch.setattr(up, 'add_to_history', lambda uid: None)
+    r = up.process_single_pdf(None, {'id': 'f', 'name': 'a.pdf', 'folder_name': 'X'}, {'uploaded_files': [], 'errors': []}, 1, 1,
+                              before_upload=L.begin_item)
+    assert r['success'] and posted == ['a.pdf'] and L.attempted == 1
