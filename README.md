@@ -426,7 +426,7 @@ geoBingAn-pdf-sync-tool/
 ├── state/                       # 狀態追蹤（registry / 上傳歷史 / pdf_inventory…）
 ├── logs/                        # 執行日誌
 ├── docs/                        # 技術文檔 + 線上追蹤報告
-└── tests/                       # 自動化測試（280 tests）
+└── tests/                       # 自動化測試（292 tests）
 ```
 
 ---

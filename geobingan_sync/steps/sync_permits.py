@@ -306,23 +306,28 @@ class PermitSync:
         過期清單）、清單是否長期沒更新。變更本身是好消息、不是問題，所以走
         資訊性通知（不 @、不進 alert_state 去重），且只在內容真的改變時發一次。
         """
-        try:
-            from geobingan_sync.list_fingerprint import ListFingerprint
-            fp = ListFingerprint()
-            changed, summary, state = fp.update(
-                self.list_label, self.list_source, self.permit_mapping.keys())
-            print(f"🧾 清單指紋: {state['label']}（{state['source']}，{state['permit_count']} 筆建照）")
-            if changed and summary:
-                print(f"🆕 {summary}")
-            # 送達才清 pending：ClickUp 失敗時保留、下一輪同步重試，通知不會遺失
-            pending = state.get('pending_notices') or []
-            if pending:
+        from geobingan_sync.list_fingerprint import ListFingerprint
+        fp = ListFingerprint()
+        # 指紋是 fail-closed 的核心狀態，**寫入失敗不可吞掉繼續**：若本輪其實已退回
+        # 靜態舊清單、指紋卻沒寫成功，health_check 會讀到上一輪的 source=動態、
+        # 看不出這次的 fallback——正是 B1 要消除的 silent fallback。例外往上傳，
+        # 讓同步步驟失敗（shell 會記 error 並告警），不要拿可能過期的清單繼續掃描。
+        changed, summary, state = fp.update(
+            self.list_label, self.list_source, self.permit_mapping.keys())
+        print(f"🧾 清單指紋: {state['label']}（{state['source']}，{state['permit_count']} 筆建照）")
+        if changed and summary:
+            print(f"🆕 {summary}")
+
+        # 相對地，變更通知是 best-effort：送達才清 pending，失敗保留、下輪重試
+        pending = state.get('pending_notices') or []
+        if pending:
+            try:
                 if self._send_list_change_notice(pending):
                     fp.clear_pending()
                 else:
                     print(f"  （清單更新通知未送達，保留 {len(pending)} 則待下輪重試）")
-        except Exception as e:
-            print(f"⚠️  清單指紋記錄失敗（不影響同步）: {e}")
+            except Exception as e:
+                print(f"  （清單更新通知處理失敗，保留待下輪重試）: {e}")
 
     @staticmethod
     def _send_list_change_notice(notices) -> bool:

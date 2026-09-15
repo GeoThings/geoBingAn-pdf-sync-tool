@@ -221,7 +221,10 @@ cities.json（多城市配置）
     │       解析後寫 list_fingerprint.json（PR #82）：記錄來源（動態／靜態）、檔名、
     │       建照數與內容 hash；內容變更發資訊性通知，退回靜態或 >60 天未變由
     │       health_check 告警——否則 #78 的 fallback 會靜默退化回原本的 bug
-    │       不變量：指紋照常更新（health_check 才不會讀到過期的來源資訊），但變更
+    │       不變量 1：指紋寫入 **fail-closed**——寫不進去就讓同步步驟失敗，不可
+    │       吞例外繼續；否則本輪明明退回靜態、health_check 卻仍讀到上輪的
+    │       source=動態，silent fallback 原封不動回來
+    │       不變量 2：指紋照常更新（health_check 才不會讀到過期的來源資訊），但變更
     │       通知存成 pending_notices，**ClickUp 送達才清除**、否則下輪重試——
     │       若先把指紋存成新 hash 再送，下一輪 changed=False，通知永久遺失
     └── CSV: 載入本地 CSV（NGO 手動整理）
@@ -368,7 +371,7 @@ API project 匹配：116 筆（滑動視窗 + 去重）
 | `alert_state_healthcheck.json` / `alert_state_sync.json` | 告警去重狀態（各 producer 一個 namespace；key → level/first_seen/last_sent） | 通知真的送達時 | 否 |
 | `upload_budget.json` + `.lock` | 本月解析預算帳本（month/uploaded/est_usd；flock；跨月歸零） | 預留／退還時 | 否（換機用 `budget --set N` 初始化） |
 | `list_fingerprint.json` | 政府清單指紋（source／label／permit_count／sha256／last_changed） | 每次 sync 解析清單後 | 否 |
-| `folder_deaths.json` | 來源資料夾由活轉死的紀錄（append-only，附 detected 日期與 pdf_count）。**fail-closed**：先原子寫入此檔成功才提交 registry——順序相反時，中斷會讓 registry 已存 404、下輪 prior 非 alive，該次死亡永遠偵測不到；讀到損毀 JSON 一律 raise，不靜默重置以免丟失歷史 | 偵測到新失效時 | 否 |
+| `folder_deaths.json` | 來源資料夾由活轉死的紀錄（append-only，附 detected 日期與 pdf_count）。**fail-closed**：先原子寫入此檔成功才提交 registry——順序相反時，中斷會讓 registry 已存 404、下輪 prior 非 alive，該次死亡永遠偵測不到；讀到損毀 JSON 一律 raise，不靜默重置以免丟失歷史。事件以 `(permit, source_url, detected)` 去重——death 已寫、registry 提交失敗時重跑會再次偵測到同一次死亡，沒去重會累積重複事件、讓 health_check 誇大失效數 | 偵測到新失效時 | 否 |
 
 ### Weekly snapshots：local-only state（PR #45）
 
@@ -576,8 +579,8 @@ config.py (from .env)  →  環境變數  →  硬編碼預設值
 | `test_resolve_list_pdf_url.py`／`test_download_pdf_list_fallback.py` | 清單動態解析與候選 fallback（PR #78） | 7 | monkeypatch |
 | `test_alert_state.py`／`test_notify_mention.py`／`test_health_check_dedup.py` | 告警去重/升級、送達才落狀態、namespace 分離、mention payload（PR #79） | 23 | tmp_path |
 | `test_budget.py`／`test_check_parse_backlog.py`／`test_process_single_pdf_classification.py`／`test_upload_response_classification.py` | 預算守門（預留/退還/跨月/POST 前守門/8 子程序併發）、解析積壓與預算檢查、回應分類（PR #80） | 40+ | tmp_path, subprocess |
-| `test_list_fingerprint.py`／`test_folder_deaths.py` | 清單指紋（變更／靜態退回／停更）、來源資料夾由活轉死（PR #82） | 15 | tmp_path |
-| **合計** | | **280** | |
+| `test_list_fingerprint.py`／`test_folder_deaths.py` | 清單指紋（變更／靜態退回／停更／寫入 fail-closed／通知 pending 重試）、來源資料夾由活轉死（fail-closed 排序／事件去重／損毀不重置）（PR #82） | 27 | tmp_path |
+| **合計** | | **292** | |
 
 設計原則：
 - 所有測試 import 零依賴模組（`permit_utils`、`drive_utils`），不觸發 credentials 或 Google API（lazy init）

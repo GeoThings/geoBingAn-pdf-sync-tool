@@ -717,11 +717,22 @@ def _atomic_write_json(path: str, data, label: str):
     os.replace(tmp, path)
 
 
-def append_folder_deaths(deaths: list, deaths_file: str = None, now=None) -> dict:
+def _death_key(d: dict) -> tuple:
+    """事件去重鍵：同一建案、同一來源連結、同一天視為同一次失效。"""
+    return (d.get('permit'), d.get('source_url', ''), d.get('detected'))
+
+
+def append_folder_deaths(deaths: list, deaths_file: str = None, now=None) -> list:
     """把新失效附加到 folder_deaths.json（原子寫入）。失敗一律 raise，不吞例外。
+
+    以 (permit, source_url, detected) 去重（review P2）：death 已寫入但 registry
+    提交失敗時，下一輪 prior 仍是 alive、會再次偵測到同一次死亡；沒有去重就會
+    累積重複事件、讓 health_check 誇大失效數與受影響 PDF 數。
 
     讀到損毀 JSON 時 raise 而非重置成空陣列——靜默重置會把歷史失效紀錄整份丟掉，
     正是這個功能要防的「無聲流失」。
+
+    Returns: 實際新增（未被去重掉）的事件清單。
     """
     from datetime import datetime as _dt
     path = deaths_file or FOLDER_DEATHS_FILE
@@ -735,12 +746,22 @@ def append_folder_deaths(deaths: list, deaths_file: str = None, now=None) -> dic
         log = {'deaths': []}
     except json.JSONDecodeError as e:
         raise ValueError(f'folder_deaths.json 損毀（拒絕覆寫以免丟失歷史紀錄）: {e}')
+
     today = now.strftime('%Y-%m-%d')
-    for d in deaths:
+    existing = {_death_key(d) for d in (log.get('deaths') or [])}
+    appended = []
+    for raw in deaths:
+        d = dict(raw)
         d['detected'] = today
-    log['deaths'] = (log.get('deaths') or []) + deaths
-    _atomic_write_json(path, log, 'folder_deaths')
-    return log
+        key = _death_key(d)
+        if key in existing:
+            continue
+        existing.add(key)
+        appended.append(d)
+    if appended:
+        log['deaths'] = (log.get('deaths') or []) + appended
+        _atomic_write_json(path, log, 'folder_deaths')
+    return appended
 
 
 def commit_registry_with_deaths(registry: dict, prior_statuses: dict,
@@ -751,19 +772,25 @@ def commit_registry_with_deaths(registry: dict, prior_statuses: dict,
     順序很關鍵（review P1）：若先寫 registry、後記 death，中間中斷或記錄失敗時
     registry 已把該建案存成 404，下一輪讀到的 prior 就是 404，而 detect 只認
     alive→404——這次死亡將**永遠**偵測不到，正好破壞本功能要防的無聲流失。
-    因此 death 寫入失敗就不提交 registry：下一輪 prior 仍是 alive，可重新偵測
-    （registry 本身是每日重建、冪等，重跑不會有副作用）。
+    因此 death 寫入失敗就不提交 registry：下一輪 prior 仍是 alive，可重新偵測。
+    反向的情況（death 寫入成功、registry 提交失敗）由 append_folder_deaths 的
+    事件去重吸收，重跑不會累積重複事件。
+
+    Returns: 本輪實際新增的失效事件（重跑時為空）。
     """
     reg_path = registry_file or REGISTRY_FILE
     deaths = detect_folder_deaths(prior_statuses, registry)
+    appended = []
     if deaths:
-        append_folder_deaths(deaths, deaths_file=deaths_file, now=now)   # 失敗 raise → 不寫 registry
-        total_pdfs = sum(d.get('pdf_count', 0) for d in deaths)
-        print(f"\n🔴 來源資料夾新失效 {len(deaths)} 個（影響約 {total_pdfs} 份 PDF）：")
-        for d in deaths[:5]:
-            print(f"    {d['permit']} {d.get('name', '')}（{d.get('pdf_count', 0)} 份）")
+        # 失敗 raise → 不寫 registry；重跑時同一事件會被去重，不重複累積
+        appended = append_folder_deaths(deaths, deaths_file=deaths_file, now=now)
+        if appended:
+            total_pdfs = sum(d.get('pdf_count', 0) for d in appended)
+            print(f"\n🔴 來源資料夾新失效 {len(appended)} 個（影響約 {total_pdfs} 份 PDF）：")
+            for d in appended[:5]:
+                print(f"    {d['permit']} {d.get('name', '')}（{d.get('pdf_count', 0)} 份）")
     _atomic_write_json(reg_path, registry, 'registry')
-    return deaths
+    return appended
 
 
 def _write_url_404_csv(registry: dict):

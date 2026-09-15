@@ -133,3 +133,48 @@ def test_sync_clears_pending_only_when_delivered(tmp_path, monkeypatch):
     monkeypatch.setattr(sp.PermitSync, '_send_list_change_notice', staticmethod(lambda n: True))
     ps._record_list_fingerprint()
     assert fp.load()['pending_notices'] == [], '送達後應清除'
+
+
+# ---------- review P1：指紋寫入失敗必須 fail-closed ----------
+
+def test_fingerprint_write_failure_aborts_sync(tmp_path, monkeypatch):
+    """退回靜態時若指紋寫不進去，不可吞掉繼續——否則 health_check 仍讀到舊的『動態』。"""
+    import geobingan_sync.steps.sync_permits as sp
+    import geobingan_sync.list_fingerprint as lf
+
+    path = tmp_path / 'f.json'
+    ListFingerprint(path).update('v1.pdf', '動態', ['a'], now=T0)     # 上輪：動態
+
+    fp = ListFingerprint(path)
+    monkeypatch.setattr(fp, 'save', lambda data: (_ for _ in ()).throw(OSError('disk full')))
+    monkeypatch.setattr(lf, 'ListFingerprint', lambda *a, **k: fp)
+
+    ps = sp.PermitSync.__new__(sp.PermitSync)
+    ps.list_label, ps.list_source = 'legacy.pdf', '靜態'              # 本輪退回靜態
+    ps.permit_mapping = {'a': '', 'b': ''}
+    try:
+        ps._record_list_fingerprint()
+        assert False, '應該要 raise，讓同步步驟失敗'
+    except OSError:
+        pass
+    # 狀態未被更新（仍是上輪的動態），但因為同步已中止，不會拿可能過期的清單繼續
+    assert ListFingerprint(path).load()['source'] == '動態'
+
+
+def test_notice_failure_does_not_abort_sync(tmp_path, monkeypatch):
+    """相對地：通知失敗只保留 pending，不能讓同步失敗。"""
+    import geobingan_sync.steps.sync_permits as sp
+    import geobingan_sync.list_fingerprint as lf
+
+    path = tmp_path / 'f.json'
+    fp = ListFingerprint(path)
+    fp.update('v1.pdf', '動態', ['a'], now=T0)
+    monkeypatch.setattr(lf, 'ListFingerprint', lambda *a, **k: fp)
+    monkeypatch.setattr(sp.PermitSync, '_send_list_change_notice',
+                        staticmethod(lambda n: (_ for _ in ()).throw(RuntimeError('clickup down'))))
+    ps = sp.PermitSync.__new__(sp.PermitSync)
+    ps.list_label, ps.list_source = 'v2.pdf', '動態'
+    ps.permit_mapping = {'a': '', 'b': ''}
+    ps._record_list_fingerprint()                       # 不應拋出
+    assert fp.load()['pending_notices'], '通知未送達應保留待重試'
+    assert fp.load()['label'] == 'v2.pdf'               # 指紋本身照常更新
