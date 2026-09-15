@@ -749,8 +749,10 @@ def select_pdfs_to_upload(all_pdfs: List[Dict], uploaded_files, *, cutoff: datet
     return picked, counts
 
 
-def main(city: dict = None, catchup_days: int = None):
+def main(city: dict = None, catchup_days: int = None, yes: bool = False):
     """主程式
+
+    yes: 估算解析成本超過 BUDGET_CONFIRM_USD 時的明確確認（防人為大批次打爆後端預算）。
 
     catchup_days: 覆蓋預設 30 天檔名日期 cutoff（暫停後補掃用）。上傳去重靠
     git-tracked history（idempotent），放大掃描窗不會重複上傳，只會補回暫停
@@ -832,6 +834,17 @@ def main(city: dict = None, catchup_days: int = None):
         print(f"  檔名無法解析日期（待 parser 強化）: {counts['no_date']}")
     print(f"  待上傳: {len(pdfs_to_upload)}" + (f"（上限 {MAX_UPLOADS}）" if MAX_UPLOADS > 0 else "（無上限）"))
 
+    # 解析預算守門：印估算、本月累計；單次超過門檻需 --yes（夜間配合 MAX_UPLOADS 不會觸發）
+    from geobingan_sync.budget import budget_gate, MonthlyBudget
+    from geobingan_sync.config import COST_PER_REPORT_USD, MONTHLY_BUDGET_USD, BUDGET_CONFIRM_USD
+    ok, gate_msg = budget_gate(len(pdfs_to_upload), COST_PER_REPORT_USD, BUDGET_CONFIRM_USD, yes)
+    month = MonthlyBudget(cost_per_report=COST_PER_REPORT_USD).load()
+    print(f"  💰 {gate_msg}")
+    print(f"  💰 本月({month['month']})已傳 {month['uploaded']} 份 ≈ US${month['est_usd']:.2f} / 上限 US${MONTHLY_BUDGET_USD:.0f}")
+    if pdfs_to_upload and not ok:
+        print(f"\n🛑 已擋下：{gate_msg}")
+        sys.exit(3)
+
     if not pdfs_to_upload:
         print(f"\n⚠️  所有 PDF 都已上傳過了！")
         print("\n如要重新上傳，請刪除狀態檔案:")
@@ -876,6 +889,13 @@ def main(city: dict = None, catchup_days: int = None):
     # 寫入所有剩餘的狀態變更
     flush_state(state)
 
+    # 記錄本月累計（health_check 每日依 MONTHLY_BUDGET_USD 檢查並告警）
+    try:
+        mb = MonthlyBudget(cost_per_report=COST_PER_REPORT_USD).add(success_count)
+        print(f"💰 本月累計 {mb['uploaded']} 份 ≈ US${mb['est_usd']:.2f} / 上限 US${MONTHLY_BUDGET_USD:.0f}")
+    except Exception as e:
+        print(f"⚠️  月累計寫入失敗（不影響上傳）: {e}")
+
     # 最終統計
     print("\n" + "=" * 60)
     print("📊 上傳完成統計")
@@ -902,12 +922,14 @@ if __name__ == '__main__':
     parser.add_argument('--catchup-days', type=int, default=None,
                         help='暫停後補掃：用 N 天檔名日期窗取代預設 30 天'
                              '（history 去重、不會重傳；恢復 .pause_upload 後用一次）')
+    parser.add_argument('--yes', action='store_true',
+                        help='估算解析成本超過 BUDGET_CONFIRM_USD 時仍執行（請先與後端確認預算餘裕）')
     args = parser.parse_args()
 
     cities = get_cities_for_cli(args.city)
     try:
         for city in cities:
-            main(city=city, catchup_days=args.catchup_days)
+            main(city=city, catchup_days=args.catchup_days, yes=args.yes)
     except KeyboardInterrupt:
         print("\n\n👋 使用者中斷執行")
         sys.exit(0)
