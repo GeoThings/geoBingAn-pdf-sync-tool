@@ -34,7 +34,14 @@ def test_new_incident_on_top_of_ancient_backlog_is_error(monkeypatch):
 
 
 class _Resp:
-    def __init__(self, payload): self._p = payload
+    def __init__(self, payload, status=200):
+        self._p = payload
+        self.status_code = status
+
+    def raise_for_status(self):
+        if self.status_code >= 400:
+            raise RuntimeError(f'HTTP {self.status_code}')
+
     def json(self): return self._p
 
 
@@ -89,3 +96,27 @@ def test_check_budget_levels(monkeypatch, tmp_path):
     b.MonthlyBudget().add(310, now=datetime.now())          # 310×0.3 = 93 → 93%
     level, msg = health_check.check_budget()
     assert level == 'error' and '93%' in msg
+
+
+def _patch_static(monkeypatch, resp):
+    monkeypatch.setattr(health_check, '_api_token', lambda: 'tok')
+    import requests
+    monkeypatch.setattr(requests, 'get', lambda url, headers=None, timeout=None: resp)
+
+
+def test_http_401_json_is_warning_not_false_green(monkeypatch):
+    """review P2：401 的 JSON 不可被當成佇列正常。"""
+    _patch_static(monkeypatch, _Resp({'detail': 'Authentication credentials were not provided.'}, status=401))
+    level, msg = health_check.check_parse_backlog(now=NOW)
+    assert level == 'warning' and 'HTTP 401' in msg
+
+
+def test_http_500_is_warning(monkeypatch):
+    _patch_static(monkeypatch, _Resp({'error': 'boom'}, status=500))
+    assert health_check.check_parse_backlog(now=NOW)[0] == 'warning'
+
+
+def test_http_200_malformed_payload_is_warning(monkeypatch):
+    _patch_static(monkeypatch, _Resp({'detail': 'weird'}, status=200))
+    level, msg = health_check.check_parse_backlog(now=NOW)
+    assert level == 'warning' and '格式異常' in msg

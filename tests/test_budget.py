@@ -4,7 +4,7 @@ import sys
 from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from geobingan_sync.budget import estimate_cost, budget_gate, budget_level, MonthlyBudget
+from geobingan_sync.budget import estimate_cost, budget_gate, budget_level, monthly_gate, MonthlyBudget
 
 
 def test_estimate_and_gate():
@@ -33,3 +33,23 @@ def test_monthly_budget_accumulates_and_rolls_over(tmp_path):
     d = mb.load(now=datetime(2026, 10, 1, 10, 0))          # 跨月歸零
     assert d['uploaded'] == 0 and d['month'] == '2026-10'
     assert mb.add(3, now=datetime(2026, 10, 1, 10, 0))['uploaded'] == 3
+
+
+def test_monthly_gate_trims_nightly_to_remaining_budget():
+    """review P1：本月 US$98、本次 15 份（US$4.5）→ 投影 102.5 > 100，自動裁切為 6 份。"""
+    allowed, msg = monthly_gate(15, 98.0, 100.0, 0.3, yes=False)
+    assert allowed == 6 and '自動裁切' in msg
+
+
+def test_monthly_gate_blocks_when_budget_exhausted():
+    allowed, msg = monthly_gate(15, 100.0, 100.0, 0.3, yes=False)
+    assert allowed == 0 and '已擋下' in msg
+    allowed, _ = monthly_gate(15, 99.9, 100.0, 0.3, yes=False)     # 剩 0.1，不足 1 份
+    assert allowed == 0
+
+
+def test_monthly_gate_passes_within_budget_and_yes_overrides():
+    assert monthly_gate(15, 50.0, 100.0, 0.3, yes=False)[0] == 15
+    allowed, msg = monthly_gate(15, 98.0, 100.0, 0.3, yes=True)
+    assert allowed == 15 and '--yes' in msg
+    assert monthly_gate(15, 500.0, 0, 0.3, yes=False)[0] == 15          # 未設上限

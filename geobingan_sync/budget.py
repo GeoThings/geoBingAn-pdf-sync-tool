@@ -33,6 +33,34 @@ def budget_gate(n_reports: int, cost_per_report: float, confirm_threshold: float
     return True, f'估算解析成本 ≈ US${est:.2f}（{n_reports} 份 × US${cost_per_report}）'
 
 
+def monthly_gate(n_reports: int, month_est_usd: float, monthly_budget: float,
+                 cost_per_report: float, yes: bool) -> Tuple[int, str]:
+    """月上限放行條件（review P1）：投影成本＝本月已用＋本次估算。
+
+    回傳 (允許份數, 訊息)：
+    - 投影 ≤ 月上限：全數放行。
+    - 超過且 yes=False（夜間/一般）：裁切到剩餘預算可容納的份數（0 則擋下）。
+    - 超過且 yes=True（人工明確覆寫）：全數放行但標警告。
+    monthly_budget ≤ 0 視為未設上限。
+    """
+    n = max(0, n_reports)
+    if monthly_budget <= 0 or n == 0:
+        return n, ''
+    projected = round(month_est_usd + estimate_cost(n, cost_per_report), 2)
+    if projected <= monthly_budget:
+        return n, f'投影本月成本 US${projected:.2f} ≤ 上限 US${monthly_budget:.0f}'
+    remaining = max(0.0, monthly_budget - month_est_usd)
+    allowed = int(remaining // cost_per_report) if cost_per_report > 0 else 0
+    if yes:
+        return n, (f'⚠️ 投影本月成本 US${projected:.2f} 超過上限 US${monthly_budget:.0f}，'
+                   f'已以 --yes 明確覆寫、全數 {n} 份執行')
+    if allowed <= 0:
+        return 0, (f'本月已用 US${month_est_usd:.2f}、上限 US${monthly_budget:.0f}，剩餘預算不足 1 份；'
+                   f'已擋下（請與後端確認預算後加 --yes，或等下月）')
+    return allowed, (f'投影本月成本 US${projected:.2f} 超過上限 US${monthly_budget:.0f}，'
+                     f'自動裁切為剩餘預算可容納的 {allowed} 份（原 {n} 份；加 --yes 可覆寫）')
+
+
 def budget_level(est_usd: float, monthly_budget: float) -> Tuple[str, float]:
     """依已用比例回 ('ok'|'warning'|'error', ratio)。"""
     if monthly_budget <= 0:

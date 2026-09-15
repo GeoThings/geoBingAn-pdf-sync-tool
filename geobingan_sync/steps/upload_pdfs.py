@@ -835,12 +835,24 @@ def main(city: dict = None, catchup_days: int = None, yes: bool = False):
     print(f"  待上傳: {len(pdfs_to_upload)}" + (f"（上限 {MAX_UPLOADS}）" if MAX_UPLOADS > 0 else "（無上限）"))
 
     # 解析預算守門：印估算、本月累計；單次超過門檻需 --yes（夜間配合 MAX_UPLOADS 不會觸發）
-    from geobingan_sync.budget import budget_gate, MonthlyBudget
+    from geobingan_sync.budget import budget_gate, monthly_gate, MonthlyBudget
     from geobingan_sync.config import COST_PER_REPORT_USD, MONTHLY_BUDGET_USD, BUDGET_CONFIRM_USD
-    ok, gate_msg = budget_gate(len(pdfs_to_upload), COST_PER_REPORT_USD, BUDGET_CONFIRM_USD, yes)
     month = MonthlyBudget(cost_per_report=COST_PER_REPORT_USD).load()
-    print(f"  💰 {gate_msg}")
     print(f"  💰 本月({month['month']})已傳 {month['uploaded']} 份 ≈ US${month['est_usd']:.2f} / 上限 US${MONTHLY_BUDGET_USD:.0f}")
+    # 月上限（review P1）：投影＝本月已用＋本次；超過則自動裁切到剩餘預算可容納的份數，--yes 才可覆寫
+    allowed, month_msg = monthly_gate(len(pdfs_to_upload), float(month.get('est_usd', 0)),
+                                      MONTHLY_BUDGET_USD, COST_PER_REPORT_USD, yes)
+    if month_msg:
+        print(f"  💰 {month_msg}")
+    if pdfs_to_upload and allowed <= 0:
+        print(f"\n🛑 已擋下：{month_msg}")
+        sys.exit(3)
+    if allowed < len(pdfs_to_upload):
+        pdfs_to_upload = pdfs_to_upload[:allowed]   # 已依 Drive 修改時間降序，裁切保留最新
+        print(f"  待上傳（裁切後）: {len(pdfs_to_upload)}")
+    # 單次門檻：擋人為大批次
+    ok, gate_msg = budget_gate(len(pdfs_to_upload), COST_PER_REPORT_USD, BUDGET_CONFIRM_USD, yes)
+    print(f"  💰 {gate_msg}")
     if pdfs_to_upload and not ok:
         print(f"\n🛑 已擋下：{gate_msg}")
         sys.exit(3)

@@ -186,8 +186,12 @@ def check_parse_backlog(now=None):
         for status in ('pending', 'processing'):
             url = f'{base}/api/reports/construction-reports/?parse_status={status}&page_size=200'
             for i in range(MAX_PAGES):
-                d = requests.get(url, headers=h, timeout=20).json()
-                pages.append(d.get('results', []))
+                resp = requests.get(url, headers=h, timeout=20)
+                resp.raise_for_status()                      # 401/500 不可變成假綠燈（review P2）
+                d = resp.json()
+                if not isinstance(d, dict) or not isinstance(d.get('results'), list):
+                    raise ValueError(f'backlog 回應格式異常: {str(d)[:120]}')
+                pages.append(d['results'])
                 url = d.get('next')
                 if not url:
                     break
