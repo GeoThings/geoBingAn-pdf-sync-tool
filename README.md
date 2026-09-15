@@ -34,8 +34,11 @@
 - ✅ 支援每日 cron job 自動執行
 - ✅ 線上追蹤報告自動更新
 - ✅ 環境變數管理（.env 檔案，向後相容 fallback）
-- ✅ 通知功能（LINE Notify / macOS）
-- ✅ 自動化測試（pytest, 63 cases, GitHub Actions CI）
+- ✅ 建管處清單動態抓取（從發布頁解析當前 PDF 連結，失效自動退回靜態網址；PR #78）
+- ✅ 告警確實送達：ClickUp 留言＋error 級 @ 人、去重/升級/每 7 天提醒/恢復通知（PR #79）
+- ✅ 解析預算守門：每日上限、單次門檻需 --yes、月上限先預留後退還（PR #80）
+- ✅ 健康檢查 8 項：Token／磁碟／同步狀態／API／launchd／上傳暫停／解析積壓／解析預算
+- ✅ 自動化測試（pytest, 265 cases, GitHub Actions CI）
 - ✅ 多城市支援（cities.json 配置，PDF 或 CSV 資料來源）
 - ✅ Refresh Token 自動輪替（API 回傳新 token 時自動寫回 .env）
 
@@ -113,9 +116,16 @@ GEOBINGAN_REFRESH_URL=https://riskmap.today/api/auth/auth/refresh_token/
 # ClickUp 週報上傳
 CLICKUP_TOKEN=your-clickup-token      # 從 ClickUp Settings > Apps 取得
 
-# 通知設定（可選）
-LINE_NOTIFY_TOKEN=your-line-token     # 從 https://notify-bot.line.me/ 取得
-ENABLE_MACOS_NOTIFY=true              # 啟用 macOS 系統通知
+# 告警（ClickUp 為主通道；LINE Notify 已停服、macOS 通知在 launchd 下常送不到）
+HEALTHCHECK_CLICKUP_TASK_ID=xxxxxxxx  # 告警留言要貼的 task
+ALERT_MENTION_USER_ID=48123565        # error 級告警要 @ 的 ClickUp user id（被 @ 才會推播）
+ENABLE_MACOS_NOTIFY=true              # 輔助通道
+
+# 上傳節流與解析預算守門（後端解析受 OpenAI 專案花費上限硬性節制）
+MAX_UPLOADS=15                        # 夜間每日上限（穩態約 6 份/日；0=不限，有打爆後端預算風險）
+COST_PER_REPORT_USD=0.3               # 單筆解析估算成本
+MONTHLY_BUDGET_USD=100                # 與後端對齊的月上限
+BUDGET_CONFIRM_USD=15                 # 單次估算超過此值需 --yes
 ```
 
 ### 4. 執行
@@ -144,7 +154,7 @@ python3 health_check.py
 sudo pmset repeat wakepoweron MTWRFSU 07:55:00
 
 # 排程內容：
-# 每日 08:00 — 健康檢查（Token/磁碟/API）
+# 每日 08:00 — 健康檢查 8 項（Token/磁碟/同步/API/launchd/上傳暫停/解析積壓/解析預算）
 # 每日 10:00 — 完整同步（核心 PDF 同步 + 上傳 + 報告 + Git push）
 #              週一額外產 sync 週報 PDF 上傳 ClickUp
 # 週五 17:00 — 總結週報（summary 週報 PDF）
@@ -174,6 +184,7 @@ tail -f logs/weekly_sync_*.log
 
 **功能：**
 - 支援兩種資料來源：政府 PDF 列表（`source_type: pdf`）或 CSV 匯入（`source_type: csv`）
+- **清單動態抓取（PR #78）**：先從建管處發布頁（`list_page_url`）解析當前的清單 PDF 連結再下載；解析失敗、非 2xx 或內容非 PDF 時自動退回靜態 `pdf_list_url`。政府改版會換 relfile 路徑，寫死網址曾讓工具同步過期清單 8 個月（351 → 440 筆）
 - 解析建案代碼和 Google Drive 連結
 - 自動建立資料夾並複製 PDF 到共享雲端（5 thread 並行）
 - 斷點續傳、增量同步
@@ -183,7 +194,10 @@ tail -f logs/weekly_sync_*.log
 ```json
 {
   "cities": [
-    {"id": "taipei", "source_type": "pdf", "pdf_list_url": "https://...", ...},
+    {"id": "taipei", "source_type": "pdf",
+     "list_page_url": "https://cmo.gov.taipei/cp.aspx?n=DDC36EA7C18D67F2",
+     "pdf_list_url": "https://...",
+     ...},
     {"id": "newtaipei", "source_type": "csv", "csv_path": "./data/newtaipei.csv", ...}
   ]
 }
@@ -198,28 +212,45 @@ permit_no,source_url,name
 ---
 
 ### `geobingan_sync/steps/upload_pdfs.py`
-從 Google Drive 上傳最近 7 天的 PDF 到 geoBingAn Backend API
+依**檔名日期 30 天滾動窗**，從 Google Drive 上傳 PDF 到 geoBingAn Backend API
 
 **功能：**
 - 掃描 Google Drive 中的建案 PDF
-- 過濾最近 7 天更新的檔案
+- 依**檔名日期**（非 Drive 修改時間）過濾 30 天滾動窗；`--catchup-days N` 可放大窗口補掃
 - 呼叫 Backend API `/api/reports/construction-reports/upload/` 上傳 PDF
-- 自動建立 Report（由後端 Gemini 2.5 Pro 處理）
+- 自動建立 Report（後端 LLM 解析；provider-neutral，預設 gpt-5.5 + 備援鏈）
 - JWT Token 自動刷新（過期前 5 分鐘）
-- 智慧快取機制避免重複掃描
+- 每次完整翻頁掃描（舊的 24h 掃描快取已移除）；靠永久 history 去重，不會重傳
 - 避免重複上傳
 
-**設定：**
-```python
-DAYS_AGO = 7                    # 只上傳最近 7 天的 PDF
-MAX_UPLOADS = 5                 # 單次最多上傳 5 個
-DELAY_BETWEEN_UPLOADS = 2       # 上傳間隔 2 秒
-AUTO_CONFIRM = True             # 自動確認模式
+**設定（.env）：**
+```bash
+MAX_UPLOADS=15                  # 夜間每日上限（0=不限）
+DELAY_BETWEEN_UPLOADS=2         # 上傳間隔 2 秒
+COST_PER_REPORT_USD=0.3         # 單筆解析估算成本
+MONTHLY_BUDGET_USD=100          # 月上限（與後端 OpenAI 花費上限對齊）
+BUDGET_CONFIRM_USD=15           # 單次估算超過此值需 --yes
+```
+
+**解析預算守門（PR #80）**：後端解析成本受 OpenAI 專案花費上限硬性節制，一次大量上傳曾打爆當月上限、後續 116 份卡 pending 一整天沒人發現。上傳流程因此固定為四步：
+
+1. **單次門檻**：對「原始請求量」估算（份數 × 單價），超過 `BUDGET_CONFIRM_USD` 且未帶 `--yes` 即擋下（exit 3）。夜間配合 `MAX_UPLOADS` 永遠不會觸發，只擋人為大批次。
+2. **月上限原子預留**：在跨程序鎖內「讀餘額 → 算可放行份數 → 立刻計入」；投影超過月上限就裁切為剩餘可容納份數（保留最新），耗盡則擋下，`--yes` 可覆寫。
+3. **POST 前月份守門**：每份在下載完成、送出前確認月份仍等於預留月份；已跨月則停止本批次、該份不寫歷史，留待下次在新月份重新預留。
+4. **預留預設視為已消耗**：只有 4xx 明確拒絕立即退 1 份；5xx／逾時／未知例外保守計入；結束（含 Ctrl-C）只退還從未嘗試的份數，且只作用於預留當月。
+
+```bash
+python3 -m geobingan_sync.steps.upload_pdfs --catchup-days 14        # 補掃：放大檔名日期窗（history 去重不重傳）
+python3 -m geobingan_sync.steps.upload_pdfs --catchup-days 62 --yes  # 大批次：請先與後端確認預算餘裕
+python3 -m geobingan_sync.budget --show                              # 本月已傳份數／估算成本
+python3 -m geobingan_sync.budget --set 224                           # 換機或重建時初始化本月計數
 ```
 
 **狀態追蹤：**
 ```
-state/uploaded_to_geobingan_7days.json
+state/uploaded_to_geobingan_7days.json   # 近期上傳（本機）
+state/upload_history_all.json            # 永久上傳歷史（git 追蹤、去重）
+state/upload_budget.json + .lock         # 本月解析預算帳本（本機、flock）
 ```
 
 **API 呼叫：**
@@ -283,7 +314,7 @@ python3 -m geobingan_sync.steps.generate_permit_tracking_report
 
 **執行順序：**
 1. `sync_permits.py` - 同步最新 PDF 到 Google Drive
-2. `upload_pdfs.py` - 上傳最近 7 天的 PDF 到 Backend
+2. `upload_pdfs.py` - 上傳檔名日期 30 天窗內的 PDF 到 Backend（含解析預算守門）
 3. `match_permits.py` - 建案名稱交叉比對（6 來源）
 4. `generate_permit_tracking_report.py` - 生成追蹤報告
 5. Git push - 更新線上報告
@@ -291,8 +322,9 @@ python3 -m geobingan_sync.steps.generate_permit_tracking_report
 
 **自動化功能：**
 - 執行狀態追蹤（`state/sync_status.json`）
-- 失敗時發送通知（LINE Notify / macOS）
-- 完成時發送摘要通知
+- 失敗時發送告警：貼 ClickUp 並 @（連日失敗不重發、恢復時發恢復通知）；Token 過期同樣走 ClickUp
+- 完成時發送摘要通知（macOS，輔助）
+- 步驟 2 可用 `.pause_upload` 旗標暫停上傳（後端解析停擺或預算未確認時），其餘步驟照常
 - 週報 PDF 自動產生並上傳 ClickUp
 - 錯誤處理與自動清理
 
@@ -322,33 +354,31 @@ python3 -c "from geobingan_sync.sync_status import SyncStatus; SyncStatus().prin
 
 ---
 
-## 🔔 通知設定
+## 🔔 告警與通知（PR #79）
 
-### LINE Notify（推薦）
+> 2026-09 復盤：告警其實一直有在發（Token 到期連喊四天、「上傳暫停 N 天」連發 25 天），但都落在沒人訂閱、沒 @ 人、同一句話天天洗版的 ClickUp task 裡——真正的盲點是**告警沒有到達人**。以下設計就是為了這件事。
 
-1. 前往 [LINE Notify](https://notify-bot.line.me/) 申請 Token
-2. 在 `.env` 中設定：
-   ```bash
-   LINE_NOTIFY_TOKEN=your-token-here
-   ```
-3. 執行測試：
-   ```bash
-   python3 -m geobingan_sync.notify
-   ```
+### 通道
 
-### macOS 系統通知
+| 通道 | 狀態 | 用途 |
+|------|------|------|
+| ClickUp 留言（`HEALTHCHECK_CLICKUP_TASK_ID`） | 主通道 | 所有告警；**error 級用 tag block @ `ALERT_MENTION_USER_ID`**（ClickUp 只對被 @ 的人推播） |
+| macOS 系統通知 | 輔助 | launchd 下常送不到，不可依賴 |
+| LINE Notify | 已停服 | 設定保留但無效 |
 
-預設啟用，可在 `.env` 中關閉：
-```bash
-ENABLE_MACOS_NOTIFY=false
-```
+### 去重與升級（`geobingan_sync/alert_state.py`）
 
-### 通知觸發時機
+每個告警只在**新出現 / warning→error 升級 / 每 7 天提醒一次 / 解除（發恢復通知）**時送出，其餘抑制。狀態檔 `state/alert_state_<producer>.json`：健康檢查與同步結果**各自一個 namespace**（共用會把對方的項目誤判成已恢復）。採 **plan → send → commit**：ClickUp 真的送達才寫入狀態，失敗或例外則保留舊狀態、下一輪重試。不帶 `--notify` 的乾跑為唯讀，不會悄悄把問題標成「已看過」。
 
-| 事件 | 通知內容 |
-|------|----------|
-| 執行成功 | 同步數量、上傳數量、執行時間 |
-| 執行失敗 | 錯誤類型、錯誤訊息 |
+### 觸發時機
+
+| 事件 | 等級 | 內容 |
+|------|------|------|
+| 健康檢查異常（8 項） | warning / error | 一輪一則彙整；error 才 @ |
+| 同步執行失敗 | error | 錯誤訊息；連日失敗每 7 天提醒；恢復時通知 |
+| Refresh Token 過期／即將過期 | error / warning | 請至 riskmap 重新登入更新 `.env` |
+| 解析積壓（近 7 天停滯 ≥6h） | warning / error（≥20 份或最舊 ≥24h） | 疑後端 worker 停擺或 OpenAI 預算上限 |
+| 解析預算（本月估算 vs 月上限） | ≥70% warning／≥90% error | 請與後端確認預算再上傳 |
 
 ---
 
@@ -358,7 +388,7 @@ ENABLE_MACOS_NOTIFY=false
 geoBingAn-pdf-sync-tool/
 ├── run_weekly_sync.sh           # 進入點：每日自動同步（launchd 10:00）
 ├── run_friday_report.sh         # 進入點：週五總結週報
-├── health_check.py              # 進入點：每日健康檢查（Token / 磁碟 / API）
+├── health_check.py              # 進入點：每日健康檢查（8 項；異常去重後貼 ClickUp、error 級 @）
 │
 ├── geobingan_sync/              # 共用模組 package
 │   ├── config.py                #   設定載入（REPO_ROOT/.env）
@@ -367,7 +397,9 @@ geoBingAn-pdf-sync-tool/
 │   ├── jwt_auth.py              #   JWT Token 管理（thread-safe）
 │   ├── filename_date_parser.py  #   檔名日期解析
 │   ├── permit_utils.py          #   建照號碼正規化 + 名稱提取
-│   ├── notify.py                #   通知模組（LINE / macOS）
+│   ├── notify.py                #   通知模組（ClickUp 留言 + @ mention；macOS 輔助）
+│   ├── alert_state.py           #   告警去重/升級狀態機（plan→send→commit、namespace 分檔）
+│   ├── budget.py                #   解析預算守門（估算/門檻/月上限帳本/預留退還）
 │   ├── sync_status.py           #   狀態追蹤模組
 │   ├── report_template.py       #   HTML/CSV 報告模板
 │   ├── analyze_decline.py       #   月度下滑分析（被 weekly_snapshot 引用）
@@ -390,7 +422,7 @@ geoBingAn-pdf-sync-tool/
 ├── state/                       # 狀態追蹤（registry / 上傳歷史 / pdf_inventory…）
 ├── logs/                        # 執行日誌
 ├── docs/                        # 技術文檔 + 線上追蹤報告
-└── tests/                       # 自動化測試（193 tests）
+└── tests/                       # 自動化測試（265 tests）
 ```
 
 ---
@@ -408,7 +440,7 @@ geoBingAn-pdf-sync-tool/
 ```
 
 ### `state/uploaded_to_geobingan_7days.json`
-記錄最近 7 天上傳的 PDF
+本機的近期上傳記錄（檔名中的 `7days` 為歷史遺留，與實際窗口無關；跨機器的去重以 git 追蹤的 `upload_history_all.json` 為準）
 ```json
 {
   "uploaded_files": [
@@ -448,7 +480,7 @@ geoBingAn-pdf-sync-tool/
 ### 重置狀態
 
 ```bash
-# 清除上傳記錄（重新上傳最近 7 天的檔案）
+# 清除本機近期上傳記錄（去重仍以 git 追蹤的 upload_history_all.json 為準，不會因此重傳）
 rm state/uploaded_to_geobingan_7days.json
 
 # 清除同步記錄（重新同步所有建案）
@@ -569,6 +601,13 @@ Service Account 只需要：
 ---
 
 ## 📝 版本歷史
+
+### v4.7.0 (2026-09-15) — 名單動態抓取／告警送達／解析預算守門
+- ✅ **PR #78** 建管處清單動態抓取：從發布頁解析當前 PDF 連結，失效退回靜態網址（原寫死網址已過期 8 個月，351 → 440 筆、registry +92 案）
+- ✅ **PR #79** 告警確實送達：`alert_state.py` 去重／升級／7 天提醒／恢復通知、producer 各自 namespace、plan→send→commit；error 級 @ 人；同步失敗與 Token 過期改走 ClickUp（LINE Notify 已停服）
+- ✅ **PR #80** 解析預算守門與健康檢查：`budget.py`（每日上限、單次門檻 `--yes`、月上限先預留後退還、跨程序鎖、綁定月份、POST 前月份守門、只退 4xx 明確拒絕）；健康檢查新增「解析積壓」「解析預算」
+- 📌 營運：後端解析成本受 OpenAI 專案花費上限節制（2026-09-14 一次 178 份打爆、116 份卡 pending）；批量上傳前先與後端確認預算；`MONTHLY_BUDGET_USD` 待對齊實際上限
+- 🧪 測試 265 cases
 
 ### v4.6.0 (2026-07-29)
 - 🏗️ repo restructure（#72/#74）：模組收進 `geobingan_sync/` package + `steps/`，launchd 進入點留根 plist 零改動；根目錄 30 檔 → 9 檔；merge 後完整實機驗證通過
@@ -764,4 +803,4 @@ MIT License
 ---
 
 **維護者**: geoBingAn Team
-**最後更新**: 2026-07-29 v4.6.0
+**最後更新**: 2026-09-15 v4.7.0

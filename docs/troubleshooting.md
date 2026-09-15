@@ -11,6 +11,10 @@
 5. [504 Gateway Timeout](#5-504-gateway-timeout)
 6. [PDF 檔案缺少副檔名](#6-pdf-檔案缺少副檔名)
 7. [launchd 自動排程 step1 下載失敗（post-wake DNS race）— ✅ 已緩解](#7-launchd-自動排程-step1-下載失敗post-wake-dns-race-已緩解)
+8. [告警沒收到／收到重複告警](#8-告警沒收到收到重複告警)
+9. [上傳被擋下（exit 3：預算門檻／月上限）](#9-上傳被擋下exit-3預算門檻月上限)
+10. [解析積壓：報告卡在 pending 不動](#10-解析積壓報告卡在-pending-不動)
+11. [跨月時批次中途停止](#11-跨月時批次中途停止)
 
 ---
 
@@ -265,6 +269,56 @@ print(response.json())
 
 ---
 
+## 8. 告警沒收到／收到重複告警
+
+### 症狀
+健康檢查 log 有 ⚠️／❌，但沒人收到通知；或同一句話每天都來。
+
+### 原因與解決
+- 告警貼在 `HEALTHCHECK_CLICKUP_TASK_ID` 指向的 task，**只有被 @ 的人會收到推播**。確認 `.env` 有 `ALERT_MENTION_USER_ID`（error 級才 @）。
+- LINE Notify 已停服、macOS 通知在 launchd 下常送不到，不可依賴。
+- 同一問題只在「新出現／升級／每 7 天／解除」時發送，狀態在 `state/alert_state_<producer>.json`。懷疑被誤抑制時，可先跑 `python3 health_check.py`（乾跑唯讀）看「將通知事件」；刪掉該狀態檔會讓下一輪重新宣告一次。
+- 若 ClickUp 發送失敗，狀態不會落地、下一輪自動重發（log 會印「告警未送達…下輪重試」）。
+
 ---
 
-**最後更新**: 2026-04-02
+## 9. 上傳被擋下（exit 3：預算門檻／月上限）
+
+### 症狀
+`upload_pdfs` 印出「🛑 已擋下：估算解析成本 … 超過確認門檻」或「剩餘預算不足」後 exit 3；或「待上傳（裁切後）」份數變少。
+
+### 原因與解決
+後端解析成本受 OpenAI 專案花費上限節制，工具在上傳前估算（份數 × `COST_PER_REPORT_USD`）並對月上限做原子預留。
+
+- **單次估算 > `BUDGET_CONFIRM_USD`**：屬人為大批次。先與後端確認預算餘裕再加 `--yes`，或縮小 `--catchup-days`／降低 `MAX_UPLOADS` 分批。
+- **月上限自動裁切或耗盡**：`python3 -m geobingan_sync.budget --show` 查本月帳；等下月，或與後端調高上限後修改 `MONTHLY_BUDGET_USD`。
+- **換機後帳本從 0 開始**：`python3 -m geobingan_sync.budget --set N` 初始化（`state/upload_budget.json` 不入版控）。
+
+---
+
+## 10. 解析積壓：報告卡在 pending 不動
+
+### 症狀
+健康檢查「解析積壓」告警：N 份近期解析停滯 ≥6h；或上傳成功但 `parse_status` 長時間為 `pending`。
+
+### 原因與解決
+- `pending` 表示**後端 worker 尚未取件**（取件即改 `processing`）。常見原因是 **OpenAI 專案花費上限爆了**（2026-09-14 事故，PROD-348）或 worker／佇列停擺。額度爆掉時 provider 回 quota 錯誤、任務可能被延後而狀態不動——**pending 不等於 worker 死掉**。
+- 這屬後端範圍：開卡給後端並附 report ID 清單與最後一份 completed 的時間。上限恢復後 pending 會自動消化；失敗的可用 `POST /api/reports/construction-reports/{id}/retry-parse/` 單筆重試（只接受 failed／pending，不會製造重複）。
+- 期間維持 `.pause_upload`，避免把新報告推進死佇列。
+- 陳年積壓（>7 天）只在告警訊息中註記、不驅動燈號，避免舊帳讓告警永遠紅燈而蓋掉新事故。
+
+---
+
+## 11. 跨月時批次中途停止
+
+### 症狀
+log 印出「⏹️ 已跨月（預留屬 YYYY-MM），停止本批次；剩餘 N 份待下次執行於新月份重新預留」。
+
+### 說明
+這是預期行為。預算預留綁定月份，跨月後送出的解析成本應占用新月額度，因此該份不 POST、不寫去重歷史；下次執行會在新月份重新預留後送出，不會漏掉。
+
+---
+
+---
+
+**最後更新**: 2026-09-15

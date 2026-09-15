@@ -1,7 +1,7 @@
 # 系統架構設計文件
 
-> geoBingAn 建案監測同步工具 v5.2 架構說明
-> 最後更新：2026-06-09
+> geoBingAn 建案監測同步工具 v5.3 架構說明
+> 最後更新：2026-09-15（新增：清單動態抓取、告警送達、解析預算守門）
 
 ## 系統概覽
 
@@ -31,11 +31,11 @@
 
 ### 自動化排程（macOS launchd）
 
-使用 `launchd` 而非 `cron`：Mac 從睡眠醒來時自動補跑錯過的排程。
+使用 `launchd` 而非 `cron`。**注意：`StartCalendarInterval` 不會主動喚醒 Mac，睡眠期間錯過的排程也不保證補跑**，因此必須搭配 `sudo pmset repeat wakepoweron MTWRFSU 07:55:00`（詳見下方 wake-from-sleep 段）。
 
 | 時間 | LaunchAgent | 內容 |
 |------|-------------|------|
-| 每日 08:00 | `com.geothings.geobingan.healthcheck` | Token/磁碟/同步狀態/API/launchd job 巡檢（PR #53） |
+| 每日 08:00 | `com.geothings.geobingan.healthcheck` | 8 項巡檢：Token／磁碟／同步狀態／API／launchd job（PR #53）／上傳暫停（#57）／解析積壓／解析預算（PR #80）；異常經 alert_state 去重後貼 ClickUp，error 級 @（PR #79） |
 | 每日 10:00 | `com.geothings.geobingan.weeklysync` | 完整流程（步驟 1-4）+ 週一加步驟 5 產 PDF |
 | 週五 17:00 | `com.geothings.geobingan.fridayreport` | 總結週報 PDF → ClickUp |
 
@@ -214,7 +214,10 @@ cities.json（多城市配置）
     │
     ▼ 依 source_type 分流
     │
-    ├── PDF: 下載政府 PDF → 智慧分塊解析
+    ├── PDF: 解析清單來源 → 下載政府 PDF → 智慧分塊解析
+    │       resolve_list_pdf_url(list_page_url)：從建管處發布頁抓當前 Download.ashx 連結
+    │       候選依序 [動態 → 靜態 pdf_list_url]，各自 retry；raise_for_status + 驗 %PDF 開頭
+    │       （PR #78：政府改版會換 relfile 路徑，寫死網址曾同步過期清單 8 個月）
     └── CSV: 載入本地 CSV（NGO 手動整理）
     │
     ▼
@@ -270,9 +273,14 @@ Shared Drive
     │  cutoff 30 天 rolling（正規化當日 00:00；--catchup-days N 可放大補掃）→
     │  max_uploads
     │
-    ▼ 逐一下載 + 上傳到 riskmap.today API（2 秒間隔）
+    ▼ 解析預算守門（PR #80，詳見「告警送達與預算守門」）：
+    │  單次門檻（對原始請求量，超過 BUDGET_CONFIRM_USD 需 --yes）
+    │  → 鎖內原子預留（月上限：超過則裁切為剩餘可容納份數、耗盡擋下）
     │
-    ▼ 成功立即寫入 state（flock + merge）
+    ▼ 逐一下載 → [POST 前一刻：月份仍等於預留月份？否則停批] → 上傳（2 秒間隔）
+    │
+    ▼ 成功立即寫入 state（flock + merge）；預算帳本：4xx 明確拒絕即時退 1 份，
+    │  5xx／逾時／未知保守計入，finally 只退未嘗試份數（綁定預留月份）
 ```
 
 ### 步驟 2.5：match_permits.py（建案名稱交叉比對）
@@ -351,6 +359,8 @@ API project 匹配：116 筆（滑動視窗 + 去重）
 | `pdf_inventory.json` | 建案 PDF inventory（已成功對應建案資料夾的 PDF；不含根目錄/unmatched。月度趨勢/decline 分析資料源；未落地前 consumer fallback 讀 legacy cache） | 每次掃描完成 | 否 |
 | `sync_status.json` | 執行狀態與歷史 | 每次執行 | 否 |
 | `weekly_snapshots/{date}.json` | sync 後狀態快照（供 compute_diff 算趨勢） | 每次 sync | 否（local-only，見下） |
+| `alert_state_healthcheck.json` / `alert_state_sync.json` | 告警去重狀態（各 producer 一個 namespace；key → level/first_seen/last_sent） | 通知真的送達時 | 否 |
+| `upload_budget.json` + `.lock` | 本月解析預算帳本（month/uploaded/est_usd；flock；跨月歸零） | 預留／退還時 | 否（換機用 `budget --set N` 初始化） |
 
 ### Weekly snapshots：local-only state（PR #45）
 
@@ -395,6 +405,73 @@ save_state(state)
 - **成功上傳立即寫入**：確保 crash 後不會重複上傳（冪等性）
 - **錯誤記錄批次寫入**：每 10 次，遺失不影響上傳/跳過判斷
 - **flock + merge**：多個 process 重疊執行時不會遺失對方的寫入
+
+## 告警送達與預算守門（PR #79 / #80）
+
+### 為什麼需要（2026-09 復盤）
+
+- 健康檢查與 ClickUp 通道**早就存在、也一直在發**：Token 到期 9/11–9/14 連喊四天、「上傳暫停 N 天」每天一則連發 25 天——全進了沒人訂閱、沒 @ 人的 task。盲點不是「沒偵測」，是**告警沒到達人**。
+- 後端 PDF 解析成本受 **OpenAI 專案花費上限**硬性節制（上限不在任何 repo 裡）。2026-09-14 一次上傳 178 份即打爆當月上限，後續 116 份卡 pending 一整天沒人知（PROD-348）。夜間上傳原本 `MAX_UPLOADS=0` 無上限。
+
+### 告警送達（`notify.py` + `alert_state.py`）
+
+```
+health_check / record_sync_result
+    │  current = {key: (level, message)}   ← 只含非 ok
+    ▼
+AlertState(namespace=producer).process(current, send)
+    │  plan_alerts(prev, current, now)：
+    │    新出現 → new；warning→error → escalated；last_sent ≥7 天 → reminder；消失 → resolved
+    ▼
+send(title, body, needs_mention)   ← needs_mention = 任一 error 級 new/escalated/reminder
+    │  ClickUp comment array + type:tag block（純文字 @name 不會推播）
+    ▼
+只有 send 回報 ClickUp 成功才 save(new_state)      ← plan → send → commit
+（失敗／例外：保留舊狀態、下一輪重發同事件）
+```
+
+不變量（review 定案）：
+
+1. **producer 各自 namespace 狀態檔**——共用時任一方都會把對方的項目判成 resolved、誤發恢復通知，隔天又當新告警重發。
+2. **送達才落狀態**——否則 ClickUp 失敗會被抑制 7 天。
+3. **乾跑唯讀**（不帶 `--notify`）——手動檢查不可悄悄壓掉之後的告警。
+
+### 預算守門（`budget.py`）
+
+```
+upload_pdfs.main()
+    │
+    ▼ gate_and_reserve(mb, n=len(pdfs), 月上限, 單價, 門檻, --yes)
+    │    1) budget_gate(n)：對「原始請求量」估算，> BUDGET_CONFIRM_USD 且無 --yes → exit 3（尚未預留）
+    │    2) mb.reserve(n)：flock 內 讀餘額 → monthly_gate → 立刻計入可放行份數
+    │         投影 = 本月已用 + 本次；超過月上限 → 裁切為剩餘可容納份數（0 則擋下）；--yes 覆寫
+    ▼ ledger = ReservationLedger(mb, reserved, month=預留月份)
+    │
+    ▼ 每份：download → before_upload=ledger.begin_item()（POST 前一刻）
+    │         當前月份 ≠ 預留月份 → 回 month_rolled_over：不 POST、不寫 error/歷史、停止整批
+    │         否則 attempted += 1（視為已消耗）→ upload_to_geobingan
+    │       settle(result)：error == 'rejected'（4xx）才 release(1, month)；其餘保留
+    ▼ finally ledger.close()：release(reserved − attempted, month)   ← 只退從未嘗試的
+```
+
+回應分類（`upload_to_geobingan`）：
+
+| 回應 | 回傳 | 預算處理 |
+|------|------|----------|
+| 2xx；502/504；逾時/連線錯誤重試耗盡 | dict | 已消耗（可能已送達） |
+| 4xx；401 換發失敗且未再送出 | `False` | 確定零成本 → 即時退款 |
+| 所有 5xx（含 503 重試耗盡、401 重試後 5xx）；未知例外 | `None` | 結果不明 → 保守計入 |
+
+不變量（八輪 review 定案）：
+
+1. **先預留、後退還**——事後累加會在中斷時漏記；預留即計入，最壞只會多算。
+2. **只退確定零成本**——5xx 可能發生在後端已建報告／已進佇列之後。
+3. **跨程序鎖 + PID 暫存檔**——排程與人工重疊不可吃到同一筆餘額。
+4. **單次門檻對原始請求量**——預留結果必 ≤ 原始量，退還或跨月都無法讓放行超過已確認的量（消除 TOCTOU）。
+5. **退還綁定預留月份**——帳本已切新月則 no-op，不重建舊月、不動新月。
+6. **月份守門放在 POST 前一刻**——下載可耗時數分鐘；跨月停批，剩餘留待新月重新預留。
+
+營運：`MONTHLY_BUDGET_USD` 須與後端實際上限對齊；`state/upload_budget.json` 為本機狀態，換機用 `python3 -m geobingan_sync.budget --set N` 初始化；`.pause_upload` 可在後端解析停擺或預算未確認時暫停步驟 2。
 
 ## 錯誤處理
 
@@ -474,7 +551,7 @@ get_valid_token(current_token, refresh_token, refresh_url)
 config.py (from .env)  →  環境變數  →  硬編碼預設值
 ```
 
-所有設定值（`SHARED_DRIVE_ID`、`DAYS_AGO`、`MAX_UPLOADS`、`DELAY_BETWEEN_UPLOADS`、`CLICKUP_TOKEN`）統一由 `config.py` 從 `.env` 載入，各腳本 import 使用，不再有本地硬編碼覆蓋。多城市配置由 `city_config.py` 從 `cities.json` 載入，空白欄位自動回退到 `.env` 預設值。
+所有設定值（`SHARED_DRIVE_ID`、`MAX_UPLOADS`、`DELAY_BETWEEN_UPLOADS`、`CLICKUP_TOKEN`、預算相關的 `COST_PER_REPORT_USD`／`MONTHLY_BUDGET_USD`／`BUDGET_CONFIRM_USD`；`DAYS_AGO` 為歷史遺留、未參與日期窗計算——cutoff 固定 30 天或由 `--catchup-days` 覆蓋）統一由 `config.py` 從 `.env` 載入，各腳本 import 使用，不再有本地硬編碼覆蓋。多城市配置由 `city_config.py` 從 `cities.json` 載入，空白欄位自動回退到 `.env` 預設值。
 
 ## 測試策略
 
@@ -488,7 +565,10 @@ config.py (from .env)  →  環境變數  →  硬編碼預設值
 | `test_drive_utils.py` | drive_utils.build_folder_resolver | 8 | 無 |
 | `test_report_template.py` | report_template (HTML + CSV + XSS) | 11 | tempfile |
 | `test_csv_import.py` | sync_permits.load_csv_list | 8 | tempfile |
-| **合計** | | **63** | |
+| `test_resolve_list_pdf_url.py`／`test_download_pdf_list_fallback.py` | 清單動態解析與候選 fallback（PR #78） | 7 | monkeypatch |
+| `test_alert_state.py`／`test_notify_mention.py`／`test_health_check_dedup.py` | 告警去重/升級、送達才落狀態、namespace 分離、mention payload（PR #79） | 23 | tmp_path |
+| `test_budget.py`／`test_check_parse_backlog.py`／`test_process_single_pdf_classification.py`／`test_upload_response_classification.py` | 預算守門（預留/退還/跨月/POST 前守門/8 子程序併發）、解析積壓與預算檢查、回應分類（PR #80） | 40+ | tmp_path, subprocess |
+| **合計** | | **265** | |
 
 設計原則：
 - 所有測試 import 零依賴模組（`permit_utils`、`drive_utils`），不觸發 credentials 或 Google API（lazy init）
