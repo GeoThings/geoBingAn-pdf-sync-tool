@@ -35,7 +35,7 @@
 
 | 時間 | LaunchAgent | 內容 |
 |------|-------------|------|
-| 每日 08:00 | `com.geothings.geobingan.healthcheck` | 8 項巡檢：Token／磁碟／同步狀態／API／launchd job（PR #53）／上傳暫停（#57）／解析積壓／解析預算（PR #80）；異常經 alert_state 去重後貼 ClickUp，error 級 @（PR #79） |
+| 每日 08:00 | `com.geothings.geobingan.healthcheck` | 10 項巡檢：Token／磁碟／同步狀態／API／launchd job（PR #53）／上傳暫停（#57）／解析積壓／解析預算（PR #80）／清單新鮮度／來源資料夾失效（PR #82）；異常經 alert_state 去重後貼 ClickUp，error 級 @（PR #79） |
 | 每日 10:00 | `com.geothings.geobingan.weeklysync` | 完整流程（步驟 1-4）+ 週一加步驟 5 產 PDF |
 | 週五 17:00 | `com.geothings.geobingan.fridayreport` | 總結週報 PDF → ClickUp |
 
@@ -218,6 +218,9 @@ cities.json（多城市配置）
     │       resolve_list_pdf_url(list_page_url)：從建管處發布頁抓當前 Download.ashx 連結
     │       候選依序 [動態 → 靜態 pdf_list_url]，各自 retry；raise_for_status + 驗 %PDF 開頭
     │       （PR #78：政府改版會換 relfile 路徑，寫死網址曾同步過期清單 8 個月）
+    │       解析後寫 list_fingerprint.json（PR #82）：記錄來源（動態／靜態）、檔名、
+    │       建照數與內容 hash；內容變更發資訊性通知，退回靜態或 >60 天未變由
+    │       health_check 告警——否則 #78 的 fallback 會靜默退化回原本的 bug
     └── CSV: 載入本地 CSV（NGO 手動整理）
     │
     ▼
@@ -361,6 +364,8 @@ API project 匹配：116 筆（滑動視窗 + 去重）
 | `weekly_snapshots/{date}.json` | sync 後狀態快照（供 compute_diff 算趨勢） | 每次 sync | 否（local-only，見下） |
 | `alert_state_healthcheck.json` / `alert_state_sync.json` | 告警去重狀態（各 producer 一個 namespace；key → level/first_seen/last_sent） | 通知真的送達時 | 否 |
 | `upload_budget.json` + `.lock` | 本月解析預算帳本（month/uploaded/est_usd；flock；跨月歸零） | 預留／退還時 | 否（換機用 `budget --set N` 初始化） |
+| `list_fingerprint.json` | 政府清單指紋（source／label／permit_count／sha256／last_changed） | 每次 sync 解析清單後 | 否 |
+| `folder_deaths.json` | 來源資料夾由活轉死的紀錄（append-only，附 detected 日期與 pdf_count） | 偵測到新失效時 | 否 |
 
 ### Weekly snapshots：local-only state（PR #45）
 
@@ -568,7 +573,8 @@ config.py (from .env)  →  環境變數  →  硬編碼預設值
 | `test_resolve_list_pdf_url.py`／`test_download_pdf_list_fallback.py` | 清單動態解析與候選 fallback（PR #78） | 7 | monkeypatch |
 | `test_alert_state.py`／`test_notify_mention.py`／`test_health_check_dedup.py` | 告警去重/升級、送達才落狀態、namespace 分離、mention payload（PR #79） | 23 | tmp_path |
 | `test_budget.py`／`test_check_parse_backlog.py`／`test_process_single_pdf_classification.py`／`test_upload_response_classification.py` | 預算守門（預留/退還/跨月/POST 前守門/8 子程序併發）、解析積壓與預算檢查、回應分類（PR #80） | 40+ | tmp_path, subprocess |
-| **合計** | | **265** | |
+| `test_list_fingerprint.py`／`test_folder_deaths.py` | 清單指紋（變更／靜態退回／停更）、來源資料夾由活轉死（PR #82） | 15 | tmp_path |
+| **合計** | | **280** | |
 
 設計原則：
 - 所有測試 import 零依賴模組（`permit_utils`、`drive_utils`），不觸發 credentials 或 Google API（lazy init）

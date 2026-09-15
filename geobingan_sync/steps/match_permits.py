@@ -399,6 +399,8 @@ def build_registry(city: dict = None):
     # 載入現有 registry
     registry = load_existing_registry()
     print(f"現有 registry: {len(registry)} 筆\n")
+    # 先留存上一輪的來源資料夾狀態，稍後偵測「本來活著、這次 404」（資料流失訊號）
+    prior_url_statuses = {p: e.get('gov_pdf_url_status') for p, e in registry.items()}
 
     # 取得所有來源
     gov_data = fetch_gov_pdf_data(city=city)
@@ -678,6 +680,62 @@ def build_registry(city: dict = None):
 
     # 列管 PDF URL 失效清單 — 給建管處請求更新政府 PDF 用
     _write_url_404_csv(registry)
+
+    # 偵測來源資料夾「由活轉死」（PR #77 只把已知失效靜音；這裡抓新發生的資料流失）
+    _record_folder_deaths(prior_url_statuses, registry)
+
+
+FOLDER_DEATHS_FILE = './state/folder_deaths.json'
+
+
+def detect_folder_deaths(prior_statuses: dict, registry: dict) -> list:
+    """找出「上一輪明確 alive、這一輪 404」的建案（純函式，便於測試）。
+
+    只認 alive→404 這個轉變：
+    - 首次出現就 404（prior 無紀錄）不算——那是既有的歷史失效，不是新的資料流失。
+    - error→404 不算——error 可能只是暫時性 API 失敗。
+    對應 111建字第0311號 事故：253 份監測報告的來源資料夾被刪、數月後才發現。
+    """
+    deaths = []
+    for permit, info in sorted(registry.items()):
+        if info.get('gov_pdf_url_status') != '404':
+            continue
+        if prior_statuses.get(permit) != 'alive':
+            continue
+        deaths.append({
+            'permit': permit,
+            'name': info.get('name') or info.get('api_match', ''),
+            'pdf_count': info.get('pdf_count', 0),
+            'source_url': info.get('source_url') or info.get('source_url_removed', ''),
+        })
+    return deaths
+
+
+def _record_folder_deaths(prior_statuses: dict, registry: dict):
+    """把新發生的失效寫進 state/folder_deaths.json（append-only，供 health_check 告警）。"""
+    try:
+        from datetime import datetime as _dt
+        deaths = detect_folder_deaths(prior_statuses, registry)
+        if not deaths:
+            return
+        today = _dt.now().strftime('%Y-%m-%d')
+        try:
+            with open(FOLDER_DEATHS_FILE, encoding='utf-8') as f:
+                log = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            log = {'deaths': []}
+        for d in deaths:
+            d['detected'] = today
+        log['deaths'] = (log.get('deaths') or []) + deaths
+        os.makedirs(os.path.dirname(FOLDER_DEATHS_FILE), exist_ok=True)
+        with open(FOLDER_DEATHS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(log, f, indent=2, ensure_ascii=False)
+        total_pdfs = sum(d.get('pdf_count', 0) for d in deaths)
+        print(f"\n🔴 來源資料夾新失效 {len(deaths)} 個（影響約 {total_pdfs} 份 PDF）：")
+        for d in deaths[:5]:
+            print(f"    {d['permit']} {d['name']}（{d['pdf_count']} 份）")
+    except Exception as e:
+        print(f"⚠️  失效偵測記錄失敗（不影響比對）: {e}")
 
 
 def _write_url_404_csv(registry: dict):

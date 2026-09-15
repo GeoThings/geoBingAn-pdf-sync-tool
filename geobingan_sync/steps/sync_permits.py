@@ -134,6 +134,9 @@ class PermitSync:
         # pdf_list_url 會一直抓到舊版清單。有設 list_page_url 時，download_pdf_list
         # 會先從發布頁動態解析當前清單連結，解析失敗才 fallback 回 pdf_list_url。
         self.list_page_url = self.city.get('list_page_url', '')
+        # 本次實際使用的清單身分（供 list_fingerprint 記錄；'動態' 表示從發布頁解析成功）
+        self.list_source = ''
+        self.list_label = ''
         self.csv_path = self.city.get('csv_path', '')
         self.shared_drive_id = self.city.get('shared_drive_id') or SHARED_DRIVE_ID
         self.target_folders = {}
@@ -199,15 +202,15 @@ class PermitSync:
             if resolved:
                 dyn_url, fname = resolved
                 print(f"🔗 動態解析到最新清單：{fname or dyn_url}")
-                candidates.append(('動態', dyn_url))
+                candidates.append(('動態', dyn_url, fname or dyn_url.rsplit('/', 1)[-1]))
             else:
                 print("⚠️  發布頁動態解析失敗，改用靜態 pdf_list_url（可能非最新版）")
-        if self.pdf_list_url and self.pdf_list_url not in [u for _, u in candidates]:
-            candidates.append(('靜態', self.pdf_list_url))
+        if self.pdf_list_url and self.pdf_list_url not in [u for _, u, _ in candidates]:
+            candidates.append(('靜態', self.pdf_list_url, self.pdf_list_url.rsplit('/', 1)[-1]))
 
         pdf_path = '/tmp/permit_list.pdf'
         last_err = None
-        for label, url in candidates:
+        for label, url, display in candidates:
             for attempt in range(1, max_attempts + 1):
                 try:
                     with warnings.catch_warnings():
@@ -221,6 +224,7 @@ class PermitSync:
                     with open(pdf_path, 'wb') as f:
                         f.write(response.content)
                     print(f"✅ 列表已下載（{label}）: {len(response.content)} bytes")
+                    self.list_source, self.list_label = label, display
                     return pdf_path
                 except Exception as e:
                     last_err = e
@@ -295,6 +299,28 @@ class PermitSync:
         
         return permit_mapping
     
+    def _record_list_fingerprint(self):
+        """記錄本次清單指紋；內容變動時發一則資訊性通知。
+
+        指紋讓 health_check 能看出兩件事：動態解析是否失效（退回靜態＝可能同步
+        過期清單）、清單是否長期沒更新。變更本身是好消息、不是問題，所以走
+        資訊性通知（不 @、不進 alert_state 去重），且只在內容真的改變時發一次。
+        """
+        try:
+            from geobingan_sync.list_fingerprint import ListFingerprint
+            changed, summary, state = ListFingerprint().update(
+                self.list_label, self.list_source, self.permit_mapping.keys())
+            print(f"🧾 清單指紋: {state['label']}（{state['source']}，{state['permit_count']} 筆建照）")
+            if changed and summary:
+                print(f"🆕 {summary}")
+                try:
+                    from geobingan_sync.notify import send_notification
+                    send_notification('🆕 建管處清單已更新', summary, use_clickup=True, mention=False)
+                except Exception as e:
+                    print(f"  （清單更新通知發送失敗，不影響同步）: {e}")
+        except Exception as e:
+            print(f"⚠️  清單指紋記錄失敗（不影響同步）: {e}")
+
     def scan_shared_drive(self) -> Dict[str, str]:
         print(f"\n📂 掃描共享雲端...")
         from geobingan_sync.drive_utils import list_top_level_folders
@@ -547,6 +573,7 @@ class PermitSync:
         else:
             pdf_path = self.download_pdf_list()
             self.permit_mapping = self.parse_pdf_list(pdf_path)
+            self._record_list_fingerprint()
         self.target_folders = self.scan_shared_drive()
 
         permit_list = list(self.permit_mapping.items())
