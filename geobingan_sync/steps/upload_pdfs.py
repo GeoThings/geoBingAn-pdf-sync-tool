@@ -889,7 +889,10 @@ def main(city: dict = None, catchup_days: int = None, yes: bool = False):
 
     try:
         for idx, pdf in enumerate(pdfs_to_upload, 1):
-            ledger.begin_item()
+            if not ledger.begin_item():
+                # 已跨月：舊月預留不可再用於新月的解析成本。停止本批次，剩餘項目留待下次於新月份重新預留。
+                print(f"\n⏹️  已跨月（預留屬 {ledger.month}），停止本批次；剩餘 {len(pdfs_to_upload) - idx + 1} 份待下次執行於新月份重新預留")
+                break
             result = process_single_pdf(service, pdf, state, idx, len(pdfs_to_upload))
             ledger.settle(result)
 

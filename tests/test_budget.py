@@ -182,3 +182,25 @@ def test_release_same_month_before_rollover_applies(tmp_path):
     L.begin_item(); L.settle({'success': False, 'error': 'rejected'})
     assert mb.load(now=sep)['uploaded'] == 14                                    # 同月正常扣減
     assert L.close()['uploaded'] == 0                                            # 退還 14 份未嘗試
+
+
+def test_begin_item_refuses_after_month_rollover_and_new_month_ledger_counts_later_sends(tmp_path):
+    """review P1：9 月預留後跨到 10 月，不得再用 9 月預留送 API；之後送出的份數要進 10 月帳本。"""
+    mb = MonthlyBudget(tmp_path / 'b.json', cost_per_report=0.3)
+    sep = datetime(2026, 9, 30, 23, 59); oct1 = datetime(2026, 10, 1, 0, 5)
+    reserved, _, data = mb.reserve(15, 100.0, 0.3, yes=False, now=sep)
+    L = ReservationLedger(mb, reserved, month=data['month'])
+    assert L.begin_item(now=sep) is True                      # 同月：可送
+    sent_in_sep = 1
+    assert L.begin_item(now=oct1) is False                    # 跨月：拒絕，attempted 不增加
+    assert L.attempted == sent_in_sep
+    L.close()                                                 # 舊月未用 14 份：檔案仍是 9 月 → 扣 9 月，不動 10 月
+    assert mb._read_raw()['month'] == '2026-09' and mb._read_raw()['uploaded'] == 1
+    # 下次執行（10 月）重新預留剩餘 14 份 → 進 10 月帳本
+    reserved2, _, data2 = mb.reserve(14, 100.0, 0.3, yes=False, now=oct1)
+    assert data2['month'] == '2026-10' and data2['uploaded'] == 14 and reserved2 == 14
+
+
+def test_begin_item_without_month_is_legacy_always_true():
+    L = ReservationLedger(_LedgerMB(), reserved=3)
+    assert L.begin_item(now=datetime(2030, 1, 1)) is True and L.attempted == 1

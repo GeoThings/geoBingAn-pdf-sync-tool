@@ -186,7 +186,7 @@ class MonthlyBudget:
 class ReservationLedger:
     """把預留當成「已消耗」，只對確定零成本的項目退還（review P1：成功後中斷不可退）。
 
-    - begin_item()：項目一進入處理即視為已嘗試（已消耗）。
+    - begin_item()：項目一進入處理即視為已嘗試（已消耗）；若已跨月回 False，批次須停止。
     - settle(result)：只有 error ∈ REFUNDABLE（下載失敗＝沒打 API；後端明確拒絕＝沒建報告）
       才立即退 1 份；成功或結果不明（逾時/未知例外）都保留。
     - close()：只退還「預留 − 已嘗試」＝從未嘗試的份數。任何在 settle 之前的中斷都不會
@@ -201,8 +201,16 @@ class ReservationLedger:
         self.attempted = 0
         self.refunded = 0
 
-    def begin_item(self) -> None:
+    def begin_item(self, now: Optional[datetime] = None) -> bool:
+        """項目送出前呼叫。回 True 表示可送出並已計入已嘗試；回 False 表示已跨月，
+        本批次應停止（review P1：跨月後送出的成本應占用新月額度，不可再用舊月預留；
+        剩餘項目不在去重歷史裡，下次執行會在新月份重新預留）。"""
+        if self.month is not None:
+            now = now or datetime.now()
+            if now.strftime('%Y-%m') != self.month:
+                return False
         self.attempted += 1
+        return True
 
     def settle(self, result: dict) -> bool:
         if result.get('success'):
