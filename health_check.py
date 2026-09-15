@@ -157,24 +157,43 @@ def check_launchd_jobs():
     return 'ok', '三個排程 job 正常'
 
 
-def main():
-    parser = argparse.ArgumentParser(description='系統健康檢查')
-    parser.add_argument('--notify', action='store_true', help='異常時發送通知')
-    args = parser.parse_args()
+DEFAULT_CHECKS = [
+    ('JWT Token', check_token),
+    ('磁碟空間', check_disk),
+    ('同步狀態', check_last_sync),
+    ('API 連線', check_api),
+    ('排程 Job', check_launchd_jobs),
+    ('上傳暫停', check_pause),
+]
 
-    checks = [
-        ('JWT Token', check_token),
-        ('磁碟空間', check_disk),
-        ('同步狀態', check_last_sync),
-        ('API 連線', check_api),
-        ('排程 Job', check_launchd_jobs),
-        ('上傳暫停', check_pause),
-    ]
 
+def run_health_check(checks=None, notify=False, alert_state=None, now=None, send=None):
+    """跑所有檢查；異常經 AlertState 去重後才通知。
+
+    以前每天把同一句話再發一次（上傳暫停連發 25 天），人麻痺後真正的新告警
+    （token 過期連喊 4 天）被淹沒。現在只在「新出現 / 升級 / 每 7 天提醒 / 解除」
+    時發一則留言，且只有 error 級才 @ 人（ClickUp 只對被 @ 的人推播）。
+
+    Args:
+        checks: [(name, fn)]，預設 DEFAULT_CHECKS
+        notify: 是否發送
+        alert_state: AlertState 實例（測試可注入 tmp 路徑）
+        now: 現在時間（測試可注入）
+        send: 發送函式 send(title, body, mention)（測試可注入）
+    Returns:
+        (issues, events)
+    """
+    from datetime import datetime as _dt
+    from geobingan_sync.alert_state import AlertState, format_events
+
+    checks = checks if checks is not None else DEFAULT_CHECKS
+    alert_state = alert_state or AlertState()
+    now = now or _dt.now()
     icons = {'ok': '✅', 'warning': '⚠️', 'error': '❌'}
     issues = []
+    current = {}
 
-    print(f"🏥 系統健康檢查 — {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+    print(f"🏥 系統健康檢查 — {now.strftime('%Y-%m-%d %H:%M')}")
     print("=" * 50)
     for name, check_fn in checks:
         try:
@@ -185,23 +204,40 @@ def main():
         print(f"  {icon} {name}: {message}")
         if status != 'ok':
             issues.append(f'{icon} {name}: {message}')
+            current[name] = (status, message)
 
     print("=" * 50)
+    # 只有真的要通知才持久化；乾跑/手動檢查唯讀，免得悄悄把問題標成「已看過」
+    events = alert_state.process(current, now=now) if notify else alert_state.plan(current, now=now)
     if issues:
         print(f"⚠️  {len(issues)} 個問題需要關注")
-        if args.notify:
-            try:
-                from geobingan_sync.notify import send_notification
-                send_notification(
-                    f'⚠️ geoBingAn 健康檢查: {len(issues)} 個問題',
-                    '\n'.join(issues),
-                    use_clickup=True,
-                )
-                print("  通知已發送")
-            except Exception as e:
-                print(f"  通知發送失敗: {e}")
     else:
         print("✅ 所有檢查通過")
+
+    if not events:
+        if issues:
+            print(f"  （{len(issues)} 個問題持續中，已抑制重複通知）")
+        return issues, events
+
+    title, body, needs_mention = format_events(events, now)
+    print(f"  通知事件：{[e.kind + ':' + e.key for e in events]}")
+    if notify:
+        try:
+            if send is None:
+                from geobingan_sync.notify import send_notification
+                send = lambda t, b, m: send_notification(t, b, use_clickup=True, mention=m)
+            send(title, body, needs_mention)
+            print("  通知已發送" + ("（已 @）" if needs_mention else ""))
+        except Exception as e:
+            print(f"  通知發送失敗: {e}")
+    return issues, events
+
+
+def main():
+    parser = argparse.ArgumentParser(description='系統健康檢查')
+    parser.add_argument('--notify', action='store_true', help='異常時發送通知')
+    args = parser.parse_args()
+    run_health_check(notify=args.notify)
 
 
 if __name__ == '__main__':

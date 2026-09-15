@@ -24,12 +24,14 @@ from typing import Optional
 
 # 載入設定
 try:
-    from geobingan_sync.config import LINE_NOTIFY_TOKEN, ENABLE_MACOS_NOTIFY, CLICKUP_TOKEN, HEALTHCHECK_CLICKUP_TASK_ID
+    from geobingan_sync.config import (LINE_NOTIFY_TOKEN, ENABLE_MACOS_NOTIFY, CLICKUP_TOKEN,
+                                       HEALTHCHECK_CLICKUP_TASK_ID, ALERT_MENTION_USER_ID)
 except ImportError:
     LINE_NOTIFY_TOKEN = os.environ.get('LINE_NOTIFY_TOKEN', '')
     ENABLE_MACOS_NOTIFY = os.environ.get('ENABLE_MACOS_NOTIFY', 'true').lower() == 'true'
     CLICKUP_TOKEN = os.environ.get('CLICKUP_TOKEN', '')
     HEALTHCHECK_CLICKUP_TASK_ID = os.environ.get('HEALTHCHECK_CLICKUP_TASK_ID', '')
+    ALERT_MENTION_USER_ID = os.environ.get('ALERT_MENTION_USER_ID', '')
 
 
 def send_line_notify(message: str) -> bool:
@@ -89,13 +91,31 @@ def send_macos_notification(title: str, message: str, sound: bool = True) -> boo
         return False
 
 
-def send_clickup_comment(task_id: str, message: str) -> bool:
+def build_clickup_comment_payload(message: str, mention_user_id: Optional[str] = None) -> dict:
+    """組 ClickUp comment payload。
+
+    有 mention_user_id 時用結構化 `comment` array + `type:tag` block（純文字 @name 不會
+    觸發推播）；否則用 comment_text。獨立成函式方便測試。
+    """
+    if mention_user_id:
+        return {
+            'comment': [
+                {'type': 'tag', 'user': {'id': int(mention_user_id)}},
+                {'text': ' ' + message},
+            ],
+            'notify_all': False,
+        }
+    return {'comment_text': message}
+
+
+def send_clickup_comment(task_id: str, message: str, mention_user_id: Optional[str] = None) -> bool:
     """
     發送 ClickUp task comment
 
     Args:
         task_id: ClickUp task ID
         message: comment 內容
+        mention_user_id: 要 @ 的 ClickUp user id（ClickUp 只對被 @ 的人推播）
 
     Returns:
         bool: 發送是否成功
@@ -108,7 +128,7 @@ def send_clickup_comment(task_id: str, message: str) -> bool:
         response = requests.post(
             f'https://api.clickup.com/api/v2/task/{task_id}/comment',
             headers={'Authorization': CLICKUP_TOKEN, 'Content-Type': 'application/json'},
-            json={'comment_text': message},
+            json=build_clickup_comment_payload(message, mention_user_id),
             timeout=10
         )
         if response.status_code != 200:
@@ -120,7 +140,8 @@ def send_clickup_comment(task_id: str, message: str) -> bool:
 
 
 def send_notification(title: str, message: str, use_line: bool = True, use_macos: bool = True,
-                      use_clickup: bool = False, clickup_task_id: Optional[str] = None):
+                      use_clickup: bool = False, clickup_task_id: Optional[str] = None,
+                      mention: bool = False):
     """
     發送通知（同時使用所有可用的通知方式）
 
@@ -131,6 +152,7 @@ def send_notification(title: str, message: str, use_line: bool = True, use_macos
         use_macos: 是否使用 macOS 通知
         use_clickup: 是否使用 ClickUp comment（需 CLICKUP_TOKEN 與 task_id）
         clickup_task_id: ClickUp task ID（未提供則用 HEALTHCHECK_CLICKUP_TASK_ID）
+        mention: True 時在 ClickUp 留言 @ ALERT_MENTION_USER_ID（error 級告警用；被 @ 才會推播）
     """
     results = []
 
@@ -146,7 +168,10 @@ def send_notification(title: str, message: str, use_line: bool = True, use_macos
     if use_clickup:
         task_id = clickup_task_id or HEALTHCHECK_CLICKUP_TASK_ID
         if task_id and CLICKUP_TOKEN:
-            clickup_result = send_clickup_comment(task_id, f"{title}\n\n{message}")
+            clickup_result = send_clickup_comment(
+                task_id, f"{title}\n\n{message}",
+                mention_user_id=ALERT_MENTION_USER_ID if mention else None,
+            )
             results.append(('ClickUp', clickup_result))
 
     return results
@@ -192,7 +217,8 @@ def send_failure(error_type: str, error_message: str):
     title = "❌ geoBingAn 同步失敗"
     message = f"{error_type}\n{error_message}"
 
-    send_notification(title, message)
+    # 失敗必須到達人：走 ClickUp 並 @（LINE Notify 已停服、macOS 通知在 launchd 下常送不到）
+    send_notification(title, message, use_clickup=True, mention=True)
 
 
 def send_warning(warning_type: str, warning_message: str):
@@ -206,7 +232,7 @@ def send_warning(warning_type: str, warning_message: str):
     title = "⚠️ geoBingAn 同步警告"
     message = f"{warning_type}\n{warning_message}"
 
-    send_notification(title, message)
+    send_notification(title, message, use_clickup=True)
 
 
 if __name__ == '__main__':

@@ -20,7 +20,11 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from geobingan_sync.sync_status import SyncStatus
-from geobingan_sync.notify import send_success, send_failure
+from geobingan_sync.notify import send_success, send_notification
+from geobingan_sync.alert_state import AlertState, format_events
+from datetime import datetime
+
+SYNC_ALERT_KEY = '同步執行'
 
 
 def main():
@@ -52,10 +56,29 @@ def main():
             failed=failed_count,
             duration_minutes=duration_minutes
         )
-    else:
-        send_failure('執行失敗', error_message)
+
+    # 失敗/恢復經 AlertState：連日失敗不洗版、恢復時發一則 ✅（9/1 磁碟滿沒人知的補洞）
+    notify_sync_outcome(status, error_message)
 
     return 0 if status == 'success' else 1
+
+
+def notify_sync_outcome(status: str, error_message: str, alert_state=None, now=None, send=None):
+    """同步失敗→ClickUp 並 @；持續失敗每 7 天提醒；恢復→✅。可注入依賴供測試。"""
+    alert_state = alert_state or AlertState()
+    now = now or datetime.now()
+    current = {} if status == 'success' else {SYNC_ALERT_KEY: ('error', error_message or '執行失敗')}
+    events = alert_state.process(current, now=now)
+    if not events:
+        return events
+    title, body, needs_mention = format_events(events, now)
+    if send is None:
+        send = lambda t, b, m: send_notification(t, b, use_clickup=True, mention=m)
+    try:
+        send(title, body, needs_mention)
+    except Exception as e:
+        print(f"  同步結果通知失敗: {e}")
+    return events
 
 
 if __name__ == '__main__':
