@@ -84,9 +84,13 @@ class ListFingerprint:
         changed = bool(prev.get('sha256')) and prev.get('sha256') != digest
 
         summary = None
+        pending = list(prev.get('pending_notices') or [])
         if changed:
             added, removed = diff_permits(prev.get('permits', []), permits)
             summary = format_change(label, source, added, removed, len(permits))
+            # 變更通知先存成 pending，送達才清除（review P2）：若直接在送出前就把
+            # 指紋存成新 hash，下一輪 changed=False，這次的變更通知會永久遺失。
+            pending.append(summary)
 
         state = {
             'source': source,
@@ -97,8 +101,17 @@ class ListFingerprint:
             'last_checked': now.isoformat(),
             'last_changed': now.isoformat() if (changed or first_time) else prev.get('last_changed', now.isoformat()),
             'last_change_summary': summary or prev.get('last_change_summary'),
+            'pending_notices': pending,
         }
         return changed, summary, self.save(state)
+
+
+    def clear_pending(self, now: Optional[datetime] = None) -> dict:
+        """通知確定送達後才呼叫，清掉待送佇列。"""
+        data = self.load()
+        data['pending_notices'] = []
+        data['last_checked'] = (now or datetime.now()).isoformat()
+        return self.save(data)
 
 
 def assess(state: dict, now: Optional[datetime] = None,

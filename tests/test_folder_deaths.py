@@ -49,7 +49,60 @@ def test_missing_file_is_ok(tmp_path):
     assert health_check.check_folder_deaths(path=tmp_path / 'nope.json', now=T0)[0] == 'ok'
 
 
-def test_corrupt_file_is_ok(tmp_path):
+
+
+# ---------- review P1：先寫 death、成功才提交 registry ----------
+
+def test_registry_not_committed_when_death_persist_fails(tmp_path, monkeypatch):
+    """死亡事件寫入失敗時不可提交 registry，否則下輪 prior 已是 404、永遠偵測不到。"""
+    import geobingan_sync.steps.match_permits as mp
+    reg_file = tmp_path / 'registry.json'
+    deaths_file = tmp_path / 'deaths.json'
+    prior = {'A': 'alive'}
+    registry = {'A': {'gov_pdf_url_status': '404', 'name': '南港段', 'pdf_count': 253}}
+
+    def boom(*a, **k):
+        raise OSError('disk full')
+    monkeypatch.setattr(mp, 'append_folder_deaths', boom)
+
+    try:
+        mp.commit_registry_with_deaths(registry, prior, registry_file=str(reg_file),
+                                       deaths_file=str(deaths_file))
+        assert False, '應該要 raise'
+    except OSError:
+        pass
+    assert not reg_file.exists()          # registry 未提交 → 下輪 prior 仍是 alive，可重新偵測
+
+
+def test_commit_writes_death_then_registry(tmp_path):
+    import geobingan_sync.steps.match_permits as mp
+    reg_file = tmp_path / 'registry.json'
+    deaths_file = tmp_path / 'deaths.json'
+    registry = {'A': {'gov_pdf_url_status': '404', 'name': '南港段', 'pdf_count': 253}}
+    deaths = mp.commit_registry_with_deaths(registry, {'A': 'alive'},
+                                            registry_file=str(reg_file),
+                                            deaths_file=str(deaths_file), now=T0)
+    assert [d['permit'] for d in deaths] == ['A']
+    assert json.loads(deaths_file.read_text(encoding='utf-8'))['deaths'][0]['detected'] == '2026-09-15'
+    assert json.loads(reg_file.read_text(encoding='utf-8'))['A']['pdf_count'] == 253
+    assert not list(tmp_path.glob('*.tmp'))        # 原子寫入，無殘留暫存檔
+
+
+def test_corrupt_deaths_file_raises_instead_of_wiping_history(tmp_path):
+    """損毀時 raise，不可靜默重置成空陣列而丟掉歷史紀錄。"""
+    import geobingan_sync.steps.match_permits as mp
+    deaths_file = tmp_path / 'deaths.json'
+    deaths_file.write_text('{broken', encoding='utf-8')
+    try:
+        mp.append_folder_deaths([{'permit': 'A'}], deaths_file=str(deaths_file))
+        assert False, '應該要 raise'
+    except ValueError as e:
+        assert '損毀' in str(e)
+    assert deaths_file.read_text(encoding='utf-8') == '{broken'    # 原檔未被覆寫
+
+
+def test_health_check_corrupt_file_is_warning_not_green(tmp_path):
     p = tmp_path / 'd.json'
     p.write_text('{not json', encoding='utf-8')
-    assert health_check.check_folder_deaths(path=p, now=T0)[0] == 'ok'
+    level, msg = health_check.check_folder_deaths(path=p, now=T0)
+    assert level == 'warning' and '損毀' in msg

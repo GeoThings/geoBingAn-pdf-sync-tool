@@ -78,3 +78,58 @@ def test_health_check_wrapper_reads_state(tmp_path):
 def test_format_change_handles_only_added():
     msg = format_change('x.pdf', '動態', ['a', 'b'], [], 10)
     assert '新增 2 筆' in msg and '移除' not in msg
+
+
+# ---------- review P2：通知送達才清 pending ----------
+
+def test_change_queues_pending_notice(tmp_path):
+    fp = ListFingerprint(tmp_path / 'f.json')
+    fp.update('舊.pdf', '動態', ['a'], now=T0)
+    _, summary, state = fp.update('新.pdf', '動態', ['a', 'b'], now=T0 + timedelta(days=1))
+    assert state['pending_notices'] == [summary]
+
+
+def test_pending_survives_until_cleared_and_accumulates(tmp_path):
+    fp = ListFingerprint(tmp_path / 'f.json')
+    fp.update('v1.pdf', '動態', ['a'], now=T0)
+    fp.update('v2.pdf', '動態', ['a', 'b'], now=T0 + timedelta(days=1))      # 變更 1（未送達）
+    _, _, state = fp.update('v2.pdf', '動態', ['a', 'b'], now=T0 + timedelta(days=2))
+    assert len(state['pending_notices']) == 1        # 無變更不重複排入
+    _, _, state = fp.update('v3.pdf', '動態', ['a', 'b', 'c'], now=T0 + timedelta(days=3))
+    assert len(state['pending_notices']) == 2        # 第二次變更累積，不覆蓋掉前一則
+    state = fp.clear_pending(now=T0 + timedelta(days=3))
+    assert state['pending_notices'] == []
+    # 清除後不會再冒出來
+    _, _, state = fp.update('v3.pdf', '動態', ['a', 'b', 'c'], now=T0 + timedelta(days=4))
+    assert state['pending_notices'] == []
+
+
+def test_state_stays_fresh_even_while_notice_pending(tmp_path):
+    """通知未送達也要更新 source/label，否則健康檢查會讀到過期的來源資訊。"""
+    fp = ListFingerprint(tmp_path / 'f.json')
+    fp.update('v1.pdf', '動態', ['a'], now=T0)
+    _, _, state = fp.update('v2.pdf', '靜態', ['a', 'b'], now=T0 + timedelta(days=1))
+    assert state['source'] == '靜態' and state['label'] == 'v2.pdf'
+    assert assess(state, now=T0 + timedelta(days=1))[0] == 'error'   # 退回靜態仍照常告警
+
+
+def test_sync_clears_pending_only_when_delivered(tmp_path, monkeypatch):
+    import geobingan_sync.steps.sync_permits as sp
+    fp = ListFingerprint(tmp_path / 'f.json')
+    fp.update('v1.pdf', '動態', ['a'], now=T0)
+    fp.update('v2.pdf', '動態', ['a', 'b'], now=T0 + timedelta(days=1))
+    assert fp.load()['pending_notices']
+
+    monkeypatch.setattr(sp.PermitSync, '_send_list_change_notice', staticmethod(lambda n: False))
+    ps = sp.PermitSync.__new__(sp.PermitSync)
+    ps.list_label, ps.list_source = 'v2.pdf', '動態'
+    ps.permit_mapping = {'a': '', 'b': ''}
+    monkeypatch.setattr(sp, 'ListFingerprint', lambda *a, **k: fp, raising=False)
+    import geobingan_sync.list_fingerprint as lf
+    monkeypatch.setattr(lf, 'ListFingerprint', lambda *a, **k: fp)
+    ps._record_list_fingerprint()
+    assert fp.load()['pending_notices'], '未送達應保留待重試'
+
+    monkeypatch.setattr(sp.PermitSync, '_send_list_change_notice', staticmethod(lambda n: True))
+    ps._record_list_fingerprint()
+    assert fp.load()['pending_notices'] == [], '送達後應清除'

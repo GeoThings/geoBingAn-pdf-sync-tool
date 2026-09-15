@@ -255,8 +255,11 @@ def check_folder_deaths(path=None, now=None, window_days=DEATH_WINDOW_DAYS):
         try:
             with open(p, encoding='utf-8') as f:
                 log = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
+        except FileNotFoundError:
             return 'ok', '無來源資料夾失效紀錄'
+        except json.JSONDecodeError as e:
+            # 損毀不可當成「無紀錄」的綠燈——那正是這個檢查要防的無聲流失
+            return 'warning', f'失效紀錄檔損毀、無法判讀（{e}）；請檢查 state/folder_deaths.json'
         now = now or _dt.now()
         cutoff = (now - timedelta(days=window_days)).strftime('%Y-%m-%d')
         recent = [d for d in (log.get('deaths') or []) if str(d.get('detected', '')) >= cutoff]

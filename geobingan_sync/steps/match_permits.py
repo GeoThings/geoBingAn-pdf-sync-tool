@@ -672,17 +672,12 @@ def build_registry(city: dict = None):
     for src, count in source_counts.most_common():
         print(f"    {src}: {count}")
 
-    # 儲存
-    os.makedirs(os.path.dirname(REGISTRY_FILE), exist_ok=True)
-    with open(REGISTRY_FILE, 'w', encoding='utf-8') as f:
-        json.dump(registry, f, indent=2, ensure_ascii=False)
+    # 儲存：先持久化「由活轉死」事件，成功後才提交 registry（fail-closed，見函式說明）
+    commit_registry_with_deaths(registry, prior_url_statuses)
     print(f"\n✅ 已儲存到 {REGISTRY_FILE}")
 
     # 列管 PDF URL 失效清單 — 給建管處請求更新政府 PDF 用
     _write_url_404_csv(registry)
-
-    # 偵測來源資料夾「由活轉死」（PR #77 只把已知失效靜音；這裡抓新發生的資料流失）
-    _record_folder_deaths(prior_url_statuses, registry)
 
 
 FOLDER_DEATHS_FILE = './state/folder_deaths.json'
@@ -711,31 +706,64 @@ def detect_folder_deaths(prior_statuses: dict, registry: dict) -> list:
     return deaths
 
 
-def _record_folder_deaths(prior_statuses: dict, registry: dict):
-    """把新發生的失效寫進 state/folder_deaths.json（append-only，供 health_check 告警）。"""
+def _atomic_write_json(path: str, data, label: str):
+    """PID 暫存檔 + os.replace 原子寫入，避免中斷留下半份 JSON。"""
+    d = os.path.dirname(path)
+    if d:
+        os.makedirs(d, exist_ok=True)
+    tmp = f'{path}.{os.getpid()}.tmp'
+    with open(tmp, 'w', encoding='utf-8') as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+    os.replace(tmp, path)
+
+
+def append_folder_deaths(deaths: list, deaths_file: str = None, now=None) -> dict:
+    """把新失效附加到 folder_deaths.json（原子寫入）。失敗一律 raise，不吞例外。
+
+    讀到損毀 JSON 時 raise 而非重置成空陣列——靜默重置會把歷史失效紀錄整份丟掉，
+    正是這個功能要防的「無聲流失」。
+    """
+    from datetime import datetime as _dt
+    path = deaths_file or FOLDER_DEATHS_FILE
+    now = now or _dt.now()
     try:
-        from datetime import datetime as _dt
-        deaths = detect_folder_deaths(prior_statuses, registry)
-        if not deaths:
-            return
-        today = _dt.now().strftime('%Y-%m-%d')
-        try:
-            with open(FOLDER_DEATHS_FILE, encoding='utf-8') as f:
-                log = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            log = {'deaths': []}
-        for d in deaths:
-            d['detected'] = today
-        log['deaths'] = (log.get('deaths') or []) + deaths
-        os.makedirs(os.path.dirname(FOLDER_DEATHS_FILE), exist_ok=True)
-        with open(FOLDER_DEATHS_FILE, 'w', encoding='utf-8') as f:
-            json.dump(log, f, indent=2, ensure_ascii=False)
+        with open(path, encoding='utf-8') as f:
+            log = json.load(f)
+        if not isinstance(log, dict):
+            raise ValueError('folder_deaths.json 內容不是物件')
+    except FileNotFoundError:
+        log = {'deaths': []}
+    except json.JSONDecodeError as e:
+        raise ValueError(f'folder_deaths.json 損毀（拒絕覆寫以免丟失歷史紀錄）: {e}')
+    today = now.strftime('%Y-%m-%d')
+    for d in deaths:
+        d['detected'] = today
+    log['deaths'] = (log.get('deaths') or []) + deaths
+    _atomic_write_json(path, log, 'folder_deaths')
+    return log
+
+
+def commit_registry_with_deaths(registry: dict, prior_statuses: dict,
+                                registry_file: str = None, deaths_file: str = None,
+                                now=None) -> list:
+    """先持久化「由活轉死」事件，成功後才提交 registry（fail-closed）。
+
+    順序很關鍵（review P1）：若先寫 registry、後記 death，中間中斷或記錄失敗時
+    registry 已把該建案存成 404，下一輪讀到的 prior 就是 404，而 detect 只認
+    alive→404——這次死亡將**永遠**偵測不到，正好破壞本功能要防的無聲流失。
+    因此 death 寫入失敗就不提交 registry：下一輪 prior 仍是 alive，可重新偵測
+    （registry 本身是每日重建、冪等，重跑不會有副作用）。
+    """
+    reg_path = registry_file or REGISTRY_FILE
+    deaths = detect_folder_deaths(prior_statuses, registry)
+    if deaths:
+        append_folder_deaths(deaths, deaths_file=deaths_file, now=now)   # 失敗 raise → 不寫 registry
         total_pdfs = sum(d.get('pdf_count', 0) for d in deaths)
         print(f"\n🔴 來源資料夾新失效 {len(deaths)} 個（影響約 {total_pdfs} 份 PDF）：")
         for d in deaths[:5]:
-            print(f"    {d['permit']} {d['name']}（{d['pdf_count']} 份）")
-    except Exception as e:
-        print(f"⚠️  失效偵測記錄失敗（不影響比對）: {e}")
+            print(f"    {d['permit']} {d.get('name', '')}（{d.get('pdf_count', 0)} 份）")
+    _atomic_write_json(reg_path, registry, 'registry')
+    return deaths
 
 
 def _write_url_404_csv(registry: dict):

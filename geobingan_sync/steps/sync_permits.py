@@ -308,18 +308,33 @@ class PermitSync:
         """
         try:
             from geobingan_sync.list_fingerprint import ListFingerprint
-            changed, summary, state = ListFingerprint().update(
+            fp = ListFingerprint()
+            changed, summary, state = fp.update(
                 self.list_label, self.list_source, self.permit_mapping.keys())
             print(f"🧾 清單指紋: {state['label']}（{state['source']}，{state['permit_count']} 筆建照）")
             if changed and summary:
                 print(f"🆕 {summary}")
-                try:
-                    from geobingan_sync.notify import send_notification
-                    send_notification('🆕 建管處清單已更新', summary, use_clickup=True, mention=False)
-                except Exception as e:
-                    print(f"  （清單更新通知發送失敗，不影響同步）: {e}")
+            # 送達才清 pending：ClickUp 失敗時保留、下一輪同步重試，通知不會遺失
+            pending = state.get('pending_notices') or []
+            if pending:
+                if self._send_list_change_notice(pending):
+                    fp.clear_pending()
+                else:
+                    print(f"  （清單更新通知未送達，保留 {len(pending)} 則待下輪重試）")
         except Exception as e:
             print(f"⚠️  清單指紋記錄失敗（不影響同步）: {e}")
+
+    @staticmethod
+    def _send_list_change_notice(notices) -> bool:
+        """發送清單變更通知；只有 ClickUp 通道成功才算送達（其他通道不算數）。"""
+        try:
+            from geobingan_sync.notify import send_notification
+            results = send_notification('🆕 建管處清單已更新', '\n'.join(notices),
+                                        use_clickup=True, mention=False)
+            return any(ch == 'ClickUp' and ok for ch, ok in (results or []))
+        except Exception as e:
+            print(f"  （清單更新通知發送例外）: {e}")
+            return False
 
     def scan_shared_drive(self) -> Dict[str, str]:
         print(f"\n📂 掃描共享雲端...")

@@ -221,6 +221,9 @@ cities.json（多城市配置）
     │       解析後寫 list_fingerprint.json（PR #82）：記錄來源（動態／靜態）、檔名、
     │       建照數與內容 hash；內容變更發資訊性通知，退回靜態或 >60 天未變由
     │       health_check 告警——否則 #78 的 fallback 會靜默退化回原本的 bug
+    │       不變量：指紋照常更新（health_check 才不會讀到過期的來源資訊），但變更
+    │       通知存成 pending_notices，**ClickUp 送達才清除**、否則下輪重試——
+    │       若先把指紋存成新 hash 再送，下一輪 changed=False，通知永久遺失
     └── CSV: 載入本地 CSV（NGO 手動整理）
     │
     ▼
@@ -365,7 +368,7 @@ API project 匹配：116 筆（滑動視窗 + 去重）
 | `alert_state_healthcheck.json` / `alert_state_sync.json` | 告警去重狀態（各 producer 一個 namespace；key → level/first_seen/last_sent） | 通知真的送達時 | 否 |
 | `upload_budget.json` + `.lock` | 本月解析預算帳本（month/uploaded/est_usd；flock；跨月歸零） | 預留／退還時 | 否（換機用 `budget --set N` 初始化） |
 | `list_fingerprint.json` | 政府清單指紋（source／label／permit_count／sha256／last_changed） | 每次 sync 解析清單後 | 否 |
-| `folder_deaths.json` | 來源資料夾由活轉死的紀錄（append-only，附 detected 日期與 pdf_count） | 偵測到新失效時 | 否 |
+| `folder_deaths.json` | 來源資料夾由活轉死的紀錄（append-only，附 detected 日期與 pdf_count）。**fail-closed**：先原子寫入此檔成功才提交 registry——順序相反時，中斷會讓 registry 已存 404、下輪 prior 非 alive，該次死亡永遠偵測不到；讀到損毀 JSON 一律 raise，不靜默重置以免丟失歷史 | 偵測到新失效時 | 否 |
 
 ### Weekly snapshots：local-only state（PR #45）
 
