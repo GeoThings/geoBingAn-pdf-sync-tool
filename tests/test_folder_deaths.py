@@ -134,23 +134,39 @@ def test_rerun_after_registry_failure_does_not_duplicate(tmp_path, monkeypatch):
     assert len(json.loads(deaths_file.read_text(encoding='utf-8'))['deaths']) == 1
     assert not reg_file.exists()
 
-    # 第二輪（prior 仍是 alive，因為 registry 沒提交）：同一事件不可重複累積
+    # 第二輪＝隔天的正常排程（prior 仍是 alive，因為 registry 沒提交）：不可重複累積
     monkeypatch.setattr(mp, '_atomic_write_json', real_write)
     appended = mp.commit_registry_with_deaths(registry, prior, registry_file=str(reg_file),
-                                              deaths_file=str(deaths_file), now=T0)
+                                              deaths_file=str(deaths_file),
+                                              now=T0 + timedelta(days=1))
     assert appended == []                                    # 已去重，本輪無新增
     assert len(json.loads(deaths_file.read_text(encoding='utf-8'))['deaths']) == 1
     assert reg_file.exists()                                 # 這次 registry 成功提交
 
 
-def test_same_permit_new_day_is_a_new_event(tmp_path):
+def test_same_folder_next_day_is_not_a_new_event(tmp_path):
+    """排程每日執行，重試必在隔天——去重鍵不含日期才擋得住（review P2）。"""
     import geobingan_sync.steps.match_permits as mp
     deaths_file = tmp_path / 'deaths.json'
-    d = {'permit': 'A', 'source_url': 'u', 'pdf_count': 1}
+    d = {'permit': 'A', 'source_url': 'https://drive.google.com/drive/folders/XYZ', 'pdf_count': 1}
     assert len(mp.append_folder_deaths([dict(d)], deaths_file=str(deaths_file), now=T0)) == 1
     assert len(mp.append_folder_deaths([dict(d)], deaths_file=str(deaths_file), now=T0)) == 0
-    later = T0 + timedelta(days=1)
-    assert len(mp.append_folder_deaths([dict(d)], deaths_file=str(deaths_file), now=later)) == 1
+    for day in (1, 2, 30):
+        assert len(mp.append_folder_deaths([dict(d)], deaths_file=str(deaths_file),
+                                           now=T0 + timedelta(days=day))) == 0
+    log = json.loads(deaths_file.read_text(encoding='utf-8'))['deaths']
+    assert len(log) == 1 and log[0]['detected'] == '2026-09-15'   # 保留首次偵測日
+
+
+def test_same_permit_different_folder_is_a_new_event(tmp_path):
+    """換了新資料夾又失效＝真的第二次事件，不可被去重掉。"""
+    import geobingan_sync.steps.match_permits as mp
+    deaths_file = tmp_path / 'deaths.json'
+    old = {'permit': 'A', 'source_url': 'https://drive.google.com/drive/folders/OLD', 'pdf_count': 1}
+    new = {'permit': 'A', 'source_url': 'https://drive.google.com/drive/folders/NEW', 'pdf_count': 9}
+    assert len(mp.append_folder_deaths([dict(old)], deaths_file=str(deaths_file), now=T0)) == 1
+    assert len(mp.append_folder_deaths([dict(new)], deaths_file=str(deaths_file),
+                                       now=T0 + timedelta(days=60))) == 1
     assert len(json.loads(deaths_file.read_text(encoding='utf-8'))['deaths']) == 2
 
 

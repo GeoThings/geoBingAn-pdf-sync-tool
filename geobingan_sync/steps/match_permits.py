@@ -718,16 +718,26 @@ def _atomic_write_json(path: str, data, label: str):
 
 
 def _death_key(d: dict) -> tuple:
-    """事件去重鍵：同一建案、同一來源連結、同一天視為同一次失效。"""
-    return (d.get('permit'), d.get('source_url', ''), d.get('detected'))
+    """事件去重鍵：同一建案 + 同一來源連結 = 同一次失效。**刻意不含日期**。
+
+    排程每日執行，所以「death 已寫、registry 提交失敗」的重試必然發生在隔天；
+    鍵裡若含 detected，隔日重跑會被當成新事件再 append，去重只在同一天有效
+    （review P2）。同一個 Drive folder 一旦 404 就是永久失效，隔天再偵測到仍是
+    同一次 transition。若該建案日後換成新的 folder URL 又失效，URL 不同會自然
+    形成新事件。
+
+    取捨：同一 folder ID 被刪除→還原→再刪除會被視為同一次（去重掉）。已刪除的
+    Drive 資料夾實務上不會以相同 ID 復活，而每日重複告警的噪音代價更高。
+    """
+    return (d.get('permit'), d.get('source_url', ''))
 
 
 def append_folder_deaths(deaths: list, deaths_file: str = None, now=None) -> list:
     """把新失效附加到 folder_deaths.json（原子寫入）。失敗一律 raise，不吞例外。
 
-    以 (permit, source_url, detected) 去重（review P2）：death 已寫入但 registry
-    提交失敗時，下一輪 prior 仍是 alive、會再次偵測到同一次死亡；沒有去重就會
-    累積重複事件、讓 health_check 誇大失效數與受影響 PDF 數。
+    以 (permit, source_url) 去重（不含日期，見 _death_key）：death 已寫入但 registry
+    提交失敗時，下一輪（通常是隔天）prior 仍是 alive、會再次偵測到同一次死亡；
+    沒有去重就會累積重複事件、讓 health_check 誇大失效數與受影響 PDF 數。
 
     讀到損毀 JSON 時 raise 而非重置成空陣列——靜默重置會把歷史失效紀錄整份丟掉，
     正是這個功能要防的「無聲流失」。
