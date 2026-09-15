@@ -489,8 +489,11 @@ def download_pdf(service, file_id: str, file_name: str, max_retries: int = 3) ->
 def upload_to_geobingan(pdf_content: bytes, file_name: str, project_code: str,
                         max_retries: int = 3) -> Optional[dict]:
     """
-    回傳：成功/可能已送達→dict；後端明確拒絕或未送出→False（確定無解析成本）；
-    未知例外→None（結果不明，預算採保守視為已消耗）。
+    回傳（預算結算依此分類）：
+    - dict：成功，或可能已送達（502/504、逾時/連線錯誤重試耗盡）→ 視為已消耗
+    - False：確定無解析成本 —— 4xx 明確拒絕、或 401 換發失敗根本沒再送
+    - None：結果不明 —— 任何 5xx（含 503 重試耗盡、401 換發後重試得到 5xx）、未知例外；
+      5xx 可能發生在後端已建報告/已進佇列之後，保守視為已消耗（review P1）
     
     上傳 PDF 到 geoBingAn API 進行分析（含重試機制）
 
@@ -567,7 +570,7 @@ def upload_to_geobingan(pdf_content: bytes, file_name: str, project_code: str,
                     continue
                 else:
                     print(f"  ❌ 伺服器不可用 (503)，已重試 {max_retries} 次")
-                    return False   # 明確未受理，無成本
+                    return None    # 5xx：結果不明，保守視為已消耗
             elif response.status_code == 401:
                 # Token 過期，嘗試刷新並重試
                 print(f"  ⚠️  Token 已過期，嘗試刷新...")
@@ -592,13 +595,15 @@ def upload_to_geobingan(pdf_content: bytes, file_name: str, project_code: str,
                         return result
                     else:
                         print(f"  ❌ 重試失敗 ({retry_response.status_code})")
-                        return False   # 後端明確拒絕，無成本
+                        # 4xx 明確拒絕→False；5xx 結果不明→None
+                        return False if 400 <= retry_response.status_code < 500 else None
                 else:
                     print(f"  ❌ Token 刷新失敗，無法繼續上傳")
                     return False   # 未送出，無成本
             else:
                 print(f"  ❌ API 錯誤 ({response.status_code}): {response.text[:300]}")
-                return False   # 後端明確拒絕（非 2xx），無成本
+                # 4xx 明確拒絕→False（無成本）；5xx 可能已建報告/進佇列→None（結果不明，保守計入）
+                return False if 400 <= response.status_code < 500 else None
 
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
             # 連線超時或連線錯誤 - 重試
