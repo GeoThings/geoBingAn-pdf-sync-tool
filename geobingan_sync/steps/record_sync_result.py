@@ -79,8 +79,14 @@ def notify_sync_outcome(status: str, error_message: str, alert_state=None, now=N
 
 
 def _clickup_send(title, body, mention):
-    results = send_notification(title, body, use_clickup=True, mention=mention)
-    return any(ch == 'ClickUp' and ok for ch, ok in (results or []))
+    """同步失敗＝error 級，同時寄 Email（唯一會推播到人的通道）並以其為送達判準。"""
+    from geobingan_sync.config import ALERT_EMAIL_TO, ALERT_SMTP_PASSWORD
+    results = send_notification(title, body, use_clickup=True, mention=mention,
+                                use_email=mention)
+    got = dict(results or [])
+    if mention and ALERT_EMAIL_TO and ALERT_SMTP_PASSWORD:
+        return bool(got.get('Email'))
+    return bool(got.get('ClickUp'))
 
 
 if __name__ == '__main__':

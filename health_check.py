@@ -397,10 +397,22 @@ def run_health_check(checks=None, notify=False, alert_state=None, now=None, send
 
 
 def clickup_send(title, body, mention):
-    """預設發送器：回傳 ClickUp 通道是否真的成功（其他通道不算數）。"""
+    """預設發送器。mention=True（有 error 級）時同時寄 Email。
+
+    送達判準分兩級（2026-09-16 實測後調整）：
+    - error：以 **Email** 是否成功為準——ClickUp 對 Zhe 本人不會推播（機器人用他
+      的 token 發文，自我 @ 會被吃掉、自己發的留言也不通知），只算紀錄。
+    - warning：ClickUp 成功即可（純紀錄，不需要打擾）。
+    未設定 Email 時退回看 ClickUp，避免整條通道卡死不發。
+    """
     from geobingan_sync.notify import send_notification
-    results = send_notification(title, body, use_clickup=True, mention=mention)
-    return any(ch == 'ClickUp' and ok for ch, ok in (results or []))
+    from geobingan_sync.config import ALERT_EMAIL_TO, ALERT_SMTP_PASSWORD
+    results = send_notification(title, body, use_clickup=True, mention=mention,
+                                use_email=mention)
+    got = dict(results or [])
+    if mention and ALERT_EMAIL_TO and ALERT_SMTP_PASSWORD:
+        return bool(got.get('Email'))
+    return bool(got.get('ClickUp'))
 
 
 def main():

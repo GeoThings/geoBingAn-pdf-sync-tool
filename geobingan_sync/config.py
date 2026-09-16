@@ -47,6 +47,14 @@ HEALTHCHECK_CLICKUP_TASK_ID = os.environ.get('HEALTHCHECK_CLICKUP_TASK_ID', '')
 # error 級告警要 @ 的 ClickUp user id（留空=不 @）；ClickUp 只對被 @ 的人推播，純留言沒人看得到
 ALERT_MENTION_USER_ID = os.environ.get('ALERT_MENTION_USER_ID', '')
 
+# Email 告警（唯一實測會推播到手機的通道）。健康檢查由 launchd 自行執行、沒有互動
+# session，必須自己會寄信，故用 Gmail SMTP + 應用程式密碼（個人帳號設定）。
+ALERT_EMAIL_TO = os.environ.get('ALERT_EMAIL_TO', '')
+ALERT_EMAIL_FROM = os.environ.get('ALERT_EMAIL_FROM', '')
+ALERT_SMTP_HOST = os.environ.get('ALERT_SMTP_HOST', 'smtp.gmail.com')
+ALERT_SMTP_PORT = int(os.environ.get('ALERT_SMTP_PORT', '465'))
+ALERT_SMTP_PASSWORD = os.environ.get('ALERT_SMTP_PASSWORD', '')
+
 # 通知設定
 LINE_NOTIFY_TOKEN = os.environ.get('LINE_NOTIFY_TOKEN', '')
 ENABLE_MACOS_NOTIFY = os.environ.get('ENABLE_MACOS_NOTIFY', 'true').lower() == 'true'
