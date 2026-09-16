@@ -593,9 +593,10 @@ config.py (from .env)  →  環境變數  →  硬編碼預設值
 | `test_budget.py`／`test_check_parse_backlog.py`／`test_process_single_pdf_classification.py`／`test_upload_response_classification.py` | 預算守門（預留/退還/跨月/POST 前守門/8 子程序併發）、解析積壓與預算檢查、回應分類（PR #80） | 40+ | tmp_path, subprocess |
 | `test_list_fingerprint.py`／`test_folder_deaths.py` | 清單指紋（變更／靜態退回／停更／寫入 fail-closed／通知 pending 重試）、來源資料夾由活轉死（fail-closed 排序／事件去重不含日期／損毀不重置）（PR #82） | 28 | tmp_path |
 | `test_email_alert.py` | Email 通道（組信 MIME／未設定／SMTP 成功失敗／error 以 Email 判送達／warning 不寄信／未設定退回 ClickUp／**error 恢復走 Email 且失敗重試**） | 9 | monkeypatch |
-| **合計** | | **303** | |
+| **合計** | | **305** | |
 
 設計原則：
+- **測試不得寫進正式落地路徑**——`download_pdf_list(dest=…)` 供測試注入；2026-09-16 曾因測試把 `/tmp/permit_list.pdf` 覆寫成 37 bytes 假檔，導致以該檔做的人工判讀誤判某建案已從政府清單下架
 - 所有測試 import 零依賴模組（`permit_utils`、`drive_utils`），不觸發 credentials 或 Google API（lazy init）
 - 可在 CI（無 credentials.json）或乾淨環境執行
 - Smoke tests 覆蓋報告生成端到端路徑（含 XSS escaping、file round-trip）

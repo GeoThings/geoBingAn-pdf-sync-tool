@@ -47,6 +47,7 @@ except ImportError:
     SHARED_DRIVE_ID = os.environ.get('SHARED_DRIVE_ID', '0AIvp1h-6BZ1oUk9PVA')
 PDF_LIST_URL_DEFAULT = 'https://www-ws.gov.taipei/001/Upload/845/relfile/-1/845/03b35db7-a123-4b29-b881-1cb17fa9c4f2.pdf'
 STATE_FILE = './state/sync_permits_progress.json'
+PERMIT_LIST_PATH = '/tmp/permit_list.pdf'   # 下載政府清單的預設落地路徑（測試請用 dest= 注入）
 # ============================================
 
 # Google Drive API 認證（lazy init，避免 import 時就需要 credentials.json）
@@ -189,7 +190,7 @@ class PermitSync:
         print(f"✅ 載入 {len(mapping)} 個建案")
         return mapping
 
-    def download_pdf_list(self, max_attempts: int = 3) -> str:
+    def download_pdf_list(self, max_attempts: int = 3, dest: str = None) -> str:
         # retry-with-backoff 防 transient 網路/DNS 失敗（#59）— 配合 network_ready.py
         # 的 post-wake gate，雙層防禦：probe 等 DNS ready，此處再吸收 mid-run blip
         print("📥 下載建案列表 PDF...")
@@ -208,7 +209,9 @@ class PermitSync:
         if self.pdf_list_url and self.pdf_list_url not in [u for _, u, _ in candidates]:
             candidates.append(('靜態', self.pdf_list_url, self.pdf_list_url.rsplit('/', 1)[-1]))
 
-        pdf_path = '/tmp/permit_list.pdf'
+        # dest 可注入：測試若寫進正式路徑，會在跑過測試的機器留下假清單檔，
+        # 並污染後續以該檔做的人工判讀（2026-09-16 曾因此誤判建案已下架）。
+        pdf_path = dest or PERMIT_LIST_PATH
         last_err = None
         for label, url, display in candidates:
             for attempt in range(1, max_attempts + 1):
