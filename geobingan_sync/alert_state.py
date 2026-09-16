@@ -79,34 +79,43 @@ def plan_alerts(prev: Dict[str, dict], current: Dict[str, Tuple[str, str]], now:
 
 
 def format_events(events: List[AlertEvent], now: datetime) -> Tuple[str, str, bool]:
-    """把事件組成一則留言。回傳 (title, body, needs_mention)。
+    """把事件組成一則留言。回傳 (title, body, needs_attention)。
 
-    needs_mention：只要有 error 級的 new/escalated/reminder 就 @；純解除不 @。
+    needs_attention＝這批事件需不需要「打擾人」：**error 級的 new/escalated/reminder，
+    以及從 error 恢復（resolved）都算**。error 恢復也要通知到人，否則承諾的「恢復
+    通知」等於沒有——ClickUp 對 token 擁有者本人不會推播（review P2）。
+
+    為何是單一旗標而非 needs_mention／needs_email 兩個：兩者在所有情境下恆等
+    （warning 一律不打擾、error 含恢復一律要打擾），且 ClickUp 的 @ 對本人是空
+    操作，真正的決策只有「要不要打擾人」這一件事。留兩個永遠相等的布林只會讓
+    呼叫端誤以為可以分開調。
     """
     icons = {'error': '❌', 'warning': '⚠️'}
     lines = []
-    needs_mention = False
+    needs_attention = False
     for e in events:
         if e.kind == 'resolved':
             lines.append(f'✅ 已恢復：{e.key}')
+            if e.level == 'error':
+                needs_attention = True      # error 解除也要送到人
             continue
         tag = {'new': '新', 'escalated': '升級', 'reminder': '持續'}[e.kind]
         lines.append(f'{icons.get(e.level, "❓")} [{tag}] {e.key}: {e.message}')
         if e.level == 'error':
-            needs_mention = True
+            needs_attention = True
 
     active = [e for e in events if e.kind != 'resolved']
     resolved = [e for e in events if e.kind == 'resolved']
     if active and resolved:
         title = f'⚠️ geoBingAn 健康檢查：{len(active)} 個問題、{len(resolved)} 個已恢復'
     elif active:
-        title = f'{"❌" if needs_mention else "⚠️"} geoBingAn 健康檢查：{len(active)} 個問題'
+        title = f'{"❌" if needs_attention else "⚠️"} geoBingAn 健康檢查：{len(active)} 個問題'
     else:
         title = f'✅ geoBingAn 健康檢查：{len(resolved)} 個問題已恢復'
-    return title, '\n'.join(lines), needs_mention
+    return title, '\n'.join(lines), needs_attention
 
 
-SendFn = Callable[[str, str, bool], bool]   # send(title, body, needs_mention) -> 是否送達
+SendFn = Callable[[str, str, bool], bool]   # send(title, body, needs_attention) -> 是否送達
 
 
 class AlertState:
@@ -160,9 +169,9 @@ class AlertState:
         if not events:
             self.save(new_state)
             return events, True
-        title, body, needs_mention = format_events(events, now)
+        title, body, needs_attention = format_events(events, now)
         try:
-            delivered = bool(send(title, body, needs_mention))
+            delivered = bool(send(title, body, needs_attention))
         except Exception as e:
             print(f"  告警發送例外（狀態不落地，下輪重試）: {e}")
             delivered = False

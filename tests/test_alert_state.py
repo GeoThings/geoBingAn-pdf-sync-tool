@@ -59,9 +59,14 @@ def test_format_mentions_only_on_error():
     events, _ = plan_alerts({}, {'上傳暫停': ('warning', 'a')}, T0)
     _, _, mention = format_events(events, T0)
     assert mention is False
+    # error 恢復：仍要送到人，否則承諾的「恢復通知」等於沒有（review P2）
     events, _ = plan_alerts({'X': {'level': 'error', 'message': 'm', 'last_sent': T0.isoformat()}}, {}, T0)
-    title, body, mention = format_events(events, T0)
-    assert mention is False and body.startswith('✅ 已恢復')
+    title, body, attention = format_events(events, T0)
+    assert attention is True and body.startswith('✅ 已恢復')
+    # warning 恢復：純紀錄，不打擾
+    events, _ = plan_alerts({'Y': {'level': 'warning', 'message': 'm', 'last_sent': T0.isoformat()}}, {}, T0)
+    _, body, attention = format_events(events, T0)
+    assert attention is False and body.startswith('✅ 已恢復')
 
 
 OK = lambda t, b, m: True

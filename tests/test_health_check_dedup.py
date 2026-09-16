@@ -36,11 +36,19 @@ def test_identical_next_day_sends_nothing(tmp_path):
     assert len(sent) == 1
 
 
-def test_recovery_sends_resolved_without_mention(tmp_path):
+def test_error_recovery_still_reaches_person(tmp_path):
+    """error 恢復＝needs_attention True → 走 Email；否則恢復通知到不了人（review P2）。"""
     st = AlertState(tmp_path / 's.json'); sent = []
     _run([('JWT Token', lambda: ('error', '已過期'))], st, T0, sent)
     _run([('JWT Token', lambda: ('ok', '剩 7 天'))], st, T0 + timedelta(days=1), sent)
-    assert len(sent) == 2 and sent[1][2] is False and '已恢復' in sent[1][1]
+    assert len(sent) == 2 and sent[1][2] is True and '已恢復' in sent[1][1]
+
+
+def test_warning_recovery_does_not_disturb(tmp_path):
+    st = AlertState(tmp_path / 's.json'); sent = []
+    _run([('上傳暫停', lambda: ('warning', '已暫停'))], st, T0, sent)
+    _run([('上傳暫停', lambda: ('ok', '未暫停'))], st, T0 + timedelta(days=1), sent)
+    assert len(sent) == 2 and sent[1][2] is False
 
 
 def test_check_exception_becomes_error(tmp_path):
@@ -57,7 +65,7 @@ def test_sync_failure_then_recovery(tmp_path):
     notify_sync_outcome('failure', 'No space left', alert_state=st, now=T0, send=send)
     notify_sync_outcome('failure', 'No space left', alert_state=st, now=T0 + timedelta(days=1), send=send)
     notify_sync_outcome('success', '', alert_state=st, now=T0 + timedelta(days=2), send=send)
-    assert [s[2] for s in sent] == [True, False]           # 失敗 @；連日失敗不重發；恢復不 @
+    assert [s[2] for s in sent] == [True, True]            # 失敗與恢復都要送到人；連日失敗不重發
     assert 'No space left' in sent[0][1] and '已恢復' in sent[1][1]
 
 

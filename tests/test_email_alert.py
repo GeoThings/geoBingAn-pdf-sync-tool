@@ -98,3 +98,37 @@ def test_falls_back_to_clickup_when_email_unconfigured(monkeypatch):
     monkeypatch.setattr('geobingan_sync.config.ALERT_SMTP_PASSWORD', '')
     monkeypatch.setattr(notify, 'send_notification', lambda *a, **k: [('ClickUp', True)])
     assert health_check.clickup_send('t', 'b', True) is True
+
+
+def test_error_recovery_uses_email_and_retries_on_failure(tmp_path, monkeypatch):
+    """review P2：error 恢復也必須走 Email；Email 失敗不 commit，下一輪重試。"""
+    import health_check
+    from geobingan_sync.alert_state import AlertState
+
+    monkeypatch.setattr('geobingan_sync.config.ALERT_EMAIL_TO', 'zhe@example.com')
+    monkeypatch.setattr('geobingan_sync.config.ALERT_SMTP_PASSWORD', 'pw')
+    calls = []
+
+    def fake_send_notification(title, body, **kw):
+        calls.append(kw.get('use_email'))
+        return [('ClickUp', True), ('Email', fake_send_notification.email_ok)]
+    fake_send_notification.email_ok = True
+    monkeypatch.setattr(notify, 'send_notification', fake_send_notification)
+
+    st = AlertState(tmp_path / 's.json')
+    err = [('JWT Token', lambda: ('error', '已過期'))]
+    ok_ = [('JWT Token', lambda: ('ok', '剩 7 天'))]
+
+    health_check.run_health_check(checks=err, notify=True, alert_state=st)
+    assert calls[-1] is True                       # 新告警走 Email
+
+    # 恢復但 Email 失敗 → 不 commit
+    fake_send_notification.email_ok = False
+    health_check.run_health_check(checks=ok_, notify=True, alert_state=st)
+    assert calls[-1] is True                       # 恢復同樣走 Email（不是只貼 ClickUp）
+    assert st.load().get('JWT Token'), '未送達，狀態應保留以便重試'
+
+    # 下一輪 Email 成功 → 才 commit
+    fake_send_notification.email_ok = True
+    health_check.run_health_check(checks=ok_, notify=True, alert_state=st)
+    assert st.load() == {}, '送達後才清除'

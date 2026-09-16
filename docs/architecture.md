@@ -435,11 +435,14 @@ AlertState(namespace=producer).process(current, send)
     │    新出現 → new；warning→error → escalated；last_sent ≥7 天 → reminder；消失 → resolved
     ▼
 send(title, body, needs_mention)   ← needs_mention = 任一 error 級 new/escalated/reminder
-    │  error → Email（Gmail SMTP，實測唯一會推播到人）＋ ClickUp 留言（紀錄）
-    │  warning → 只留 ClickUp
+    │  needs_attention（error 的新增/升級/提醒/**恢復**）→ Email（實測唯一會推播到人）
+    │    ＋ ClickUp 留言（紀錄）；只有 warning → 只留 ClickUp
+    │  單一旗標而非 mention/email 兩個：兩者在所有情境恆等，且 @ 對本人是空操作
     │  ClickUp comment array + type:tag block（純文字 @name 不會推播）
     ▼
-只有 send 回報 ClickUp 成功才 save(new_state)      ← plan → send → commit
+只有「真正會到人的通道」回報成功才 save(new_state)   ← plan → send → commit
+    │  需打擾（error 新增/升級/提醒/**恢復**）→ 看 Email；只有 warning → 看 ClickUp
+    │  （未設定 Email 時退回看 ClickUp，避免整條通道卡死不發）
 （失敗／例外：保留舊狀態、下一輪重發同事件）
 ```
 
@@ -450,6 +453,8 @@ send(title, body, needs_mention)   ← needs_mention = 任一 error 級 new/esca
    吃成空的 `{"type": "tag"}`、也不通知自己發的留言，等於**結構上不可能送達**
    （Token 到期連喊四天無人察覺即此因）。改為 error 級以 **Email 成功**為判準，
    ClickUp 降為紀錄。教訓：測試只驗「payload 組得對」不夠，必須驗「對方真的收得到」。
+   **error 的「已恢復」通知同樣要走 Email**——否則承諾的恢復通知一樣到不了人
+   （review P2）；warning 與 warning 恢復維持純紀錄、不打擾。
 1. **producer 各自 namespace 狀態檔**——共用時任一方都會把對方的項目判成 resolved、誤發恢復通知，隔天又當新告警重發。
 2. **送達才落狀態**——否則 ClickUp 失敗會被抑制 7 天。
 3. **乾跑唯讀**（不帶 `--notify`）——手動檢查不可悄悄壓掉之後的告警。
@@ -587,8 +592,8 @@ config.py (from .env)  →  環境變數  →  硬編碼預設值
 | `test_alert_state.py`／`test_notify_mention.py`／`test_health_check_dedup.py` | 告警去重/升級、送達才落狀態、namespace 分離、mention payload（PR #79） | 23 | tmp_path |
 | `test_budget.py`／`test_check_parse_backlog.py`／`test_process_single_pdf_classification.py`／`test_upload_response_classification.py` | 預算守門（預留/退還/跨月/POST 前守門/8 子程序併發）、解析積壓與預算檢查、回應分類（PR #80） | 40+ | tmp_path, subprocess |
 | `test_list_fingerprint.py`／`test_folder_deaths.py` | 清單指紋（變更／靜態退回／停更／寫入 fail-closed／通知 pending 重試）、來源資料夾由活轉死（fail-closed 排序／事件去重不含日期／損毀不重置）（PR #82） | 28 | tmp_path |
-| `test_email_alert.py` | Email 通道（組信 MIME／未設定／SMTP 成功失敗／error 以 Email 判送達／warning 不寄信／未設定退回 ClickUp） | 8 | monkeypatch |
-| **合計** | | **301** | |
+| `test_email_alert.py` | Email 通道（組信 MIME／未設定／SMTP 成功失敗／error 以 Email 判送達／warning 不寄信／未設定退回 ClickUp／**error 恢復走 Email 且失敗重試**） | 9 | monkeypatch |
+| **合計** | | **303** | |
 
 設計原則：
 - 所有測試 import 零依賴模組（`permit_utils`、`drive_utils`），不觸發 credentials 或 Google API（lazy init）

@@ -396,21 +396,22 @@ def run_health_check(checks=None, notify=False, alert_state=None, now=None, send
     return issues, events
 
 
-def clickup_send(title, body, mention):
-    """預設發送器。mention=True（有 error 級）時同時寄 Email。
+def clickup_send(title, body, needs_attention):
+    """預設發送器。needs_attention＝這批含 error 級事件（**含 error 恢復**）。
 
     送達判準分兩級（2026-09-16 實測後調整）：
-    - error：以 **Email** 是否成功為準——ClickUp 對 Zhe 本人不會推播（機器人用他
-      的 token 發文，自我 @ 會被吃掉、自己發的留言也不通知），只算紀錄。
-    - warning：ClickUp 成功即可（純紀錄，不需要打擾）。
+    - 需打擾（error 新增／升級／提醒／恢復）：以 **Email** 是否成功為準——ClickUp
+      對 Zhe 本人不會推播（機器人用他的 token 發文，自我 @ 會被吃掉、自己發的
+      留言也不通知），只算紀錄。
+    - 只有 warning：ClickUp 成功即可（純紀錄，不需要打擾）。
     未設定 Email 時退回看 ClickUp，避免整條通道卡死不發。
     """
     from geobingan_sync.notify import send_notification
     from geobingan_sync.config import ALERT_EMAIL_TO, ALERT_SMTP_PASSWORD
-    results = send_notification(title, body, use_clickup=True, mention=mention,
-                                use_email=mention)
+    results = send_notification(title, body, use_clickup=True, mention=needs_attention,
+                                use_email=needs_attention)
     got = dict(results or [])
-    if mention and ALERT_EMAIL_TO and ALERT_SMTP_PASSWORD:
+    if needs_attention and ALERT_EMAIL_TO and ALERT_SMTP_PASSWORD:
         return bool(got.get('Email'))
     return bool(got.get('ClickUp'))
 

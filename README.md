@@ -38,7 +38,7 @@
 - ✅ 告警確實送達：ClickUp 留言＋error 級 @ 人、去重/升級/每 7 天提醒/恢復通知（PR #79）
 - ✅ 解析預算守門：每日上限、單次門檻需 --yes、月上限先預留後退還（PR #80）
 - ✅ 健康檢查 10 項：Token／磁碟／同步狀態／API／launchd／上傳暫停／解析積壓／解析預算／清單新鮮度／來源資料夾
-- ✅ 自動化測試（pytest, 301 cases, GitHub Actions CI）
+- ✅ 自動化測試（pytest, 303 cases, GitHub Actions CI）
 - ✅ 多城市支援（cities.json 配置，PDF 或 CSV 資料來源）
 - ✅ Refresh Token 自動輪替（API 回傳新 token 時自動寫回 .env）
 
@@ -371,18 +371,18 @@ python3 -c "from geobingan_sync.sync_status import SyncStatus; SyncStatus().prin
 | macOS 系統通知 | 輔助 | launchd 下權限受限常送不到，只在人在電腦前時有效 |
 | LINE Notify | 已停服 | 設定保留但無效 |
 
-> **送達判準分兩級**：error 以 **Email 成功**為準（ClickUp 只算紀錄），warning 以 ClickUp 為準（純紀錄、不打擾）。未設定 Email 時退回看 ClickUp，避免整條通道卡死不發。
+> **送達判準分兩級**：需打擾的事件（error 的新增／升級／提醒／**恢復**）以 **Email 成功**為準（ClickUp 只算紀錄）；只有 warning 時以 ClickUp 為準（純紀錄、不打擾）。未設定 Email 時退回看 ClickUp，避免整條通道卡死不發。
 
 ### 去重與升級（`geobingan_sync/alert_state.py`）
 
-每個告警只在**新出現 / warning→error 升級 / 每 7 天提醒一次 / 解除（發恢復通知）**時送出，其餘抑制。狀態檔 `state/alert_state_<producer>.json`：健康檢查與同步結果**各自一個 namespace**（共用會把對方的項目誤判成已恢復）。採 **plan → send → commit**：ClickUp 真的送達才寫入狀態，失敗或例外則保留舊狀態、下一輪重試。不帶 `--notify` 的乾跑為唯讀，不會悄悄把問題標成「已看過」。
+每個告警只在**新出現 / warning→error 升級 / 每 7 天提醒一次 / 解除（發恢復通知）**時送出，其餘抑制。狀態檔 `state/alert_state_<producer>.json`：健康檢查與同步結果**各自一個 namespace**（共用會把對方的項目誤判成已恢復）。採 **plan → send → commit**：**真正會到人的通道**送達才寫入狀態，失敗或例外則保留舊狀態、下一輪重試。不帶 `--notify` 的乾跑為唯讀，不會悄悄把問題標成「已看過」。
 
 ### 觸發時機
 
 | 事件 | 等級 | 內容 |
 |------|------|------|
 | 健康檢查異常（10 項） | warning / error | 一輪一則彙整；error 才 @ |
-| 同步執行失敗 | error | 錯誤訊息；連日失敗每 7 天提醒；恢復時通知 |
+| 同步執行失敗／恢復 | error | 錯誤訊息；連日失敗每 7 天提醒；**恢復同樣寄 Email** |
 | Refresh Token 過期／即將過期 | error / warning | 請至 riskmap 重新登入更新 `.env` |
 | 解析積壓（近 7 天停滯 ≥6h） | warning / error（≥20 份或最舊 ≥24h） | 疑後端 worker 停擺或 OpenAI 預算上限 |
 | 解析預算（本月估算 vs 月上限） | ≥70% warning／≥90% error | 請與後端確認預算再上傳 |
@@ -432,7 +432,7 @@ geoBingAn-pdf-sync-tool/
 ├── state/                       # 狀態追蹤（registry / 上傳歷史 / pdf_inventory…）
 ├── logs/                        # 執行日誌
 ├── docs/                        # 技術文檔 + 線上追蹤報告
-└── tests/                       # 自動化測試（301 tests）
+└── tests/                       # 自動化測試（303 tests）
 ```
 
 ---
