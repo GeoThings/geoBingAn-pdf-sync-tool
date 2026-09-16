@@ -38,7 +38,7 @@
 - ✅ 告警確實送達：ClickUp 留言＋error 級 @ 人、去重/升級/每 7 天提醒/恢復通知（PR #79）
 - ✅ 解析預算守門：每日上限、單次門檻需 --yes、月上限先預留後退還（PR #80）
 - ✅ 健康檢查 10 項：Token／磁碟／同步狀態／API／launchd／上傳暫停／解析積壓／解析預算／清單新鮮度／來源資料夾
-- ✅ 自動化測試（pytest, 265 cases, GitHub Actions CI）
+- ✅ 自動化測試（pytest, 303 cases, GitHub Actions CI）
 - ✅ 多城市支援（cities.json 配置，PDF 或 CSV 資料來源）
 - ✅ Refresh Token 自動輪替（API 回傳新 token 時自動寫回 .env）
 
@@ -116,9 +116,12 @@ GEOBINGAN_REFRESH_URL=https://riskmap.today/api/auth/auth/refresh_token/
 # ClickUp 週報上傳
 CLICKUP_TOKEN=your-clickup-token      # 從 ClickUp Settings > Apps 取得
 
-# 告警（ClickUp 為主通道；LINE Notify 已停服、macOS 通知在 launchd 下常送不到）
-HEALTHCHECK_CLICKUP_TASK_ID=xxxxxxxx  # 告警留言要貼的 task
-ALERT_MENTION_USER_ID=48123565        # error 級告警要 @ 的 ClickUp user id（被 @ 才會推播）
+# 告警（Email 為 error 級的送達通道；ClickUp 降為紀錄；LINE Notify 已停服）
+ALERT_EMAIL_TO=you@example.com        # error 級告警寄到這裡（實測唯一會推播到手機）
+ALERT_SMTP_PASSWORD=                  # Google 應用程式密碼（個人帳號設定，勿提交）
+ALERT_SMTP_HOST=smtp.gmail.com        # 預設值，通常不用改
+HEALTHCHECK_CLICKUP_TASK_ID=xxxxxxxx  # 告警留言要貼的 task（紀錄用）
+ALERT_MENTION_USER_ID=48123565        # ClickUp @ 對象（⚠️ 對 token 擁有者本人無效）
 ENABLE_MACOS_NOTIFY=true              # 輔助通道
 
 # 上傳節流與解析預算守門（後端解析受 OpenAI 專案花費上限硬性節制）
@@ -363,20 +366,23 @@ python3 -c "from geobingan_sync.sync_status import SyncStatus; SyncStatus().prin
 
 | 通道 | 狀態 | 用途 |
 |------|------|------|
-| ClickUp 留言（`HEALTHCHECK_CLICKUP_TASK_ID`） | 主通道 | 所有告警；**error 級用 tag block @ `ALERT_MENTION_USER_ID`**（ClickUp 只對被 @ 的人推播） |
-| macOS 系統通知 | 輔助 | launchd 下常送不到，不可依賴 |
+| **Email**（`ALERT_EMAIL_TO`） | **error 級的送達通道** | 2026-09-16 實測唯一會推播到手機。健康檢查由 launchd 自行執行、沒有互動 session，故用 Gmail SMTP + 應用程式密碼自行寄送 |
+| ClickUp 留言（`HEALTHCHECK_CLICKUP_TASK_ID`） | 紀錄 | 所有告警都留一份；**但對 token 擁有者本人不會推播**——機器人用他的帳號發文，ClickUp 會把自我 @ 的 tag block 吃成空的、也不通知自己發的留言（實測確認） |
+| macOS 系統通知 | 輔助 | launchd 下權限受限常送不到，只在人在電腦前時有效 |
 | LINE Notify | 已停服 | 設定保留但無效 |
+
+> **送達判準分兩級**：需打擾的事件（error 的新增／升級／提醒／**恢復**）以 **Email 成功**為準（ClickUp 只算紀錄）；只有 warning 時以 ClickUp 為準（純紀錄、不打擾）。未設定 Email 時退回看 ClickUp，避免整條通道卡死不發。
 
 ### 去重與升級（`geobingan_sync/alert_state.py`）
 
-每個告警只在**新出現 / warning→error 升級 / 每 7 天提醒一次 / 解除（發恢復通知）**時送出，其餘抑制。狀態檔 `state/alert_state_<producer>.json`：健康檢查與同步結果**各自一個 namespace**（共用會把對方的項目誤判成已恢復）。採 **plan → send → commit**：ClickUp 真的送達才寫入狀態，失敗或例外則保留舊狀態、下一輪重試。不帶 `--notify` 的乾跑為唯讀，不會悄悄把問題標成「已看過」。
+每個告警只在**新出現 / warning→error 升級 / 每 7 天提醒一次 / 解除（發恢復通知）**時送出，其餘抑制。狀態檔 `state/alert_state_<producer>.json`：健康檢查與同步結果**各自一個 namespace**（共用會把對方的項目誤判成已恢復）。採 **plan → send → commit**：**真正會到人的通道**送達才寫入狀態，失敗或例外則保留舊狀態、下一輪重試。不帶 `--notify` 的乾跑為唯讀，不會悄悄把問題標成「已看過」。
 
 ### 觸發時機
 
 | 事件 | 等級 | 內容 |
 |------|------|------|
 | 健康檢查異常（10 項） | warning / error | 一輪一則彙整；error 才 @ |
-| 同步執行失敗 | error | 錯誤訊息；連日失敗每 7 天提醒；恢復時通知 |
+| 同步執行失敗／恢復 | error | 錯誤訊息；連日失敗每 7 天提醒；**恢復同樣寄 Email** |
 | Refresh Token 過期／即將過期 | error / warning | 請至 riskmap 重新登入更新 `.env` |
 | 解析積壓（近 7 天停滯 ≥6h） | warning / error（≥20 份或最舊 ≥24h） | 疑後端 worker 停擺或 OpenAI 預算上限 |
 | 解析預算（本月估算 vs 月上限） | ≥70% warning／≥90% error | 請與後端確認預算再上傳 |
@@ -426,7 +432,7 @@ geoBingAn-pdf-sync-tool/
 ├── state/                       # 狀態追蹤（registry / 上傳歷史 / pdf_inventory…）
 ├── logs/                        # 執行日誌
 ├── docs/                        # 技術文檔 + 線上追蹤報告
-└── tests/                       # 自動化測試（293 tests）
+└── tests/                       # 自動化測試（303 tests）
 ```
 
 ---
