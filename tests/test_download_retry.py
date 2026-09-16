@@ -45,7 +45,7 @@ def _patch(monkeypatch, fake, slept):
 
 
 class TestDownloadRetry:
-    def test_succeeds_after_two_failures(self, monkeypatch):
+    def test_succeeds_after_two_failures(self, monkeypatch, tmp_path):
         slept = []
         fake = _FakeRequests([
             OSError('dns fail 1'),
@@ -53,27 +53,28 @@ class TestDownloadRetry:
             _FakeResp(b'%PDF ok'),
         ])
         _patch(monkeypatch, fake, slept)
-        path = _make_sync().download_pdf_list(max_attempts=3)
-        assert path == '/tmp/permit_list.pdf'
+        dest = str(tmp_path / 'list.pdf')
+        path = _make_sync().download_pdf_list(max_attempts=3, dest=dest)
+        assert path == dest
         assert fake.calls == 3        # 真的重試到第 3 次才成功
         assert slept == [5, 10]       # backoff 5s, 10s（成功前各睡一次）
         with open(path, 'rb') as f:
             assert f.read() == b'%PDF ok'
 
-    def test_all_fail_exits_after_max_attempts(self, monkeypatch):
+    def test_all_fail_exits_after_max_attempts(self, monkeypatch, tmp_path):
         slept = []
         fake = _FakeRequests([OSError('x'), OSError('x'), OSError('x')])
         _patch(monkeypatch, fake, slept)
         with pytest.raises(SystemExit) as exc:
-            _make_sync().download_pdf_list(max_attempts=3)
+            _make_sync().download_pdf_list(max_attempts=3, dest=str(tmp_path / 'list.pdf'))
         assert exc.value.code == 1
         assert fake.calls == 3        # 嘗試滿 max_attempts 才放棄
         assert slept == [5, 10]       # 最後一次失敗不再 sleep
 
-    def test_first_try_success_no_retry(self, monkeypatch):
+    def test_first_try_success_no_retry(self, monkeypatch, tmp_path):
         slept = []
         fake = _FakeRequests([_FakeResp(b'%PDF first')])
         _patch(monkeypatch, fake, slept)
-        path = _make_sync().download_pdf_list()
+        path = _make_sync().download_pdf_list(dest=str(tmp_path / 'list.pdf'))
         assert fake.calls == 1        # 一次成功不重試
         assert slept == []
