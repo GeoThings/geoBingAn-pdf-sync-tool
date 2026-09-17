@@ -1,13 +1,19 @@
-"""解析預算守門。
+"""解析預算守門（**日**模型）。
 
-後端 PDF 解析成本受 OpenAI 專案的花費上限硬性節制（2026-09-14 一次上傳 178 份
-就把當月上限打爆、後續 116 份全卡 pending）。這裡把那道看不見的外部硬上限，
-變成我們這邊看得見、可控制的軟上限：
+後端 PDF 解析成本受 OpenAI 專案花費上限硬性節制。2026-09-16 確認真實限制是
+**每日 US$20**（約 66 份），不是先前假設的月上限——月模型會在還有日額度時
+無謂擋下上傳，日模型才對得上後端的實際節流。
+
+**額度是共用的**：夜間上傳與手動 retry-parse 吃同一份日額度。2026-09-14 一次
+上傳 178 份打爆額度、116 份卡死，就是沒有這道守門。retry 也必須計入，否則
+重推吃掉額度而守門毫不知情，當晚上傳會再爆一次。
+
+這裡把那道看不見的外部硬上限，變成我們這邊看得見、可控制的軟上限：
 
 - estimate_cost / budget_gate：上傳前印估算，單次超過門檻需 --yes（夜間排程配合
   MAX_UPLOADS 永遠不會超過門檻，只擋人為的大批次）。
-- MonthlyBudget：state/upload_budget.json 記當月已傳份數與估算成本（state/*.json 已
-  gitignore），供 health_check 每日檢查並在 70%/90% 告警。
+- DailyBudget：state/upload_budget.json 記當日消耗份數（上傳＋重推）與估算成本
+  （state/*.json 已 gitignore），供 health_check 檢查並在 70%/90% 告警。
 """
 import fcntl
 import json
@@ -36,39 +42,39 @@ def budget_gate(n_reports: int, cost_per_report: float, confirm_threshold: float
     return True, f'估算解析成本 ≈ US${est:.2f}（{n_reports} 份 × US${cost_per_report}）'
 
 
-def monthly_gate(n_reports: int, month_est_usd: float, monthly_budget: float,
-                 cost_per_report: float, yes: bool) -> Tuple[int, str]:
-    """月上限放行條件（review P1）：投影成本＝本月已用＋本次估算。
+def daily_gate(n_reports: int, day_est_usd: float, daily_budget: float,
+               cost_per_report: float, yes: bool) -> Tuple[int, str]:
+    """日上限放行條件：投影成本＝今日已用（上傳＋重推）＋本次估算。
 
     回傳 (允許份數, 訊息)：
     - 投影 ≤ 月上限：全數放行。
     - 超過且 yes=False（夜間/一般）：裁切到剩餘預算可容納的份數（0 則擋下）。
     - 超過且 yes=True（人工明確覆寫）：全數放行但標警告。
-    monthly_budget ≤ 0 視為未設上限。
+    daily_budget ≤ 0 視為未設上限。
     """
     n = max(0, n_reports)
-    if monthly_budget <= 0 or n == 0:
+    if daily_budget <= 0 or n == 0:
         return n, ''
-    projected = round(month_est_usd + estimate_cost(n, cost_per_report), 2)
-    if projected <= monthly_budget:
-        return n, f'投影本月成本 US${projected:.2f} ≤ 上限 US${monthly_budget:.0f}'
-    remaining = max(0.0, monthly_budget - month_est_usd)
+    projected = round(day_est_usd + estimate_cost(n, cost_per_report), 2)
+    if projected <= daily_budget:
+        return n, f'投影今日成本 US${projected:.2f} ≤ 日上限 US${daily_budget:.0f}'
+    remaining = max(0.0, daily_budget - day_est_usd)
     allowed = int(remaining // cost_per_report) if cost_per_report > 0 else 0
     if yes:
-        return n, (f'⚠️ 投影本月成本 US${projected:.2f} 超過上限 US${monthly_budget:.0f}，'
+        return n, (f'⚠️ 投影今日成本 US${projected:.2f} 超過日上限 US${daily_budget:.0f}，'
                    f'已以 --yes 明確覆寫、全數 {n} 份執行')
     if allowed <= 0:
-        return 0, (f'本月已用 US${month_est_usd:.2f}、上限 US${monthly_budget:.0f}，剩餘預算不足 1 份；'
-                   f'已擋下（請與後端確認預算後加 --yes，或等下月）')
-    return allowed, (f'投影本月成本 US${projected:.2f} 超過上限 US${monthly_budget:.0f}，'
-                     f'自動裁切為剩餘預算可容納的 {allowed} 份（原 {n} 份；加 --yes 可覆寫）')
+        return 0, (f'今日已用 US${day_est_usd:.2f}、日上限 US${daily_budget:.0f}，剩餘額度不足 1 份；'
+                   f'已擋下（明日額度重置後再跑，或確認後加 --yes）')
+    return allowed, (f'投影今日成本 US${projected:.2f} 超過日上限 US${daily_budget:.0f}，'
+                     f'自動裁切為今日剩餘可容納的 {allowed} 份（原 {n} 份；加 --yes 可覆寫）')
 
 
-def budget_level(est_usd: float, monthly_budget: float) -> Tuple[str, float]:
+def budget_level(est_usd: float, daily_budget: float) -> Tuple[str, float]:
     """依已用比例回 ('ok'|'warning'|'error', ratio)。"""
-    if monthly_budget <= 0:
+    if daily_budget <= 0:
         return 'ok', 0.0
-    ratio = est_usd / monthly_budget
+    ratio = est_usd / daily_budget
     if ratio >= ERROR_RATIO:
         return 'error', ratio
     if ratio >= WARN_RATIO:
@@ -76,8 +82,12 @@ def budget_level(est_usd: float, monthly_budget: float) -> Tuple[str, float]:
     return 'ok', ratio
 
 
-class MonthlyBudget:
-    """state/upload_budget.json：{"month": "2026-09", "uploaded": N, "est_usd": X}。跨月自動歸零。
+class DailyBudget:
+    """state/upload_budget.json：{"day": "2026-09-17", "uploaded": N, "retried": M,
+    "units": N+M, "est_usd": X}。**跨日自動歸零**。
+
+    units＝當日送進後端解析的總份數（上傳＋手動 retry-parse）。兩者吃同一份日額度，
+    所以必須合計；只算上傳會讓重推的消耗對守門隱形。
 
     併發與中斷安全（review P1×2）：
     - 所有讀改寫都在跨程序鎖 fcntl.flock（state/upload_budget.lock）內完成，排程與人工重疊
@@ -114,15 +124,21 @@ class MonthlyBudget:
             return {}
 
     def _read(self, now: datetime) -> dict:
-        month = now.strftime('%Y-%m')
+        day = now.strftime('%Y-%m-%d')
         data = self._read_raw()
-        if data.get('month') != month:
-            data = {'month': month, 'uploaded': 0, 'est_usd': 0.0}
+        if data.get('day') != day:
+            # 跨日（或舊的月格式檔）一律重置——日額度每天重來
+            data = {'day': day, 'uploaded': 0, 'retried': 0, 'units': 0, 'est_usd': 0.0}
+        data.setdefault('uploaded', 0)
+        data.setdefault('retried', 0)
+        data.setdefault('units', int(data.get('uploaded', 0)) + int(data.get('retried', 0)))
         return data
 
     def _write(self, data: dict, now: datetime) -> dict:
         data['uploaded'] = max(0, int(data.get('uploaded', 0)))
-        data['est_usd'] = round(data['uploaded'] * self.cost_per_report, 2)
+        data['retried'] = max(0, int(data.get('retried', 0)))
+        data['units'] = data['uploaded'] + data['retried']
+        data['est_usd'] = round(data['units'] * self.cost_per_report, 2)
         data['updated_at'] = now.isoformat()
         tmp = self.path.with_name(f'{self.path.name}.{os.getpid()}.tmp')   # 含 PID，不共用暫存檔
         with open(tmp, 'w', encoding='utf-8') as f:
@@ -134,48 +150,53 @@ class MonthlyBudget:
         """唯讀取用（顯示用）。"""
         return self._read(now or datetime.now())
 
-    def add(self, n: int, now: Optional[datetime] = None) -> dict:
-        """鎖內累加（n 可為負，下限 0）。"""
+    def add(self, n: int, now: Optional[datetime] = None, kind: str = 'uploaded') -> dict:
+        """鎖內累加（n 可為負，下限 0）。kind＝'uploaded' 或 'retried'。"""
+        assert kind in ('uploaded', 'retried')
         now = now or datetime.now()
         with self._locked():
             data = self._read(now)
-            data['uploaded'] = int(data.get('uploaded', 0)) + int(n)
+            data[kind] = int(data.get(kind, 0)) + int(n)
             return self._write(data, now)
 
-    def reserve(self, n_requested: int, monthly_budget: float, cost_per_report: float,
+    def record_retry(self, n: int, now: Optional[datetime] = None) -> dict:
+        """記錄手動 retry-parse 的消耗——它與上傳吃同一份日額度。"""
+        return self.add(n, now=now, kind='retried')
+
+    def reserve(self, n_requested: int, daily_budget: float, cost_per_report: float,
                 yes: bool, now: Optional[datetime] = None) -> Tuple[int, str, dict]:
-        """鎖內原子預留：讀餘額 → monthly_gate → 立刻計入可放行份數。回 (允許份數, 訊息, 狀態)。"""
+        """鎖內原子預留：讀今日餘額 → daily_gate → 立刻計入可放行份數。回 (允許份數, 訊息, 狀態)。"""
         now = now or datetime.now()
         with self._locked():
             data = self._read(now)
-            allowed, msg = monthly_gate(n_requested, float(data.get('est_usd', 0.0)),
-                                        monthly_budget, cost_per_report, yes)
+            allowed, msg = daily_gate(n_requested, float(data.get('est_usd', 0.0)),
+                                      daily_budget, cost_per_report, yes)
             if allowed > 0:
                 data['uploaded'] = int(data.get('uploaded', 0)) + allowed
                 data = self._write(data, now)
             return allowed, msg, data
 
     def release(self, unused: int, now: Optional[datetime] = None,
-                month: Optional[str] = None) -> dict:
-        """退還未用到的預留，綁定預留所屬月份（review P1 跨月）。
+                day: Optional[str] = None) -> dict:
+        """退還未用到的預留，綁定預留所屬日期（跨日同理於原跨月保護）。
 
-        鎖內先讀檔案實際儲存的月份：與 month 相同才扣減；帳本已切到新月份則 no-op
-        （不重建舊月、不動新月的額度）。month=None 時退回舊行為（扣當月）。
+        鎖內先讀檔案實際儲存的日期：與 day 相同才扣減；帳本已切到新的一天則 no-op
+        （不重建昨日、不動今日的額度）。day=None 時退回舊行為（扣當日）。
         """
         now = now or datetime.now()
         if unused <= 0:
             return self.load(now)
         with self._locked():
-            if month is not None:
-                stored = self._read_raw().get('month')
-                if stored != month:
-                    return self._read(now)          # 舊月預留跨月退還 → 不動任何數字
+            if day is not None:
+                stored = self._read_raw().get('day')
+                if stored != day:
+                    return self._read(now)          # 昨日預留跨日退還 → 不動任何數字
             data = self._read(now)
             data['uploaded'] = int(data.get('uploaded', 0)) - int(unused)
             return self._write(data, now)
 
     def set_uploaded(self, n: int, now: Optional[datetime] = None) -> dict:
-        """明確設定本月份數（換機/重建時的初始化：python -m geobingan_sync.budget --set N）。"""
+        """明確設定今日上傳份數（重建/校正用：python -m geobingan_sync.budget --set N）。"""
         now = now or datetime.now()
         with self._locked():
             data = self._read(now)
@@ -196,23 +217,23 @@ class ReservationLedger:
     # close() 會把它當作未嘗試退還，若這裡再退會重複。
     REFUNDABLE = frozenset({'rejected'})
 
-    def __init__(self, mb: 'MonthlyBudget', reserved: int, month: Optional[str] = None,
+    def __init__(self, mb: 'DailyBudget', reserved: int, day: Optional[str] = None,
                  clock=None):
         self.mb = mb
         self.reserved = max(0, int(reserved))
-        self.month = month                      # 預留所屬月份；退還只作用於同月帳本
+        self.day = day                          # 預留所屬日期；退還只作用於同日帳本
         self.clock = clock or datetime.now      # 可注入時鐘（測試模擬下載期間跨月）
         self.attempted = 0
         self.refunded = 0
 
     def begin_item(self, now: Optional[datetime] = None) -> bool:
         """在「下載完成、第一個 HTTP POST 之前」呼叫（作為 process_single_pdf 的 before_upload）。
-        回 True 表示可送出並已計入已嘗試；回 False 表示已跨月，本批次應停止
-        （review P1：跨月後送出的成本應占用新月額度，不可再用舊月預留；該項目不寫 error/歷史，
-        剩餘項目下次執行會在新月份重新預留）。"""
-        if self.month is not None:
+        回 True 表示可送出並已計入已嘗試；回 False 表示已跨日，本批次應停止
+        （跨日後送出的成本應占用新一天的額度，不可再用昨日預留；該項目不寫 error/歷史，
+        剩餘項目下次執行會在新的一天重新預留）。"""
+        if self.day is not None:
             now = now or self.clock()
-            if now.strftime('%Y-%m') != self.month:
+            if now.strftime('%Y-%m-%d') != self.day:
                 return False
         self.attempted += 1
         return True
@@ -221,48 +242,56 @@ class ReservationLedger:
         if result.get('success'):
             return False
         if result.get('error') in self.REFUNDABLE:
-            self.mb.release(1, month=self.month)
+            self.mb.release(1, day=self.day)
             self.refunded += 1
             return True
         return False
 
     def close(self) -> dict:
         unused = self.reserved - self.attempted
-        return self.mb.release(unused, month=self.month) if unused > 0 else self.mb.load()
+        return self.mb.release(unused, day=self.day) if unused > 0 else self.mb.load()
 
 
-def gate_and_reserve(mb: 'MonthlyBudget', n_requested: int, monthly_budget: float,
+def gate_and_reserve(mb: 'DailyBudget', n_requested: int, daily_budget: float,
                      cost_per_report: float, confirm_threshold: float, yes: bool):
     """單次門檻 → 原子預留，順序固定（review TOCTOU）。
 
     單次門檻對「原始請求量」檢查而非對預覽份數：預留結果永遠 ≤ 原始請求量，
-    所以另一程序在中途退還額度或跨月，都不可能讓放行份數超過已確認的量。
-    門檻擋下時尚未預留，不需退還。回 (允許份數, 訊息列表, 擋下原因或 None, 預留所屬月份)。
+    所以另一程序在中途退還額度或跨日，都不可能讓放行份數超過已確認的量。
+    門檻擋下時尚未預留，不需退還。回 (允許份數, 訊息列表, 擋下原因或 None, 預留所屬日期)。
     """
     msgs = []
     ok, gate_msg = budget_gate(n_requested, cost_per_report, confirm_threshold, yes)
     msgs.append(gate_msg)
     if n_requested > 0 and not ok:
         return 0, msgs, gate_msg, None
-    allowed, month_msg, data = mb.reserve(n_requested, monthly_budget, cost_per_report, yes)
-    if month_msg:
-        msgs.append(month_msg)
+    allowed, day_msg, data = mb.reserve(n_requested, daily_budget, cost_per_report, yes)
+    if day_msg:
+        msgs.append(day_msg)
     if n_requested > 0 and allowed <= 0:
-        return 0, msgs, month_msg, data.get('month')
-    return allowed, msgs, None, data.get('month')
+        return 0, msgs, day_msg, data.get('day')
+    return allowed, msgs, None, data.get('day')
 
 
 def _cli():
     import argparse
-    from geobingan_sync.config import COST_PER_REPORT_USD, MONTHLY_BUDGET_USD
-    ap = argparse.ArgumentParser(description='本月解析預算計數（state/upload_budget.json 為本機狀態、不入版控）')
-    ap.add_argument('--show', action='store_true', help='顯示本月累計')
-    ap.add_argument('--set', type=int, metavar='N', help='明確設定本月已傳份數（換機/重建初始化）')
+    from geobingan_sync.config import COST_PER_REPORT_USD, DAILY_BUDGET_USD
+    ap = argparse.ArgumentParser(description='今日解析預算計數（state/upload_budget.json 為本機狀態、不入版控）')
+    ap.add_argument('--show', action='store_true', help='顯示今日累計')
+    ap.add_argument('--set', type=int, metavar='N', help='明確設定今日上傳份數（重建/校正）')
+    ap.add_argument('--record-retry', type=int, metavar='N',
+                    help='記錄手動 retry-parse 的份數——與上傳吃同一份日額度，不記會讓守門低估')
     a = ap.parse_args()
-    mb = MonthlyBudget(cost_per_report=COST_PER_REPORT_USD)
-    d = mb.set_uploaded(a.set) if a.set is not None else mb.load()
-    level, ratio = budget_level(float(d.get('est_usd', 0)), MONTHLY_BUDGET_USD)
-    print(f"本月({d['month']})已傳 {d['uploaded']} 份 ≈ US${float(d.get('est_usd', 0)):.2f} / 上限 US${MONTHLY_BUDGET_USD:.0f}（{ratio:.0%}，{level}）")
+    mb = DailyBudget(cost_per_report=COST_PER_REPORT_USD)
+    if a.set is not None:
+        d = mb.set_uploaded(a.set)
+    elif a.record_retry is not None:
+        d = mb.record_retry(a.record_retry)
+    else:
+        d = mb.load()
+    level, ratio = budget_level(float(d.get('est_usd', 0)), DAILY_BUDGET_USD)
+    print(f"今日({d['day']}) 上傳 {d['uploaded']} ＋重推 {d['retried']} ＝ {d['units']} 份 "
+          f"≈ US${float(d.get('est_usd', 0)):.2f} / 日上限 US${DAILY_BUDGET_USD:.0f}（{ratio:.0%}，{level}）")
 
 
 if __name__ == '__main__':

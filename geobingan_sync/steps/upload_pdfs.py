@@ -853,13 +853,14 @@ def main(city: dict = None, catchup_days: int = None, yes: bool = False):
     print(f"  待上傳: {len(pdfs_to_upload)}" + (f"（上限 {MAX_UPLOADS}）" if MAX_UPLOADS > 0 else "（無上限）"))
 
     # 解析預算守門：單次門檻（對原始請求量）→ 鎖內原子預留 → 上傳 → finally 退還未用
-    from geobingan_sync.budget import gate_and_reserve, MonthlyBudget, ReservationLedger
-    from geobingan_sync.config import COST_PER_REPORT_USD, MONTHLY_BUDGET_USD, BUDGET_CONFIRM_USD
-    mb = MonthlyBudget(cost_per_report=COST_PER_REPORT_USD)
-    month = mb.load()
-    print(f"  💰 本月({month['month']})已傳 {month['uploaded']} 份 ≈ US${month['est_usd']:.2f} / 上限 US${MONTHLY_BUDGET_USD:.0f}")
-    reserved, budget_msgs, blocked, reserved_month = gate_and_reserve(
-        mb, len(pdfs_to_upload), MONTHLY_BUDGET_USD, COST_PER_REPORT_USD, BUDGET_CONFIRM_USD, yes)
+    from geobingan_sync.budget import gate_and_reserve, DailyBudget, ReservationLedger
+    from geobingan_sync.config import COST_PER_REPORT_USD, DAILY_BUDGET_USD, BUDGET_CONFIRM_USD
+    mb = DailyBudget(cost_per_report=COST_PER_REPORT_USD)
+    day = mb.load()
+    print(f"  💰 今日({day['day']}) 上傳 {day['uploaded']}＋重推 {day['retried']} ＝ {day['units']} 份 "
+          f"≈ US${day['est_usd']:.2f} / 日上限 US${DAILY_BUDGET_USD:.0f}")
+    reserved, budget_msgs, blocked, reserved_day = gate_and_reserve(
+        mb, len(pdfs_to_upload), DAILY_BUDGET_USD, COST_PER_REPORT_USD, BUDGET_CONFIRM_USD, yes)
     for m in budget_msgs:
         print(f"  💰 {m}")
     if pdfs_to_upload and blocked:
@@ -898,7 +899,7 @@ def main(city: dict = None, catchup_days: int = None, yes: bool = False):
     error_count = 0
     # 預留預設視為已消耗：只對「確定零成本」的失敗（下載失敗/後端明確拒絕）立即退 1 份；
     # 結束（含中斷）只退還從未嘗試的份數。成功後才中斷、或結果不明，都保留在帳上（保守高估）。
-    ledger = ReservationLedger(mb, reserved, month=reserved_month)   # 退還只作用於預留當月，跨月 no-op
+    ledger = ReservationLedger(mb, reserved, day=reserved_day)   # 退還只作用於預留當日，跨日 no-op
 
     try:
         for idx, pdf in enumerate(pdfs_to_upload, 1):
@@ -906,7 +907,7 @@ def main(city: dict = None, catchup_days: int = None, yes: bool = False):
             result = process_single_pdf(service, pdf, state, idx, len(pdfs_to_upload),
                                         before_upload=ledger.begin_item)
             if result.get('error') == 'month_rolled_over':
-                print(f"\n⏹️  已跨月（預留屬 {ledger.month}），停止本批次；剩餘 {len(pdfs_to_upload) - idx + 1} 份待下次執行於新月份重新預留")
+                print(f"\n⏹️  已跨日（預留屬 {ledger.day}），停止本批次；剩餘 {len(pdfs_to_upload) - idx + 1} 份待下次執行於新的一天重新預留")
                 break
             ledger.settle(result)
 
@@ -921,8 +922,8 @@ def main(city: dict = None, catchup_days: int = None, yes: bool = False):
                 time.sleep(DELAY_BETWEEN_UPLOADS)
     finally:
         try:
-            month = ledger.close()
-            print(f"💰 本月累計 {month['uploaded']} 份 ≈ US${month['est_usd']:.2f} / 上限 US${MONTHLY_BUDGET_USD:.0f}")
+            day = ledger.close()
+            print(f"💰 今日累計 {day['units']} 份（上傳 {day['uploaded']}＋重推 {day['retried']}）≈ US${day['est_usd']:.2f} / 日上限 US${DAILY_BUDGET_USD:.0f}")
         except Exception as e:
             print(f"⚠️  月累計結算失敗（保守多算，不影響上傳）: {e}")
 
