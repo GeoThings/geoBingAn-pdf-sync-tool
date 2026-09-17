@@ -212,15 +212,19 @@ def check_parse_backlog(now=None):
 
 
 def check_budget(path=None):
-    """本月解析估算成本 vs MONTHLY_BUDGET_USD：≥70% warning、≥90% error。path 可注入供測試。"""
-    from geobingan_sync.budget import MonthlyBudget, budget_level
-    from geobingan_sync.config import COST_PER_REPORT_USD, MONTHLY_BUDGET_USD
+    """今日解析估算成本 vs DAILY_BUDGET_USD：≥70% warning、≥90% error。path 可注入供測試。
+
+    今日消耗＝上傳＋手動 retry-parse（兩者吃同一份後端日額度）。
+    """
+    from geobingan_sync.budget import DailyBudget, budget_level
+    from geobingan_sync.config import COST_PER_REPORT_USD, DAILY_BUDGET_USD
     try:
-        m = MonthlyBudget(path=path, cost_per_report=COST_PER_REPORT_USD).load()
-        level, ratio = budget_level(float(m.get('est_usd', 0)), MONTHLY_BUDGET_USD)
-        msg = f"本月({m['month']})已傳 {m['uploaded']} 份 ≈ US${float(m.get('est_usd', 0)):.2f} / 上限 US${MONTHLY_BUDGET_USD:.0f}（{ratio:.0%}）"
+        m = DailyBudget(path=path, cost_per_report=COST_PER_REPORT_USD).load()
+        level, ratio = budget_level(float(m.get('est_usd', 0)), DAILY_BUDGET_USD)
+        msg = (f"今日({m['day']}) 上傳 {m['uploaded']}＋重推 {m['retried']} ＝ {m['units']} 份 "
+               f"≈ US${float(m.get('est_usd', 0)):.2f} / 日上限 US${DAILY_BUDGET_USD:.0f}（{ratio:.0%}）")
         if level != 'ok':
-            msg += '；請與 slayer 確認預算餘裕再上傳'
+            msg += '；今日額度將盡，上傳會被自動裁切，明日重置'
         return level, msg
     except Exception as e:
         return 'warning', f'預算檢查失敗: {e}'
