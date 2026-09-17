@@ -639,7 +639,7 @@ def process_single_pdf(service, pdf: Dict, state: dict, idx: int, total: int,
     flush_state() 確保最後的變更被寫入。
 
     before_upload: 下載完成、第一個 HTTP POST 之前呼叫的 callback；回 False 表示不可送出
-        （預算帳本跨月），此時回傳 error='month_rolled_over'，不寫 error 也不寫去重歷史。
+        （預算帳本已跨到新的一天），此時回傳 error='day_rolled_over'，不寫 error 也不寫去重歷史。
 
     Returns:
         Dict with keys: success (bool), pdf (Dict), result (Optional[dict])
@@ -653,9 +653,9 @@ def process_single_pdf(service, pdf: Dict, state: dict, idx: int, total: int,
     if not pdf_content:
         return {'success': False, 'pdf': pdf, 'result': None, 'error': 'download_failed'}
 
-    # 月份守門要在這一刻（下載已完成、POST 尚未送出）：下載可能耗時數分鐘，之前檢查會有時間窗
+    # 日期守門要在這一刻（下載已完成、POST 尚未送出）：下載可能耗時數分鐘，之前檢查會有時間窗
     if before_upload is not None and not before_upload():
-        return {'success': False, 'pdf': pdf, 'result': None, 'error': 'month_rolled_over'}
+        return {'success': False, 'pdf': pdf, 'result': None, 'error': 'day_rolled_over'}
 
     # 上傳
     result = upload_to_geobingan(pdf_content, pdf['name'], pdf['folder_name'])
@@ -907,10 +907,10 @@ def main(city: dict = None, catchup_days: int = None, yes: bool = False,
 
     try:
         for idx, pdf in enumerate(pdfs_to_upload, 1):
-            # 月份守門由 before_upload 在 POST 前一刻執行（下載之後）；跨月則該項目不送、不寫歷史
+            # 日期守門由 before_upload 在 POST 前一刻執行（下載之後）；跨日則該項目不送、不寫歷史
             result = process_single_pdf(service, pdf, state, idx, len(pdfs_to_upload),
                                         before_upload=ledger.begin_item)
-            if result.get('error') == 'month_rolled_over':
+            if result.get('error') == 'day_rolled_over':
                 print(f"\n⏹️  已跨日（預留屬 {ledger.day}），停止本批次；剩餘 {len(pdfs_to_upload) - idx + 1} 份待下次執行於新的一天重新預留")
                 break
             ledger.settle(result)

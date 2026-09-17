@@ -1,4 +1,6 @@
-"""文件裡的指令範例，旗標必須真的存在（PR #85 review 連兩輪的文件漂移）。
+"""文件與程式的一致性守門（PR #85 review 連三輪抓到同一類漂移）。
+
+一、文件裡的指令範例，旗標必須真的存在。
 
 第一輪：文件殘留月模型敘述。第二輪：retry_parse 的 docstring 寫了
 `--pending-from`，而 argparse 只有 `--ids-file`，照著做會直接 unknown argument。
@@ -74,6 +76,54 @@ def test_documented_flags_exist_in_argparse():
            for doc, ln, mod, flag in _documented_usages()
            if flag not in declared[mod]]
     assert not bad, '文件示範了不存在的旗標：\n  ' + '\n  '.join(bad)
+
+
+# ---------- 二、預算改日模型後，描述「現行機制」的月模型詞彙一律不得出現 ----------
+
+# 這些詞只會用來描述**當下的**機制，日模型上線後沒有任何正當用法。
+# 刻意不收「月上限」：architecture 需要寫「後端是每日 US$20，**不是月上限**」這種
+# 對照歷史的敘述；把歷史說明一起禁掉會逼人改寫正確的文字。
+STALE_MONTHLY_TERMS = [
+    '跨月',
+    'month_rolled_over',
+    '月份守門',
+    '新月份',
+    '本月解析預算帳本',
+    'MONTHLY_BUDGET_USD',
+]
+
+BUDGET_SURFACE = [
+    'geobingan_sync/budget.py',
+    'geobingan_sync/steps/upload_pdfs.py',
+    'geobingan_sync/steps/retry_parse.py',
+    'health_check.py',
+    'README.md',
+    'docs/architecture.md',
+    'docs/troubleshooting.md',
+    '.env.example',
+]
+
+
+def test_no_stale_monthly_vocabulary_on_budget_surface():
+    """預算相關的程式訊息、docstring、註解與文件都不得再講月模型。
+
+    review 連三輪抓到的都是同一件事：機制已改成日，敘述還停在月。使用者照著
+    troubleshooting 找「跨月」找不到，或照著 docstring 用不存在的旗標。程式能跑
+    不代表描述是對的，所以用測試釘住。
+    """
+    bad = []
+    for rel in BUDGET_SURFACE:
+        for lineno, line in enumerate(_read(rel).split('\n'), 1):
+            for term in STALE_MONTHLY_TERMS:
+                if term in line:
+                    bad.append(f'{rel}:{lineno}: 仍出現「{term}」→ {line.strip()[:70]}')
+    assert not bad, '預算改日模型後仍殘留月模型敘述：\n  ' + '\n  '.join(bad)
+
+
+def test_stale_term_scanner_reads_real_files():
+    """防假綠：掃描清單裡的檔案都要真的讀得到且非空。"""
+    for rel in BUDGET_SURFACE:
+        assert len(_read(rel)) > 200, rel
 
 
 @pytest.mark.parametrize('mod,expected', [

@@ -156,7 +156,7 @@ class DailyBudget:
                 fcntl.flock(lf.fileno(), fcntl.LOCK_UN)
 
     def _read_raw(self) -> dict:
-        """讀檔案實際內容（不依現在時間換月），供跨月判斷用。"""
+        """讀檔案實際內容（不依現在時間換日），供跨日判斷用。"""
         try:
             with open(self.path, encoding='utf-8') as f:
                 data = json.load(f)
@@ -239,7 +239,7 @@ class DailyBudget:
 
     def release(self, unused: int, now: Optional[datetime] = None,
                 day: Optional[str] = None, kind: str = 'uploaded') -> dict:
-        """退還未用到的預留，綁定預留所屬日期（跨日同理於原跨月保護）。
+        """退還未用到的預留，綁定預留所屬日期。
 
         鎖內先讀檔案實際儲存的日期：與 day 相同才扣減；帳本已切到新的一天則 no-op
         （不重建昨日、不動今日的額度）。day=None 時退回舊行為（扣當日）。
@@ -268,7 +268,7 @@ class DailyBudget:
 class ReservationLedger:
     """把預留當成「已消耗」，只對確定零成本的項目退還（review P1：成功後中斷不可退）。
 
-    - begin_item()：在 POST 前一刻呼叫，通過即視為已嘗試（已消耗）；若已跨月回 False，批次須停止。
+    - begin_item()：在 POST 前一刻呼叫，通過即視為已嘗試（已消耗）；若已跨日回 False，批次須停止。
     - settle(result)：只有 error ∈ REFUNDABLE（後端明確拒絕＝沒建報告）才立即退 1 份；
       下載失敗未進入已嘗試、由 close() 退還；成功或結果不明（逾時/未知例外）都保留。
     - close()：只退還「預留 − 已嘗試」＝從未嘗試的份數。任何在 settle 之前的中斷都不會
@@ -284,7 +284,7 @@ class ReservationLedger:
         self.reserved = max(0, int(reserved))
         self.day = day                          # 預留所屬日期；退還只作用於同日帳本
         self.kind = kind                        # 'uploaded' 或 'retried'——退還要記回同一欄
-        self.clock = clock or utcnow            # 可注入時鐘（測試模擬下載期間跨月）
+        self.clock = clock or utcnow            # 可注入時鐘（測試模擬下載期間跨日）
         self.attempted = 0
         self.refunded = 0
 

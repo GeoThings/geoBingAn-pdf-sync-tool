@@ -473,7 +473,7 @@ upload_pdfs.main()
     ▼ ledger = ReservationLedger(mb, reserved, day=預留日期)
     │
     ▼ 每份：download → before_upload=ledger.begin_item()（POST 前一刻）
-    │         當前日期 ≠ 預留日期 → 回 month_rolled_over（歷史命名）：不 POST、不寫 error/歷史、停止整批
+    │         當前日期 ≠ 預留日期 → 回 day_rolled_over：不 POST、不寫 error/歷史、停止整批
     │         否則 attempted += 1（視為已消耗）→ upload_to_geobingan
     │       settle(result)：error == 'rejected'（4xx）才 release(1, day)；其餘保留
     ▼ finally ledger.close()：release(reserved − attempted, day)   ← 只退從未嘗試的

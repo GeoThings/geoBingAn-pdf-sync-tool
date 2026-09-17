@@ -260,7 +260,7 @@ def test_day_guard_right_before_post_blocks_after_slow_download(tmp_path, monkey
     state = {'uploaded_files': [], 'errors': []}
     r = up.process_single_pdf(None, {'id': 'f', 'name': 'a.pdf', 'folder_name': 'X'}, state, 1, 1,
                               before_upload=L.begin_item)
-    assert r['error'] == 'month_rolled_over' and posted == [] and L.attempted == 0
+    assert r['error'] == 'day_rolled_over' and posted == [] and L.attempted == 0
     assert state['uploaded_files'] == [] and state['errors'] == []
     L.close()
     assert mb._read_raw()['day'] == DAY0 and mb._read_raw()['uploaded'] == 0
