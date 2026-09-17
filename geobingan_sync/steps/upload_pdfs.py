@@ -767,7 +767,8 @@ def select_pdfs_to_upload(all_pdfs: List[Dict], uploaded_files, *, cutoff: datet
     return picked, counts
 
 
-def main(city: dict = None, catchup_days: int = None, yes: bool = False):
+def main(city: dict = None, catchup_days: int = None, yes: bool = False,
+         override_daily_budget: str = ''):
     """主程式
 
     yes: 估算解析成本超過 BUDGET_CONFIRM_USD 時的明確確認（防人為大批次打爆後端預算）。
@@ -859,8 +860,11 @@ def main(city: dict = None, catchup_days: int = None, yes: bool = False):
     day = mb.load()
     print(f"  💰 今日({day['day']}) 上傳 {day['uploaded']}＋重推 {day['retried']} ＝ {day['units']} 份 "
           f"≈ US${day['est_usd']:.2f} / 日上限 US${DAILY_BUDGET_USD:.0f}")
+    if override_daily_budget:
+        print(f"  🚨 已指定 --override-daily-budget：將突破後端日上限（理由：{override_daily_budget}）")
     reserved, budget_msgs, blocked, reserved_day = gate_and_reserve(
-        mb, len(pdfs_to_upload), DAILY_BUDGET_USD, COST_PER_REPORT_USD, BUDGET_CONFIRM_USD, yes)
+        mb, len(pdfs_to_upload), DAILY_BUDGET_USD, COST_PER_REPORT_USD, BUDGET_CONFIRM_USD, yes,
+        override=bool(override_daily_budget), override_reason=override_daily_budget)
     for m in budget_msgs:
         print(f"  💰 {m}")
     if pdfs_to_upload and blocked:
@@ -957,13 +961,18 @@ if __name__ == '__main__':
                         help='暫停後補掃：用 N 天檔名日期窗取代預設 30 天'
                              '（history 去重、不會重傳；恢復 .pause_upload 後用一次）')
     parser.add_argument('--yes', action='store_true',
-                        help='估算解析成本超過 BUDGET_CONFIRM_USD 時仍執行（請先與後端確認預算餘裕）')
+                        help='估算解析成本超過 BUDGET_CONFIRM_USD 時仍執行（請先與後端確認預算餘裕）；'
+                             '**只解單次門檻，不會放寬後端日上限**')
+    parser.add_argument('--override-daily-budget', metavar='REASON', default='',
+                        help='突破後端每日額度硬上限，需填理由（會記進日誌）。'
+                             '僅限人工、且已與後端確認可超支時使用；排程不得帶此旗標')
     args = parser.parse_args()
 
     cities = get_cities_for_cli(args.city)
     try:
         for city in cities:
-            main(city=city, catchup_days=args.catchup_days, yes=args.yes)
+            main(city=city, catchup_days=args.catchup_days, yes=args.yes,
+                 override_daily_budget=args.override_daily_budget)
     except KeyboardInterrupt:
         print("\n\n👋 使用者中斷執行")
         sys.exit(0)

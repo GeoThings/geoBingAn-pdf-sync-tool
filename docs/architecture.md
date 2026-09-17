@@ -466,9 +466,10 @@ upload_pdfs.main()
     │
     ▼ gate_and_reserve(mb, n=len(pdfs), 日上限, 單價, 門檻, --yes, kind='uploaded'|'retried')
     │    1) budget_gate(n)：對「原始請求量」估算，> BUDGET_CONFIRM_USD 且無 --yes → exit 3（尚未預留）
+    │       （--yes 到此為止；它**不會**放寬下面的日上限）
     │    2) mb.reserve(n)：flock 內 讀今日餘額 → daily_gate → 立刻計入可放行份數
     │         投影 = 今日已用（上傳＋重推）+ 本次；超過日上限 → 裁切為今日剩餘可容納
-    │         份數（0 則擋下、明日重置）；--yes 覆寫
+    │         份數（0 則擋下、UTC 換日後重置）；只有 --override-daily-budget REASON 能全放
     ▼ ledger = ReservationLedger(mb, reserved, day=預留日期)
     │
     ▼ 每份：download → before_upload=ledger.begin_item()（POST 前一刻）
@@ -497,6 +498,8 @@ upload_pdfs.main()
 7. **模型要對得上後端的真實節流**（2026-09-16 確認）——後端是**每日 US$20**，不是月上限。用月模型會在還有日額度時無謂擋下上傳。
 8. **日界以 UTC 計**——額度由 provider 依 UTC 重置。若用主機本地時間（台北 UTC+8）算日界，帳本會在台北午夜＝UTC 16:00 就歸零，比後端**提早 8 小時**放行整份額度。
 9. **消耗額度的每條路徑都必須先預留**——手動 `retry-parse` 與上傳共用同一份日額度。事後記帳（`--reconcile-retry`）擋不住競態：在「已送出、尚未記帳」的空窗裡，夜間上傳讀到用量偏低而照常預留，兩者合計即超上限。因此重推走 `steps/retry_parse.py`，用同一個 `DailyBudget.reserve_retry()`（同一把鎖、同一份帳本）先佔額度再送出，並沿用同一套保守結算。
+10. **日界的 UTC 對齊要擋在型別上**——`day_key()` 直接拒收 naive datetime。先前版本把 naive 當成「已是 UTC」，而 production 每個呼叫點傳的都是 `datetime.now()`＝台北本地時間，於是實際日界仍落在台北午夜，UTC 對齊形同虛設。時鐘統一走 `budget.utcnow()`。
+11. **兩道閘不可共用一個旗標**——`--yes` 只確認「這一批很大」，日上限一律強制裁切。若 `--yes` 同時放寬日上限，任何**合法**的大批次都會順帶突破後端硬限：55 份重推估 US$16.5、必須帶 `--yes` 才過單次門檻，今日已用 US$10 時本應只放 32 份，卻會全放 55 份、投影 US$26.5。要真的超支必須另外明講 `--override-daily-budget REASON`，理由會寫進日誌，排程不帶此旗標。
 
 營運：`DAILY_BUDGET_USD` 須與後端實際日上限對齊（目前 US$20）；`state/upload_budget.json` 為本機狀態，換機用 `python3 -m geobingan_sync.budget --set N` 初始化；`.pause_upload` 可在後端解析停擺或預算未確認時暫停步驟 2。
 

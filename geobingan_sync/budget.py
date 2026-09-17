@@ -11,7 +11,8 @@
 這裡把那道看不見的外部硬上限，變成我們這邊看得見、可控制的軟上限：
 
 - estimate_cost / budget_gate：上傳前印估算，單次超過門檻需 --yes（夜間排程配合
-  MAX_UPLOADS 永遠不會超過門檻，只擋人為的大批次）。
+  MAX_UPLOADS 永遠不會超過門檻，只擋人為的大批次）。--yes **只解這道門檻**，
+  不會放寬日上限；要突破後端額度得另外帶 --override-daily-budget REASON。
 - DailyBudget：state/upload_budget.json 記當日消耗份數（上傳＋重推）與估算成本
   （state/*.json 已 gitignore），供 health_check 檢查並在 70%/90% 告警。
 """
@@ -27,21 +28,35 @@ WARN_RATIO = 0.7
 ERROR_RATIO = 0.9
 
 
+def utcnow() -> datetime:
+    """本模組唯一的時鐘來源：**帶時區的 UTC 現在時間**。
+
+    所有預留／退還／讀寫帳本的預設時間都走這裡；不可換回 `datetime.now()`，
+    naive 的本地時間會被 `day_key()` 當場擋下（見下）。
+    """
+    return datetime.now(timezone.utc)
+
+
 def day_key(now: Optional[datetime] = None) -> str:
     """回傳帳本的「日」鍵，**以 UTC 計**。
 
     後端的日額度由 provider（OpenAI）依 UTC 重置；若我們用主機本地時間（台北
     UTC+8）算日界，帳本會在台北午夜＝UTC 16:00 就歸零，比後端**提早 8 小時**
-    重新放行整份額度（review 指出的風險）。用 UTC 對齊；即使後端其實依本地時間
-    重置，UTC 也只會讓我們晚一點才重置＝偏保守，不會超額。
+    重新放行整份額度。
 
-    傳入 naive datetime 時視為「已是預期基準」（測試注入用），不再轉換。
+    **必須傳 timezone-aware 的時間**（naive 直接 raise）。先前版本把 naive 當成
+    「已是 UTC」，但 production 每個呼叫點傳的都是 `datetime.now()`＝台北本地
+    時間，實際日界仍落在台北午夜，UTC 對齊形同虛設（review P1）。與其要求每個
+    呼叫點自律，不如讓它擋在型別上：naive 進來就是 bug，當場炸掉，好過無聲提早
+    八小時放行整份額度。
     """
     if now is None:
-        return datetime.now(timezone.utc).strftime('%Y-%m-%d')
-    if now.tzinfo is not None:
-        return now.astimezone(timezone.utc).strftime('%Y-%m-%d')
-    return now.strftime('%Y-%m-%d')
+        return utcnow().strftime('%Y-%m-%d')
+    if now.tzinfo is None or now.tzinfo.utcoffset(now) is None:
+        raise ValueError(
+            'day_key() 需要 timezone-aware 的時間，收到 naive datetime。'
+            '請用 budget.utcnow()，測試請明確帶 tzinfo=timezone.utc。')
+    return now.astimezone(timezone.utc).strftime('%Y-%m-%d')
 
 
 def estimate_cost(n_reports: int, cost_per_report: float) -> float:
@@ -60,13 +75,21 @@ def budget_gate(n_reports: int, cost_per_report: float, confirm_threshold: float
 
 
 def daily_gate(n_reports: int, day_est_usd: float, daily_budget: float,
-               cost_per_report: float, yes: bool) -> Tuple[int, str]:
+               cost_per_report: float, override: bool = False,
+               override_reason: str = '') -> Tuple[int, str]:
     """日上限放行條件：投影成本＝今日已用（上傳＋重推）＋本次估算。
 
     回傳 (允許份數, 訊息)：
     - 投影 ≤ 日上限：全數放行。
-    - 超過且 yes=False（夜間/一般）：裁切到剩餘預算可容納的份數（0 則擋下）。
-    - 超過且 yes=True（人工明確覆寫）：全數放行但標警告。
+    - 超過：裁切到剩餘預算可容納的份數（0 則擋下）。
+    - 超過且 override=True：全數放行但標警告。
+
+    **`--yes` 不在這裡**（review P1）。`--yes` 的職責只有「確認這一批很大」，
+    而它同時是 `budget_gate` 的必要旗標；若一併拿來放寬日上限，任何合法的大批次
+    都會順帶突破後端硬限——55 份重推要加 `--yes` 才過單次門檻，結果連日上限一起
+    失效，本模組的核心保證就沒了。所以日上限**一律強制裁切**，真要超過後端額度
+    必須另外明講 `override`（排程不會帶）。
+
     daily_budget ≤ 0 視為未設上限。
     """
     n = max(0, n_reports)
@@ -77,14 +100,15 @@ def daily_gate(n_reports: int, day_est_usd: float, daily_budget: float,
         return n, f'投影今日成本 US${projected:.2f} ≤ 日上限 US${daily_budget:.0f}'
     remaining = max(0.0, daily_budget - day_est_usd)
     allowed = int(remaining // cost_per_report) if cost_per_report > 0 else 0
-    if yes:
-        return n, (f'⚠️ 投影今日成本 US${projected:.2f} 超過日上限 US${daily_budget:.0f}，'
-                   f'已以 --yes 明確覆寫、全數 {n} 份執行')
+    if override:
+        return n, (f'🚨 投影今日成本 US${projected:.2f} 超過後端日上限 US${daily_budget:.0f}，'
+                   f'已以 --override-daily-budget 覆寫、全數 {n} 份執行'
+                   f'（理由：{override_reason or "未填"}）')
     if allowed <= 0:
         return 0, (f'今日已用 US${day_est_usd:.2f}、日上限 US${daily_budget:.0f}，剩餘額度不足 1 份；'
-                   f'已擋下（明日額度重置後再跑，或確認後加 --yes）')
+                   f'已擋下（UTC 換日後額度重置再跑）')
     return allowed, (f'投影今日成本 US${projected:.2f} 超過日上限 US${daily_budget:.0f}，'
-                     f'自動裁切為今日剩餘可容納的 {allowed} 份（原 {n} 份；加 --yes 可覆寫）')
+                     f'自動裁切為今日剩餘可容納的 {allowed} 份（原 {n} 份）')
 
 
 def budget_level(est_usd: float, daily_budget: float) -> Tuple[str, float]:
@@ -165,12 +189,12 @@ class DailyBudget:
 
     def load(self, now: Optional[datetime] = None) -> dict:
         """唯讀取用（顯示用）。"""
-        return self._read(now or datetime.now())
+        return self._read(now or utcnow())
 
     def add(self, n: int, now: Optional[datetime] = None, kind: str = 'uploaded') -> dict:
         """鎖內累加（n 可為負，下限 0）。kind＝'uploaded' 或 'retried'。"""
         assert kind in ('uploaded', 'retried')
-        now = now or datetime.now()
+        now = now or utcnow()
         with self._locked():
             data = self._read(now)
             data[kind] = int(data.get(kind, 0)) + int(n)
@@ -186,26 +210,28 @@ class DailyBudget:
         return self.add(n, now=now, kind='retried')
 
     def reserve_retry(self, n_requested: int, daily_budget: float, cost_per_report: float,
-                      yes: bool, now: Optional[datetime] = None) -> Tuple[int, str, dict]:
+                      override: bool = False, now: Optional[datetime] = None,
+                      override_reason: str = '') -> Tuple[int, str, dict]:
         """重推專用的原子預留：與上傳走同一把鎖、同一份日額度，先佔再送。"""
-        now = now or datetime.now()
+        now = now or utcnow()
         with self._locked():
             data = self._read(now)
             allowed, msg = daily_gate(n_requested, float(data.get('est_usd', 0.0)),
-                                      daily_budget, cost_per_report, yes)
+                                      daily_budget, cost_per_report, override, override_reason)
             if allowed > 0:
                 data['retried'] = int(data.get('retried', 0)) + allowed
                 data = self._write(data, now)
             return allowed, msg, data
 
     def reserve(self, n_requested: int, daily_budget: float, cost_per_report: float,
-                yes: bool, now: Optional[datetime] = None) -> Tuple[int, str, dict]:
+                override: bool = False, now: Optional[datetime] = None,
+                override_reason: str = '') -> Tuple[int, str, dict]:
         """鎖內原子預留：讀今日餘額 → daily_gate → 立刻計入可放行份數。回 (允許份數, 訊息, 狀態)。"""
-        now = now or datetime.now()
+        now = now or utcnow()
         with self._locked():
             data = self._read(now)
             allowed, msg = daily_gate(n_requested, float(data.get('est_usd', 0.0)),
-                                      daily_budget, cost_per_report, yes)
+                                      daily_budget, cost_per_report, override, override_reason)
             if allowed > 0:
                 data['uploaded'] = int(data.get('uploaded', 0)) + allowed
                 data = self._write(data, now)
@@ -218,7 +244,7 @@ class DailyBudget:
         鎖內先讀檔案實際儲存的日期：與 day 相同才扣減；帳本已切到新的一天則 no-op
         （不重建昨日、不動今日的額度）。day=None 時退回舊行為（扣當日）。
         """
-        now = now or datetime.now()
+        now = now or utcnow()
         if unused <= 0:
             return self.load(now)
         with self._locked():
@@ -232,7 +258,7 @@ class DailyBudget:
 
     def set_uploaded(self, n: int, now: Optional[datetime] = None) -> dict:
         """明確設定今日上傳份數（重建/校正用：python -m geobingan_sync.budget --set N）。"""
-        now = now or datetime.now()
+        now = now or utcnow()
         with self._locked():
             data = self._read(now)
             data['uploaded'] = int(n)
@@ -258,7 +284,7 @@ class ReservationLedger:
         self.reserved = max(0, int(reserved))
         self.day = day                          # 預留所屬日期；退還只作用於同日帳本
         self.kind = kind                        # 'uploaded' 或 'retried'——退還要記回同一欄
-        self.clock = clock or datetime.now      # 可注入時鐘（測試模擬下載期間跨月）
+        self.clock = clock or utcnow            # 可注入時鐘（測試模擬下載期間跨月）
         self.attempted = 0
         self.refunded = 0
 
@@ -290,12 +316,15 @@ class ReservationLedger:
 
 def gate_and_reserve(mb: 'DailyBudget', n_requested: int, daily_budget: float,
                      cost_per_report: float, confirm_threshold: float, yes: bool,
-                     kind: str = 'uploaded'):
+                     kind: str = 'uploaded', override: bool = False,
+                     override_reason: str = ''):
     """單次門檻 → 原子預留，順序固定（review TOCTOU）。
 
     單次門檻對「原始請求量」檢查而非對預覽份數：預留結果永遠 ≤ 原始請求量，
     所以另一程序在中途退還額度或跨日，都不可能讓放行份數超過已確認的量。
     門檻擋下時尚未預留，不需退還。回 (允許份數, 訊息列表, 擋下原因或 None, 預留所屬日期)。
+
+    兩個旗標職責分離（review P1）：`yes` 只解單次門檻，`override` 才放寬日上限。
     """
     msgs = []
     ok, gate_msg = budget_gate(n_requested, cost_per_report, confirm_threshold, yes)
@@ -303,7 +332,8 @@ def gate_and_reserve(mb: 'DailyBudget', n_requested: int, daily_budget: float,
     if n_requested > 0 and not ok:
         return 0, msgs, gate_msg, None
     reserve = mb.reserve_retry if kind == 'retried' else mb.reserve
-    allowed, day_msg, data = reserve(n_requested, daily_budget, cost_per_report, yes)
+    allowed, day_msg, data = reserve(n_requested, daily_budget, cost_per_report,
+                                     override=override, override_reason=override_reason)
     if day_msg:
         msgs.append(day_msg)
     if n_requested > 0 and allowed <= 0:

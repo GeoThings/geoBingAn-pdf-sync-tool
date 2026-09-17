@@ -7,15 +7,19 @@ POST 前守門、以及重推與上傳共用額度。
 import json
 import os
 import sys
-from datetime import datetime, timedelta
+
+import pytest
+from datetime import datetime, timedelta, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from geobingan_sync.budget import (estimate_cost, budget_gate, budget_level, daily_gate,
                                    gate_and_reserve, DailyBudget, ReservationLedger)
 
-D0 = datetime(2026, 9, 17, 10, 0)          # 基準日
-D0_LATE = datetime(2026, 9, 17, 23, 59)
-D1 = datetime(2026, 9, 18, 0, 5)           # 隔日
+# 一律 timezone-aware UTC：day_key() 現在直接拒絕 naive（review P1）
+UTC = timezone.utc
+D0 = datetime(2026, 9, 17, 10, 0, tzinfo=UTC)          # 基準日
+D0_LATE = datetime(2026, 9, 17, 23, 59, tzinfo=UTC)
+D1 = datetime(2026, 9, 18, 0, 5, tzinfo=UTC)           # 隔日（UTC）
 DAY0, DAY1 = '2026-09-17', '2026-09-18'
 
 
@@ -41,21 +45,21 @@ def test_budget_level_thresholds():
 
 def test_daily_gate_trims_to_remaining_budget():
     """今日已用 US$16.5、再來 15 份 → 投影 21 > 20，裁切為剩餘可容納的 11 份。"""
-    allowed, msg = daily_gate(15, 16.5, 20.0, 0.3, yes=False)
+    allowed, msg = daily_gate(15, 16.5, 20.0, 0.3)
     assert allowed == 11 and '自動裁切' in msg
 
 
 def test_daily_gate_blocks_when_exhausted():
-    allowed, msg = daily_gate(15, 20.0, 20.0, 0.3, yes=False)
+    allowed, msg = daily_gate(15, 20.0, 20.0, 0.3)
     assert allowed == 0 and '已擋下' in msg
-    assert daily_gate(15, 19.9, 20.0, 0.3, yes=False)[0] == 0      # 剩 0.1 不足 1 份
+    assert daily_gate(15, 19.9, 20.0, 0.3)[0] == 0                # 剩 0.1 不足 1 份
 
 
-def test_daily_gate_passes_and_yes_overrides():
-    assert daily_gate(15, 4.0, 20.0, 0.3, yes=False)[0] == 15
-    allowed, msg = daily_gate(15, 18.0, 20.0, 0.3, yes=True)
-    assert allowed == 15 and '--yes' in msg
-    assert daily_gate(15, 500.0, 0, 0.3, yes=False)[0] == 15       # 未設上限
+def test_daily_gate_passes_and_override_bypasses():
+    assert daily_gate(15, 4.0, 20.0, 0.3)[0] == 15
+    allowed, msg = daily_gate(15, 18.0, 20.0, 0.3, override=True, override_reason='後端已加碼')
+    assert allowed == 15 and '--override-daily-budget' in msg and '後端已加碼' in msg
+    assert daily_gate(15, 500.0, 0, 0.3)[0] == 15                  # 未設上限
 
 
 # ---------- 帳本：累加、跨日歸零、重推共用 ----------
@@ -76,7 +80,7 @@ def test_retries_and_uploads_share_the_same_daily_budget(tmp_path):
     mb.record_retry(55, now=D0)                                     # 手動重推 55 份
     d = mb.load(now=D0)
     assert (d['retried'], d['units'], d['est_usd']) == (55, 55, 16.5)
-    allowed, msg, data = mb.reserve(15, 20.0, 0.3, yes=False, now=D0)
+    allowed, msg, data = mb.reserve(15, 20.0, 0.3, now=D0)
     assert allowed == 11 and '自動裁切' in msg                       # 剩 US$3.5 → 11 份
     assert data['uploaded'] == 11 and data['units'] == 66
 
@@ -93,7 +97,7 @@ def test_old_month_format_file_is_reset(tmp_path):
 
 def test_reserve_charges_upfront_and_release_refunds_unused(tmp_path):
     mb = DailyBudget(tmp_path / 'b.json', cost_per_report=0.3)
-    reserved, _, d = mb.reserve(15, 20.0, 0.3, yes=False, now=D0)
+    reserved, _, d = mb.reserve(15, 20.0, 0.3, now=D0)
     assert reserved == 15 and d['uploaded'] == 15                    # 預留即計入
     assert mb.load(now=D0)['uploaded'] == 15                         # 中途中斷：帳上仍在（只會多算）
     assert mb.release(15 - 4, now=D0, day=DAY0)['uploaded'] == 4     # 正常結束退還未用
@@ -107,7 +111,7 @@ def test_reserve_is_atomic_across_processes(tmp_path):
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     code = (
         "import sys; sys.path.insert(0, %r); from geobingan_sync.budget import DailyBudget; "
-        "r,_,_ = DailyBudget(%r, cost_per_report=0.3).reserve(5, 3.0, 0.3, yes=False); print(r)"
+        "r,_,_ = DailyBudget(%r, cost_per_report=0.3).reserve(5, 3.0, 0.3); print(r)"
     ) % (root, str(path))
     procs = [subprocess.Popen([sys.executable, '-c', code], stdout=subprocess.PIPE, text=True)
              for _ in range(8)]
@@ -122,7 +126,7 @@ def test_reserve_is_atomic_across_processes(tmp_path):
 class _FakeMB:
     """預留時會「放行很多」的假帳本，證明門檻不可能被預留結果放大。"""
     def __init__(self): self.calls = []
-    def reserve(self, n, budget, cost, yes):
+    def reserve(self, n, budget, cost, override=False, override_reason=''):
         self.calls.append(n); return n, '假預留全數放行', {'day': DAY0}
 
 
@@ -180,7 +184,7 @@ def test_ledger_interrupt_keeps_attempted_items_charged():
 
 def test_ledger_normal_completion_with_real_ledger(tmp_path):
     mb = DailyBudget(tmp_path / 'b.json', cost_per_report=0.3)
-    reserved, _, _ = mb.reserve(6, 20.0, 0.3, yes=False, now=D0)
+    reserved, _, _ = mb.reserve(6, 20.0, 0.3, now=D0)
     L = ReservationLedger(mb, reserved, day=DAY0)
     for r in ({'success': True},) * 4 + ({'success': False, 'error': 'rejected'},
                                          {'success': False, 'error': 'unknown'}):
@@ -193,11 +197,11 @@ def test_ledger_normal_completion_with_real_ledger(tmp_path):
 def test_release_from_previous_day_does_not_touch_today(tmp_path):
     """昨日的預留跨日退還時，不得扣到今日（其他程序）的額度。"""
     mb = DailyBudget(tmp_path / 'b.json', cost_per_report=0.3)
-    reserved_a, _, data_a = mb.reserve(15, 60.0, 0.3, yes=False, now=D0_LATE)
+    reserved_a, _, data_a = mb.reserve(15, 60.0, 0.3, now=D0_LATE)
     ledger_a = ReservationLedger(mb, reserved_a, day=data_a['day'])
     assert ledger_a.day == DAY0
 
-    _, _, data_b = mb.reserve(15, 60.0, 0.3, yes=False, now=D1)        # 程序 B：新的一天
+    _, _, data_b = mb.reserve(15, 60.0, 0.3, now=D1)        # 程序 B：新的一天
     assert data_b['day'] == DAY1 and data_b['uploaded'] == 15
 
     ledger_a.begin_item(now=D0_LATE); ledger_a.settle({'success': False, 'error': 'rejected'})
@@ -209,7 +213,7 @@ def test_release_from_previous_day_does_not_touch_today(tmp_path):
 
 def test_release_same_day_applies(tmp_path):
     mb = DailyBudget(tmp_path / 'b.json', cost_per_report=0.3)
-    reserved, _, data = mb.reserve(15, 60.0, 0.3, yes=False, now=D0)
+    reserved, _, data = mb.reserve(15, 60.0, 0.3, now=D0)
     L = ReservationLedger(mb, reserved, day=data['day'])
     L.begin_item(now=D0); L.settle({'success': False, 'error': 'rejected'})
     assert mb.load(now=D0)['uploaded'] == 14                           # 同日正常扣減
@@ -219,13 +223,13 @@ def test_release_same_day_applies(tmp_path):
 def test_begin_item_refuses_after_day_rollover(tmp_path):
     """跨日後不得再用昨日預留送出；之後的份數要進新一天的帳本。"""
     mb = DailyBudget(tmp_path / 'b.json', cost_per_report=0.3)
-    reserved, _, data = mb.reserve(15, 60.0, 0.3, yes=False, now=D0_LATE)
+    reserved, _, data = mb.reserve(15, 60.0, 0.3, now=D0_LATE)
     L = ReservationLedger(mb, reserved, day=data['day'])
     assert L.begin_item(now=D0_LATE) is True
     assert L.begin_item(now=D1) is False and L.attempted == 1          # 跨日拒絕、不計入
     L.close()
     assert mb._read_raw()['day'] == DAY0 and mb._read_raw()['uploaded'] == 1
-    reserved2, _, data2 = mb.reserve(14, 60.0, 0.3, yes=False, now=D1)
+    reserved2, _, data2 = mb.reserve(14, 60.0, 0.3, now=D1)
     assert data2['day'] == DAY1 and reserved2 == 14
 
 
@@ -240,7 +244,7 @@ def test_day_guard_right_before_post_blocks_after_slow_download(tmp_path, monkey
     """下載開始於 9/17、完成時已 9/18 → 不得 POST、attempted 不增、不寫 error/歷史。"""
     import geobingan_sync.steps.upload_pdfs as up
     mb = DailyBudget(tmp_path / 'b.json', cost_per_report=0.3)
-    reserved, _, data = mb.reserve(15, 60.0, 0.3, yes=False, now=D0_LATE)
+    reserved, _, data = mb.reserve(15, 60.0, 0.3, now=D0_LATE)
     clock = {'now': D0_LATE}
     L = ReservationLedger(mb, reserved, day=data['day'], clock=lambda: clock['now'])
     posted = []
@@ -260,14 +264,14 @@ def test_day_guard_right_before_post_blocks_after_slow_download(tmp_path, monkey
     assert state['uploaded_files'] == [] and state['errors'] == []
     L.close()
     assert mb._read_raw()['day'] == DAY0 and mb._read_raw()['uploaded'] == 0
-    reserved2, _, data2 = mb.reserve(15, 60.0, 0.3, yes=False, now=D1)
+    reserved2, _, data2 = mb.reserve(15, 60.0, 0.3, now=D1)
     assert data2['day'] == DAY1 and reserved2 == 15
 
 
 def test_day_guard_same_day_allows_post(tmp_path, monkeypatch):
     import geobingan_sync.steps.upload_pdfs as up
     mb = DailyBudget(tmp_path / 'b.json', cost_per_report=0.3)
-    reserved, _, data = mb.reserve(2, 20.0, 0.3, yes=False, now=D0)
+    reserved, _, data = mb.reserve(2, 20.0, 0.3, now=D0)
     L = ReservationLedger(mb, reserved, day=data['day'], clock=lambda: D0)
     posted = []
     monkeypatch.setattr(up, 'download_pdf', lambda s, f, n: b'%PDF')
@@ -284,11 +288,11 @@ def test_day_guard_same_day_allows_post(tmp_path, monkeypatch):
 def test_reserve_retry_counts_into_retried_not_uploaded(tmp_path):
     """重推預留記在 retried，但一樣吃掉 units，讓後續上傳看得到。"""
     mb = DailyBudget(tmp_path / 'b.json', cost_per_report=0.3)
-    reserved, _, d = mb.reserve_retry(55, 20.0, 0.3, yes=True, now=D0)
+    reserved, _, d = mb.reserve_retry(55, 20.0, 0.3, now=D0)
     assert reserved == 55
     assert d['retried'] == 55 and d['uploaded'] == 0                 # 分欄記帳
     assert d['units'] == 55                                          # 但共用同一份總量
-    allowed, msg, d2 = mb.reserve(15, 20.0, 0.3, yes=False, now=D0)
+    allowed, msg, d2 = mb.reserve(15, 20.0, 0.3, now=D0)
     assert allowed == 11 and '自動裁切' in msg                        # 剩 US$3.5 → 只放行 11 份
     assert d2['units'] == 66
 
@@ -296,7 +300,7 @@ def test_reserve_retry_counts_into_retried_not_uploaded(tmp_path):
 def test_retry_release_refunds_retried_column(tmp_path):
     """重推退還要回到 retried，不可錯記成上傳額度。"""
     mb = DailyBudget(tmp_path / 'b.json', cost_per_report=0.3)
-    mb.reserve_retry(10, 20.0, 0.3, yes=False, now=D0)
+    mb.reserve_retry(10, 20.0, 0.3, now=D0)
     d = mb.release(4, now=D0, day=DAY0, kind='retried')
     assert d['retried'] == 6 and d['uploaded'] == 0 and d['units'] == 6
 
@@ -304,8 +308,8 @@ def test_retry_release_refunds_retried_column(tmp_path):
 def test_retry_blocked_when_daily_budget_exhausted(tmp_path):
     """上傳已用滿當日額度 → 重推必須被擋下（而不是照送、事後才發現超支）。"""
     mb = DailyBudget(tmp_path / 'b.json', cost_per_report=0.3)
-    mb.reserve(66, 20.0, 0.3, yes=True, now=D0)                      # 66 × 0.3 = US$19.8
-    allowed, msg, _ = mb.reserve_retry(20, 20.0, 0.3, yes=False, now=D0)
+    mb.reserve(66, 20.0, 0.3, override=True, now=D0)                      # 66 × 0.3 = US$19.8
+    allowed, msg, _ = mb.reserve_retry(20, 20.0, 0.3, now=D0)
     assert allowed == 0 and ('不足' in msg or '耗盡' in msg), msg
 
 
@@ -320,7 +324,7 @@ def test_gate_and_reserve_routes_retry_to_retried(tmp_path):
 def test_retry_ledger_refunds_only_unattempted_into_retried(tmp_path):
     """重推沿用保守結算：4xx 明確拒絕退還，未嘗試的退還，其餘保守保留。"""
     mb = DailyBudget(tmp_path / 'b.json', cost_per_report=0.3)
-    mb.reserve_retry(5, 20.0, 0.3, yes=False, now=D0)
+    mb.reserve_retry(5, 20.0, 0.3, now=D0)
     led = ReservationLedger(mb, 5, day=DAY0, clock=lambda: D0, kind='retried')
     led.begin_item(); led.settle({'success': False, 'error': 'rejected'})   # 4xx → 退 1
     led.begin_item()                                                        # 202 → 保留
@@ -341,7 +345,7 @@ def test_retry_and_upload_never_exceed_daily_budget_across_processes(tmp_path):
     tmpl = (
         "import sys; sys.path.insert(0, %r); from geobingan_sync.budget import DailyBudget; "
         "mb = DailyBudget(%r, cost_per_report=0.3); "
-        "r,_,_ = mb.%s(5, 3.0, 0.3, yes=False); print(r)"
+        "r,_,_ = mb.%s(5, 3.0, 0.3); print(r)"
     )
     procs = [subprocess.Popen([sys.executable, '-c',
                                tmpl % (root, str(path),
@@ -368,7 +372,7 @@ def test_retry_and_upload_draw_from_the_same_ledger(tmp_path):
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     tmpl = (
         "import sys; sys.path.insert(0, %r); from geobingan_sync.budget import DailyBudget; "
-        "r,_,_ = DailyBudget(%r, cost_per_report=0.3).%s(5, 3.0, 0.3, yes=False); print(r)"
+        "r,_,_ = DailyBudget(%r, cost_per_report=0.3).%s(5, 3.0, 0.3); print(r)"
     )
     procs = [subprocess.Popen([sys.executable, '-c', tmpl % (root, str(path), fn)],
                               stdout=subprocess.PIPE, text=True)
@@ -378,16 +382,81 @@ def test_retry_and_upload_draw_from_the_same_ledger(tmp_path):
     d = DailyBudget(path, cost_per_report=0.3).load()
     assert d['uploaded'] == 5 and d['retried'] == 5 and d['units'] == 10
     # 額度已用盡：第三個請求一份都拿不到
-    assert DailyBudget(path, cost_per_report=0.3).reserve(1, 3.0, 0.3, yes=False)[0] == 0
+    assert DailyBudget(path, cost_per_report=0.3).reserve(1, 3.0, 0.3)[0] == 0
 
 
 # ---------- 日界對齊 provider（UTC） ----------
 
 def test_day_key_uses_utc_not_local_time():
     """台北午夜（UTC+8）不可當成換日——否則比後端提早 8 小時放行整份額度。"""
-    from datetime import timezone
     from geobingan_sync.budget import day_key
     tpe = timezone(timedelta(hours=8))
     assert day_key(datetime(2026, 9, 18, 0, 30, tzinfo=tpe)) == '2026-09-17'   # 仍屬前一 UTC 日
     assert day_key(datetime(2026, 9, 18, 8, 30, tzinfo=tpe)) == '2026-09-18'   # UTC 00:30 才換日
-    assert day_key(datetime(2026, 9, 17, 23, 0)) == '2026-09-17'               # naive 視為已是基準
+
+
+def test_day_key_rejects_naive_datetime():
+    """naive datetime 必須當場 raise。
+
+    先前版本把 naive 當成「已是 UTC」，而 production 每個呼叫點傳的都是
+    `datetime.now()`＝台北本地時間，於是實際日界仍落在台北午夜，UTC 對齊形同
+    虛設（review P1）。擋在型別上，比要求每個呼叫點自律可靠。
+    """
+    from geobingan_sync.budget import day_key
+    with pytest.raises(ValueError, match='timezone-aware'):
+        day_key(datetime(2026, 9, 17, 23, 0))
+
+
+def test_production_clock_is_utc_aware():
+    """utcnow() 是本模組唯一時鐘，必須帶時區，否則上面那道防線等於沒有。"""
+    from geobingan_sync.budget import utcnow
+    now = utcnow()
+    assert now.tzinfo is not None and now.utcoffset() == timedelta(0)
+
+
+def test_ledger_default_clock_is_utc_aware(tmp_path):
+    """ReservationLedger 預設時鐘也要是 UTC-aware，否則 begin_item 會炸。"""
+    mb = DailyBudget(tmp_path / 'b.json', cost_per_report=0.3)
+    reserved, _, data = mb.reserve(3, 20.0, 0.3)
+    led = ReservationLedger(mb, reserved, day=data['day'])
+    assert led.begin_item() is True                                  # 不得 raise
+
+
+# ---------- --yes 不得放寬日上限（review P1） ----------
+
+def test_yes_confirms_batch_size_but_never_bypasses_daily_cap(tmp_path):
+    """`--yes` 只解單次門檻，日上限仍須強制裁切。
+
+    55 份重推估 US$16.5，超過確認門檻 US$15 所以一定要帶 --yes；若 --yes 同時
+    放寬日上限，今日已用 US$10 時就會放行全部 55 份、投影 US$26.5，直接突破後端
+    每日 US$20 的硬限——本模組的核心保證會在每一次合法大批次上失效。
+    """
+    mb = DailyBudget(tmp_path / 'b.json', cost_per_report=0.3)
+    mb.record_retry(34, now=D0)                                      # 今日已用 US$10.20
+    reserved, msgs, blocked, _ = gate_and_reserve(
+        mb, 55, 20.0, 0.3, 15.0, yes=True, kind='retried')           # 帶 --yes 過單次門檻
+    assert blocked is None                                           # 單次門檻確實放行了
+    assert reserved == 32, reserved                                  # 但日上限仍裁切：剩 US$9.8 → 32 份
+    assert any('自動裁切' in m for m in msgs)
+    d = mb.load(now=D0)
+    assert d['units'] == 66 and d['est_usd'] <= 20.0                 # 絕不超過日上限
+
+
+def test_override_flag_is_the_only_way_past_daily_cap(tmp_path):
+    """真要超過後端額度，必須另外明講 override（排程不會帶）。"""
+    mb = DailyBudget(tmp_path / 'b.json', cost_per_report=0.3)
+    mb.record_retry(34, now=D0)
+    reserved, msgs, blocked, _ = gate_and_reserve(
+        mb, 55, 20.0, 0.3, 15.0, yes=True, kind='retried',
+        override=True, override_reason='後端已臨時加碼')
+    assert blocked is None and reserved == 55
+    assert any('後端已臨時加碼' in m for m in msgs)                    # 理由要留在日誌裡
+
+
+def test_override_alone_still_needs_yes_for_single_batch_threshold(tmp_path):
+    """override 不代換 --yes：單次大批次仍要人確認，兩道閘各司其職。"""
+    mb = DailyBudget(tmp_path / 'b.json', cost_per_report=0.3)
+    reserved, _, blocked, _ = gate_and_reserve(
+        mb, 55, 20.0, 0.3, 15.0, yes=False, kind='retried', override=True)
+    assert reserved == 0 and blocked and '超過確認門檻' in blocked
+    assert mb.load()['units'] == 0                                   # 擋在預留之前

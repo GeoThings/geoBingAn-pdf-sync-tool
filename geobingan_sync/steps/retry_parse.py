@@ -56,7 +56,8 @@ def fetch_retryable(ids: List[str], headers) -> List[str]:
     return out
 
 
-def main(ids: List[str], max_items: int = 0, yes: bool = False) -> int:
+def main(ids: List[str], max_items: int = 0, yes: bool = False,
+         override_daily_budget: str = '') -> int:
     headers = {'Authorization': f'Bearer {_get_valid_token()}'}
     print(f'📋 候選 {len(ids)} 份，查詢目前可重試的…')
     targets = fetch_retryable(ids, headers)
@@ -74,9 +75,12 @@ def main(ids: List[str], max_items: int = 0, yes: bool = False) -> int:
           f"＝ {day['units']} 份 ≈ US${day['est_usd']:.2f} / 日上限 US${DAILY_BUDGET_USD:.0f}")
 
     # 與上傳相同的守門：單次門檻對原始請求量 → 鎖內原子預留（記在 retried）
+    if override_daily_budget:
+        print(f'  🚨 已指定 --override-daily-budget：將突破後端日上限（理由：{override_daily_budget}）')
     reserved, msgs, blocked, reserved_day = gate_and_reserve(
         mb, len(targets), DAILY_BUDGET_USD, COST_PER_REPORT_USD, BUDGET_CONFIRM_USD, yes,
-        kind='retried')
+        kind='retried', override=bool(override_daily_budget),
+        override_reason=override_daily_budget)
     for m in msgs:
         print(f'  💰 {m}')
     if blocked:
@@ -129,8 +133,13 @@ if __name__ == '__main__':
     ap.add_argument('--ids-file', required=True, help='每行一個 report id 的檔案')
     ap.add_argument('--max', type=int, default=0, help='本次最多重推幾份（0＝由日額度決定）')
     ap.add_argument('--yes', action='store_true',
-                    help='估算成本超過 BUDGET_CONFIRM_USD 時仍執行（請先確認後端預算餘裕）')
+                    help='估算成本超過 BUDGET_CONFIRM_USD 時仍執行（請先確認後端預算餘裕）；'
+                         '**只解單次門檻，不會放寬後端日上限**')
+    ap.add_argument('--override-daily-budget', metavar='REASON', default='',
+                    help='突破後端每日額度硬上限，需填理由（會記進日誌）。'
+                         '僅限人工、且已與後端確認可超支時使用；排程不得帶此旗標')
     a = ap.parse_args()
     with open(a.ids_file, encoding='utf-8') as f:
         ids = [l.strip() for l in f if l.strip()]
-    sys.exit(main(ids, max_items=a.max, yes=a.yes))
+    sys.exit(main(ids, max_items=a.max, yes=a.yes,
+                  override_daily_budget=a.override_daily_budget))

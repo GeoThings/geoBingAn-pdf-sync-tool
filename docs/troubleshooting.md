@@ -290,7 +290,7 @@ print(response.json())
 ### 原因與解決
 後端解析成本受 OpenAI 專案花費上限節制（**每日 US$20**，上傳與手動重推共用），工具在送出前估算（份數 × `COST_PER_REPORT_USD`）並對日上限做原子預留。
 
-- **單次估算 > `BUDGET_CONFIRM_USD`**：屬人為大批次。先與後端確認預算餘裕再加 `--yes`，或縮小 `--catchup-days`／降低 `MAX_UPLOADS` 分批。
+- **單次估算 > `BUDGET_CONFIRM_USD`**：屬人為大批次。先與後端確認預算餘裕再加 `--yes`，或縮小 `--catchup-days`／降低 `MAX_UPLOADS` 分批。注意 `--yes` 只解這道門檻，日上限仍會裁切。
 - **日上限自動裁切或耗盡**：`python3 -m geobingan_sync.budget --show` 查今日帳（上傳＋重推）；等隔日重置（日界以 UTC 計，台北時間早上 08:00 換日），或與後端調高上限後修改 `DAILY_BUDGET_USD`。
 - **換機後帳本從 0 開始**：`python3 -m geobingan_sync.budget --set N` 初始化（`state/upload_budget.json` 不入版控）。
 
