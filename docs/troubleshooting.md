@@ -12,7 +12,7 @@
 6. [PDF 檔案缺少副檔名](#6-pdf-檔案缺少副檔名)
 7. [launchd 自動排程 step1 下載失敗（post-wake DNS race）— ✅ 已緩解](#7-launchd-自動排程-step1-下載失敗post-wake-dns-race-已緩解)
 8. [告警沒收到／收到重複告警](#8-告警沒收到收到重複告警)
-9. [上傳被擋下（exit 3：預算門檻／月上限）](#9-上傳被擋下exit-3預算門檻月上限)
+9. [上傳被擋下（exit 3：預算門檻／日上限）](#9-上傳被擋下exit-3預算門檻日上限)
 10. [解析積壓：報告卡在 pending 不動](#10-解析積壓報告卡在-pending-不動)
 11. [跨月時批次中途停止](#11-跨月時批次中途停止)
 
@@ -282,16 +282,16 @@ print(response.json())
 
 ---
 
-## 9. 上傳被擋下（exit 3：預算門檻／月上限）
+## 9. 上傳被擋下（exit 3：預算門檻／日上限）
 
 ### 症狀
 `upload_pdfs` 印出「🛑 已擋下：估算解析成本 … 超過確認門檻」或「剩餘預算不足」後 exit 3；或「待上傳（裁切後）」份數變少。
 
 ### 原因與解決
-後端解析成本受 OpenAI 專案花費上限節制，工具在上傳前估算（份數 × `COST_PER_REPORT_USD`）並對月上限做原子預留。
+後端解析成本受 OpenAI 專案花費上限節制（**每日 US$20**，上傳與手動重推共用），工具在送出前估算（份數 × `COST_PER_REPORT_USD`）並對日上限做原子預留。
 
 - **單次估算 > `BUDGET_CONFIRM_USD`**：屬人為大批次。先與後端確認預算餘裕再加 `--yes`，或縮小 `--catchup-days`／降低 `MAX_UPLOADS` 分批。
-- **月上限自動裁切或耗盡**：`python3 -m geobingan_sync.budget --show` 查本月帳；等下月，或與後端調高上限後修改 `MONTHLY_BUDGET_USD`。
+- **日上限自動裁切或耗盡**：`python3 -m geobingan_sync.budget --show` 查今日帳（上傳＋重推）；等隔日重置（日界以 UTC 計，台北時間早上 08:00 換日），或與後端調高上限後修改 `DAILY_BUDGET_USD`。
 - **換機後帳本從 0 開始**：`python3 -m geobingan_sync.budget --set N` 初始化（`state/upload_budget.json` 不入版控）。
 
 ---

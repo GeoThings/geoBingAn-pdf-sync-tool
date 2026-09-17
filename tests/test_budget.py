@@ -149,8 +149,9 @@ def test_gate_and_reserve_with_real_ledger(tmp_path):
 # ---------- ReservationLedger ----------
 
 class _LedgerMB:
-    def __init__(self): self.releases = []
-    def release(self, n, now=None, day=None): self.releases.append(n); return {'uploaded': -1}
+    def __init__(self): self.releases = []; self.kinds = []
+    def release(self, n, now=None, day=None, kind='uploaded'):
+        self.releases.append(n); self.kinds.append(kind); return {'uploaded': -1}
     def load(self): return {'uploaded': -1}
 
 
@@ -162,6 +163,7 @@ def test_ledger_refunds_only_definite_zero_cost_failures():
     L.begin_item(); L.settle({'success': False, 'error': 'unknown'})  # 結果不明 → 保留
     L.close()                                                          # 4−3＝退 1
     assert mb.releases == [1, 1]
+    assert mb.kinds == ['uploaded', 'uploaded']                        # 退還記回同一欄
 
 
 def test_ledger_interrupt_keeps_attempted_items_charged():
@@ -275,3 +277,92 @@ def test_day_guard_same_day_allows_post(tmp_path, monkeypatch):
     r = up.process_single_pdf(None, {'id': 'f', 'name': 'a.pdf', 'folder_name': 'X'},
                               {'uploaded_files': [], 'errors': []}, 1, 1, before_upload=L.begin_item)
     assert r['success'] and posted == ['a.pdf'] and L.attempted == 1
+
+
+# ---------- 重推與上傳共用同一份日額度（PR #85 review P1） ----------
+
+def test_reserve_retry_counts_into_retried_not_uploaded(tmp_path):
+    """重推預留記在 retried，但一樣吃掉 units，讓後續上傳看得到。"""
+    mb = DailyBudget(tmp_path / 'b.json', cost_per_report=0.3)
+    reserved, _, d = mb.reserve_retry(55, 20.0, 0.3, yes=True, now=D0)
+    assert reserved == 55
+    assert d['retried'] == 55 and d['uploaded'] == 0                 # 分欄記帳
+    assert d['units'] == 55                                          # 但共用同一份總量
+    allowed, msg, d2 = mb.reserve(15, 20.0, 0.3, yes=False, now=D0)
+    assert allowed == 11 and '自動裁切' in msg                        # 剩 US$3.5 → 只放行 11 份
+    assert d2['units'] == 66
+
+
+def test_retry_release_refunds_retried_column(tmp_path):
+    """重推退還要回到 retried，不可錯記成上傳額度。"""
+    mb = DailyBudget(tmp_path / 'b.json', cost_per_report=0.3)
+    mb.reserve_retry(10, 20.0, 0.3, yes=False, now=D0)
+    d = mb.release(4, now=D0, day=DAY0, kind='retried')
+    assert d['retried'] == 6 and d['uploaded'] == 0 and d['units'] == 6
+
+
+def test_retry_blocked_when_daily_budget_exhausted(tmp_path):
+    """上傳已用滿當日額度 → 重推必須被擋下（而不是照送、事後才發現超支）。"""
+    mb = DailyBudget(tmp_path / 'b.json', cost_per_report=0.3)
+    mb.reserve(66, 20.0, 0.3, yes=True, now=D0)                      # 66 × 0.3 = US$19.8
+    allowed, msg, _ = mb.reserve_retry(20, 20.0, 0.3, yes=False, now=D0)
+    assert allowed == 0 and ('不足' in msg or '耗盡' in msg), msg
+
+
+def test_gate_and_reserve_routes_retry_to_retried(tmp_path):
+    mb = DailyBudget(tmp_path / 'b.json', cost_per_report=0.3)
+    reserved, msgs, blocked, day = gate_and_reserve(mb, 10, 20.0, 0.3, 15.0, False,
+                                                    kind='retried')
+    assert reserved == 10 and not blocked
+    assert mb.load()['retried'] == 10 and mb.load()['uploaded'] == 0
+
+
+def test_retry_ledger_refunds_only_unattempted_into_retried(tmp_path):
+    """重推沿用保守結算：4xx 明確拒絕退還，未嘗試的退還，其餘保守保留。"""
+    mb = DailyBudget(tmp_path / 'b.json', cost_per_report=0.3)
+    mb.reserve_retry(5, 20.0, 0.3, yes=False, now=D0)
+    led = ReservationLedger(mb, 5, day=DAY0, clock=lambda: D0, kind='retried')
+    led.begin_item(); led.settle({'success': False, 'error': 'rejected'})   # 4xx → 退 1
+    led.begin_item()                                                        # 202 → 保留
+    led.begin_item()                                                        # 5xx → 保守保留
+    d = led.close()                                                         # 未嘗試 2 份 → 退還
+    assert d['retried'] == 2 and d['uploaded'] == 0                         # 5 - 1 - 2 = 2
+
+
+def test_retry_and_upload_never_exceed_daily_budget_across_processes(tmp_path):
+    """8 個程序（4 重推 + 4 上傳）同時搶只夠 10 份的日額度 → 總放行恰為 10。
+
+    這正是 --record-retry 事後記帳擋不住的競態：重推已送出但還沒記帳時，
+    上傳讀到用量偏低而照常預留，兩者合計超過後端日上限（2026-09-14 事故）。
+    """
+    import subprocess
+    path = tmp_path / 'b.json'
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    tmpl = (
+        "import sys; sys.path.insert(0, %r); from geobingan_sync.budget import DailyBudget; "
+        "mb = DailyBudget(%r, cost_per_report=0.3); "
+        "r,_,_ = mb.%s(5, 3.0, 0.3, yes=False); print(r)"
+    )
+    procs = [subprocess.Popen([sys.executable, '-c',
+                               tmpl % (root, str(path),
+                                       'reserve_retry' if i % 2 else 'reserve')],
+                              stdout=subprocess.PIPE, text=True)
+             for i in range(8)]
+    allowed = [int(p.communicate()[0].strip().splitlines()[-1]) for p in procs]
+    assert sum(allowed) == 10, allowed                               # 總放行不超過日額度
+    d = DailyBudget(path, cost_per_report=0.3).load()
+    assert d['uploaded'] + d['retried'] == 10 and d['units'] == 10
+    assert d['uploaded'] > 0 and d['retried'] > 0                    # 兩條路徑都真的搶到過
+    assert not list(tmp_path.glob('*.tmp'))
+
+
+# ---------- 日界對齊 provider（UTC） ----------
+
+def test_day_key_uses_utc_not_local_time():
+    """台北午夜（UTC+8）不可當成換日——否則比後端提早 8 小時放行整份額度。"""
+    from datetime import timezone
+    from geobingan_sync.budget import day_key
+    tpe = timezone(timedelta(hours=8))
+    assert day_key(datetime(2026, 9, 18, 0, 30, tzinfo=tpe)) == '2026-09-17'   # 仍屬前一 UTC 日
+    assert day_key(datetime(2026, 9, 18, 8, 30, tzinfo=tpe)) == '2026-09-18'   # UTC 00:30 才換日
+    assert day_key(datetime(2026, 9, 17, 23, 0)) == '2026-09-17'               # naive 視為已是基準
