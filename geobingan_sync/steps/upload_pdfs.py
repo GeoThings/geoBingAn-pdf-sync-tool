@@ -639,7 +639,7 @@ def process_single_pdf(service, pdf: Dict, state: dict, idx: int, total: int,
     flush_state() 確保最後的變更被寫入。
 
     before_upload: 下載完成、第一個 HTTP POST 之前呼叫的 callback；回 False 表示不可送出
-        （預算帳本跨月），此時回傳 error='month_rolled_over'，不寫 error 也不寫去重歷史。
+        （預算帳本已跨到新的一天），此時回傳 error='day_rolled_over'，不寫 error 也不寫去重歷史。
 
     Returns:
         Dict with keys: success (bool), pdf (Dict), result (Optional[dict])
@@ -653,9 +653,9 @@ def process_single_pdf(service, pdf: Dict, state: dict, idx: int, total: int,
     if not pdf_content:
         return {'success': False, 'pdf': pdf, 'result': None, 'error': 'download_failed'}
 
-    # 月份守門要在這一刻（下載已完成、POST 尚未送出）：下載可能耗時數分鐘，之前檢查會有時間窗
+    # 日期守門要在這一刻（下載已完成、POST 尚未送出）：下載可能耗時數分鐘，之前檢查會有時間窗
     if before_upload is not None and not before_upload():
-        return {'success': False, 'pdf': pdf, 'result': None, 'error': 'month_rolled_over'}
+        return {'success': False, 'pdf': pdf, 'result': None, 'error': 'day_rolled_over'}
 
     # 上傳
     result = upload_to_geobingan(pdf_content, pdf['name'], pdf['folder_name'])
@@ -767,7 +767,8 @@ def select_pdfs_to_upload(all_pdfs: List[Dict], uploaded_files, *, cutoff: datet
     return picked, counts
 
 
-def main(city: dict = None, catchup_days: int = None, yes: bool = False):
+def main(city: dict = None, catchup_days: int = None, yes: bool = False,
+         override_daily_budget: str = ''):
     """主程式
 
     yes: 估算解析成本超過 BUDGET_CONFIRM_USD 時的明確確認（防人為大批次打爆後端預算）。
@@ -853,13 +854,17 @@ def main(city: dict = None, catchup_days: int = None, yes: bool = False):
     print(f"  待上傳: {len(pdfs_to_upload)}" + (f"（上限 {MAX_UPLOADS}）" if MAX_UPLOADS > 0 else "（無上限）"))
 
     # 解析預算守門：單次門檻（對原始請求量）→ 鎖內原子預留 → 上傳 → finally 退還未用
-    from geobingan_sync.budget import gate_and_reserve, MonthlyBudget, ReservationLedger
-    from geobingan_sync.config import COST_PER_REPORT_USD, MONTHLY_BUDGET_USD, BUDGET_CONFIRM_USD
-    mb = MonthlyBudget(cost_per_report=COST_PER_REPORT_USD)
-    month = mb.load()
-    print(f"  💰 本月({month['month']})已傳 {month['uploaded']} 份 ≈ US${month['est_usd']:.2f} / 上限 US${MONTHLY_BUDGET_USD:.0f}")
-    reserved, budget_msgs, blocked, reserved_month = gate_and_reserve(
-        mb, len(pdfs_to_upload), MONTHLY_BUDGET_USD, COST_PER_REPORT_USD, BUDGET_CONFIRM_USD, yes)
+    from geobingan_sync.budget import gate_and_reserve, DailyBudget, ReservationLedger
+    from geobingan_sync.config import COST_PER_REPORT_USD, DAILY_BUDGET_USD, BUDGET_CONFIRM_USD
+    mb = DailyBudget(cost_per_report=COST_PER_REPORT_USD)
+    day = mb.load()
+    print(f"  💰 今日({day['day']}) 上傳 {day['uploaded']}＋重推 {day['retried']} ＝ {day['units']} 份 "
+          f"≈ US${day['est_usd']:.2f} / 日上限 US${DAILY_BUDGET_USD:.0f}")
+    if override_daily_budget:
+        print(f"  🚨 已指定 --override-daily-budget：將突破後端日上限（理由：{override_daily_budget}）")
+    reserved, budget_msgs, blocked, reserved_day = gate_and_reserve(
+        mb, len(pdfs_to_upload), DAILY_BUDGET_USD, COST_PER_REPORT_USD, BUDGET_CONFIRM_USD, yes,
+        override=bool(override_daily_budget), override_reason=override_daily_budget)
     for m in budget_msgs:
         print(f"  💰 {m}")
     if pdfs_to_upload and blocked:
@@ -898,15 +903,15 @@ def main(city: dict = None, catchup_days: int = None, yes: bool = False):
     error_count = 0
     # 預留預設視為已消耗：只對「確定零成本」的失敗（下載失敗/後端明確拒絕）立即退 1 份；
     # 結束（含中斷）只退還從未嘗試的份數。成功後才中斷、或結果不明，都保留在帳上（保守高估）。
-    ledger = ReservationLedger(mb, reserved, month=reserved_month)   # 退還只作用於預留當月，跨月 no-op
+    ledger = ReservationLedger(mb, reserved, day=reserved_day)   # 退還只作用於預留當日，跨日 no-op
 
     try:
         for idx, pdf in enumerate(pdfs_to_upload, 1):
-            # 月份守門由 before_upload 在 POST 前一刻執行（下載之後）；跨月則該項目不送、不寫歷史
+            # 日期守門由 before_upload 在 POST 前一刻執行（下載之後）；跨日則該項目不送、不寫歷史
             result = process_single_pdf(service, pdf, state, idx, len(pdfs_to_upload),
                                         before_upload=ledger.begin_item)
-            if result.get('error') == 'month_rolled_over':
-                print(f"\n⏹️  已跨月（預留屬 {ledger.month}），停止本批次；剩餘 {len(pdfs_to_upload) - idx + 1} 份待下次執行於新月份重新預留")
+            if result.get('error') == 'day_rolled_over':
+                print(f"\n⏹️  已跨日（預留屬 {ledger.day}），停止本批次；剩餘 {len(pdfs_to_upload) - idx + 1} 份待下次執行於新的一天重新預留")
                 break
             ledger.settle(result)
 
@@ -921,10 +926,10 @@ def main(city: dict = None, catchup_days: int = None, yes: bool = False):
                 time.sleep(DELAY_BETWEEN_UPLOADS)
     finally:
         try:
-            month = ledger.close()
-            print(f"💰 本月累計 {month['uploaded']} 份 ≈ US${month['est_usd']:.2f} / 上限 US${MONTHLY_BUDGET_USD:.0f}")
+            day = ledger.close()
+            print(f"💰 今日累計 {day['units']} 份（上傳 {day['uploaded']}＋重推 {day['retried']}）≈ US${day['est_usd']:.2f} / 日上限 US${DAILY_BUDGET_USD:.0f}")
         except Exception as e:
-            print(f"⚠️  月累計結算失敗（保守多算，不影響上傳）: {e}")
+            print(f"⚠️  今日額度結算失敗（保守多算，不影響上傳）: {e}")
 
     # 寫入所有剩餘的狀態變更
     flush_state(state)
@@ -956,13 +961,18 @@ if __name__ == '__main__':
                         help='暫停後補掃：用 N 天檔名日期窗取代預設 30 天'
                              '（history 去重、不會重傳；恢復 .pause_upload 後用一次）')
     parser.add_argument('--yes', action='store_true',
-                        help='估算解析成本超過 BUDGET_CONFIRM_USD 時仍執行（請先與後端確認預算餘裕）')
+                        help='估算解析成本超過 BUDGET_CONFIRM_USD 時仍執行（請先與後端確認預算餘裕）；'
+                             '**只解單次門檻，不會放寬後端日上限**')
+    parser.add_argument('--override-daily-budget', metavar='REASON', default='',
+                        help='突破後端每日額度硬上限，需填理由（會記進日誌）。'
+                             '僅限人工、且已與後端確認可超支時使用；排程不得帶此旗標')
     args = parser.parse_args()
 
     cities = get_cities_for_cli(args.city)
     try:
         for city in cities:
-            main(city=city, catchup_days=args.catchup_days, yes=args.yes)
+            main(city=city, catchup_days=args.catchup_days, yes=args.yes,
+                 override_daily_budget=args.override_daily_budget)
     except KeyboardInterrupt:
         print("\n\n👋 使用者中斷執行")
         sys.exit(0)

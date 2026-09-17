@@ -284,12 +284,12 @@ Shared Drive
     │
     ▼ 解析預算守門（PR #80，詳見「告警送達與預算守門」）：
     │  單次門檻（對原始請求量，超過 BUDGET_CONFIRM_USD 需 --yes）
-    │  → 鎖內原子預留（月上限：超過則裁切為剩餘可容納份數、耗盡擋下）
+    │  → 鎖內原子預留（日上限：超過則裁切為今日剩餘可容納份數、耗盡擋下）
     │
-    ▼ 逐一下載 → [POST 前一刻：月份仍等於預留月份？否則停批] → 上傳（2 秒間隔）
+    ▼ 逐一下載 → [POST 前一刻：日期仍等於預留日期？否則停批] → 上傳（2 秒間隔）
     │
     ▼ 成功立即寫入 state（flock + merge）；預算帳本：4xx 明確拒絕即時退 1 份，
-    │  5xx／逾時／未知保守計入，finally 只退未嘗試份數（綁定預留月份）
+    │  5xx／逾時／未知保守計入，finally 只退未嘗試份數（綁定預留日期）
 ```
 
 ### 步驟 2.5：match_permits.py（建案名稱交叉比對）
@@ -369,7 +369,7 @@ API project 匹配：116 筆（滑動視窗 + 去重）
 | `sync_status.json` | 執行狀態與歷史 | 每次執行 | 否 |
 | `weekly_snapshots/{date}.json` | sync 後狀態快照（供 compute_diff 算趨勢） | 每次 sync | 否（local-only，見下） |
 | `alert_state_healthcheck.json` / `alert_state_sync.json` | 告警去重狀態（各 producer 一個 namespace；key → level/first_seen/last_sent） | 通知真的送達時 | 否 |
-| `upload_budget.json` + `.lock` | 本月解析預算帳本（month/uploaded/est_usd；flock；跨月歸零） | 預留／退還時 | 否（換機用 `budget --set N` 初始化） |
+| `upload_budget.json` + `.lock` | **今日**解析預算帳本（day/uploaded/**retried**/units/est_usd；flock；**跨日歸零**，日界以 **UTC** 計；舊月格式檔自動視為非今日而歸零） | 上傳或重推預留／退還時 | 否（重推走 `steps.retry_parse`，它自己預留） |
 | `list_fingerprint.json` | 政府清單指紋（source／label／permit_count／sha256／last_changed） | 每次 sync 解析清單後 | 否 |
 | `folder_deaths.json` | 來源資料夾由活轉死的紀錄（append-only，附 detected 日期與 pdf_count）。**fail-closed**：先原子寫入此檔成功才提交 registry——順序相反時，中斷會讓 registry 已存 404、下輪 prior 非 alive，該次死亡永遠偵測不到；讀到損毀 JSON 一律 raise，不靜默重置以免丟失歷史。事件以 `(permit, source_url)` 去重（**不含日期**）——death 已寫、registry 提交失敗時，下一輪（排程每日跑，通常是隔天）prior 仍是 alive、會再次偵測到同一次死亡；鍵若含偵測日，去重只在同一天有效。同一建案換新 folder URL 後再失效會自然形成新事件 | 偵測到新失效時 | 否 |
 
@@ -422,7 +422,7 @@ save_state(state)
 ### 為什麼需要（2026-09 復盤）
 
 - 健康檢查與 ClickUp 通道**早就存在、也一直在發**：Token 到期 9/11–9/14 連喊四天、「上傳暫停 N 天」每天一則連發 25 天——全進了沒人訂閱、沒 @ 人的 task。盲點不是「沒偵測」，是**告警沒到達人**。
-- 後端 PDF 解析成本受 **OpenAI 專案花費上限**硬性節制（上限不在任何 repo 裡）。2026-09-14 一次上傳 178 份即打爆當月上限，後續 116 份卡 pending 一整天沒人知（PROD-348）。夜間上傳原本 `MAX_UPLOADS=0` 無上限。
+- 後端 PDF 解析成本受 **OpenAI 專案花費上限**硬性節制（上限不在任何 repo 裡）。2026-09-14 一次上傳 178 份即打爆當日額度，後續 116 份卡 pending 一整天沒人知（PROD-348）。夜間上傳原本 `MAX_UPLOADS=0` 無上限。
 
 ### 告警送達（`notify.py` + `alert_state.py`）
 
@@ -464,17 +464,19 @@ send(title, body, needs_mention)   ← needs_mention = 任一 error 級 new/esca
 ```
 upload_pdfs.main()
     │
-    ▼ gate_and_reserve(mb, n=len(pdfs), 月上限, 單價, 門檻, --yes)
+    ▼ gate_and_reserve(mb, n=len(pdfs), 日上限, 單價, 門檻, --yes, kind='uploaded'|'retried')
     │    1) budget_gate(n)：對「原始請求量」估算，> BUDGET_CONFIRM_USD 且無 --yes → exit 3（尚未預留）
-    │    2) mb.reserve(n)：flock 內 讀餘額 → monthly_gate → 立刻計入可放行份數
-    │         投影 = 本月已用 + 本次；超過月上限 → 裁切為剩餘可容納份數（0 則擋下）；--yes 覆寫
-    ▼ ledger = ReservationLedger(mb, reserved, month=預留月份)
+    │       （--yes 到此為止；它**不會**放寬下面的日上限）
+    │    2) mb.reserve(n)：flock 內 讀今日餘額 → daily_gate → 立刻計入可放行份數
+    │         投影 = 今日已用（上傳＋重推）+ 本次；超過日上限 → 裁切為今日剩餘可容納
+    │         份數（0 則擋下、UTC 換日後重置）；只有 --override-daily-budget REASON 能全放
+    ▼ ledger = ReservationLedger(mb, reserved, day=預留日期)
     │
     ▼ 每份：download → before_upload=ledger.begin_item()（POST 前一刻）
-    │         當前月份 ≠ 預留月份 → 回 month_rolled_over：不 POST、不寫 error/歷史、停止整批
+    │         當前日期 ≠ 預留日期 → 回 day_rolled_over：不 POST、不寫 error/歷史、停止整批
     │         否則 attempted += 1（視為已消耗）→ upload_to_geobingan
-    │       settle(result)：error == 'rejected'（4xx）才 release(1, month)；其餘保留
-    ▼ finally ledger.close()：release(reserved − attempted, month)   ← 只退從未嘗試的
+    │       settle(result)：error == 'rejected'（4xx）才 release(1, day)；其餘保留
+    ▼ finally ledger.close()：release(reserved − attempted, day)   ← 只退從未嘗試的
 ```
 
 回應分類（`upload_to_geobingan`）：
@@ -490,11 +492,17 @@ upload_pdfs.main()
 1. **先預留、後退還**——事後累加會在中斷時漏記；預留即計入，最壞只會多算。
 2. **只退確定零成本**——5xx 可能發生在後端已建報告／已進佇列之後。
 3. **跨程序鎖 + PID 暫存檔**——排程與人工重疊不可吃到同一筆餘額。
-4. **單次門檻對原始請求量**——預留結果必 ≤ 原始量，退還或跨月都無法讓放行超過已確認的量（消除 TOCTOU）。
-5. **退還綁定預留月份**——帳本已切新月則 no-op，不重建舊月、不動新月。
-6. **月份守門放在 POST 前一刻**——下載可耗時數分鐘；跨月停批，剩餘留待新月重新預留。
+4. **單次門檻對原始請求量**——預留結果必 ≤ 原始量，退還或跨日都無法讓放行超過已確認的量（消除 TOCTOU）。
+5. **退還綁定預留日期**——帳本已切新的一天則 no-op，不重建昨日、不動今日。
+6. **日期守門放在 POST 前一刻**——下載可耗時數分鐘；跨日停批，剩餘留待新的一天重新預留。
+7. **模型要對得上後端的真實節流**（2026-09-16 確認）——後端是**每日 US$20**，不是月上限。用月模型會在還有日額度時無謂擋下上傳。
+8. **日界以 UTC 計**——額度由 provider 依 UTC 重置。若用主機本地時間（台北 UTC+8）算日界，帳本會在台北午夜＝UTC 16:00 就歸零，比後端**提早 8 小時**放行整份額度。
+9. **消耗額度的每條路徑都必須先預留**——手動 `retry-parse` 與上傳共用同一份日額度。事後記帳（`--reconcile-retry`）擋不住競態：在「已送出、尚未記帳」的空窗裡，夜間上傳讀到用量偏低而照常預留，兩者合計即超上限。因此重推走 `steps/retry_parse.py`，用同一個 `DailyBudget.reserve_retry()`（同一把鎖、同一份帳本）先佔額度再送出，並沿用同一套保守結算。
+12. **「查不到」不可講成「沒有」**——`retry_parse` 的查詢階段 fail-closed：HTTP 非 200、網路例外、非 JSON、缺 `parse_status` 都進失敗清單而非被跳過。有任何查詢失敗就不宣告「沒有需要重推的報告」，並回 exit 4。原本一律 `except: continue`，整批查詢掛掉時會印出成功訊息並 exit 0，操作者以為積壓清空了。
+10. **日界的 UTC 對齊要擋在型別上**——`day_key()` 直接拒收 naive datetime。先前版本把 naive 當成「已是 UTC」，而 production 每個呼叫點傳的都是 `datetime.now()`＝台北本地時間，於是實際日界仍落在台北午夜，UTC 對齊形同虛設。時鐘統一走 `budget.utcnow()`。
+11. **兩道閘不可共用一個旗標**——`--yes` 只確認「這一批很大」，日上限一律強制裁切。若 `--yes` 同時放寬日上限，任何**合法**的大批次都會順帶突破後端硬限：55 份重推估 US$16.5、必須帶 `--yes` 才過單次門檻，今日已用 US$10 時本應只放 32 份，卻會全放 55 份、投影 US$26.5。要真的超支必須另外明講 `--override-daily-budget REASON`，理由會寫進日誌，排程不帶此旗標。
 
-營運：`MONTHLY_BUDGET_USD` 須與後端實際上限對齊；`state/upload_budget.json` 為本機狀態，換機用 `python3 -m geobingan_sync.budget --set N` 初始化；`.pause_upload` 可在後端解析停擺或預算未確認時暫停步驟 2。
+營運：`DAILY_BUDGET_USD` 須與後端實際日上限對齊（目前 US$20）；`state/upload_budget.json` 為本機狀態，換機用 `python3 -m geobingan_sync.budget --set N` 初始化；`.pause_upload` 可在後端解析停擺或預算未確認時暫停步驟 2。
 
 ## 錯誤處理
 
@@ -590,7 +598,7 @@ get_valid_token(current_token, refresh_token, refresh_url)
 config.py (from .env)  →  環境變數  →  硬編碼預設值
 ```
 
-所有設定值（`SHARED_DRIVE_ID`、`MAX_UPLOADS`、`DELAY_BETWEEN_UPLOADS`、`CLICKUP_TOKEN`、預算相關的 `COST_PER_REPORT_USD`／`MONTHLY_BUDGET_USD`／`BUDGET_CONFIRM_USD`；`DAYS_AGO` 為歷史遺留、未參與日期窗計算——cutoff 固定 30 天或由 `--catchup-days` 覆蓋）統一由 `config.py` 從 `.env` 載入，各腳本 import 使用，不再有本地硬編碼覆蓋。多城市配置由 `city_config.py` 從 `cities.json` 載入，空白欄位自動回退到 `.env` 預設值。
+所有設定值（`SHARED_DRIVE_ID`、`MAX_UPLOADS`、`DELAY_BETWEEN_UPLOADS`、`CLICKUP_TOKEN`、預算相關的 `COST_PER_REPORT_USD`／`DAILY_BUDGET_USD`／`BUDGET_CONFIRM_USD`；`DAYS_AGO` 為歷史遺留、未參與日期窗計算——cutoff 固定 30 天或由 `--catchup-days` 覆蓋）統一由 `config.py` 從 `.env` 載入，各腳本 import 使用，不再有本地硬編碼覆蓋。多城市配置由 `city_config.py` 從 `cities.json` 載入，空白欄位自動回退到 `.env` 預設值。
 
 ## 測試策略
 
@@ -606,10 +614,10 @@ config.py (from .env)  →  環境變數  →  硬編碼預設值
 | `test_csv_import.py` | sync_permits.load_csv_list | 8 | tempfile |
 | `test_resolve_list_pdf_url.py`／`test_download_pdf_list_fallback.py` | 清單動態解析與候選 fallback（PR #78） | 7 | monkeypatch |
 | `test_alert_state.py`／`test_notify_mention.py`／`test_health_check_dedup.py` | 告警去重/升級、送達才落狀態、namespace 分離、mention payload（PR #79） | 23 | tmp_path |
-| `test_budget.py`／`test_check_parse_backlog.py`／`test_process_single_pdf_classification.py`／`test_upload_response_classification.py` | 預算守門（預留/退還/跨月/POST 前守門/8 子程序併發）、解析積壓與預算檢查、回應分類（PR #80） | 40+ | tmp_path, subprocess |
+| `test_budget.py`／`test_check_parse_backlog.py`／`test_process_single_pdf_classification.py`／`test_upload_response_classification.py` | 預算守門（預留/退還/跨日/POST 前守門/8 子程序併發/重推與上傳共用日額度）、解析積壓與預算檢查、回應分類（PR #80） | 40+ | tmp_path, subprocess |
 | `test_list_fingerprint.py`／`test_folder_deaths.py` | 清單指紋（變更／靜態退回／停更／寫入 fail-closed／通知 pending 重試）、來源資料夾由活轉死（fail-closed 排序／事件去重不含日期／損毀不重置）（PR #82） | 28 | tmp_path |
 | `test_email_alert.py` | Email 通道（組信 MIME／未設定／SMTP 成功失敗／error 以 Email 判送達／warning 不寄信／未設定退回 ClickUp／**error 恢復走 Email 且失敗重試**） | 9 | monkeypatch |
-| **合計** | | **305** | |
+| **合計** | | **306** | |
 
 設計原則：
 - **測試不得寫進正式落地路徑**——`download_pdf_list(dest=…)` 供測試注入；2026-09-16 曾因測試把 `/tmp/permit_list.pdf` 覆寫成 37 bytes 假檔，導致以該檔做的人工判讀誤判某建案已從政府清單下架

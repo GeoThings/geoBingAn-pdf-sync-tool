@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import health_check
-from geobingan_sync.budget import MonthlyBudget
+from geobingan_sync.budget import DailyBudget
 
 NOW = datetime(2026, 9, 15, 12, 0, tzinfo=timezone.utc)
 
@@ -88,12 +88,12 @@ def test_backlog_api_failure_is_warning(monkeypatch):
 
 
 def test_check_budget_levels(monkeypatch, tmp_path):
-    from geobingan_sync.budget import MonthlyBudget
-    monkeypatch.setattr('geobingan_sync.config.MONTHLY_BUDGET_USD', 100.0)
+    from geobingan_sync.budget import DailyBudget
+    monkeypatch.setattr('geobingan_sync.config.DAILY_BUDGET_USD', 20.0)
     monkeypatch.setattr('geobingan_sync.config.COST_PER_REPORT_USD', 0.3)
     path = tmp_path / 'b.json'
-    MonthlyBudget(path, cost_per_report=0.3).set_uploaded(310)          # 310×0.3 = 93 → 93%
+    DailyBudget(path, cost_per_report=0.3).set_uploaded(62)           # 62×0.3 = 18.6 / 20 → 93%
     level, msg = health_check.check_budget(path=path)
     assert level == 'error' and '93%' in msg
-    MonthlyBudget(path, cost_per_report=0.3).set_uploaded(100)          # 30%
+    DailyBudget(path, cost_per_report=0.3).set_uploaded(15)           # 15×0.3 = 4.5 / 20 → 23%
     assert health_check.check_budget(path=path)[0] == 'ok'
