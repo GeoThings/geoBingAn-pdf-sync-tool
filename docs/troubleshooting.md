@@ -292,7 +292,7 @@ print(response.json())
 
 - **單次估算 > `BUDGET_CONFIRM_USD`**：屬人為大批次。先與後端確認預算餘裕再加 `--yes`，或縮小 `--catchup-days`／降低 `MAX_UPLOADS` 分批。注意 `--yes` 只解這道門檻，日上限仍會裁切。
 - **日上限自動裁切或耗盡**：`python3 -m geobingan_sync.budget --show` 查今日帳（上傳＋重推）；等隔日重置（日界以 UTC 計，台北時間早上 08:00 換日），或與後端調高上限後修改 `DAILY_BUDGET_USD`。
-- **換機後帳本從 0 開始**：`python3 -m geobingan_sync.budget --set N` 初始化（`state/upload_budget.json` 不入版控）。
+- **換機後帳本從 0 開始**：`python3 -m geobingan_sync.budget --set N` 校正當日份數（`state/upload_budget.json` 不入版控，跨日本來就會歸零）。
 
 ---
 

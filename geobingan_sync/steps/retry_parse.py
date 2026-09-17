@@ -6,9 +6,13 @@
 就超過日上限——2026-09-14 把額度打爆、116 份卡死就是同一類問題（review P1）。
 因此這支走與上傳完全相同的守門：單次門檻 → 鎖內原子預留 → 逐份送出 → 保守結算。
 
-用法：
+用法（旗標以 `--help` 為準）：
+    # 全部候選，份數由當日剩餘額度決定
     python -m geobingan_sync.steps.retry_parse --ids-file state/.sep_upload_ids_20260914.txt
-    python -m geobingan_sync.steps.retry_parse --pending-from FILE --max 55 --yes
+    # 分批：本次最多 55 份；估算超過 BUDGET_CONFIRM_USD 需 --yes 確認
+    python -m geobingan_sync.steps.retry_parse --ids-file IDS.txt --max 55 --yes
+
+結束碼：0=完成／3=預算擋下／4=有報告查不到狀態（**不等於沒有待重推**，排除後重跑）。
 """
 import sys
 import time

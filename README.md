@@ -257,7 +257,7 @@ python3 -m geobingan_sync.budget --set 15                            # 校正今
 ```
 state/uploaded_to_geobingan_7days.json   # 近期上傳（本機）
 state/upload_history_all.json            # 永久上傳歷史（git 追蹤、去重）
-state/upload_budget.json + .lock         # 本月解析預算帳本（本機、flock）
+state/upload_budget.json + .lock         # 當日解析預算帳本（本機、flock、跨日歸零、日界以 UTC 計）
 ```
 
 **API 呼叫：**
