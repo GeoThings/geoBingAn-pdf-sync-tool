@@ -929,7 +929,7 @@ def main(city: dict = None, catchup_days: int = None, yes: bool = False,
             day = ledger.close()
             print(f"💰 今日累計 {day['units']} 份（上傳 {day['uploaded']}＋重推 {day['retried']}）≈ US${day['est_usd']:.2f} / 日上限 US${DAILY_BUDGET_USD:.0f}")
         except Exception as e:
-            print(f"⚠️  月累計結算失敗（保守多算，不影響上傳）: {e}")
+            print(f"⚠️  今日額度結算失敗（保守多算，不影響上傳）: {e}")
 
     # 寫入所有剩餘的狀態變更
     flush_state(state)

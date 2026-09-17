@@ -89,8 +89,43 @@ STALE_MONTHLY_TERMS = [
     '月份守門',
     '新月份',
     '本月解析預算帳本',
+    '月累計',
+    '月額度',
     'MONTHLY_BUDGET_USD',
 ]
+
+# 上面是逐字黑名單，補不完——「月累計」就是這樣漏掉的（我照著「剛改過什麼」列詞，
+# 而不是照概念掃）。下面這條才是真正的規則：**預算語境裡不該有「月」**。
+# 判準＝同一行同時出現「月」與某個預算詞。這樣「檔名日期超過 1 個月」（日期窗，
+# 非預算）、「月度趨勢」（另一個功能）、「監測月報」（檔名格式）都不會被誤判。
+BUDGET_WORDS = ['累計', '額度', '上限', '帳本', '預留', '結算', '消耗']
+
+# 講「舊模型」的歷史敘述是正當的，靠這些標記辨識，不必逐條白名單。
+HISTORY_MARKERS = ['舊', '不是', '非', '先前', '原本', '曾']
+
+BUDGET_CODE = [
+    'geobingan_sync/budget.py',
+    'geobingan_sync/steps/upload_pdfs.py',
+    'geobingan_sync/steps/retry_parse.py',
+    'health_check.py',
+]
+
+
+def test_budget_context_never_says_month():
+    """預算語境（同行同時提到「月」與預算詞）一律視為殘留，除非在講歷史。
+
+    逐字黑名單補不完：`月累計結算失敗` 這句面向操作者的訊息就漏過了上一輪掃描。
+    改用概念判準才擋得住整類，而不是擋住我恰好想到的那幾個詞。
+    """
+    bad = []
+    for rel in BUDGET_CODE + DOCS:
+        for lineno, line in enumerate(_read(rel).split('\n'), 1):
+            if '月' not in line or not any(w in line for w in BUDGET_WORDS):
+                continue
+            if any(m in line for m in HISTORY_MARKERS):
+                continue          # 「不是月上限」「舊月格式檔」這類歷史對照是正當的
+            bad.append(f'{rel}:{lineno}: 預算語境出現「月」→ {line.strip()[:72]}')
+    assert not bad, '日模型下預算語境不該再有「月」：\n  ' + '\n  '.join(bad)
 
 BUDGET_SURFACE = [
     'geobingan_sync/budget.py',
