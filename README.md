@@ -36,7 +36,7 @@
 - ✅ 環境變數管理（.env 檔案，向後相容 fallback）
 - ✅ 建管處清單動態抓取（從發布頁解析當前 PDF 連結，失效自動退回靜態網址；PR #78）
 - ✅ 告警確實送達：ClickUp 留言＋error 級 @ 人、去重/升級/每 7 天提醒/恢復通知（PR #79）
-- ✅ 解析預算守門：每日上限、單次門檻需 --yes、月上限先預留後退還（PR #80）
+- ✅ 解析預算守門：後端日上限 US$20（上傳＋重推共用）、單次門檻需 --yes、先預留後退還（PR #80／#85）
 - ✅ 健康檢查 10 項：Token／磁碟／同步狀態／API／launchd／上傳暫停／解析積壓／解析預算／清單新鮮度／來源資料夾
 - ✅ 自動化測試（pytest, 306 cases, GitHub Actions CI）
 - ✅ 多城市支援（cities.json 配置，PDF 或 CSV 資料來源）
@@ -236,10 +236,10 @@ DAILY_BUDGET_USD=20             # 日上限（與後端實際節流對齊；上�
 BUDGET_CONFIRM_USD=15           # 單次估算超過此值需 --yes
 ```
 
-**解析預算守門（PR #80）**：後端解析成本受 OpenAI 專案花費上限硬性節制，一次大量上傳曾打爆當月上限、後續 116 份卡 pending 一整天沒人發現。上傳流程因此固定為四步：
+**解析預算守門（PR #80／#85）**：後端解析成本受 OpenAI 專案花費上限硬性節制，額度是**每日 US$20**（2026-09-16 與後端確認），一次大量上傳曾把當日額度打爆、後續 116 份卡 pending 一整天沒人發現。上傳與手動重推**共用同一份日額度**，兩者走同一把鎖、同一份帳本，流程固定為四步：
 
 1. **單次門檻**：對「原始請求量」估算（份數 × 單價），超過 `BUDGET_CONFIRM_USD` 且未帶 `--yes` 即擋下（exit 3）。夜間配合 `MAX_UPLOADS` 永遠不會觸發，只擋人為大批次。
-2. **日上限原子預留**：在跨程序鎖內「讀今日餘額 → 算可放行份數 → 立刻計入」；投影超過日上限就裁切為今日剩餘可容納份數（保留最新），耗盡則擋下（明日重置），`--yes` 可覆寫。**手動 `retry-parse` 與上傳吃同一份日額度**，重推後要用 `budget --record-retry N` 記帳，否則守門會低估。
+2. **日上限原子預留**：在跨程序鎖內「讀今日餘額 → 算可放行份數 → 立刻計入」；投影超過日上限就裁切為今日剩餘可容納份數（保留最新），耗盡則擋下（隔日重置，日界以 UTC 計、與 provider 對齊），`--yes` 可覆寫。**手動重推請走 `steps.retry_parse`**，它在送出前用同一個 `reserve` 取得額度；事後記帳（`--reconcile-retry`）擋不住競態，只作為補救。
 3. **POST 前日期守門**：每份在下載完成、送出前確認日期仍等於預留日期；已跨日則停止本批次、該份不寫歷史，留待下次在新的一天重新預留。
 4. **預留預設視為已消耗**：只有 4xx 明確拒絕立即退 1 份；5xx／逾時／未知例外保守計入；結束（含 Ctrl-C）只退還從未嘗試的份數，且只作用於預留當日。
 
@@ -247,7 +247,8 @@ BUDGET_CONFIRM_USD=15           # 單次估算超過此值需 --yes
 python3 -m geobingan_sync.steps.upload_pdfs --catchup-days 14        # 補掃：放大檔名日期窗（history 去重不重傳）
 python3 -m geobingan_sync.steps.upload_pdfs --catchup-days 62 --yes  # 大批次：請先與後端確認預算餘裕
 python3 -m geobingan_sync.budget --show                              # 今日消耗（上傳＋重推）／估算成本
-python3 -m geobingan_sync.budget --record-retry 55                   # 記錄手動 retry-parse（與上傳共用日額度）
+python3 -m geobingan_sync.steps.retry_parse --ids-file IDS.txt       # 重推卡住的報告（先預留日額度再送出）
+python3 -m geobingan_sync.budget --reconcile-retry 55                # 事後補記（不預留，僅補救用）
 python3 -m geobingan_sync.budget --set 15                            # 校正今日上傳份數
 ```
 
@@ -409,7 +410,7 @@ geoBingAn-pdf-sync-tool/
 │   ├── permit_utils.py          #   建照號碼正規化 + 名稱提取
 │   ├── notify.py                #   通知模組（ClickUp 留言 + @ mention；macOS 輔助）
 │   ├── alert_state.py           #   告警去重/升級狀態機（plan→send→commit、namespace 分檔）
-│   ├── budget.py                #   解析預算守門（估算/門檻/月上限帳本/預留退還）
+│   ├── budget.py                #   解析預算守門（估算/門檻/日額度帳本/預留退還）
 │   ├── list_fingerprint.py      #   政府清單指紋（更新偵測／靜態退回／停更）
 │   ├── sync_status.py           #   狀態追蹤模組
 │   ├── report_template.py       #   HTML/CSV 報告模板
@@ -616,8 +617,9 @@ Service Account 只需要：
 ### v4.7.0 (2026-09-15) — 名單動態抓取／告警送達／解析預算守門
 - ✅ **PR #78** 建管處清單動態抓取：從發布頁解析當前 PDF 連結，失效退回靜態網址（原寫死網址已過期 8 個月，351 → 440 筆、registry +92 案）
 - ✅ **PR #79** 告警確實送達：`alert_state.py` 去重／升級／7 天提醒／恢復通知、producer 各自 namespace、plan→send→commit；error 級 @ 人；同步失敗與 Token 過期改走 ClickUp（LINE Notify 已停服）
-- ✅ **PR #80** 解析預算守門與健康檢查：`budget.py`（每日上限、單次門檻 `--yes`、月上限先預留後退還、跨程序鎖、綁定月份、POST 前月份守門、只退 4xx 明確拒絕）；健康檢查新增「解析積壓」「解析預算」
-- 📌 營運：後端解析成本受 OpenAI 專案花費上限節制（2026-09-14 一次 178 份打爆、116 份卡 pending）；批量上傳前先與後端確認預算；`MONTHLY_BUDGET_USD` 待對齊實際上限
+- ✅ **PR #80** 解析預算守門與健康檢查：`budget.py`（單次門檻 `--yes`、先預留後退還、跨程序鎖、綁定期間、POST 前守門、只退 4xx 明確拒絕）；健康檢查新增「解析積壓」「解析預算」
+- ✅ **PR #85** 預算模型改為**日**：後端真實節流是每日 US$20（非月上限），帳本改 `day/uploaded/retried/units`、日界以 UTC 對齊 provider；新增 `steps/retry_parse.py` 讓手動重推走同一把鎖先預留再送出
+- 📌 營運：後端解析成本受 OpenAI 專案花費上限節制（2026-09-14 一次 178 份打爆、116 份卡 pending）；批量上傳前先與後端確認預算；`DAILY_BUDGET_USD=20` 已與後端對齊
 - 🧪 測試 265 cases
 
 ### v4.6.0 (2026-07-29)

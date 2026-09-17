@@ -19,12 +19,29 @@ import fcntl
 import json
 import os
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional, Tuple
 
 WARN_RATIO = 0.7
 ERROR_RATIO = 0.9
+
+
+def day_key(now: Optional[datetime] = None) -> str:
+    """回傳帳本的「日」鍵，**以 UTC 計**。
+
+    後端的日額度由 provider（OpenAI）依 UTC 重置；若我們用主機本地時間（台北
+    UTC+8）算日界，帳本會在台北午夜＝UTC 16:00 就歸零，比後端**提早 8 小時**
+    重新放行整份額度（review 指出的風險）。用 UTC 對齊；即使後端其實依本地時間
+    重置，UTC 也只會讓我們晚一點才重置＝偏保守，不會超額。
+
+    傳入 naive datetime 時視為「已是預期基準」（測試注入用），不再轉換。
+    """
+    if now is None:
+        return datetime.now(timezone.utc).strftime('%Y-%m-%d')
+    if now.tzinfo is not None:
+        return now.astimezone(timezone.utc).strftime('%Y-%m-%d')
+    return now.strftime('%Y-%m-%d')
 
 
 def estimate_cost(n_reports: int, cost_per_report: float) -> float:
@@ -47,7 +64,7 @@ def daily_gate(n_reports: int, day_est_usd: float, daily_budget: float,
     """日上限放行條件：投影成本＝今日已用（上傳＋重推）＋本次估算。
 
     回傳 (允許份數, 訊息)：
-    - 投影 ≤ 月上限：全數放行。
+    - 投影 ≤ 日上限：全數放行。
     - 超過且 yes=False（夜間/一般）：裁切到剩餘預算可容納的份數（0 則擋下）。
     - 超過且 yes=True（人工明確覆寫）：全數放行但標警告。
     daily_budget ≤ 0 視為未設上限。
@@ -124,7 +141,7 @@ class DailyBudget:
             return {}
 
     def _read(self, now: datetime) -> dict:
-        day = now.strftime('%Y-%m-%d')
+        day = day_key(now)
         data = self._read_raw()
         if data.get('day') != day:
             # 跨日（或舊的月格式檔）一律重置——日額度每天重來
@@ -160,8 +177,26 @@ class DailyBudget:
             return self._write(data, now)
 
     def record_retry(self, n: int, now: Optional[datetime] = None) -> dict:
-        """記錄手動 retry-parse 的消耗——它與上傳吃同一份日額度。"""
+        """事後補記 retry 消耗（**不預留**）。
+
+        ⚠️ 只用於補記工具外已發生的消耗。正常重推請走 steps.retry_parse，它會先
+        reserve 再送出——事後記帳擋不住「retry 已送出但尚未記帳時，夜間上傳讀到
+        用量為 0 而超額」的競態（review P1）。
+        """
         return self.add(n, now=now, kind='retried')
+
+    def reserve_retry(self, n_requested: int, daily_budget: float, cost_per_report: float,
+                      yes: bool, now: Optional[datetime] = None) -> Tuple[int, str, dict]:
+        """重推專用的原子預留：與上傳走同一把鎖、同一份日額度，先佔再送。"""
+        now = now or datetime.now()
+        with self._locked():
+            data = self._read(now)
+            allowed, msg = daily_gate(n_requested, float(data.get('est_usd', 0.0)),
+                                      daily_budget, cost_per_report, yes)
+            if allowed > 0:
+                data['retried'] = int(data.get('retried', 0)) + allowed
+                data = self._write(data, now)
+            return allowed, msg, data
 
     def reserve(self, n_requested: int, daily_budget: float, cost_per_report: float,
                 yes: bool, now: Optional[datetime] = None) -> Tuple[int, str, dict]:
@@ -177,7 +212,7 @@ class DailyBudget:
             return allowed, msg, data
 
     def release(self, unused: int, now: Optional[datetime] = None,
-                day: Optional[str] = None) -> dict:
+                day: Optional[str] = None, kind: str = 'uploaded') -> dict:
         """退還未用到的預留，綁定預留所屬日期（跨日同理於原跨月保護）。
 
         鎖內先讀檔案實際儲存的日期：與 day 相同才扣減；帳本已切到新的一天則 no-op
@@ -192,7 +227,7 @@ class DailyBudget:
                 if stored != day:
                     return self._read(now)          # 昨日預留跨日退還 → 不動任何數字
             data = self._read(now)
-            data['uploaded'] = int(data.get('uploaded', 0)) - int(unused)
+            data[kind] = int(data.get(kind, 0)) - int(unused)
             return self._write(data, now)
 
     def set_uploaded(self, n: int, now: Optional[datetime] = None) -> dict:
@@ -218,10 +253,11 @@ class ReservationLedger:
     REFUNDABLE = frozenset({'rejected'})
 
     def __init__(self, mb: 'DailyBudget', reserved: int, day: Optional[str] = None,
-                 clock=None):
+                 clock=None, kind: str = 'uploaded'):
         self.mb = mb
         self.reserved = max(0, int(reserved))
         self.day = day                          # 預留所屬日期；退還只作用於同日帳本
+        self.kind = kind                        # 'uploaded' 或 'retried'——退還要記回同一欄
         self.clock = clock or datetime.now      # 可注入時鐘（測試模擬下載期間跨月）
         self.attempted = 0
         self.refunded = 0
@@ -233,7 +269,7 @@ class ReservationLedger:
         剩餘項目下次執行會在新的一天重新預留）。"""
         if self.day is not None:
             now = now or self.clock()
-            if now.strftime('%Y-%m-%d') != self.day:
+            if day_key(now) != self.day:
                 return False
         self.attempted += 1
         return True
@@ -242,18 +278,19 @@ class ReservationLedger:
         if result.get('success'):
             return False
         if result.get('error') in self.REFUNDABLE:
-            self.mb.release(1, day=self.day)
+            self.mb.release(1, day=self.day, kind=self.kind)
             self.refunded += 1
             return True
         return False
 
     def close(self) -> dict:
         unused = self.reserved - self.attempted
-        return self.mb.release(unused, day=self.day) if unused > 0 else self.mb.load()
+        return self.mb.release(unused, day=self.day, kind=self.kind) if unused > 0 else self.mb.load()
 
 
 def gate_and_reserve(mb: 'DailyBudget', n_requested: int, daily_budget: float,
-                     cost_per_report: float, confirm_threshold: float, yes: bool):
+                     cost_per_report: float, confirm_threshold: float, yes: bool,
+                     kind: str = 'uploaded'):
     """單次門檻 → 原子預留，順序固定（review TOCTOU）。
 
     單次門檻對「原始請求量」檢查而非對預覽份數：預留結果永遠 ≤ 原始請求量，
@@ -265,7 +302,8 @@ def gate_and_reserve(mb: 'DailyBudget', n_requested: int, daily_budget: float,
     msgs.append(gate_msg)
     if n_requested > 0 and not ok:
         return 0, msgs, gate_msg, None
-    allowed, day_msg, data = mb.reserve(n_requested, daily_budget, cost_per_report, yes)
+    reserve = mb.reserve_retry if kind == 'retried' else mb.reserve
+    allowed, day_msg, data = reserve(n_requested, daily_budget, cost_per_report, yes)
     if day_msg:
         msgs.append(day_msg)
     if n_requested > 0 and allowed <= 0:
@@ -279,14 +317,15 @@ def _cli():
     ap = argparse.ArgumentParser(description='今日解析預算計數（state/upload_budget.json 為本機狀態、不入版控）')
     ap.add_argument('--show', action='store_true', help='顯示今日累計')
     ap.add_argument('--set', type=int, metavar='N', help='明確設定今日上傳份數（重建/校正）')
-    ap.add_argument('--record-retry', type=int, metavar='N',
-                    help='記錄手動 retry-parse 的份數——與上傳吃同一份日額度，不記會讓守門低估')
+    ap.add_argument('--reconcile-retry', type=int, metavar='N',
+                    help='⚠️ 僅供補記「已在工具外發生」的 retry 消耗（不預留、無法防超額）。'
+                         '正常重推請用 python -m geobingan_sync.steps.retry_parse，它會先預留再送出')
     a = ap.parse_args()
     mb = DailyBudget(cost_per_report=COST_PER_REPORT_USD)
     if a.set is not None:
         d = mb.set_uploaded(a.set)
-    elif a.record_retry is not None:
-        d = mb.record_retry(a.record_retry)
+    elif a.reconcile_retry is not None:
+        d = mb.record_retry(a.reconcile_retry)
     else:
         d = mb.load()
     level, ratio = budget_level(float(d.get('est_usd', 0)), DAILY_BUDGET_USD)
