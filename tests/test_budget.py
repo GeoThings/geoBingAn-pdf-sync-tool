@@ -351,9 +351,34 @@ def test_retry_and_upload_never_exceed_daily_budget_across_processes(tmp_path):
     allowed = [int(p.communicate()[0].strip().splitlines()[-1]) for p in procs]
     assert sum(allowed) == 10, allowed                               # 總放行不超過日額度
     d = DailyBudget(path, cost_per_report=0.3).load()
-    assert d['uploaded'] + d['retried'] == 10 and d['units'] == 10
-    assert d['uploaded'] > 0 and d['retried'] > 0                    # 兩條路徑都真的搶到過
+    assert d['uploaded'] + d['retried'] == 10 and d['units'] == 10   # 兩欄合計才是額度
     assert not list(tmp_path.glob('*.tmp'))
+    # 註：不斷言「兩欄都 > 0」——先搶到鎖的兩個程序可能同類，額度即被吃光。
+    #     「兩條路徑真的共用同一份帳本」由下面的確定性測試保證。
+
+
+def test_retry_and_upload_draw_from_the_same_ledger(tmp_path):
+    """一個上傳、一個重推各要 5 份，額度恰好 10 份 → 兩者都拿到且合計用盡。
+
+    與上面的 8 程序測試互補：這裡份數確定，證明兩條路徑吃的是同一份 units，
+    而不是各自一份（各自一份時合計會是 20，後端就會被打爆）。
+    """
+    import subprocess
+    path = tmp_path / 'b.json'
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    tmpl = (
+        "import sys; sys.path.insert(0, %r); from geobingan_sync.budget import DailyBudget; "
+        "r,_,_ = DailyBudget(%r, cost_per_report=0.3).%s(5, 3.0, 0.3, yes=False); print(r)"
+    )
+    procs = [subprocess.Popen([sys.executable, '-c', tmpl % (root, str(path), fn)],
+                              stdout=subprocess.PIPE, text=True)
+             for fn in ('reserve', 'reserve_retry')]
+    allowed = [int(p.communicate()[0].strip().splitlines()[-1]) for p in procs]
+    assert allowed == [5, 5], allowed
+    d = DailyBudget(path, cost_per_report=0.3).load()
+    assert d['uploaded'] == 5 and d['retried'] == 5 and d['units'] == 10
+    # 額度已用盡：第三個請求一份都拿不到
+    assert DailyBudget(path, cost_per_report=0.3).reserve(1, 3.0, 0.3, yes=False)[0] == 0
 
 
 # ---------- 日界對齊 provider（UTC） ----------
