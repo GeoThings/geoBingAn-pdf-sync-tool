@@ -369,7 +369,7 @@ API project 匹配：116 筆（滑動視窗 + 去重）
 | `sync_status.json` | 執行狀態與歷史 | 每次執行 | 否 |
 | `weekly_snapshots/{date}.json` | sync 後狀態快照（供 compute_diff 算趨勢） | 每次 sync | 否（local-only，見下） |
 | `alert_state_healthcheck.json` / `alert_state_sync.json` | 告警去重狀態（各 producer 一個 namespace；key → level/first_seen/last_sent） | 通知真的送達時 | 否 |
-| `upload_budget.json` + `.lock` | 本月解析預算帳本（month/uploaded/est_usd；flock；跨月歸零） | 預留／退還時 | 否（換機用 `budget --set N` 初始化） |
+| `upload_budget.json` + `.lock` | **今日**解析預算帳本（day/uploaded/**retried**/units/est_usd；flock；**跨日歸零**；舊月格式檔自動視為非今日而歸零） | 預留／退還／記錄重推時 | 否（`budget --record-retry N` 記手動重推） |
 | `list_fingerprint.json` | 政府清單指紋（source／label／permit_count／sha256／last_changed） | 每次 sync 解析清單後 | 否 |
 | `folder_deaths.json` | 來源資料夾由活轉死的紀錄（append-only，附 detected 日期與 pdf_count）。**fail-closed**：先原子寫入此檔成功才提交 registry——順序相反時，中斷會讓 registry 已存 404、下輪 prior 非 alive，該次死亡永遠偵測不到；讀到損毀 JSON 一律 raise，不靜默重置以免丟失歷史。事件以 `(permit, source_url)` 去重（**不含日期**）——death 已寫、registry 提交失敗時，下一輪（排程每日跑，通常是隔天）prior 仍是 alive、會再次偵測到同一次死亡；鍵若含偵測日，去重只在同一天有效。同一建案換新 folder URL 後再失效會自然形成新事件 | 偵測到新失效時 | 否 |
 
@@ -466,15 +466,16 @@ upload_pdfs.main()
     │
     ▼ gate_and_reserve(mb, n=len(pdfs), 月上限, 單價, 門檻, --yes)
     │    1) budget_gate(n)：對「原始請求量」估算，> BUDGET_CONFIRM_USD 且無 --yes → exit 3（尚未預留）
-    │    2) mb.reserve(n)：flock 內 讀餘額 → monthly_gate → 立刻計入可放行份數
-    │         投影 = 本月已用 + 本次；超過月上限 → 裁切為剩餘可容納份數（0 則擋下）；--yes 覆寫
-    ▼ ledger = ReservationLedger(mb, reserved, month=預留月份)
+    │    2) mb.reserve(n)：flock 內 讀今日餘額 → daily_gate → 立刻計入可放行份數
+    │         投影 = 今日已用（上傳＋重推）+ 本次；超過日上限 → 裁切為今日剩餘可容納
+    │         份數（0 則擋下、明日重置）；--yes 覆寫
+    ▼ ledger = ReservationLedger(mb, reserved, day=預留日期)
     │
     ▼ 每份：download → before_upload=ledger.begin_item()（POST 前一刻）
-    │         當前月份 ≠ 預留月份 → 回 month_rolled_over：不 POST、不寫 error/歷史、停止整批
+    │         當前日期 ≠ 預留日期 → 回 month_rolled_over（歷史命名）：不 POST、不寫 error/歷史、停止整批
     │         否則 attempted += 1（視為已消耗）→ upload_to_geobingan
-    │       settle(result)：error == 'rejected'（4xx）才 release(1, month)；其餘保留
-    ▼ finally ledger.close()：release(reserved − attempted, month)   ← 只退從未嘗試的
+    │       settle(result)：error == 'rejected'（4xx）才 release(1, day)；其餘保留
+    ▼ finally ledger.close()：release(reserved − attempted, day)   ← 只退從未嘗試的
 ```
 
 回應分類（`upload_to_geobingan`）：
@@ -491,10 +492,11 @@ upload_pdfs.main()
 2. **只退確定零成本**——5xx 可能發生在後端已建報告／已進佇列之後。
 3. **跨程序鎖 + PID 暫存檔**——排程與人工重疊不可吃到同一筆餘額。
 4. **單次門檻對原始請求量**——預留結果必 ≤ 原始量，退還或跨月都無法讓放行超過已確認的量（消除 TOCTOU）。
-5. **退還綁定預留月份**——帳本已切新月則 no-op，不重建舊月、不動新月。
-6. **月份守門放在 POST 前一刻**——下載可耗時數分鐘；跨月停批，剩餘留待新月重新預留。
+5. **退還綁定預留日期**——帳本已切新的一天則 no-op，不重建昨日、不動今日。
+6. **日期守門放在 POST 前一刻**——下載可耗時數分鐘；跨日停批，剩餘留待新的一天重新預留。
+7. **模型要對得上後端的真實節流**（2026-09-16 確認）——後端是**每日 US$20**，不是月上限。用月模型會在還有日額度時無謂擋下上傳；且**手動 retry-parse 與上傳共用同一份日額度**，重推必須計入（`--record-retry`），否則守門低估、當晚上傳會再把額度打爆。
 
-營運：`MONTHLY_BUDGET_USD` 須與後端實際上限對齊；`state/upload_budget.json` 為本機狀態，換機用 `python3 -m geobingan_sync.budget --set N` 初始化；`.pause_upload` 可在後端解析停擺或預算未確認時暫停步驟 2。
+營運：`DAILY_BUDGET_USD` 須與後端實際日上限對齊（目前 US$20）；`state/upload_budget.json` 為本機狀態，換機用 `python3 -m geobingan_sync.budget --set N` 初始化；`.pause_upload` 可在後端解析停擺或預算未確認時暫停步驟 2。
 
 ## 錯誤處理
 
@@ -593,7 +595,7 @@ config.py (from .env)  →  環境變數  →  硬編碼預設值
 | `test_budget.py`／`test_check_parse_backlog.py`／`test_process_single_pdf_classification.py`／`test_upload_response_classification.py` | 預算守門（預留/退還/跨月/POST 前守門/8 子程序併發）、解析積壓與預算檢查、回應分類（PR #80） | 40+ | tmp_path, subprocess |
 | `test_list_fingerprint.py`／`test_folder_deaths.py` | 清單指紋（變更／靜態退回／停更／寫入 fail-closed／通知 pending 重試）、來源資料夾由活轉死（fail-closed 排序／事件去重不含日期／損毀不重置）（PR #82） | 28 | tmp_path |
 | `test_email_alert.py` | Email 通道（組信 MIME／未設定／SMTP 成功失敗／error 以 Email 判送達／warning 不寄信／未設定退回 ClickUp／**error 恢復走 Email 且失敗重試**） | 9 | monkeypatch |
-| **合計** | | **305** | |
+| **合計** | | **306** | |
 
 設計原則：
 - **測試不得寫進正式落地路徑**——`download_pdf_list(dest=…)` 供測試注入；2026-09-16 曾因測試把 `/tmp/permit_list.pdf` 覆寫成 37 bytes 假檔，導致以該檔做的人工判讀誤判某建案已從政府清單下架

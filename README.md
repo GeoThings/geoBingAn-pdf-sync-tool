@@ -38,7 +38,7 @@
 - ✅ 告警確實送達：ClickUp 留言＋error 級 @ 人、去重/升級/每 7 天提醒/恢復通知（PR #79）
 - ✅ 解析預算守門：每日上限、單次門檻需 --yes、月上限先預留後退還（PR #80）
 - ✅ 健康檢查 10 項：Token／磁碟／同步狀態／API／launchd／上傳暫停／解析積壓／解析預算／清單新鮮度／來源資料夾
-- ✅ 自動化測試（pytest, 303 cases, GitHub Actions CI）
+- ✅ 自動化測試（pytest, 306 cases, GitHub Actions CI）
 - ✅ 多城市支援（cities.json 配置，PDF 或 CSV 資料來源）
 - ✅ Refresh Token 自動輪替（API 回傳新 token 時自動寫回 .env）
 
@@ -127,7 +127,7 @@ ENABLE_MACOS_NOTIFY=true              # 輔助通道
 # 上傳節流與解析預算守門（後端解析受 OpenAI 專案花費上限硬性節制）
 MAX_UPLOADS=15                        # 夜間每日上限（穩態約 6 份/日；0=不限，有打爆後端預算風險）
 COST_PER_REPORT_USD=0.3               # 單筆解析估算成本
-MONTHLY_BUDGET_USD=100                # 與後端對齊的月上限
+DAILY_BUDGET_USD=20                   # 後端解析日上限（上傳＋重推共用，約 66 份）
 BUDGET_CONFIRM_USD=15                 # 單次估算超過此值需 --yes
 ```
 
@@ -232,22 +232,23 @@ permit_no,source_url,name
 MAX_UPLOADS=15                  # 夜間每日上限（0=不限）
 DELAY_BETWEEN_UPLOADS=2         # 上傳間隔 2 秒
 COST_PER_REPORT_USD=0.3         # 單筆解析估算成本
-MONTHLY_BUDGET_USD=100          # 月上限（與後端 OpenAI 花費上限對齊）
+DAILY_BUDGET_USD=20             # 日上限（與後端實際節流對齊；上傳＋重推共用）
 BUDGET_CONFIRM_USD=15           # 單次估算超過此值需 --yes
 ```
 
 **解析預算守門（PR #80）**：後端解析成本受 OpenAI 專案花費上限硬性節制，一次大量上傳曾打爆當月上限、後續 116 份卡 pending 一整天沒人發現。上傳流程因此固定為四步：
 
 1. **單次門檻**：對「原始請求量」估算（份數 × 單價），超過 `BUDGET_CONFIRM_USD` 且未帶 `--yes` 即擋下（exit 3）。夜間配合 `MAX_UPLOADS` 永遠不會觸發，只擋人為大批次。
-2. **月上限原子預留**：在跨程序鎖內「讀餘額 → 算可放行份數 → 立刻計入」；投影超過月上限就裁切為剩餘可容納份數（保留最新），耗盡則擋下，`--yes` 可覆寫。
-3. **POST 前月份守門**：每份在下載完成、送出前確認月份仍等於預留月份；已跨月則停止本批次、該份不寫歷史，留待下次在新月份重新預留。
-4. **預留預設視為已消耗**：只有 4xx 明確拒絕立即退 1 份；5xx／逾時／未知例外保守計入；結束（含 Ctrl-C）只退還從未嘗試的份數，且只作用於預留當月。
+2. **日上限原子預留**：在跨程序鎖內「讀今日餘額 → 算可放行份數 → 立刻計入」；投影超過日上限就裁切為今日剩餘可容納份數（保留最新），耗盡則擋下（明日重置），`--yes` 可覆寫。**手動 `retry-parse` 與上傳吃同一份日額度**，重推後要用 `budget --record-retry N` 記帳，否則守門會低估。
+3. **POST 前日期守門**：每份在下載完成、送出前確認日期仍等於預留日期；已跨日則停止本批次、該份不寫歷史，留待下次在新的一天重新預留。
+4. **預留預設視為已消耗**：只有 4xx 明確拒絕立即退 1 份；5xx／逾時／未知例外保守計入；結束（含 Ctrl-C）只退還從未嘗試的份數，且只作用於預留當日。
 
 ```bash
 python3 -m geobingan_sync.steps.upload_pdfs --catchup-days 14        # 補掃：放大檔名日期窗（history 去重不重傳）
 python3 -m geobingan_sync.steps.upload_pdfs --catchup-days 62 --yes  # 大批次：請先與後端確認預算餘裕
-python3 -m geobingan_sync.budget --show                              # 本月已傳份數／估算成本
-python3 -m geobingan_sync.budget --set 224                           # 換機或重建時初始化本月計數
+python3 -m geobingan_sync.budget --show                              # 今日消耗（上傳＋重推）／估算成本
+python3 -m geobingan_sync.budget --record-retry 55                   # 記錄手動 retry-parse（與上傳共用日額度）
+python3 -m geobingan_sync.budget --set 15                            # 校正今日上傳份數
 ```
 
 **狀態追蹤：**
@@ -385,7 +386,7 @@ python3 -c "from geobingan_sync.sync_status import SyncStatus; SyncStatus().prin
 | 同步執行失敗／恢復 | error | 錯誤訊息；連日失敗每 7 天提醒；**恢復同樣寄 Email** |
 | Refresh Token 過期／即將過期 | error / warning | 請至 riskmap 重新登入更新 `.env` |
 | 解析積壓（近 7 天停滯 ≥6h） | warning / error（≥20 份或最舊 ≥24h） | 疑後端 worker 停擺或 OpenAI 預算上限 |
-| 解析預算（本月估算 vs 月上限） | ≥70% warning／≥90% error | 請與後端確認預算再上傳 |
+| 解析預算（今日估算 vs 日上限） | ≥70% warning／≥90% error | 今日額度將盡，上傳會被自動裁切，明日重置 |
 | 清單新鮮度 | error（退回靜態備援）／warning（>60 天未更新） | 動態解析失效時會靜默同步過期清單，必須知道 |
 | 來源資料夾由活轉死 | error | 近 7 天新失效＝資料流失訊號（對應 111建字第0311號 253 份消失） |
 
@@ -432,7 +433,7 @@ geoBingAn-pdf-sync-tool/
 ├── state/                       # 狀態追蹤（registry / 上傳歷史 / pdf_inventory…）
 ├── logs/                        # 執行日誌
 ├── docs/                        # 技術文檔 + 線上追蹤報告
-└── tests/                       # 自動化測試（303 tests）
+└── tests/                       # 自動化測試（306 tests）
 ```
 
 ---
