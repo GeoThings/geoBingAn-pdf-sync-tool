@@ -512,6 +512,13 @@ run_weekly_sync.sh
 └── 步驟 3 失敗 → 步驟 4 仍執行
 ```
 
+**步驟 4 的分支守門**：這一步 `git push origin main`，但 `git commit` 會落在工作樹
+**當下所在的分支**。開發期間工作樹常停在功能分支上，兩者就對不起來——2026-09-17
+當天的報告 commit 落到 `feat/daily-budget`，`push origin main` 推了個沒動的 ref
+（無聲成功），main 一整天沒收到報告，PR 還被灌進 4070 行狀態檔變動。現在非 `main`
+時**一律不 commit**：報告與狀態檔留在工作目錄，回到 main 的下一次執行會一併帶走
+（狀態是累積式的，晚一天提交不會遺失資料）。
+
 ### 上傳重試策略
 
 | HTTP Status | 行為 | 原因 |

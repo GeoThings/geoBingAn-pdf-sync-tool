@@ -287,8 +287,18 @@ fi
 
 # 提交並推送到 GitHub（檢查報告或上傳歷史是否有變更）
 cd "$SCRIPT_DIR"
-git add docs/index.html state/permit_tracking_report.html state/permit_tracking.csv state/upload_history_all.json state/permit_registry.json 2>/dev/null || true
-if git diff --cached --quiet 2>/dev/null; then
+
+# 分支守門：本步驟固定 push 到 main，但 commit 會落在工作樹「當下所在的分支」。
+# 開發期間工作樹常停在功能分支上（2026-09-17 就把當天的報告 commit 到
+# feat/daily-budget，main 一整天沒收到報告、PR 還被灌進 4070 行狀態檔變動）。
+# 因此非 main 時一律不 commit：檔案留在工作目錄不動，下一次在 main 上執行會一併帶走。
+CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)"
+if [ "$CURRENT_BRANCH" != "main" ]; then
+    echo "⚠️  工作樹目前在分支 $CURRENT_BRANCH（非 main），跳過 commit/push。" | tee -a "$LOG_FILE"
+    echo "    報告與狀態檔已更新在工作目錄，回到 main 後的下一次執行會一併提交。" | tee -a "$LOG_FILE"
+elif ! git add docs/index.html state/permit_tracking_report.html state/permit_tracking.csv state/upload_history_all.json state/permit_registry.json 2>/dev/null; then
+    echo "ℹ️  沒有可提交的報告檔案，跳過推送" | tee -a "$LOG_FILE"
+elif git diff --cached --quiet 2>/dev/null; then
     echo "ℹ️  無任何變更，跳過推送" | tee -a "$LOG_FILE"
 else
     if git commit -m "$COMMIT_LABEL report update ($(date +%Y-%m-%d))" 2>&1 | tee -a "$LOG_FILE"; then
