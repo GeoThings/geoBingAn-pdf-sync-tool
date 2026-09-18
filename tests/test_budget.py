@@ -21,6 +21,22 @@ D0 = datetime(2026, 9, 17, 10, 0, tzinfo=UTC)          # 基準日
 D0_LATE = datetime(2026, 9, 17, 23, 59, tzinfo=UTC)
 D1 = datetime(2026, 9, 18, 0, 5, tzinfo=UTC)           # 隔日（UTC）
 DAY0, DAY1 = '2026-09-17', '2026-09-18'
+REAL_NOW = lambda: datetime.now(timezone.utc)   # 子程序測試用：子程序走真實時鐘，父端要跟著
+
+
+@pytest.fixture(autouse=True)
+def _freeze_clock(monkeypatch):
+    """把模組時鐘凍結在 D0，整個檔案與牆上日期脫鉤。
+
+    2026-09-18 CI 紅了 8 個測試，而 9/17 全綠——差別只有日期。測試一半的呼叫
+    注入 now=D0，另一半走預設 utcnow()；D0 是 9/17 時兩者同一天，隔天就變成
+    「兩種今天」，帳本被判跨日歸零（0 == 14）。這是會在固定日期引爆的時間炸彈，
+    而且 review 也看不出來，因為當天必然通過。
+    凍結後，任何沒帶 now= 的呼叫都落在 D0，測試的意圖（同日／跨日）由 D0/D1
+    明確表達，不再偷偷依賴今天幾號。
+    """
+    import geobingan_sync.budget as budget
+    monkeypatch.setattr(budget, 'utcnow', lambda: D0)
 
 
 # ---------- 估算與單次門檻 ----------
@@ -117,7 +133,7 @@ def test_reserve_is_atomic_across_processes(tmp_path):
              for _ in range(8)]
     allowed = [int(p.communicate()[0].strip().splitlines()[-1]) for p in procs]
     assert sum(allowed) == 10, allowed
-    assert DailyBudget(path, cost_per_report=0.3).load()['uploaded'] == 10
+    assert DailyBudget(path, cost_per_report=0.3).load(now=REAL_NOW())['uploaded'] == 10
     assert not list(tmp_path.glob('*.tmp'))
 
 
@@ -262,10 +278,13 @@ def test_day_guard_right_before_post_blocks_after_slow_download(tmp_path, monkey
                               before_upload=L.begin_item)
     assert r['error'] == 'day_rolled_over' and posted == [] and L.attempted == 0
     assert state['uploaded_files'] == [] and state['errors'] == []
-    L.close()
-    assert mb._read_raw()['day'] == DAY0 and mb._read_raw()['uploaded'] == 0
+    L.close()                                                          # ledger 時鐘已是 D1
+    # 不變式 #5「退還綁定預留日期」：現在已跨日 → close 是 no-op，昨日帳本原封不動
+    # （15 份保留在 D0 帳上，方向安全＝最壞多算），也不得替今天建出一個空檔。
+    # 舊斷言寫 uploaded == 0，其實是靠牆上時鐘剛好還是 9/17 才通過的日期炸彈。
+    assert mb._read_raw()['day'] == DAY0 and mb._read_raw()['uploaded'] == 15
     reserved2, _, data2 = mb.reserve(15, 60.0, 0.3, now=D1)
-    assert data2['day'] == DAY1 and reserved2 == 15
+    assert data2['day'] == DAY1 and reserved2 == 15                    # 今天從 0 重新開始
 
 
 def test_day_guard_same_day_allows_post(tmp_path, monkeypatch):
@@ -354,7 +373,7 @@ def test_retry_and_upload_never_exceed_daily_budget_across_processes(tmp_path):
              for i in range(8)]
     allowed = [int(p.communicate()[0].strip().splitlines()[-1]) for p in procs]
     assert sum(allowed) == 10, allowed                               # 總放行不超過日額度
-    d = DailyBudget(path, cost_per_report=0.3).load()
+    d = DailyBudget(path, cost_per_report=0.3).load(now=REAL_NOW())
     assert d['uploaded'] + d['retried'] == 10 and d['units'] == 10   # 兩欄合計才是額度
     assert not list(tmp_path.glob('*.tmp'))
     # 註：不斷言「兩欄都 > 0」——先搶到鎖的兩個程序可能同類，額度即被吃光。
@@ -379,10 +398,30 @@ def test_retry_and_upload_draw_from_the_same_ledger(tmp_path):
              for fn in ('reserve', 'reserve_retry')]
     allowed = [int(p.communicate()[0].strip().splitlines()[-1]) for p in procs]
     assert allowed == [5, 5], allowed
-    d = DailyBudget(path, cost_per_report=0.3).load()
+    d = DailyBudget(path, cost_per_report=0.3).load(now=REAL_NOW())
     assert d['uploaded'] == 5 and d['retried'] == 5 and d['units'] == 10
     # 額度已用盡：第三個請求一份都拿不到
-    assert DailyBudget(path, cost_per_report=0.3).reserve(1, 3.0, 0.3)[0] == 0
+    assert DailyBudget(path, cost_per_report=0.3).reserve(1, 3.0, 0.3, now=REAL_NOW())[0] == 0
+
+
+# ---------- ledger 的時鐘要一致（settle/close 也要看注入的 clock） ----------
+
+def test_ledger_settle_and_close_use_injected_clock(tmp_path, monkeypatch):
+    """注入 clock 後，退還與收尾必須用同一個時鐘，否則同一個 ledger 會有兩種「今天」。
+
+    這裡把模組時鐘故意撥到 D1（隔日），ledger 的 clock 卻停在 D0：
+    若 settle/close 偷用模組時鐘，帳本會被判跨日、退還變 no-op 或歸零。
+    """
+    import geobingan_sync.budget as budget
+    mb = DailyBudget(tmp_path / 'b.json', cost_per_report=0.3)
+    reserved, _, data = mb.reserve(6, 20.0, 0.3, now=D0)
+    L = ReservationLedger(mb, reserved, day=data['day'], clock=lambda: D0)
+    monkeypatch.setattr(budget, 'utcnow', lambda: D1)       # 牆上時鐘已是隔日
+    L.begin_item(); L.settle({'success': False, 'error': 'rejected'})   # 4xx 退 1
+    assert mb.load(now=D0)['uploaded'] == 5                 # 用 ledger 的日期退還了
+    L.begin_item()                                          # 再嘗試 1 份
+    d = L.close()                                           # 未嘗試 4 份 → 退還
+    assert d['day'] == DAY0 and d['uploaded'] == 1          # 6 − 1 − 4，且仍是 D0 的帳
 
 
 # ---------- 日界對齊 provider（UTC） ----------

@@ -250,8 +250,12 @@ class DailyBudget:
         with self._locked():
             if day is not None:
                 stored = self._read_raw().get('day')
-                if stored != day:
-                    return self._read(now)          # 昨日預留跨日退還 → 不動任何數字
+                if stored != day or day_key(now) != day:
+                    # 兩種跨日都 no-op：帳本已切到新的一天（stored ≠ day），或帳本
+                    # 還停在昨天但「現在」已是新的一天（day_key(now) ≠ day）。後者
+                    # 原本會通過檢查、再由 _read(now) 重置成今天的空帳並寫回——
+                    # 等於用一次昨日的退還把昨日帳本提早抹掉，並無聲建立今天的檔。
+                    return self._read(now)
             data = self._read(now)
             data[kind] = int(data.get(kind, 0)) - int(unused)
             return self._write(data, now)
@@ -304,14 +308,19 @@ class ReservationLedger:
         if result.get('success'):
             return False
         if result.get('error') in self.REFUNDABLE:
-            self.mb.release(1, day=self.day, kind=self.kind)
+            # 一律用本 ledger 的時鐘：注入了 clock 卻讓退還走真實時間，同一個 ledger
+            # 會出現兩種「今天」（2026-09-18 CI 就是這樣紅的：基準日過了一天，
+            # begin_item 看注入時鐘、release 看牆上時鐘，帳本被判跨日歸零）。
+            self.mb.release(1, now=self.clock(), day=self.day, kind=self.kind)
             self.refunded += 1
             return True
         return False
 
     def close(self) -> dict:
         unused = self.reserved - self.attempted
-        return self.mb.release(unused, day=self.day, kind=self.kind) if unused > 0 else self.mb.load()
+        now = self.clock()
+        return (self.mb.release(unused, now=now, day=self.day, kind=self.kind)
+                if unused > 0 else self.mb.load(now=now))
 
 
 def gate_and_reserve(mb: 'DailyBudget', n_requested: int, daily_budget: float,
