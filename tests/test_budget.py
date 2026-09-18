@@ -25,8 +25,12 @@ REAL_NOW = lambda: datetime.now(timezone.utc)   # 子程序測試用：子程序
 
 
 @pytest.fixture(autouse=True)
-def _freeze_clock(monkeypatch):
+def _freeze_clock(monkeypatch, request):
     """把模組時鐘凍結在 D0，整個檔案與牆上日期脫鉤。
+
+    標記 `@pytest.mark.real_clock` 的測試不凍結——那幾支的目的就是驗證**正式**
+    時鐘本身帶時區；凍結後它們只會驗到 mock，production 時鐘退化成 naive 也
+    照樣全綠（PR #88 review P2）。
 
     2026-09-18 CI 紅了 8 個測試，而 9/17 全綠——差別只有日期。測試一半的呼叫
     注入 now=D0，另一半走預設 utcnow()；D0 是 9/17 時兩者同一天，隔天就變成
@@ -35,6 +39,8 @@ def _freeze_clock(monkeypatch):
     凍結後，任何沒帶 now= 的呼叫都落在 D0，測試的意圖（同日／跨日）由 D0/D1
     明確表達，不再偷偷依賴今天幾號。
     """
+    if request.node.get_closest_marker('real_clock'):
+        return
     import geobingan_sync.budget as budget
     monkeypatch.setattr(budget, 'utcnow', lambda: D0)
 
@@ -446,15 +452,22 @@ def test_day_key_rejects_naive_datetime():
         day_key(datetime(2026, 9, 17, 23, 0))
 
 
+@pytest.mark.real_clock
 def test_production_clock_is_utc_aware():
-    """utcnow() 是本模組唯一時鐘，必須帶時區，否則上面那道防線等於沒有。"""
-    from geobingan_sync.budget import utcnow
-    now = utcnow()
+    """utcnow() 是本模組唯一時鐘，必須帶時區，否則上面那道防線等於沒有。
+
+    必須用真實時鐘：被 _freeze_clock 凍結的話，這裡驗的是 lambda: D0。
+    """
+    import geobingan_sync.budget as budget
+    assert budget.utcnow.__name__ == 'utcnow'            # 防假綠：確認沒被 mock 掉
+    now = budget.utcnow()
     assert now.tzinfo is not None and now.utcoffset() == timedelta(0)
+    assert abs((now - datetime.now(timezone.utc)).total_seconds()) < 5   # 真的是「現在」
 
 
+@pytest.mark.real_clock
 def test_ledger_default_clock_is_utc_aware(tmp_path):
-    """ReservationLedger 預設時鐘也要是 UTC-aware，否則 begin_item 會炸。"""
+    """ReservationLedger 預設時鐘也要是 UTC-aware，否則 begin_item 會炸（真實時鐘）。"""
     mb = DailyBudget(tmp_path / 'b.json', cost_per_report=0.3)
     reserved, _, data = mb.reserve(3, 20.0, 0.3)
     led = ReservationLedger(mb, reserved, day=data['day'])
