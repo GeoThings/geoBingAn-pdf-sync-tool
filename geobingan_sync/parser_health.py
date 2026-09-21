@@ -87,7 +87,9 @@ def assess(reports: List[dict], now: datetime, stale_hours: int = STALE_HOURS) -
             pa = _ts(m.get('parsed_at'))
             if pa and pa >= stale_cut:
                 st['completed_recent'] += 1
-        if status in ('pending', 'processing') and kind not in ('quota', 'billing'):
+        if r.get('_no_detail'):
+            st['no_detail'] = st.get('no_detail', 0) + 1
+        elif status in ('pending', 'processing') and kind not in ('quota', 'billing'):
             created = _ts(r.get('created_at'))
             if created and created <= stale_cut:
                 st['stalled'] += 1
@@ -103,9 +105,17 @@ def assess(reports: List[dict], now: datetime, stale_hours: int = STALE_HOURS) -
 
 
 def fetch_recent(base: str, headers: dict, now: datetime, hours: int = WINDOW_HOURS,
-                 detail_cap: int = 40, get: Callable = None) -> List[dict]:
-    """近 hours 小時建立的報告；非 completed 的抓 detail 取 metadata，completed 只抓前 10 份
-    的 detail（要 parsed_at）。detail 呼叫有上限避免拖慢每日上傳。"""
+                 detail_cap: int = 150, get: Callable = None,
+                 our_names: Optional[set] = None) -> List[dict]:
+    """近 hours 小時建立、**我方上傳**的報告（review P2：文件宣稱我方，程式就要真的限定，
+    否則別人上傳的病態檔會把我們的上傳擋住）。our_names＝正規化檔名集合（見 drain_stuck.norm_name），
+    None 表示不過濾（測試用）。
+
+    非 completed 的**全部**抓 detail 取 metadata——只有 detail 才看得到 parse_error，
+    沒 detail 的 pending 分不出「撞 quota」和「真的停擺」（review P2：原 detail_cap=40
+    超過後 quota pending 會被誤判成 worker 停擺）。每日量 ≤ 70，hard cap 150 只是保險；
+    超過的標 `_no_detail=True`，assess 不把它們算進 stalled。completed 只抓前 10 份
+    的 detail（要 parsed_at）。"""
     import requests
     get = get or requests.get
     cut = now - timedelta(hours=hours)
@@ -127,19 +137,25 @@ def fetch_recent(base: str, headers: dict, now: datetime, hours: int = WINDOW_HO
         url = d.get('next')
         if not url:
             break
+    if our_names is not None:
+        from geobingan_sync.steps.drain_stuck import norm_name
+        rows = [r for r in rows if norm_name(r.get('file_name') or '') in our_names]
     out: List[dict] = []
     detail_used = 0
     completed_detail = 0
     for r in rows:
         status = r.get('parse_status')
         need_detail = status != 'completed' or completed_detail < 10
-        if need_detail and detail_used < detail_cap:
-            resp = get(f"{base}/api/reports/construction-reports/{r['id']}/", headers=headers, timeout=30)
-            resp.raise_for_status()
-            r = resp.json()
-            detail_used += 1
-            if status == 'completed':
-                completed_detail += 1
+        if need_detail:
+            if detail_used < detail_cap:
+                resp = get(f"{base}/api/reports/construction-reports/{r['id']}/", headers=headers, timeout=30)
+                resp.raise_for_status()
+                r = resp.json()
+                detail_used += 1
+                if status == 'completed':
+                    completed_detail += 1
+            else:
+                r = dict(r, _no_detail=True)      # 看不到 parse_error → 不可歸類，不算 stalled
         out.append(r)
     return out
 
@@ -148,11 +164,12 @@ def probe(now: Optional[datetime] = None, hours: int = WINDOW_HOURS) -> Verdict:
     """網路版：取 token、抓近期報告、assess。任何例外都回「未知＝不放行」。"""
     from geobingan_sync.steps.upload_pdfs import _get_valid_token
     from geobingan_sync.config import GEOBINGAN_BASE_URL
+    from geobingan_sync.steps.drain_stuck import load_our_names
     now = now or datetime.now(timezone.utc)
     try:
         base = GEOBINGAN_BASE_URL.rstrip('/')
         headers = {'Authorization': f'Bearer {_get_valid_token()}'}
-        reports = fetch_recent(base, headers, now, hours=hours)
+        reports = fetch_recent(base, headers, now, hours=hours, our_names=load_our_names())
     except Exception as e:  # noqa: BLE001 — 探測失敗＝狀態未知，不能當成健康
         return Verdict(False, f'探測失敗，解析引擎狀態未知：{type(e).__name__}: {str(e)[:80]}',
                        {'probe_error': 1})

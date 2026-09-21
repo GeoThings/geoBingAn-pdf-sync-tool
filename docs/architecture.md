@@ -36,6 +36,7 @@
 | 時間 | LaunchAgent | 內容 |
 |------|-------------|------|
 | 每日 08:00 | `com.geothings.geobingan.healthcheck` | 10 項巡檢：Token／磁碟／同步狀態／API／launchd job（PR #53）／上傳暫停（#57）／解析積壓／解析預算（PR #80）／清單新鮮度／來源資料夾失效（PR #82）；異常經 alert_state 去重後貼 ClickUp，error 級 @（PR #79） |
+| 每日 08:20 | `com.geothings.geobingan.drainstuck` | 放行我方近 7 天卡住的 pending/failed（先探解析引擎健康、走 retry_parse 預留、上限 20；PR #91） |
 | 每日 10:00 | `com.geothings.geobingan.weeklysync` | 完整流程（步驟 1-4）+ 週一加步驟 5 產 PDF |
 | 週五 17:00 | `com.geothings.geobingan.fridayreport` | 總結週報 PDF → ClickUp |
 
@@ -127,14 +128,14 @@ launchctl bootstrap "gui/$(id -u)" ~/Library/LaunchAgents/com.geothings.geobinga
 **Ops discipline（每兩週手動巡檢）**：
 
 ```bash
-for j in healthcheck weeklysync fridayreport; do
+for j in healthcheck drainstuck weeklysync fridayreport; do
   echo "=== $j ==="
   launchctl print "gui/$(id -u)/com.geothings.geobingan.$j" 2>/dev/null \
     | grep -E "runs|last exit|state"
 done
 ```
 
-**自動兜底（PR #53）**：`health_check.py` 加 `check_launchd_jobs()`，每日 08:00 healthcheck 跑時掃三個 job、發現 `last exit != 0` 寫進 ClickUp 通知。6/02 首次真實救援——把原本要等 4 週才被發現的 weeklysync 鎖死提早到 1 天浮現。
+**自動兜底（PR #53）**：`health_check.py` 加 `check_launchd_jobs()`，每日 08:00 healthcheck 跑時掃所有 job（清單在 `check_launchd_jobs()`，新增 plist 必同步）、發現 `last exit != 0` 寫進 ClickUp 通知。6/02 首次真實救援——把原本要等 4 週才被發現的 weeklysync 鎖死提早到 1 天浮現。
 
 ##### Diagnostic marker 兩種模式（PR #47 / #49 / #51）
 

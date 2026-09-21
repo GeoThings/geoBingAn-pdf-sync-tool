@@ -279,7 +279,7 @@ def check_folder_deaths(path=None, now=None, window_days=DEATH_WINDOW_DAYS):
 
 
 def check_launchd_jobs():
-    """檢查三個 launchd 排程 job 的最後執行狀態。
+    """檢查所有 launchd 排程 job 的最後執行狀態（清單見 jobs；新增 plist 時必須同步加入，否則鎖死不會被巡到）。
 
     動機：launchd 對 EX_CONFIG 等錯誤會 silent backoff 鎖死整個 schedule、
     沒有任何 alerting。fridayreport 5/1 鎖 3 週、weeklysync 4 月某次鎖 4 週
@@ -290,7 +290,7 @@ def check_launchd_jobs():
     """
     import subprocess
     import re
-    jobs = ['healthcheck', 'weeklysync', 'fridayreport']
+    jobs = ['healthcheck', 'weeklysync', 'fridayreport', 'drainstuck']   # 與 launchd/*.plist 一一對應
     uid = os.getuid()
     bad = []
     for job in jobs:
@@ -315,7 +315,7 @@ def check_launchd_jobs():
             bad.append(f'{job}（last exit={m.group(1)}）')
     if bad:
         return 'warning', 'launchd job 異常（可能 backoff 鎖死，需 bootout+bootstrap reload）: ' + '、'.join(bad)
-    return 'ok', '三個排程 job 正常'
+    return 'ok', f'{len(jobs)} 個排程 job 正常'
 
 
 DEFAULT_CHECKS = [

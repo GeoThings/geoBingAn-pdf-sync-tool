@@ -95,6 +95,57 @@ def test_hold_passes_when_healthy():
     assert hold_if_unhealthy(probe_fn=lambda: Verdict(True, 'ok')).ok
 
 
+def test_no_detail_pending_is_not_counted_as_stalled():
+    """抓不到 detail 的 pending 分不出 quota／停擺 → 不算 stalled（review P2：cap 超過後誤判）。"""
+    r = _r('pending', 9); r['_no_detail'] = True
+    v = assess([r, _r('pending', 9)], NOW)              # 第二個有 detail、無錯誤 → 才算停擺
+    assert v.stats['stalled'] == 1 and v.stats['no_detail'] == 1
+
+
+class _Resp:
+    def __init__(self, payload): self._p = payload
+    def raise_for_status(self): pass
+    def json(self): return self._p
+
+
+def test_fetch_recent_filters_to_our_reports_and_details_all_noncompleted():
+    """探測必須真的只看我方（review P2），且非 completed 全抓 detail。"""
+    from geobingan_sync.parser_health import fetch_recent
+    from geobingan_sync.steps.drain_stuck import norm_name
+    listing = [
+        {'id': '1', 'file_name': 'ours.pdf', 'parse_status': 'pending', 'created_at': (NOW - timedelta(hours=1)).isoformat()},
+        {'id': '2', 'file_name': 'theirs.pdf', 'parse_status': 'failed', 'created_at': (NOW - timedelta(hours=1)).isoformat()},
+        {'id': '3', 'file_name': 'ours2', 'parse_status': 'completed', 'created_at': (NOW - timedelta(hours=2)).isoformat()},
+    ]
+    calls = []
+    def get(url, headers=None, params=None, timeout=None):
+        calls.append(url)
+        if url.endswith('/construction-reports/'):
+            return _Resp({'results': listing, 'next': None})
+        rid = url.rstrip('/').split('/')[-1]
+        row = next(x for x in listing if x['id'] == rid)
+        return _Resp(dict(row, metadata={'parse_error': 'budget is exhausted'} if rid == '1' else {}))
+    ours = {norm_name('ours.pdf'), norm_name('ours2.pdf')}
+    out = fetch_recent('http://x', {}, NOW, get=get, our_names=ours)
+    assert [r['id'] for r in out] == ['1', '3']                       # theirs 被濾掉
+    assert out[0]['metadata']['parse_error'] == 'budget is exhausted'  # 非 completed 抓了 detail
+    assert not any(url.endswith('/2/') for url in calls)              # 別人的連 detail 都不抓
+
+
+def test_fetch_recent_marks_no_detail_beyond_cap():
+    from geobingan_sync.parser_health import fetch_recent
+    listing = [{'id': str(i), 'file_name': f'{i}.pdf', 'parse_status': 'pending',
+                'created_at': (NOW - timedelta(hours=1)).isoformat()} for i in range(5)]
+    def get(url, headers=None, params=None, timeout=None):
+        if url.endswith('/construction-reports/'):
+            return _Resp({'results': listing, 'next': None})
+        return _Resp(dict(next(x for x in listing if url.rstrip('/').endswith('/' + x['id'])), metadata={}))
+    out = fetch_recent('http://x', {}, NOW, get=get, detail_cap=2)
+    assert sum(1 for r in out if r.get('_no_detail')) == 3
+    v = assess(out, NOW)
+    assert v.stats['no_detail'] == 3 and v.stats['stalled'] == 0        # 剛上傳 1h，本來就不 stalled；且無 detail 的不計
+
+
 def test_probe_error_is_not_health(monkeypatch):
     """探測本身失敗＝狀態未知 → 不放行（fail-closed），不能當成健康。"""
     import geobingan_sync.parser_health as ph
