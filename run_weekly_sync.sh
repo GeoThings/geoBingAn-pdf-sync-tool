@@ -227,8 +227,18 @@ else
     echo "" | tee -a "$LOG_FILE"
     echo "📤 步驟 2/4: 上傳最近 7 天的 PDF 到 Backend..." | tee -a "$LOG_FILE"
     echo "----------------------------------------" | tee -a "$LOG_FILE"
-    if ! python3 -m geobingan_sync.steps.upload_pdfs 2>&1 | tee -a "$LOG_FILE"; then
-        handle_error "步驟2" "上傳 PDF 失敗"
+    if python3 -m geobingan_sync.steps.upload_pdfs 2>&1 | tee -a "$LOG_FILE"; then
+        :
+    else
+        # PIPESTATUS[0] 是 python 的結束碼（pipefail 下 $? 也是，但這裡明確取），
+        # 4＝解析引擎探測擋下（帳戶沒餘額／worker 停擺）：要告警但訊息要講清楚，
+        # 不能跟「上傳失敗」混在一起，否則操作者會去查上傳而不是後端。
+        UPLOAD_RC=${PIPESTATUS[0]}
+        if [ "${UPLOAD_RC}" -eq 4 ]; then
+            handle_error "步驟2" "解析引擎異常，今日上傳已暫停（見上方探測結果；後端修復後會自動恢復）"
+        else
+            handle_error "步驟2" "上傳 PDF 失敗（exit ${UPLOAD_RC}）"
+        fi
         STEP2_FAILED=1
     fi
 fi

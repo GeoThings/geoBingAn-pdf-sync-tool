@@ -14,6 +14,7 @@
 8. [告警沒收到／收到重複告警](#8-告警沒收到收到重複告警)
 9. [上傳被擋下（exit 3：預算門檻／日上限）](#9-上傳被擋下exit-3預算門檻日上限)
 10. [解析積壓：報告卡在 pending 不動](#10-解析積壓報告卡在-pending-不動)
+11a. [上傳被擋下（exit 4：解析引擎探測）](#11a-上傳被擋下exit-4解析引擎探測)
 11. [跨日時批次中途停止](#11-跨日時批次中途停止)
 
 ---
@@ -306,6 +307,21 @@ print(response.json())
 - 這屬後端範圍：開卡給後端並附 report ID 清單與最後一份 completed 的時間。上限恢復後 pending 會自動消化；失敗的可用 `POST /api/reports/construction-reports/{id}/retry-parse/` 單筆重試（只接受 failed／pending，不會製造重複）。
 - 期間維持 `.pause_upload`，避免把新報告推進死佇列。
 - 陳年積壓（>7 天）只在告警訊息中註記、不驅動燈號，避免舊帳讓告警永遠紅燈而蓋掉新事故。
+
+---
+
+## 11a. 上傳被擋下（exit 4：解析引擎探測）
+
+### 症狀
+`upload_pdfs` 印出「🛑 解析引擎異常，今日暫停上傳」後 exit 4；同步失敗信寫「解析引擎異常，今日上傳已暫停」。
+
+### 原因與解決
+上傳前探測近 24h 我方報告：有「You have no credits remaining」（OpenAI 帳戶無餘額）或 pending 超過 6h 且零完成（worker 停擺）。這兩種情況送進去只會變成不會自動恢復的 pending/failed。
+
+- **帳戶無餘額**：請後端加值（PROD-348 類）。加值後隔天 08:20 `drain_stuck` 會自動放行卡住的；要立刻放行可手動 `python3 -m geobingan_sync.steps.drain_stuck`。
+- **worker 停擺**：交後端查 celery/redis。
+- **只撞應用層閘門（quota）不會觸發**：那是額度用完，午夜重置。
+- 人工確認引擎其實正常時，`--skip-parser-health` 可繞過（會印警告）。
 
 ---
 

@@ -768,7 +768,7 @@ def select_pdfs_to_upload(all_pdfs: List[Dict], uploaded_files, *, cutoff: datet
 
 
 def main(city: dict = None, catchup_days: int = None, yes: bool = False,
-         override_daily_budget: str = ''):
+         override_daily_budget: str = '', skip_parser_health: bool = False):
     """主程式
 
     yes: 估算解析成本超過 BUDGET_CONFIRM_USD 時的明確確認（防人為大批次打爆後端預算）。
@@ -852,6 +852,12 @@ def main(city: dict = None, catchup_days: int = None, yes: bool = False,
     if counts['no_date'] > 0:
         print(f"  檔名無法解析日期（待 parser 強化）: {counts['no_date']}")
     print(f"  待上傳: {len(pdfs_to_upload)}" + (f"（上限 {MAX_UPLOADS}）" if MAX_UPLOADS > 0 else "（無上限）"))
+
+    # 解析引擎健康探測（先於預算）：送進壞掉的佇列會變成不會自動恢復的 pending/failed。
+    # 帳戶沒餘額或 worker 停擺 → exit 4、今日不上傳（run_weekly_sync 會記為失敗並告警）。
+    if pdfs_to_upload:
+        from geobingan_sync.parser_health import hold_if_unhealthy
+        hold_if_unhealthy(skip=skip_parser_health)
 
     # 解析預算守門：單次門檻（對原始請求量）→ 鎖內原子預留 → 上傳 → finally 退還未用
     from geobingan_sync.budget import gate_and_reserve, DailyBudget, ReservationLedger
@@ -966,13 +972,16 @@ if __name__ == '__main__':
     parser.add_argument('--override-daily-budget', metavar='REASON', default='',
                         help='突破後端每日額度硬上限，需填理由（會記進日誌）。'
                              '僅限人工、且已與後端確認可超支時使用；排程不得帶此旗標')
+    parser.add_argument('--skip-parser-health', action='store_true',
+                        help='繞過上傳前的解析引擎健康探測（探測異常時預設 exit 4 不上傳）；人工確認後使用')
     args = parser.parse_args()
 
     cities = get_cities_for_cli(args.city)
     try:
         for city in cities:
             main(city=city, catchup_days=args.catchup_days, yes=args.yes,
-                 override_daily_budget=args.override_daily_budget)
+                 override_daily_budget=args.override_daily_budget,
+                 skip_parser_health=args.skip_parser_health)
     except KeyboardInterrupt:
         print("\n\n👋 使用者中斷執行")
         sys.exit(0)

@@ -22,6 +22,7 @@ sys.path.insert(0, ROOT)
 # 模組 → 原始碼路徑
 CLI_MODULES = {
     'geobingan_sync.steps.retry_parse': 'geobingan_sync/steps/retry_parse.py',
+    'geobingan_sync.steps.drain_stuck': 'geobingan_sync/steps/drain_stuck.py',
     'geobingan_sync.steps.upload_pdfs': 'geobingan_sync/steps/upload_pdfs.py',
     'geobingan_sync.steps.sync_permits': 'geobingan_sync/steps/sync_permits.py',
     'geobingan_sync.steps.match_permits': 'geobingan_sync/steps/match_permits.py',

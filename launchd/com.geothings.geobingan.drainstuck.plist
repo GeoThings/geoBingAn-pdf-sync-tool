@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.geothings.geobingan.drainstuck</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>-c</string>
+        <string>sleep 30 &amp;&amp; cd /Users/geothingsmacbookair/Developer/geoBingAn-pdf-sync-tool &amp;&amp; echo "[$(date '+%F %T')] launchd fired: drain_stuck" >> logs/drain_stuck.log &amp;&amp; ./venv/bin/python3 -m geobingan_sync.steps.drain_stuck --days 7 --max 20 >> logs/drain_stuck.log 2>&amp;1</string>
+    </array>
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>8</integer>
+        <key>Minute</key>
+        <integer>20</integer>
+    </dict>
+    <key>StandardErrorPath</key>
+    <string>/Users/geothingsmacbookair/Developer/geoBingAn-pdf-sync-tool/logs/launchd_drainstuck_err.log</string>
+</dict>
+</plist>
