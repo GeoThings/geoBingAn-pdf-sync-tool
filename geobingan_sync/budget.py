@@ -20,6 +20,7 @@ import fcntl
 import json
 import os
 from contextlib import contextmanager
+from zoneinfo import ZoneInfo
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional, Tuple
@@ -28,35 +29,38 @@ WARN_RATIO = 0.7
 ERROR_RATIO = 0.9
 
 
-def utcnow() -> datetime:
-    """本模組唯一的時鐘來源：**帶時區的 UTC 現在時間**。
+BUDGET_TZ = ZoneInfo('Asia/Taipei')
+
+
+def budget_now() -> datetime:
+    """本模組唯一的時鐘來源：**帶時區的台北現在時間**。
 
     所有預留／退還／讀寫帳本的預設時間都走這裡；不可換回 `datetime.now()`，
-    naive 的本地時間會被 `day_key()` 當場擋下（見下）。
+    naive 的時間會被 `day_key()` 當場擋下（見下）。
     """
-    return datetime.now(timezone.utc)
+    return datetime.now(BUDGET_TZ)
 
 
 def day_key(now: Optional[datetime] = None) -> str:
-    """回傳帳本的「日」鍵，**以 UTC 計**。
+    """回傳帳本的「日」鍵，**以台北日曆日計、午夜重置**。
 
-    後端的日額度由 provider（OpenAI）依 UTC 重置；若我們用主機本地時間（台北
-    UTC+8）算日界，帳本會在台北午夜＝UTC 16:00 就歸零，比後端**提早 8 小時**
-    重新放行整份額度。
+    後端的日額度閘門是應用層自己的（`DATA_FOUNDRY_DAILY_BUDGET_USD`，Redis 鍵
+    `data_foundry:spend:{timezone.localdate()}`，`TIME_ZONE='Asia/Taipei'`），
+    2026-09-19 slayer 於 PROD-348 確認，並在 origin/main 讀碼核對。
+    先前（#85）誤以為是 OpenAI 平台依 UTC 重置，帳本因此比後端**晚 8 小時**
+    歸零——方向偏保守（台北 00:00–08:00 會無謂裁切），但與後端不對齊仍是錯。
 
-    **必須傳 timezone-aware 的時間**（naive 直接 raise）。先前版本把 naive 當成
-    「已是 UTC」，但 production 每個呼叫點傳的都是 `datetime.now()`＝台北本地
-    時間，實際日界仍落在台北午夜，UTC 對齊形同虛設（review P1）。與其要求每個
-    呼叫點自律，不如讓它擋在型別上：naive 進來就是 bug，當場炸掉，好過無聲提早
-    八小時放行整份額度。
+    **必須傳 timezone-aware 的時間**（naive 直接 raise）。production 每個呼叫點
+    傳的若是 `datetime.now()`＝naive，型別上就擋住，不靠呼叫點自律。
+    任何時區的 aware 時間都會先換算成台北再取日期。
     """
     if now is None:
-        return utcnow().strftime('%Y-%m-%d')
+        return budget_now().strftime('%Y-%m-%d')
     if now.tzinfo is None or now.tzinfo.utcoffset(now) is None:
         raise ValueError(
             'day_key() 需要 timezone-aware 的時間，收到 naive datetime。'
-            '請用 budget.utcnow()，測試請明確帶 tzinfo=timezone.utc。')
-    return now.astimezone(timezone.utc).strftime('%Y-%m-%d')
+            '請用 budget.budget_now()，測試請明確帶 tzinfo。')
+    return now.astimezone(BUDGET_TZ).strftime('%Y-%m-%d')
 
 
 def estimate_cost(n_reports: int, cost_per_report: float) -> float:
@@ -106,7 +110,7 @@ def daily_gate(n_reports: int, day_est_usd: float, daily_budget: float,
                    f'（理由：{override_reason or "未填"}）')
     if allowed <= 0:
         return 0, (f'今日已用 US${day_est_usd:.2f}、日上限 US${daily_budget:.0f}，剩餘額度不足 1 份；'
-                   f'已擋下（UTC 換日後額度重置再跑）')
+                   f'已擋下（台北午夜額度重置後再跑）')
     return allowed, (f'投影今日成本 US${projected:.2f} 超過日上限 US${daily_budget:.0f}，'
                      f'自動裁切為今日剩餘可容納的 {allowed} 份（原 {n} 份）')
 
@@ -189,12 +193,12 @@ class DailyBudget:
 
     def load(self, now: Optional[datetime] = None) -> dict:
         """唯讀取用（顯示用）。"""
-        return self._read(now or utcnow())
+        return self._read(now or budget_now())
 
     def add(self, n: int, now: Optional[datetime] = None, kind: str = 'uploaded') -> dict:
         """鎖內累加（n 可為負，下限 0）。kind＝'uploaded' 或 'retried'。"""
         assert kind in ('uploaded', 'retried')
-        now = now or utcnow()
+        now = now or budget_now()
         with self._locked():
             data = self._read(now)
             data[kind] = int(data.get(kind, 0)) + int(n)
@@ -213,7 +217,7 @@ class DailyBudget:
                       override: bool = False, now: Optional[datetime] = None,
                       override_reason: str = '') -> Tuple[int, str, dict]:
         """重推專用的原子預留：與上傳走同一把鎖、同一份日額度，先佔再送。"""
-        now = now or utcnow()
+        now = now or budget_now()
         with self._locked():
             data = self._read(now)
             allowed, msg = daily_gate(n_requested, float(data.get('est_usd', 0.0)),
@@ -227,7 +231,7 @@ class DailyBudget:
                 override: bool = False, now: Optional[datetime] = None,
                 override_reason: str = '') -> Tuple[int, str, dict]:
         """鎖內原子預留：讀今日餘額 → daily_gate → 立刻計入可放行份數。回 (允許份數, 訊息, 狀態)。"""
-        now = now or utcnow()
+        now = now or budget_now()
         with self._locked():
             data = self._read(now)
             allowed, msg = daily_gate(n_requested, float(data.get('est_usd', 0.0)),
@@ -244,7 +248,7 @@ class DailyBudget:
         鎖內先讀檔案實際儲存的日期：與 day 相同才扣減；帳本已切到新的一天則 no-op
         （不重建昨日、不動今日的額度）。day=None 時退回舊行為（扣當日）。
         """
-        now = now or utcnow()
+        now = now or budget_now()
         if unused <= 0:
             return self.load(now)
         with self._locked():
@@ -262,7 +266,7 @@ class DailyBudget:
 
     def set_uploaded(self, n: int, now: Optional[datetime] = None) -> dict:
         """明確設定今日上傳份數（重建/校正用：python -m geobingan_sync.budget --set N）。"""
-        now = now or utcnow()
+        now = now or budget_now()
         with self._locked():
             data = self._read(now)
             data['uploaded'] = int(n)
@@ -288,7 +292,7 @@ class ReservationLedger:
         self.reserved = max(0, int(reserved))
         self.day = day                          # 預留所屬日期；退還只作用於同日帳本
         self.kind = kind                        # 'uploaded' 或 'retried'——退還要記回同一欄
-        self.clock = clock or utcnow            # 可注入時鐘（測試模擬下載期間跨日）
+        self.clock = clock or budget_now            # 可注入時鐘（測試模擬下載期間跨日）
         self.attempted = 0
         self.refunded = 0
 

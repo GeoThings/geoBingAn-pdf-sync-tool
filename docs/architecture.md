@@ -369,7 +369,7 @@ API project 匹配：116 筆（滑動視窗 + 去重）
 | `sync_status.json` | 執行狀態與歷史 | 每次執行 | 否 |
 | `weekly_snapshots/{date}.json` | sync 後狀態快照（供 compute_diff 算趨勢） | 每次 sync | 否（local-only，見下） |
 | `alert_state_healthcheck.json` / `alert_state_sync.json` | 告警去重狀態（各 producer 一個 namespace；key → level/first_seen/last_sent） | 通知真的送達時 | 否 |
-| `upload_budget.json` + `.lock` | **今日**解析預算帳本（day/uploaded/**retried**/units/est_usd；flock；**跨日歸零**，日界以 **UTC** 計；舊月格式檔自動視為非今日而歸零） | 上傳或重推預留／退還時 | 否（重推走 `steps.retry_parse`，它自己預留） |
+| `upload_budget.json` + `.lock` | **今日**解析預算帳本（day/uploaded/**retried**/units/est_usd；flock；**跨日歸零**，**台北午夜**換日；舊月格式檔自動視為非今日而歸零） | 上傳或重推預留／退還時 | 否（重推走 `steps.retry_parse`，它自己預留） |
 | `list_fingerprint.json` | 政府清單指紋（source／label／permit_count／sha256／last_changed） | 每次 sync 解析清單後 | 否 |
 | `folder_deaths.json` | 來源資料夾由活轉死的紀錄（append-only，附 detected 日期與 pdf_count）。**fail-closed**：先原子寫入此檔成功才提交 registry——順序相反時，中斷會讓 registry 已存 404、下輪 prior 非 alive，該次死亡永遠偵測不到；讀到損毀 JSON 一律 raise，不靜默重置以免丟失歷史。事件以 `(permit, source_url)` 去重（**不含日期**）——death 已寫、registry 提交失敗時，下一輪（排程每日跑，通常是隔天）prior 仍是 alive、會再次偵測到同一次死亡；鍵若含偵測日，去重只在同一天有效。同一建案換新 folder URL 後再失效會自然形成新事件 | 偵測到新失效時 | 否 |
 
@@ -469,7 +469,7 @@ upload_pdfs.main()
     │       （--yes 到此為止；它**不會**放寬下面的日上限）
     │    2) mb.reserve(n)：flock 內 讀今日餘額 → daily_gate → 立刻計入可放行份數
     │         投影 = 今日已用（上傳＋重推）+ 本次；超過日上限 → 裁切為今日剩餘可容納
-    │         份數（0 則擋下、UTC 換日後重置）；只有 --override-daily-budget REASON 能全放
+    │         份數（0 則擋下、台北午夜重置）；只有 --override-daily-budget REASON 能全放
     ▼ ledger = ReservationLedger(mb, reserved, day=預留日期)
     │
     ▼ 每份：download → before_upload=ledger.begin_item()（POST 前一刻）
@@ -496,10 +496,10 @@ upload_pdfs.main()
 5. **退還綁定預留日期**——帳本已切新的一天則 no-op，不重建昨日、不動今日。
 6. **日期守門放在 POST 前一刻**——下載可耗時數分鐘；跨日停批，剩餘留待新的一天重新預留。
 7. **模型要對得上後端的真實節流**（2026-09-16 確認）——後端是**每日 US$20**，不是月上限。用月模型會在還有日額度時無謂擋下上傳。
-8. **日界以 UTC 計**——額度由 provider 依 UTC 重置。若用主機本地時間（台北 UTC+8）算日界，帳本會在台北午夜＝UTC 16:00 就歸零，比後端**提早 8 小時**放行整份額度。
+8. **日界要對到後端閘門的日界，不是猜 provider**——後端閘門是應用層的 `DATA_FOUNDRY_DAILY_BUDGET_USD`，鍵 `data_foundry:spend:{timezone.localdate()}`、`TIME_ZONE=Asia/Taipei`，即**台北日曆日、午夜重置**（2026-09-19 slayer 確認、origin/main 讀碼核對）。#85 曾誤設 UTC，帳本比後端晚 8 小時歸零：方向保守但不對齊。教訓：日界是後端的事實，去讀後端的碼，不要從「OpenAI 應該用 UTC」推。
 9. **消耗額度的每條路徑都必須先預留**——手動 `retry-parse` 與上傳共用同一份日額度。事後記帳（`--reconcile-retry`）擋不住競態：在「已送出、尚未記帳」的空窗裡，夜間上傳讀到用量偏低而照常預留，兩者合計即超上限。因此重推走 `steps/retry_parse.py`，用同一個 `DailyBudget.reserve_retry()`（同一把鎖、同一份帳本）先佔額度再送出，並沿用同一套保守結算。
 12. **「查不到」不可講成「沒有」**——`retry_parse` 的查詢階段 fail-closed：HTTP 非 200、網路例外、非 JSON、缺 `parse_status` 都進失敗清單而非被跳過。有任何查詢失敗就不宣告「沒有需要重推的報告」，並回 exit 4。原本一律 `except: continue`，整批查詢掛掉時會印出成功訊息並 exit 0，操作者以為積壓清空了。
-10. **日界的 UTC 對齊要擋在型別上**——`day_key()` 直接拒收 naive datetime。先前版本把 naive 當成「已是 UTC」，而 production 每個呼叫點傳的都是 `datetime.now()`＝台北本地時間，於是實際日界仍落在台北午夜，UTC 對齊形同虛設。時鐘統一走 `budget.utcnow()`。
+10. **日界要擋在型別上**——`day_key()` 直接拒收 naive datetime，任何 aware 時間先換算成台北再取日期。時鐘統一走 `budget.budget_now()`；不靠呼叫點自律。
 11. **兩道閘不可共用一個旗標**——`--yes` 只確認「這一批很大」，日上限一律強制裁切。若 `--yes` 同時放寬日上限，任何**合法**的大批次都會順帶突破後端硬限：55 份重推估 US$16.5、必須帶 `--yes` 才過單次門檻，今日已用 US$10 時本應只放 32 份，卻會全放 55 份、投影 US$26.5。要真的超支必須另外明講 `--override-daily-budget REASON`，理由會寫進日誌，排程不帶此旗標。
 
 營運：`DAILY_BUDGET_USD` 須與後端實際日上限對齊（目前 US$20）；`state/upload_budget.json` 為本機狀態，換機用 `python3 -m geobingan_sync.budget --set N` 初始化；`.pause_upload` 可在後端解析停擺或預算未確認時暫停步驟 2。

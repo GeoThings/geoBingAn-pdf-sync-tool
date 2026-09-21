@@ -112,7 +112,7 @@ def main(ids: List[str], max_items: int = 0, yes: bool = False,
 
     mb = DailyBudget(path=budget_path, cost_per_report=COST_PER_REPORT_USD)
     day = mb.load()
-    print(f"  💰 今日({day['day']}, UTC) 上傳 {day['uploaded']}＋重推 {day['retried']} "
+    print(f"  💰 今日({day['day']}, 台北日) 上傳 {day['uploaded']}＋重推 {day['retried']} "
           f"＝ {day['units']} 份 ≈ US${day['est_usd']:.2f} / 日上限 US${DAILY_BUDGET_USD:.0f}")
 
     # 與上傳相同的守門：單次門檻對原始請求量 → 鎖內原子預留（記在 retried）
