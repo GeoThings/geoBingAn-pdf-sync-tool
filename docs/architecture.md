@@ -36,6 +36,7 @@
 | 時間 | LaunchAgent | 內容 |
 |------|-------------|------|
 | 每日 08:00 | `com.geothings.geobingan.healthcheck` | 10 項巡檢：Token／磁碟／同步狀態／API／launchd job（PR #53）／上傳暫停（#57）／解析積壓／解析預算（PR #80）／清單新鮮度／來源資料夾失效（PR #82）；異常經 alert_state 去重後貼 ClickUp，error 級 @（PR #79） |
+| 每日 08:20 | `com.geothings.geobingan.drainstuck` | 放行我方近 7 天卡住的 pending/failed（先探解析引擎健康、走 retry_parse 預留、上限 20；PR #91） |
 | 每日 10:00 | `com.geothings.geobingan.weeklysync` | 完整流程（步驟 1-4）+ 週一加步驟 5 產 PDF |
 | 週五 17:00 | `com.geothings.geobingan.fridayreport` | 總結週報 PDF → ClickUp |
 
@@ -127,14 +128,14 @@ launchctl bootstrap "gui/$(id -u)" ~/Library/LaunchAgents/com.geothings.geobinga
 **Ops discipline（每兩週手動巡檢）**：
 
 ```bash
-for j in healthcheck weeklysync fridayreport; do
+for j in healthcheck drainstuck weeklysync fridayreport; do
   echo "=== $j ==="
   launchctl print "gui/$(id -u)/com.geothings.geobingan.$j" 2>/dev/null \
     | grep -E "runs|last exit|state"
 done
 ```
 
-**自動兜底（PR #53）**：`health_check.py` 加 `check_launchd_jobs()`，每日 08:00 healthcheck 跑時掃三個 job、發現 `last exit != 0` 寫進 ClickUp 通知。6/02 首次真實救援——把原本要等 4 週才被發現的 weeklysync 鎖死提早到 1 天浮現。
+**自動兜底（PR #53）**：`health_check.py` 加 `check_launchd_jobs()`，每日 08:00 healthcheck 跑時掃所有 job（清單在 `check_launchd_jobs()`，新增 plist 必同步）、發現 `last exit != 0` 寫進 ClickUp 通知。6/02 首次真實救援——把原本要等 4 週才被發現的 weeklysync 鎖死提早到 1 天浮現。
 
 ##### Diagnostic marker 兩種模式（PR #47 / #49 / #51）
 
@@ -281,6 +282,10 @@ Shared Drive
     │  filename_date_parser 解析檔名日期 →
     │  cutoff 30 天 rolling（正規化當日 00:00；--catchup-days N 可放大補掃）→
     │  max_uploads
+    │
+    ▼ 解析引擎健康探測（parser_health.probe）：近 24h 我方報告有 billing 失敗，或
+    │  pending ≥6h 且期間零 completed → exit 4 今日不上傳（run_weekly_sync 記失敗並告警）
+    │  只撞應用層閘門（quota）不擋——那是額度用完的正常結果，午夜重置
     │
     ▼ 解析預算守門（PR #80，詳見「告警送達與預算守門」）：
     │  單次門檻（對原始請求量，超過 BUDGET_CONFIRM_USD 需 --yes）
@@ -501,6 +506,8 @@ upload_pdfs.main()
 12. **「查不到」不可講成「沒有」**——`retry_parse` 的查詢階段 fail-closed：HTTP 非 200、網路例外、非 JSON、缺 `parse_status` 都進失敗清單而非被跳過。有任何查詢失敗就不宣告「沒有需要重推的報告」，並回 exit 4。原本一律 `except: continue`，整批查詢掛掉時會印出成功訊息並 exit 0，操作者以為積壓清空了。
 10. **日界要擋在型別上**——`day_key()` 直接拒收 naive datetime，任何 aware 時間先換算成台北再取日期。時鐘統一走 `budget.budget_now()`；不靠呼叫點自律。
 11. **兩道閘不可共用一個旗標**——`--yes` 只確認「這一批很大」，日上限一律強制裁切。若 `--yes` 同時放寬日上限，任何**合法**的大批次都會順帶突破後端硬限：55 份重推估 US$16.5、必須帶 `--yes` 才過單次門檻，今日已用 US$10 時本應只放 32 份，卻會全放 55 份、投影 US$26.5。要真的超支必須另外明講 `--override-daily-budget REASON`，理由會寫進日誌，排程不帶此旗標。
+12. **送進壞掉的佇列比不送更糟**——上傳免費，但撞頂／billing 失敗的解析停在 pending/failed **不會自動恢復**（後端 skip_reason=quota 不重試、午夜重置不放行、retry-parse 端點不查預算）。所以上傳前先探解析引擎健康（`parser_health`），異常就不送；探測本身失敗＝未知，同樣不送（fail-closed）。後端的 `parse_failure_kind` 不可信（billing 被標 invalid_json），只看 parse_error 原文分類。
+13. **卡住要能自癒**——`steps/drain_stuck.py` 於 launchd 08:20（台北午夜重置後）只挑**我方**近 7 天上傳的 pending/failed，排除確定性失敗（輸出超上限），先探健康再走 `retry_parse` 的預留。「我方」以檔名比對且**副檔名無關**（Drive 有些檔名沒有 .pdf）。
 
 營運：`DAILY_BUDGET_USD` 須與後端實際日上限對齊（目前 US$20）；`state/upload_budget.json` 為本機狀態，換機用 `python3 -m geobingan_sync.budget --set N` 初始化；`.pause_upload` 可在後端解析停擺或預算未確認時暫停步驟 2。
 
