@@ -701,7 +701,15 @@ def select_pdfs_to_upload(all_pdfs: List[Dict], uploaded_files, *, cutoff: datet
 
     規則（依序）：排除清單 → history 去重（folder/檔名）→ run 內同名去重
     → 檔名日期解析（解析不到跳過）→ cutoff 日期窗 → max_uploads 上限
-    （0 = 不限）。輸入先按 Drive modifiedTime 降序排序，讓上限吃到最新的。
+    （0 = 不限）。
+
+    排序＝**報告日期（檔名解析）降序，同日再依 Drive modifiedTime 降序**，讓
+    上限吃到「最新的報告」而不是「最近被丟進 Drive 的檔案」。兩者常常不同：
+    監測公司會整批回填舊報告，modifiedTime 全是今天、報告日期卻是上個月。
+    2026-09-21 補掃實測：依 modifiedTime 傳出的 54 份混進 8/21 的舊報告，而剩餘
+    302 份裡有 259 份的報告日期比那批最舊的還新。後端解析近似先到先做、額度撞頂
+    後晚到的會卡住——排錯順序等於把最有時效價值的報告排去卡住。
+    解析不出日期的排最後（之後也會被 no_date 跳過），不影響其他項目次序。
 
     cutoff 以「日」為粒度：傳入值會正規化到當日 00:00，確保 cutoff 當日的
     報告（parser 回傳皆為當日 00:00）不會因呼叫端帶時分秒（如
@@ -737,7 +745,11 @@ def select_pdfs_to_upload(all_pdfs: List[Dict], uploaded_files, *, cutoff: datet
     # history 尚未寫入，故需獨立的 in-run 集合，否則會建出重複報告（2026-07-17 踩過）。
     seen_this_run = set()
 
-    for pdf in sorted(all_pdfs, key=lambda x: x.get('modifiedTime', ''), reverse=True):
+    # 先算一次日期供排序與過濾共用（parser 對 3 萬筆算兩次會拖慢每日掃描）
+    dated = [(pdf, _filename_date(pdf)) for pdf in all_pdfs]
+    dated.sort(key=lambda t: (t[1] or datetime.min, t[0].get('modifiedTime', '')), reverse=True)
+
+    for pdf, fd in dated:
         if pdf['name'] in exclude:
             counts['excluded'] += 1
             continue
@@ -751,7 +763,6 @@ def select_pdfs_to_upload(all_pdfs: List[Dict], uploaded_files, *, cutoff: datet
             counts['dup_skipped'].append(unique_id)
             continue
 
-        fd = _filename_date(pdf)
         if fd is None:
             counts['no_date'] += 1
             continue

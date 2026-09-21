@@ -94,8 +94,45 @@ def test_cutoff_time_of_day_normalized():
     assert counts['too_old'] == 0
 
 
+def test_report_date_beats_modified_time():
+    """報告日期新的先於 modifiedTime 新的——「最新的報告」不是「最近丟進 Drive 的檔」。
+
+    情境＝監測公司整批回填：舊報告 7/14 今天才上傳（mtime 最新），新報告 7/20
+    上週就在（mtime 較舊）。上限 1 份時必須拿 7/20 那份。
+    2026-09-21 實測：依 mtime 排序讓 259 份較新的報告排在 8 月底舊報告之後。
+    """
+    pdfs = [
+        _pdf('報告_1150714.pdf', folder='舊報告今天回填', mtime='2026-07-25T00:00:00Z'),
+        _pdf('報告_1150720.pdf', folder='新報告上週就在', mtime='2026-07-21T00:00:00Z'),
+    ]
+    picked, _ = select_pdfs_to_upload(pdfs, [], cutoff=CUTOFF, max_uploads=1)
+    assert [p['folder_name'] for p in picked] == ['新報告上週就在']
+
+
+def test_same_report_date_tiebreak_by_modified_time():
+    """同一報告日期才看 modifiedTime，新的先。"""
+    pdfs = [
+        _pdf('報告_1150720.pdf', folder='早丟', mtime='2026-07-20T01:00:00Z'),
+        _pdf('報告_1150720.pdf', folder='晚丟', mtime='2026-07-20T09:00:00Z'),
+    ]
+    picked, _ = select_pdfs_to_upload(pdfs, [], cutoff=CUTOFF)
+    assert [p['folder_name'] for p in picked] == ['晚丟', '早丟']
+
+
+def test_no_date_items_do_not_disturb_order():
+    """解析不出日期的排最後（之後被 no_date 跳過），不能把有日期的擠掉。"""
+    pdfs = [
+        _pdf('無日期.pdf', folder='X', mtime='2026-07-30T00:00:00Z'),
+        _pdf('報告_1150720.pdf', folder='Y', mtime='2026-07-10T00:00:00Z'),
+    ]
+    picked, counts = select_pdfs_to_upload(pdfs, [], cutoff=CUTOFF)
+    assert [p['folder_name'] for p in picked] == ['Y'] and counts['no_date'] == 1
+    picked1, _ = select_pdfs_to_upload(pdfs, [], cutoff=CUTOFF, max_uploads=1)
+    assert [p['folder_name'] for p in picked1] == ['Y']              # 上限 1 也不會被無日期的擠掉
+
+
 def test_max_uploads_picks_newest_first():
-    """上限啟用時要吃到 modifiedTime 最新的（排序在函式內）。"""
+    """上限啟用時要吃到報告日期最新的（排序在函式內；此例 mtime 與報告日期同向）。"""
     pdfs = [
         _pdf('報告_1150714.pdf', folder='A', mtime='2026-07-14T00:00:00Z'),
         _pdf('報告_1150720.pdf', folder='B', mtime='2026-07-20T00:00:00Z'),
