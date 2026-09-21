@@ -15,11 +15,13 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from geobingan_sync.budget import (estimate_cost, budget_gate, budget_level, daily_gate,
                                    gate_and_reserve, DailyBudget, ReservationLedger)
 
-# 一律 timezone-aware UTC：day_key() 現在直接拒絕 naive（review P1）
+# 一律 timezone-aware：day_key() 直接拒絕 naive（review P1）。日界＝台北日曆日（後端閘門）。
+from zoneinfo import ZoneInfo
+TPE = ZoneInfo('Asia/Taipei')
 UTC = timezone.utc
-D0 = datetime(2026, 9, 17, 10, 0, tzinfo=UTC)          # 基準日
-D0_LATE = datetime(2026, 9, 17, 23, 59, tzinfo=UTC)
-D1 = datetime(2026, 9, 18, 0, 5, tzinfo=UTC)           # 隔日（UTC）
+D0 = datetime(2026, 9, 17, 10, 0, tzinfo=TPE)          # 基準日（台北）
+D0_LATE = datetime(2026, 9, 17, 23, 59, tzinfo=TPE)
+D1 = datetime(2026, 9, 18, 0, 5, tzinfo=TPE)           # 隔日（台北午夜後）
 DAY0, DAY1 = '2026-09-17', '2026-09-18'
 REAL_NOW = lambda: datetime.now(timezone.utc)   # 子程序測試用：子程序走真實時鐘，父端要跟著
 
@@ -33,7 +35,7 @@ def _freeze_clock(monkeypatch, request):
     照樣全綠（PR #88 review P2）。
 
     2026-09-18 CI 紅了 8 個測試，而 9/17 全綠——差別只有日期。測試一半的呼叫
-    注入 now=D0，另一半走預設 utcnow()；D0 是 9/17 時兩者同一天，隔天就變成
+    注入 now=D0，另一半走預設 budget_now()；D0 是 9/17 時兩者同一天，隔天就變成
     「兩種今天」，帳本被判跨日歸零（0 == 14）。這是會在固定日期引爆的時間炸彈，
     而且 review 也看不出來，因為當天必然通過。
     凍結後，任何沒帶 now= 的呼叫都落在 D0，測試的意圖（同日／跨日）由 D0/D1
@@ -42,7 +44,7 @@ def _freeze_clock(monkeypatch, request):
     if request.node.get_closest_marker('real_clock'):
         return
     import geobingan_sync.budget as budget
-    monkeypatch.setattr(budget, 'utcnow', lambda: D0)
+    monkeypatch.setattr(budget, 'budget_now', lambda: D0)
 
 
 # ---------- 估算與單次門檻 ----------
@@ -422,7 +424,7 @@ def test_ledger_settle_and_close_use_injected_clock(tmp_path, monkeypatch):
     mb = DailyBudget(tmp_path / 'b.json', cost_per_report=0.3)
     reserved, _, data = mb.reserve(6, 20.0, 0.3, now=D0)
     L = ReservationLedger(mb, reserved, day=data['day'], clock=lambda: D0)
-    monkeypatch.setattr(budget, 'utcnow', lambda: D1)       # 牆上時鐘已是隔日
+    monkeypatch.setattr(budget, 'budget_now', lambda: D1)       # 牆上時鐘已是隔日
     L.begin_item(); L.settle({'success': False, 'error': 'rejected'})   # 4xx 退 1
     assert mb.load(now=D0)['uploaded'] == 5                 # 用 ledger 的日期退還了
     L.begin_item()                                          # 再嘗試 1 份
@@ -430,22 +432,25 @@ def test_ledger_settle_and_close_use_injected_clock(tmp_path, monkeypatch):
     assert d['day'] == DAY0 and d['uploaded'] == 1          # 6 − 1 − 4，且仍是 D0 的帳
 
 
-# ---------- 日界對齊 provider（UTC） ----------
+# ---------- 日界對齊後端閘門（台北日曆日、午夜重置） ----------
 
-def test_day_key_uses_utc_not_local_time():
-    """台北午夜（UTC+8）不可當成換日——否則比後端提早 8 小時放行整份額度。"""
+def test_day_key_uses_taipei_calendar_day():
+    """後端閘門鍵是 timezone.localdate()（Asia/Taipei）：台北午夜就換日。
+
+    #85 曾誤設 UTC，帳本比後端晚 8 小時歸零。任何時區的 aware 時間都要先換算成
+    台北再取日期——UTC 16:30 已是台北隔日 00:30。
+    """
     from geobingan_sync.budget import day_key
-    tpe = timezone(timedelta(hours=8))
-    assert day_key(datetime(2026, 9, 18, 0, 30, tzinfo=tpe)) == '2026-09-17'   # 仍屬前一 UTC 日
-    assert day_key(datetime(2026, 9, 18, 8, 30, tzinfo=tpe)) == '2026-09-18'   # UTC 00:30 才換日
+    assert day_key(datetime(2026, 9, 18, 0, 30, tzinfo=TPE)) == '2026-09-18'   # 台北午夜即換日
+    assert day_key(datetime(2026, 9, 17, 23, 30, tzinfo=TPE)) == '2026-09-17'
+    assert day_key(datetime(2026, 9, 17, 16, 30, tzinfo=UTC)) == '2026-09-18'   # UTC 16:30 = 台北 00:30
 
 
 def test_day_key_rejects_naive_datetime():
     """naive datetime 必須當場 raise。
 
-    先前版本把 naive 當成「已是 UTC」，而 production 每個呼叫點傳的都是
-    `datetime.now()`＝台北本地時間，於是實際日界仍落在台北午夜，UTC 對齊形同
-    虛設（review P1）。擋在型別上，比要求每個呼叫點自律可靠。
+    production 若有呼叫點傳 `datetime.now()`＝naive，型別上就擋住；不靠呼叫點
+    自律（review P1）。
     """
     from geobingan_sync.budget import day_key
     with pytest.raises(ValueError, match='timezone-aware'):
@@ -453,21 +458,21 @@ def test_day_key_rejects_naive_datetime():
 
 
 @pytest.mark.real_clock
-def test_production_clock_is_utc_aware():
-    """utcnow() 是本模組唯一時鐘，必須帶時區，否則上面那道防線等於沒有。
+def test_production_clock_is_taipei_aware():
+    """budget_now() 是本模組唯一時鐘，必須帶時區且為台北，否則上面那道防線等於沒有。
 
     必須用真實時鐘：被 _freeze_clock 凍結的話，這裡驗的是 lambda: D0。
     """
     import geobingan_sync.budget as budget
-    assert budget.utcnow.__name__ == 'utcnow'            # 防假綠：確認沒被 mock 掉
-    now = budget.utcnow()
-    assert now.tzinfo is not None and now.utcoffset() == timedelta(0)
+    assert budget.budget_now.__name__ == 'budget_now'    # 防假綠：確認沒被 mock 掉
+    now = budget.budget_now()
+    assert now.tzinfo is not None and now.utcoffset() == timedelta(hours=8)
     assert abs((now - datetime.now(timezone.utc)).total_seconds()) < 5   # 真的是「現在」
 
 
 @pytest.mark.real_clock
-def test_ledger_default_clock_is_utc_aware(tmp_path):
-    """ReservationLedger 預設時鐘也要是 UTC-aware，否則 begin_item 會炸（真實時鐘）。"""
+def test_ledger_default_clock_is_tz_aware(tmp_path):
+    """ReservationLedger 預設時鐘也要帶時區，否則 begin_item 會炸（真實時鐘）。"""
     mb = DailyBudget(tmp_path / 'b.json', cost_per_report=0.3)
     reserved, _, data = mb.reserve(3, 20.0, 0.3)
     led = ReservationLedger(mb, reserved, day=data['day'])

@@ -239,7 +239,7 @@ BUDGET_CONFIRM_USD=15           # 單次估算超過此值需 --yes
 **解析預算守門（PR #80／#85）**：後端解析成本受 OpenAI 專案花費上限硬性節制，額度是**每日 US$20**（2026-09-16 與後端確認），一次大量上傳曾把當日額度打爆、後續 116 份卡 pending 一整天沒人發現。上傳與手動重推**共用同一份日額度**，兩者走同一把鎖、同一份帳本，流程固定為四步：
 
 1. **單次門檻**：對「原始請求量」估算（份數 × 單價），超過 `BUDGET_CONFIRM_USD` 且未帶 `--yes` 即擋下（exit 3）。夜間配合 `MAX_UPLOADS` 永遠不會觸發，只擋人為大批次。
-2. **日上限原子預留**：在跨程序鎖內「讀今日餘額 → 算可放行份數 → 立刻計入」；投影超過日上限就裁切為今日剩餘可容納份數（保留最新），耗盡則擋下（隔日重置，日界以 UTC 計、與 provider 對齊）。**`--yes` 不會放寬日上限**——它只解單次門檻，若兩者共用一個旗標，任何合法的大批次都會順帶突破後端硬限。真要超支得另外明講 `--override-daily-budget REASON`（排程不帶）。**手動重推請走 `steps.retry_parse`**，它在送出前用同一個 `reserve` 取得額度；事後記帳（`--reconcile-retry`）擋不住競態，只作為補救。
+2. **日上限原子預留**：在跨程序鎖內「讀今日餘額 → 算可放行份數 → 立刻計入」；投影超過日上限就裁切為今日剩餘可容納份數（保留最新），耗盡則擋下（隔日重置，日界以台北日曆日計、午夜重置，與後端閘門對齊）。**`--yes` 不會放寬日上限**——它只解單次門檻，若兩者共用一個旗標，任何合法的大批次都會順帶突破後端硬限。真要超支得另外明講 `--override-daily-budget REASON`（排程不帶）。**手動重推請走 `steps.retry_parse`**，它在送出前用同一個 `reserve` 取得額度；事後記帳（`--reconcile-retry`）擋不住競態，只作為補救。
 3. **POST 前日期守門**：每份在下載完成、送出前確認日期仍等於預留日期；已跨日則停止本批次、該份不寫歷史，留待下次在新的一天重新預留。
 4. **預留預設視為已消耗**：只有 4xx 明確拒絕立即退 1 份；5xx／逾時／未知例外保守計入；結束（含 Ctrl-C）只退還從未嘗試的份數，且只作用於預留當日。
 
@@ -257,7 +257,7 @@ python3 -m geobingan_sync.budget --set 15                            # 校正今
 ```
 state/uploaded_to_geobingan_7days.json   # 近期上傳（本機）
 state/upload_history_all.json            # 永久上傳歷史（git 追蹤、去重）
-state/upload_budget.json + .lock         # 當日解析預算帳本（本機、flock、跨日歸零、日界以 UTC 計）
+state/upload_budget.json + .lock         # 當日解析預算帳本（本機、flock、跨日歸零、台北午夜換日）
 ```
 
 **API 呼叫：**
@@ -388,7 +388,7 @@ python3 -c "from geobingan_sync.sync_status import SyncStatus; SyncStatus().prin
 | 同步執行失敗／恢復 | error | 錯誤訊息；連日失敗每 7 天提醒；**恢復同樣寄 Email** |
 | Refresh Token 過期／即將過期 | error / warning | 請至 riskmap 重新登入更新 `.env` |
 | 解析積壓（近 7 天停滯 ≥6h） | warning / error（≥20 份或最舊 ≥24h） | 疑後端 worker 停擺或 OpenAI 預算上限 |
-| 解析預算（今日估算 vs 日上限） | ≥70% warning／≥90% error | 今日額度將盡，上傳會被自動裁切，UTC 換日後重置 |
+| 解析預算（今日估算 vs 日上限） | ≥70% warning／≥90% error | 今日額度將盡，上傳會被自動裁切，台北午夜重置 |
 | 清單新鮮度 | error（退回靜態備援）／warning（>60 天未更新） | 動態解析失效時會靜默同步過期清單，必須知道 |
 | 來源資料夾由活轉死 | error | 近 7 天新失效＝資料流失訊號（對應 111建字第0311號 253 份消失） |
 
@@ -619,7 +619,7 @@ Service Account 只需要：
 - ✅ **PR #78** 建管處清單動態抓取：從發布頁解析當前 PDF 連結，失效退回靜態網址（原寫死網址已過期 8 個月，351 → 440 筆、registry +92 案）
 - ✅ **PR #79** 告警確實送達：`alert_state.py` 去重／升級／7 天提醒／恢復通知、producer 各自 namespace、plan→send→commit；error 級 @ 人；同步失敗與 Token 過期改走 ClickUp（LINE Notify 已停服）
 - ✅ **PR #80** 解析預算守門與健康檢查：`budget.py`（單次門檻 `--yes`、先預留後退還、跨程序鎖、綁定期間、POST 前守門、只退 4xx 明確拒絕）；健康檢查新增「解析積壓」「解析預算」
-- ✅ **PR #85** 預算模型改為**日**：後端真實節流是每日 US$20（非月上限），帳本改 `day/uploaded/retried/units`、日界以 UTC 對齊 provider；新增 `steps/retry_parse.py` 讓手動重推走同一把鎖先預留再送出；`--yes` 只解單次門檻不放寬日上限；查詢階段 fail-closed（查不到狀態絕不當成「不需重推」）
+- ✅ **PR #85** 預算模型改為**日**：後端真實節流是每日 US$20（非月上限），帳本改 `day/uploaded/retried/units`、日界依後端閘門為台北日曆日（#85 曾誤設 UTC，#89 更正）；新增 `steps/retry_parse.py` 讓手動重推走同一把鎖先預留再送出；`--yes` 只解單次門檻不放寬日上限；查詢階段 fail-closed（查不到狀態絕不當成「不需重推」）
 - 📌 營運：後端解析成本受 OpenAI 專案花費上限節制（2026-09-14 一次 178 份打爆、116 份卡 pending）；批量上傳前先與後端確認預算；`DAILY_BUDGET_USD=20` 已與後端對齊
 - 🧪 測試 265 cases
 
