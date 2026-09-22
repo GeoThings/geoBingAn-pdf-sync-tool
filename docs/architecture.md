@@ -506,8 +506,9 @@ upload_pdfs.main()
 12. **「查不到」不可講成「沒有」**——`retry_parse` 的查詢階段 fail-closed：HTTP 非 200、網路例外、非 JSON、缺 `parse_status` 都進失敗清單而非被跳過。有任何查詢失敗就不宣告「沒有需要重推的報告」，並回 exit 4。原本一律 `except: continue`，整批查詢掛掉時會印出成功訊息並 exit 0，操作者以為積壓清空了。
 10. **日界要擋在型別上**——`day_key()` 直接拒收 naive datetime，任何 aware 時間先換算成台北再取日期。時鐘統一走 `budget.budget_now()`；不靠呼叫點自律。
 11. **兩道閘不可共用一個旗標**——`--yes` 只確認「這一批很大」，日上限一律強制裁切。若 `--yes` 同時放寬日上限，任何**合法**的大批次都會順帶突破後端硬限：55 份重推估 US$16.5、必須帶 `--yes` 才過單次門檻，今日已用 US$10 時本應只放 32 份，卻會全放 55 份、投影 US$26.5。要真的超支必須另外明講 `--override-daily-budget REASON`，理由會寫進日誌，排程不帶此旗標。
-12. **送進壞掉的佇列比不送更糟**——上傳免費，但撞頂／billing 失敗的解析停在 pending/failed **不會自動恢復**（後端 skip_reason=quota 不重試、午夜重置不放行、retry-parse 端點不查預算）。所以上傳前先探解析引擎健康（`parser_health`），異常就不送；探測本身失敗＝未知，同樣不送（fail-closed）。後端的 `parse_failure_kind` 不可信（billing 被標 invalid_json），只看 parse_error 原文分類。
-13. **卡住要能自癒**——`steps/drain_stuck.py` 於 launchd 08:20（台北午夜重置後）只挑**我方**近 7 天上傳的 pending/failed，排除確定性失敗（輸出超上限），先探健康再走 `retry_parse` 的預留。「我方」以檔名比對且**副檔名無關**（Drive 有些檔名沒有 .pdf）。
+12. **沒有證據 ≠ 健康**——探測只看近 24h 視窗，空視窗原本回「健康」。2026-09-22 實例：前一天 11:00 的 billing 失敗滑出視窗後，探測印「解析引擎正常（completed 0、pending 0）」並放行 15 份，帳戶其實還沒加值。改法＝`state/parser_health.json` 持久化 held；觀測到壞就記、**看見完成才解除**、看不到任何東西就沿用上次狀態。死結出口＝`drain_stuck` 每天送 1 份 canary 探路（成本上限 1 份），或人工 `--skip-parser-health`。探測本身失敗時不寫狀態（沒有新資訊，不可清掉 held）。
+13. **送進壞掉的佇列比不送更糟**——上傳免費，但撞頂／billing 失敗的解析停在 pending/failed **不會自動恢復**（後端 skip_reason=quota 不重試、午夜重置不放行、retry-parse 端點不查預算）。所以上傳前先探解析引擎健康（`parser_health`），異常就不送；探測本身失敗＝未知，同樣不送（fail-closed）。後端的 `parse_failure_kind` 不可信（billing 被標 invalid_json），只看 parse_error 原文分類。
+14. **卡住要能自癒**——`steps/drain_stuck.py` 於 launchd 08:20（台北午夜重置後）只挑**我方**近 7 天上傳的 pending/failed，排除確定性失敗（輸出超上限），先探健康再走 `retry_parse` 的預留。「我方」以檔名比對且**副檔名無關**（Drive 有些檔名沒有 .pdf）。
 
 營運：`DAILY_BUDGET_USD` 須與後端實際日上限對齊（目前 US$20）；`state/upload_budget.json` 為本機狀態，換機用 `python3 -m geobingan_sync.budget --set N` 初始化；`.pause_upload` 可在後端解析停擺或預算未確認時暫停步驟 2。
 

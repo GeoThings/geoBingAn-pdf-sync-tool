@@ -11,9 +11,13 @@ failed、6 份撞應用層閘門，後端還把 billing 錯誤標成 invalid_jso
 探測本身失敗（API 掛、token 壞）＝狀態未知 → **不放行**（fail-closed，與本專案
 其他守門一致）；人工要繞過用 `--skip-parser-health`。
 """
+import json
+import os
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Tuple
+
+STATE_FILE = './state/parser_health.json'
 
 # 錯誤文字分類。後端 parse_failure_kind 不可信（billing 被標 invalid_json），只看原文。
 BILLING_MARKERS = ('no credits', 'credits remaining', 'add credits', 'billing', 'insufficient_quota')
@@ -53,6 +57,67 @@ def _ts(s: Optional[str]) -> Optional[datetime]:
     except ValueError:
         return None
     return t if t.tzinfo else t.replace(tzinfo=timezone.utc)
+
+
+def load_state(path: str = STATE_FILE) -> dict:
+    if not os.path.exists(path):
+        return {}
+    try:
+        with open(path, encoding='utf-8') as f:
+            d = json.load(f)
+        return d if isinstance(d, dict) else {}
+    except (ValueError, OSError):
+        return {}
+
+
+def save_state(state: dict, path: str = STATE_FILE) -> None:
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    tmp = f'{path}.tmp.{os.getpid()}'
+    with open(tmp, 'w', encoding='utf-8') as f:
+        json.dump(state, f, ensure_ascii=False, indent=2)
+    os.replace(tmp, path)
+
+
+def evaluate(reports: List[dict], now: datetime, prev: Optional[dict] = None,
+             stale_hours: int = STALE_HOURS) -> Tuple[Verdict, dict]:
+    """把「這次觀測」與「上次已知狀態」合起來判斷，回 (Verdict, 新狀態)。
+
+    為什麼需要狀態（2026-09-22 實例）：`assess()` 只看視窗內的報告，**空視窗會回
+    健康**。前一天 11:00 上傳的 billing 失敗在隔天 12:00 已滑出 24h 視窗，於是探測
+    印出「解析引擎正常（completed 0、pending 0、quota 擋 0）」並放行 15 份——帳戶
+    其實還沒加值，只是我們剛好看不到證據。**沒有證據不等於健康**。
+
+    規則：
+    - 觀測到壞（billing／停擺）→ 記為 held，寫入原因與時間。
+    - 觀測到**正面證據**（視窗內有 completed）→ 清除 held。
+    - 觀測不到任何東西（空視窗／只有剛上傳的 pending）→ **維持上次狀態**。
+      先前 held 就繼續 held，直到看見恢復證據為止。
+
+    卡死的出口：`drain_stuck` 在 held-for-billing 時會送 1 份 canary 測試（見該檔），
+    或人工 `--skip-parser-health`。
+    """
+    prev = prev or {}
+    v = assess(reports, now, stale_hours=stale_hours)
+    st = dict(prev)
+    if not v.ok:
+        st.update({'status': 'held', 'reason': v.reason, 'since': st.get('since') or now.isoformat(),
+                   'kind': 'billing' if v.stats.get('billing') else 'stalled',
+                   'last_bad': now.isoformat()})
+        return v, st
+
+    positive = v.stats.get('completed', 0) > 0
+    if positive:
+        if prev.get('status') == 'held':
+            v = Verdict(True, f'解析引擎已恢復（視窗內有 {v.stats["completed"]} 份完成；'
+                              f'先前 held 原因：{prev.get("reason", "")[:40]}）', v.stats)
+        return v, {'status': 'ok', 'last_ok': now.isoformat()}
+
+    # 沒有正面證據：維持上次狀態，不得憑「看不到」宣告健康
+    if prev.get('status') == 'held':
+        held = Verdict(False, f'視窗內沒有任何報告可判斷，且先前為 held（{prev.get("reason", "")[:60]}）'
+                              f'——沒有證據不等於健康，維持不放行', dict(v.stats, carried_over=1))
+        return held, st
+    return Verdict(True, v.reason + '（視窗內無報告，沿用先前狀態）', v.stats), st
 
 
 def assess(reports: List[dict], now: datetime, stale_hours: int = STALE_HOURS) -> Verdict:
@@ -160,8 +225,13 @@ def fetch_recent(base: str, headers: dict, now: datetime, hours: int = WINDOW_HO
     return out
 
 
-def probe(now: Optional[datetime] = None, hours: int = WINDOW_HOURS) -> Verdict:
-    """網路版：取 token、抓近期報告、assess。任何例外都回「未知＝不放行」。"""
+def probe(now: Optional[datetime] = None, hours: int = WINDOW_HOURS,
+          state_path: str = STATE_FILE) -> Verdict:
+    """網路版：取 token、抓近期報告、evaluate（含持久化狀態）。
+
+    任何例外都回「未知＝不放行」，且**不寫狀態**（探測沒成功就沒有新資訊，
+    不可因此清掉先前的 held）。
+    """
     from geobingan_sync.steps.upload_pdfs import _get_valid_token
     from geobingan_sync.config import GEOBINGAN_BASE_URL
     from geobingan_sync.steps.drain_stuck import load_our_names
@@ -173,7 +243,9 @@ def probe(now: Optional[datetime] = None, hours: int = WINDOW_HOURS) -> Verdict:
     except Exception as e:  # noqa: BLE001 — 探測失敗＝狀態未知，不能當成健康
         return Verdict(False, f'探測失敗，解析引擎狀態未知：{type(e).__name__}: {str(e)[:80]}',
                        {'probe_error': 1})
-    return assess(reports, now)
+    v, st = evaluate(reports, now, load_state(state_path))
+    save_state(st, state_path)
+    return v
 
 
 def hold_if_unhealthy(skip: bool = False, probe_fn: Callable[[], Verdict] = None) -> Verdict:

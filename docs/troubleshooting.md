@@ -321,6 +321,7 @@ print(response.json())
 - **帳戶無餘額**：請後端加值（PROD-348 類）。加值後隔天 08:20 `drain_stuck` 會自動放行卡住的；要立刻放行可手動 `python3 -m geobingan_sync.steps.drain_stuck`。
 - **worker 停擺**：交後端查 celery/redis。
 - **只撞應用層閘門（quota）不會觸發**：那是額度用完，午夜重置。
+- **「視窗內沒有任何報告可判斷，且先前為 held」**：探測看不到新資料（例如一天沒上傳），沿用先前的 held——沒有證據不等於健康。`drain_stuck` 每天會送 1 份 canary 探路，恢復後隔天自動解除；狀態存在 `state/parser_health.json`（本機、不入版控）。
 - 人工確認引擎其實正常時，`--skip-parser-health` 可繞過（會印警告）。
 
 ---

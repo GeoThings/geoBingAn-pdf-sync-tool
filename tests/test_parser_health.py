@@ -68,8 +68,64 @@ def test_fresh_pending_is_ok():
     assert v.ok
 
 
-def test_empty_is_ok():
+def test_empty_window_assess_alone_is_ok():
+    """assess() 只看視窗，空的就沒話說；真正的判斷在 evaluate（要合併上次狀態）。"""
     assert assess([], NOW).ok
+
+
+# ---------- 沒有證據 ≠ 健康（2026-09-22 實例） ----------
+
+def test_empty_window_carries_over_previous_hold():
+    """前一天 billing 失敗滑出 24h 視窗後，探測不得因為「看不到」而放行。
+
+    實際發生：9/21 11:00 上傳的 4 份 billing 失敗，9/22 12:00 已超過 24h，
+    探測印「解析引擎正常（completed 0、pending 0、quota 擋 0）」並放行 15 份。
+    """
+    from geobingan_sync.parser_health import evaluate
+    prev = {'status': 'held', 'reason': '近 24h 有 4 份因 OpenAI 帳戶無餘額失敗', 'kind': 'billing'}
+    v, st = evaluate([], NOW, prev)
+    assert not v.ok and '沒有證據不等於健康' in v.reason
+    assert st['status'] == 'held'                       # 狀態保留，不被清掉
+
+
+def test_completed_in_window_clears_hold():
+    """看見恢復證據（視窗內有完成）才解除 held。"""
+    from geobingan_sync.parser_health import evaluate
+    prev = {'status': 'held', 'reason': '帳戶無餘額', 'kind': 'billing'}
+    v, st = evaluate([_r('completed', 1, parsed_h_ago=0.5)], NOW, prev)
+    assert v.ok and '已恢復' in v.reason and st['status'] == 'ok'
+
+
+def test_bad_observation_records_hold():
+    from geobingan_sync.parser_health import evaluate
+    v, st = evaluate([_r('failed', 2, error=BILLING)], NOW, {})
+    assert not v.ok and st['status'] == 'held' and st['kind'] == 'billing'
+
+
+def test_empty_window_without_previous_hold_is_ok():
+    """沒有前科時，空視窗不該無故擋下（否則靜默一陣子就再也傳不了）。"""
+    from geobingan_sync.parser_health import evaluate
+    v, st = evaluate([], NOW, {})
+    assert v.ok and st.get('status') != 'held'
+
+
+def test_state_roundtrip(tmp_path):
+    from geobingan_sync.parser_health import load_state, save_state
+    p = str(tmp_path / 's.json')
+    assert load_state(p) == {}
+    save_state({'status': 'held', 'kind': 'billing'}, p)
+    assert load_state(p)['kind'] == 'billing'
+
+
+def test_probe_failure_does_not_clear_hold(monkeypatch, tmp_path):
+    """探測本身失敗＝沒有新資訊，不可把先前的 held 寫掉。"""
+    import geobingan_sync.parser_health as ph
+    p = str(tmp_path / 's.json')
+    ph.save_state({'status': 'held', 'kind': 'billing', 'reason': 'x'}, p)
+    monkeypatch.setattr(ph, 'fetch_recent', lambda *a, **k: (_ for _ in ()).throw(OSError('down')))
+    monkeypatch.setattr('geobingan_sync.steps.upload_pdfs._get_valid_token', lambda: 'tok')
+    v = ph.probe(now=NOW, state_path=p)
+    assert not v.ok and ph.load_state(p)['status'] == 'held' 
 
 
 def test_deterministic_and_other_failures_do_not_hold():

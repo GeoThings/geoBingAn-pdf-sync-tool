@@ -25,7 +25,7 @@ import sys
 from datetime import datetime, timedelta, timezone
 from typing import Callable, List, Set, Tuple
 
-from geobingan_sync.parser_health import classify_error, probe, Verdict
+from geobingan_sync.parser_health import classify_error, load_state, probe, save_state, Verdict
 
 HISTORY_FILE = './state/upload_history_all.json'
 
@@ -116,14 +116,28 @@ def fetch_candidates(base: str, headers: dict, now: datetime, days: int, get: Ca
 
 def main(days: int = 7, max_items: int = 20, yes: bool = False, skip_parser_health: bool = False,
          budget_path=None, probe_fn: Callable[[], Verdict] = None, now: datetime = None,
-         fetch_fn: Callable = None, retry_fn: Callable = None, our_names: Set[str] = None) -> int:
+         fetch_fn: Callable = None, retry_fn: Callable = None, our_names: Set[str] = None,
+         state_path: str = None) -> int:
     """可注入探測／抓取／重推函式與時鐘供測試；預設走正式路徑。"""
     now = now or datetime.now(timezone.utc)
     v = (probe_fn or probe)()
     print(f"  {'✅' if v.ok else '🛑'} 解析引擎探測：{v.reason}")
+    canary = False
     if not v.ok and not skip_parser_health:
-        print('🛑 不放行：解析引擎異常，重試只會再被擋。加值／修復後再跑，或人工確認後加 --skip-parser-health。')
-        return 4
+        # held 狀態只能靠「看見恢復」解除，但沒人送東西進去就永遠看不見 → 死結。
+        # 出口＝每天送 1 份 canary 探路：成本上限 1 份，結果會進下一輪探測的視窗。
+        st = load_state(state_path) if state_path else load_state()
+        today = (now or datetime.now(timezone.utc)).strftime('%Y-%m-%d')
+        if st.get('canary_day') == today:
+            print('🛑 不放行：解析引擎異常，今日 canary 已送過。等後端修復；'
+                  '人工確認後可加 --skip-parser-health。')
+            return 4
+        st['canary_day'] = today
+        (save_state(st, state_path) if state_path else save_state(st))
+        canary = True
+        print('  🐤 送 1 份 canary 探路（held 需要「看見恢復」才能解除，不送就永遠解不開）')
+    elif not v.ok:
+        print('  ⚠️ 已指定 --skip-parser-health，照常放行')
 
     if fetch_fn is None:
         from geobingan_sync.steps.upload_pdfs import _get_valid_token
@@ -139,8 +153,10 @@ def main(days: int = 7, max_items: int = 20, yes: bool = False, skip_parser_heal
     if not ids:
         print('✅ 沒有需要放行的報告')
         return 0
-    ids = ids[:max_items] if max_items > 0 else ids
-    print(f'   本次放行上限 {max_items}，實際送 {len(ids)} 份（走 retry_parse：先預留日額度再送）')
+    cap = 1 if canary else max_items
+    ids = ids[:cap] if cap > 0 else ids
+    label = 'canary 探路 1 份' if canary else f'上限 {max_items}'
+    print(f'   本次{label}，實際送 {len(ids)} 份（走 retry_parse：先預留日額度再送）')
     if retry_fn is None:
         from geobingan_sync.steps.retry_parse import main as retry_main
         retry_fn = lambda i: retry_main(i, max_items=max_items, yes=yes, budget_path=budget_path)  # noqa: E731

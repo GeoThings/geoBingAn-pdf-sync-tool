@@ -47,10 +47,19 @@ def test_match_is_extension_insensitive():
     assert ids == ['1']
 
 
-def test_main_refuses_when_parser_unhealthy():
-    called = []
-    rc = ds.main(probe_fn=lambda: Verdict(False, '帳戶沒餘額'), fetch_fn=lambda: [], retry_fn=lambda i: called.append(i) or 0)
-    assert rc == 4 and called == []                       # 不送：retry-parse 端點不查預算，送了只會再被擋
+def test_unhealthy_sends_one_canary_then_refuses_same_day(tmp_path):
+    """held 只能靠「看見恢復」解除；沒人送東西就永遠看不見 → 每天送 1 份 canary 探路。"""
+    sp = str(tmp_path / 's.json')
+    sent = []
+    rc = ds.main(probe_fn=lambda: Verdict(False, '帳戶沒餘額'), state_path=sp, now=NOW,
+                 fetch_fn=lambda: [_r(str(i), 'a.pdf', 'pending') for i in range(5)],
+                 our_names=OURS, retry_fn=lambda i: sent.append(i) or 0)
+    assert rc == 0 and len(sent) == 1 and len(sent[0]) == 1        # 只送 1 份
+
+    rc2 = ds.main(probe_fn=lambda: Verdict(False, '帳戶沒餘額'), state_path=sp, now=NOW,
+                  fetch_fn=lambda: [_r('9', 'a.pdf', 'pending')], our_names=OURS,
+                  retry_fn=lambda i: sent.append(i) or 0)
+    assert rc2 == 4 and len(sent) == 1                             # 同日不再送第二隻
 
 
 def test_main_skip_health_still_sends():
