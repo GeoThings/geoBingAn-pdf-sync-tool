@@ -169,3 +169,29 @@ def test_stale_term_scanner_reads_real_files():
 def test_key_flags_are_declared(mod, expected):
     """釘住幾個關鍵旗標，避免改名後文件與程式一起漂走而測試仍綠。"""
     assert expected in _declared_flags(CLI_MODULES[mod])
+
+
+# ---------- launchd 巡檢：每個 job 的「正常結束碼」要與 plist 一一對應 ----------
+
+def test_launchd_job_list_matches_plists():
+    """新增 plist 卻忘了加進巡檢 → 那個 job 鎖死不會被發現。"""
+    import glob
+    import re as _re
+    src = _read('health_check.py')
+    m = _re.search(r'jobs = \{(.+?)\}\n', src, _re.S)
+    assert m, '找不到 jobs 定義'
+    in_code = set(_re.findall(r"'([a-z]+)':", m.group(1)))
+    on_disk = {os.path.basename(p).rsplit('.', 1)[0].split('.')[-1]
+               for p in glob.glob(os.path.join(ROOT, 'launchd', '*.plist'))}
+    assert in_code == on_disk, f'巡檢清單 {in_code} 與 launchd/ 的 {on_disk} 不一致'
+
+
+def test_drainstuck_expected_code_is_the_dedicated_one():
+    """只有「有意不放行」的專屬碼算正常；exit 4（查詢失敗）必須仍告警（review P1）。"""
+    import re as _re
+    from geobingan_sync.parser_health import EXIT_PARSER_HELD
+    src = _read('health_check.py')
+    m = _re.search(r"'drainstuck': \{([^}]*)\}", src)
+    assert m, '找不到 drainstuck 的正常結束碼'
+    assert 'EXIT_PARSER_HELD' in m.group(1) and EXIT_PARSER_HELD == 5
+    assert '4' not in m.group(1), 'exit 4 不可列為正常，否則吞掉真正的查詢失敗'

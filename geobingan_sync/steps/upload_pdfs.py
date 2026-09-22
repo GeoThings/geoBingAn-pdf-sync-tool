@@ -865,7 +865,7 @@ def main(city: dict = None, catchup_days: int = None, yes: bool = False,
     print(f"  待上傳: {len(pdfs_to_upload)}" + (f"（上限 {MAX_UPLOADS}）" if MAX_UPLOADS > 0 else "（無上限）"))
 
     # 解析引擎健康探測（先於預算）：送進壞掉的佇列會變成不會自動恢復的 pending/failed。
-    # 帳戶沒餘額或 worker 停擺 → exit 4、今日不上傳（run_weekly_sync 會記為失敗並告警）。
+    # 帳戶沒餘額或 worker 停擺 → exit 5（EXIT_PARSER_HELD）、今日不上傳（run_weekly_sync 會記為失敗並告警）。
     if pdfs_to_upload:
         from geobingan_sync.parser_health import hold_if_unhealthy
         hold_if_unhealthy(skip=skip_parser_health)
@@ -984,7 +984,7 @@ if __name__ == '__main__':
                         help='突破後端每日額度硬上限，需填理由（會記進日誌）。'
                              '僅限人工、且已與後端確認可超支時使用；排程不得帶此旗標')
     parser.add_argument('--skip-parser-health', action='store_true',
-                        help='繞過上傳前的解析引擎健康探測（探測異常時預設 exit 4 不上傳）；人工確認後使用')
+                        help='繞過上傳前的解析引擎健康探測（探測異常時預設 exit 5 不上傳）；人工確認後使用')
     args = parser.parse_args()
 
     cities = get_cities_for_cli(args.city)

@@ -37,7 +37,7 @@
 - ✅ 建管處清單動態抓取（從發布頁解析當前 PDF 連結，失效自動退回靜態網址；PR #78）
 - ✅ 告警確實送達：ClickUp 留言＋error 級 @ 人、去重/升級/每 7 天提醒/恢復通知（PR #79）
 - ✅ 解析預算守門：後端日上限 US$20（上傳＋重推共用、強制裁切）、單次門檻需 --yes、先預留後退還（PR #80／#85）
-- ✅ 解析引擎健康探測：上傳前先看近 24h 我方報告——帳戶無餘額或 worker 停擺就不上傳（exit 4）並告警；**看不到資料時沿用先前狀態**（沒有證據 ≠ 健康），held 由每日 1 份 canary 探路解除；隔日 08:20 自動放行卡住的報告（`steps/drain_stuck.py`）
+- ✅ 解析引擎健康探測：上傳前先看近 24h 我方報告——帳戶無餘額或 worker 停擺就不上傳（exit 5＝EXIT_PARSER_HELD）並告警；**看不到資料時沿用先前狀態**（沒有證據 ≠ 健康），held 由每日 1 份 canary 探路解除；隔日 08:20 自動放行卡住的報告（`steps/drain_stuck.py`）
 - ✅ 健康檢查 10 項：Token／磁碟／同步狀態／API／launchd／上傳暫停／解析積壓／解析預算／清單新鮮度／來源資料夾
 - ✅ 自動化測試（pytest, 306 cases, GitHub Actions CI）
 - ✅ 多城市支援（cities.json 配置，PDF 或 CSV 資料來源）
@@ -250,7 +250,7 @@ python3 -m geobingan_sync.steps.upload_pdfs --catchup-days 62 --yes  # 大批次
 python3 -m geobingan_sync.budget --show                              # 今日消耗（上傳＋重推）／估算成本
 python3 -m geobingan_sync.steps.retry_parse --ids-file IDS.txt       # 重推卡住的報告（先預留日額度再送出）
 python3 -m geobingan_sync.steps.drain_stuck --days 7 --max 20        # 放行我方近 7 天卡住的（先探健康、再預留、再送；launchd 08:20 自動跑）
-python3 -m geobingan_sync.steps.upload_pdfs --skip-parser-health     # 人工確認後繞過解析引擎探測（探測異常時預設 exit 4 不上傳）
+python3 -m geobingan_sync.steps.upload_pdfs --skip-parser-health     # 人工確認後繞過解析引擎探測（探測異常時預設 exit 5 不上傳）
 #   exit 0=完成 / 3=預算擋下 / 4=有報告查不到狀態（**不等於沒有待重推**，排除後重跑）
 python3 -m geobingan_sync.budget --reconcile-retry 55                # 事後補記（不預留，僅補救用）
 python3 -m geobingan_sync.budget --set 15                            # 校正今日上傳份數

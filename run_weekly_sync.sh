@@ -230,11 +230,11 @@ else
     if python3 -m geobingan_sync.steps.upload_pdfs 2>&1 | tee -a "$LOG_FILE"; then
         :
     else
-        # PIPESTATUS[0] 是 python 的結束碼（pipefail 下 $? 也是，但這裡明確取），
-        # 4＝解析引擎探測擋下（帳戶沒餘額／worker 停擺）：要告警但訊息要講清楚，
-        # 不能跟「上傳失敗」混在一起，否則操作者會去查上傳而不是後端。
+        # PIPESTATUS[0] 是 python 的結束碼（pipefail 下 $? 也是，但這裡明確取）。
+        # 5＝EXIT_PARSER_HELD，解析引擎探測擋下（帳戶沒餘額／worker 停擺）：要告警
+        # 但訊息要講清楚，不能跟「上傳失敗」混在一起，否則操作者會去查上傳而不是後端。
         UPLOAD_RC=${PIPESTATUS[0]}
-        if [ "${UPLOAD_RC}" -eq 4 ]; then
+        if [ "${UPLOAD_RC}" -eq 5 ]; then
             handle_error "步驟2" "解析引擎異常，今日上傳已暫停（見上方探測結果；後端修復後會自動恢復）"
         else
             handle_error "步驟2" "上傳 PDF 失敗（exit ${UPLOAD_RC}）"

@@ -290,10 +290,18 @@ def check_launchd_jobs():
     """
     import subprocess
     import re
-    jobs = ['healthcheck', 'weeklysync', 'fridayreport', 'drainstuck']   # 與 launchd/*.plist 一一對應
+    # 與 launchd/*.plist 一一對應。值＝「這個 job 的正常結束碼」：
+    # drainstuck 的 EXIT_PARSER_HELD（5）是**設計上的正常結果**（探測到解析引擎異常
+    # → 今天不放行），不是 launchd backoff 鎖死；不列進來每天都會誤報一次，
+    # 而告警被雜訊稀釋正是這套巡檢要防的事。
+    # **只放行這一個碼**：exit 4（retry_parse 查詢失敗／狀態未知）仍必須告警，
+    # 否則 API／token 故障會被吞掉（review P1）。
+    from geobingan_sync.parser_health import EXIT_PARSER_HELD
+    jobs = {'healthcheck': {0}, 'weeklysync': {0}, 'fridayreport': {0},
+            'drainstuck': {0, EXIT_PARSER_HELD}}
     uid = os.getuid()
     bad = []
-    for job in jobs:
+    for job, okay_codes in jobs.items():
         label = f'com.geothings.geobingan.{job}'
         try:
             out = subprocess.run(
@@ -311,7 +319,7 @@ def check_launchd_jobs():
         # '(never' = 從未跑過（剛 reload，正常）；'0' = 正常；其他非零 = 異常
         if m is None:
             bad.append(f'{job}（無法解析 launchctl 輸出、請手動確認）')
-        elif m.group(1) not in ('0', '(never'):
+        elif m.group(1) != '(never' and int(m.group(1)) not in okay_codes:
             bad.append(f'{job}（last exit={m.group(1)}）')
     if bad:
         return 'warning', 'launchd job 異常（可能 backoff 鎖死，需 bootout+bootstrap reload）: ' + '、'.join(bad)
