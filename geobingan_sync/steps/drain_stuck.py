@@ -171,21 +171,31 @@ def main(days: int = 7, max_items: int = 20, yes: bool = False, skip_parser_heal
                                         budget_path=budget_path, stats_out=stats)
     rc = retry_fn(ids, stats) if _takes_stats(retry_fn) else retry_fn(ids)
     if canary:
-        # 只有**至少一份被後端受理（202）**才算用掉今天的 canary（review P2）。
-        # exit 0 不代表送成功：目標狀態已改變或全被 4xx 拒絕時也是 0，
-        # 那樣記帳等於白白鎖掉當日探路，而 held 的唯一出口就是 canary。
+        # 保守結算，與 budget.ReservationLedger 同一個原則（review P2）：
+        # 202 受理＝確定已送；**逾時／連線例外／5xx＝結果不明，後端可能已經受理**，
+        # 同樣算用掉今天的額度，否則同日重跑會再送一次、重複解析。
+        # 只有「確定沒送到」才允許當日再探：全數 4xx 明確拒絕，或根本沒送出
+        # （預算擋下／查不到目標 → stats 空）。
         accepted = int(stats.get('accepted', 0))
-        if rc == 0 and accepted >= 1:
+        unknown = int(stats.get('unknown', 0))
+        consumed = accepted + unknown
+        if consumed >= 1:
             st = load_state(state_path) if state_path else load_state()
             st['canary_day'] = today
             st['canary_sent_at'] = (now or datetime.now(timezone.utc)).isoformat()
             # 記下 id：canary 重推的是幾天前建立的報告，探測的 24h created_at 視窗
             # 抓不到它，要按 id 補抓才看得到它有沒有完成（review P1）。
+            # 結果不明時更需要保留 id——那正是要靠後續查詢才知道下場的情況。
             st['canary_ids'] = list(ids)
             (save_state(st, state_path) if state_path else save_state(st))
+            if accepted == 0:
+                print(f'  ⚠️ canary 結果不明（{unknown} 份逾時/5xx），保守視為已送出、'
+                      f'記入今日額度；下次探測會按 id 查它的下場')
         else:
-            why = f'retry 回 {rc}' if rc != 0 else '無任何一份被受理（可能狀態已改變或被拒絕）'
-            print(f'  ⚠️ canary 未送成功（{why}），不記入今日額度，下次仍可探路')
+            rejected = int(stats.get('rejected', 0))
+            why = (f'{rejected} 份全被明確拒絕（4xx）' if rejected
+                   else f'未送出（retry 回 {rc}）')
+            print(f'  ⚠️ canary {why}，確定沒消耗，不記入今日額度，下次仍可探路')
     return rc
 
 
