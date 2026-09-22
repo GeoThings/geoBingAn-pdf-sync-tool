@@ -135,7 +135,7 @@ for j in healthcheck drainstuck weeklysync fridayreport; do
 done
 ```
 
-**自動兜底（PR #53）**：`health_check.py` 加 `check_launchd_jobs()`，每日 08:00 healthcheck 跑時掃所有 job（清單在 `check_launchd_jobs()`，新增 plist 必同步；該清單是 dict，值為**該 job 的正常結束碼**——`drainstuck` 的 `4`＝探測到解析引擎異常、今天不放行，是設計結果不是失敗，不列入就會每天誤報一次）、發現 `last exit != 0` 寫進 ClickUp 通知。6/02 首次真實救援——把原本要等 4 週才被發現的 weeklysync 鎖死提早到 1 天浮現。
+**自動兜底（PR #53）**：`health_check.py` 加 `check_launchd_jobs()`，每日 08:00 healthcheck 跑時掃所有 job（清單在 `check_launchd_jobs()`，新增 plist 必同步；該清單是 dict，值為**該 job 的正常結束碼**——`drainstuck` 的 `EXIT_PARSER_HELD`（**5**）＝探測到解析引擎異常、今天有意不放行，是設計結果不是失敗，不列入就會每天誤報一次。**`4` 不可列入**：那是 `retry_parse` 的查詢失敗／狀態未知，列進去會把 API／token 故障吞掉變 silent failure。避開 `78`（EX_CONFIG 會觸發 launchd backoff 鎖死））、發現 `last exit != 0` 寫進 ClickUp 通知。6/02 首次真實救援——把原本要等 4 週才被發現的 weeklysync 鎖死提早到 1 天浮現。
 
 ##### Diagnostic marker 兩種模式（PR #47 / #49 / #51）
 
