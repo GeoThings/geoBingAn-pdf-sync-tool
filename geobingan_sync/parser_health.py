@@ -78,6 +78,24 @@ def save_state(state: dict, path: str = STATE_FILE) -> None:
     os.replace(tmp, path)
 
 
+def count_recovered_after(reports: List[dict], bad_at: Optional[datetime]) -> int:
+    """算「事故之後」完成的份數＝真正的恢復證據。
+
+    bad_at 為 None（舊狀態檔沒記時間）時保守回 0：寧可多 held 一輪，由 canary 解除，
+    也不要用來路不明的完成紀錄開閘。
+    """
+    if bad_at is None:
+        return 0
+    n = 0
+    for r in reports:
+        if (r.get('parse_status') or '') != 'completed':
+            continue
+        pa = _ts(((r.get('metadata') or {}).get('parsed_at')))
+        if pa and pa > bad_at:
+            n += 1
+    return n
+
+
 def evaluate(reports: List[dict], now: datetime, prev: Optional[dict] = None,
              stale_hours: int = STALE_HOURS) -> Tuple[Verdict, dict]:
     """把「這次觀測」與「上次已知狀態」合起來判斷，回 (Verdict, 新狀態)。
@@ -105,19 +123,26 @@ def evaluate(reports: List[dict], now: datetime, prev: Optional[dict] = None,
                    'last_bad': now.isoformat()})
         return v, st
 
-    positive = v.stats.get('completed', 0) > 0
-    if positive:
-        if prev.get('status') == 'held':
-            v = Verdict(True, f'解析引擎已恢復（視窗內有 {v.stats["completed"]} 份完成；'
-                              f'先前 held 原因：{prev.get("reason", "")[:40]}）', v.stats)
+    if prev.get('status') == 'held':
+        # 解除只認「事故之後」的完成（review P1）。視窗是滑動的 24h，事故當天稍早
+        # 成功的那些也還在視窗內——拿它們當恢復證據等於用事故前的資料開閘。
+        bad_at = _ts(prev.get('last_bad')) or _ts(prev.get('since'))
+        n = count_recovered_after(reports, bad_at)
+        if n > 0:
+            when = f'{bad_at:%m-%d %H:%M}' if bad_at else '事故'
+            return (Verdict(True, f'解析引擎已恢復（{when} 之後有 {n} 份完成；'
+                                  f'先前 held 原因：{prev.get("reason", "")[:40]}）', v.stats),
+                    {'status': 'ok', 'last_ok': now.isoformat()})
+        held = Verdict(False, f'仍 held：視窗內 {v.stats.get("completed", 0)} 份完成都在事故之前，'
+                              f'沒有恢復證據（{prev.get("reason", "")[:50]}）',
+                       dict(v.stats, recovered_after_bad=0))
+        return held, st
+
+    if v.stats.get('completed', 0) > 0:
         return v, {'status': 'ok', 'last_ok': now.isoformat()}
 
-    # 沒有正面證據：維持上次狀態，不得憑「看不到」宣告健康
-    if prev.get('status') == 'held':
-        held = Verdict(False, f'視窗內沒有任何報告可判斷，且先前為 held（{prev.get("reason", "")[:60]}）'
-                              f'——沒有證據不等於健康，維持不放行', dict(v.stats, carried_over=1))
-        return held, st
-    return Verdict(True, v.reason + '（視窗內無報告，沿用先前狀態）', v.stats), st
+    # 沒有前科、也沒有完成：沿用先前（ok）狀態，不因「看不到」而誤擋
+    return Verdict(True, v.reason + '（視窗內無完成紀錄，沿用先前狀態）', v.stats), st
 
 
 def assess(reports: List[dict], now: datetime, stale_hours: int = STALE_HOURS) -> Verdict:

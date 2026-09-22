@@ -132,8 +132,6 @@ def main(days: int = 7, max_items: int = 20, yes: bool = False, skip_parser_heal
             print('🛑 不放行：解析引擎異常，今日 canary 已送過。等後端修復；'
                   '人工確認後可加 --skip-parser-health。')
             return 4
-        st['canary_day'] = today
-        (save_state(st, state_path) if state_path else save_state(st))
         canary = True
         print('  🐤 送 1 份 canary 探路（held 需要「看見恢復」才能解除，不送就永遠解不開）')
     elif not v.ok:
@@ -151,7 +149,7 @@ def main(days: int = 7, max_items: int = 20, yes: bool = False, skip_parser_heal
     ids, skipped = select_stuck(reports, names, now, days=days)
     print(f'📋 近 {days} 天我方上傳的卡住報告：{len(ids)} 份可放行、{len(skipped)} 份確定性失敗不重試')
     if not ids:
-        print('✅ 沒有需要放行的報告')
+        print('✅ 沒有需要放行的報告' + ('(canary 無候選可送，不記入今日額度)' if canary else ''))
         return 0
     cap = 1 if canary else max_items
     ids = ids[:cap] if cap > 0 else ids
@@ -160,7 +158,19 @@ def main(days: int = 7, max_items: int = 20, yes: bool = False, skip_parser_heal
     if retry_fn is None:
         from geobingan_sync.steps.retry_parse import main as retry_main
         retry_fn = lambda i: retry_main(i, max_items=max_items, yes=yes, budget_path=budget_path)  # noqa: E731
-    return retry_fn(ids)
+    rc = retry_fn(ids)
+    if canary:
+        # 只有真的送出去（有候選、retry 回 0）才算用掉今天的 canary（review P2）。
+        # 原本在送出前就寫 canary_day：沒候選或 retry 失敗時會白白鎖掉當日探路，
+        # 而 held 的唯一出口就是 canary，等於把自己關到隔天。
+        if rc == 0:
+            st = load_state(state_path) if state_path else load_state()
+            st['canary_day'] = today
+            st['canary_sent_at'] = (now or datetime.now(timezone.utc)).isoformat()
+            (save_state(st, state_path) if state_path else save_state(st))
+        else:
+            print(f'  ⚠️ canary 未送成功（retry 回 {rc}），不記入今日額度，下次仍可探路')
+    return rc
 
 
 if __name__ == '__main__':

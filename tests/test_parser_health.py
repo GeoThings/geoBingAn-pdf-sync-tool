@@ -82,18 +82,49 @@ def test_empty_window_carries_over_previous_hold():
     探測印「解析引擎正常（completed 0、pending 0、quota 擋 0）」並放行 15 份。
     """
     from geobingan_sync.parser_health import evaluate
-    prev = {'status': 'held', 'reason': '近 24h 有 4 份因 OpenAI 帳戶無餘額失敗', 'kind': 'billing'}
+    prev = {'status': 'held', 'reason': '近 24h 有 4 份因 OpenAI 帳戶無餘額失敗',
+            'kind': 'billing', 'last_bad': BAD_AT}
     v, st = evaluate([], NOW, prev)
-    assert not v.ok and '沒有證據不等於健康' in v.reason
+    assert not v.ok and '沒有恢復證據' in v.reason
     assert st['status'] == 'held'                       # 狀態保留，不被清掉
 
 
-def test_completed_in_window_clears_hold():
-    """看見恢復證據（視窗內有完成）才解除 held。"""
+BAD_AT = (NOW - timedelta(hours=4)).isoformat()      # 事故發生在 4 小時前
+HELD = {'status': 'held', 'reason': '帳戶無餘額', 'kind': 'billing', 'last_bad': BAD_AT}
+
+
+def test_completed_after_incident_clears_hold():
+    """解除要看見「事故之後」的完成。"""
     from geobingan_sync.parser_health import evaluate
-    prev = {'status': 'held', 'reason': '帳戶無餘額', 'kind': 'billing'}
-    v, st = evaluate([_r('completed', 1, parsed_h_ago=0.5)], NOW, prev)
+    v, st = evaluate([_r('completed', 1, parsed_h_ago=0.5)], NOW, HELD)     # 0.5h 前完成 > 4h 前事故
     assert v.ok and '已恢復' in v.reason and st['status'] == 'ok'
+
+
+def test_completed_before_incident_does_not_clear_hold():
+    """P1：事故**之前**的完成不算恢復證據。
+
+    視窗是滑動的 24h，事故當天稍早成功的那些也還在視窗內；拿它們開閘
+    等於用事故前的資料證明事故已解決。
+    """
+    from geobingan_sync.parser_health import evaluate
+    v, st = evaluate([_r('completed', 8, parsed_h_ago=7)], NOW, HELD)       # 7h 前完成 < 4h 前事故
+    assert not v.ok and '事故之前' in v.reason
+    assert st['status'] == 'held' and v.stats['recovered_after_bad'] == 0
+
+
+def test_mixed_completions_need_one_after_incident():
+    from geobingan_sync.parser_health import evaluate
+    before = _r('completed', 8, parsed_h_ago=7)
+    after = _r('completed', 1, parsed_h_ago=0.5)
+    assert not evaluate([before], NOW, HELD)[0].ok
+    assert evaluate([before, after], NOW, HELD)[0].ok
+
+
+def test_hold_without_timestamp_stays_held():
+    """舊狀態檔沒記事故時間 → 保守不解除，交給 canary。"""
+    from geobingan_sync.parser_health import evaluate
+    v, _ = evaluate([_r('completed', 1, parsed_h_ago=0.5)], NOW, {'status': 'held', 'reason': 'x'})
+    assert not v.ok
 
 
 def test_bad_observation_records_hold():

@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from geobingan_sync.parser_health import Verdict
+from geobingan_sync.parser_health import load_state  # noqa: F401
 from geobingan_sync.steps import drain_stuck as ds
 
 NOW = datetime(2026, 9, 22, 0, 20, tzinfo=timezone.utc)
@@ -60,6 +61,36 @@ def test_unhealthy_sends_one_canary_then_refuses_same_day(tmp_path):
                   fetch_fn=lambda: [_r('9', 'a.pdf', 'pending')], our_names=OURS,
                   retry_fn=lambda i: sent.append(i) or 0)
     assert rc2 == 4 and len(sent) == 1                             # 同日不再送第二隻
+
+
+def test_canary_day_not_burned_when_no_candidate(tmp_path):
+    """P2：沒有候選可送時不可記入今日額度——held 的唯一出口是 canary。"""
+    sp = str(tmp_path / 's.json')
+    rc = ds.main(probe_fn=lambda: Verdict(False, 'x'), state_path=sp, now=NOW,
+                 fetch_fn=lambda: [], our_names=OURS, retry_fn=lambda i: 0)
+    assert rc == 0 and 'canary_day' not in ds.load_state(sp)
+    sent = []
+    rc2 = ds.main(probe_fn=lambda: Verdict(False, 'x'), state_path=sp, now=NOW,
+                  fetch_fn=lambda: [_r('1', 'a.pdf', 'pending')], our_names=OURS,
+                  retry_fn=lambda i: sent.append(i) or 0)
+    assert rc2 == 0 and len(sent) == 1                             # 隔一次仍可探路
+
+
+def test_canary_day_not_burned_when_retry_fails(tmp_path):
+    """P2：retry 失敗（例如預算擋下）也不可記入今日額度。"""
+    sp = str(tmp_path / 's.json')
+    rc = ds.main(probe_fn=lambda: Verdict(False, 'x'), state_path=sp, now=NOW,
+                 fetch_fn=lambda: [_r('1', 'a.pdf', 'pending')], our_names=OURS,
+                 retry_fn=lambda i: 3)
+    assert rc == 3 and 'canary_day' not in ds.load_state(sp)
+
+
+def test_canary_day_recorded_only_on_success(tmp_path):
+    sp = str(tmp_path / 's.json')
+    ds.main(probe_fn=lambda: Verdict(False, 'x'), state_path=sp, now=NOW,
+            fetch_fn=lambda: [_r('1', 'a.pdf', 'pending')], our_names=OURS, retry_fn=lambda i: 0)
+    st = ds.load_state(sp)
+    assert st['canary_day'] == NOW.strftime('%Y-%m-%d') and st.get('canary_sent_at')
 
 
 def test_main_skip_health_still_sends():
