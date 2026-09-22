@@ -25,7 +25,8 @@ import sys
 from datetime import datetime, timedelta, timezone
 from typing import Callable, List, Set, Tuple
 
-from geobingan_sync.parser_health import classify_error, load_state, probe, save_state, Verdict
+from geobingan_sync.parser_health import (classify_error, load_state, probe, save_state,
+                                           Verdict, EXIT_PARSER_HELD)
 
 HISTORY_FILE = './state/upload_history_all.json'
 
@@ -140,7 +141,10 @@ def main(days: int = 7, max_items: int = 20, yes: bool = False, skip_parser_heal
         if st.get('canary_day') == today:
             print('🛑 不放行：解析引擎異常，今日 canary 已送過。等後端修復；'
                   '人工確認後可加 --skip-parser-health。')
-            return 4
+            # 專屬結束碼：這是「有意不放行」，與 retry_parse 的 exit 4（查詢失敗、
+            # 狀態未知）語意不同。兩者共用一個碼的話，把它列進巡檢正常清單就會
+            # 順手吞掉真正的 API／token 故障（review P1）。
+            return EXIT_PARSER_HELD
         canary = True
         print('  🐤 送 1 份 canary 探路（held 需要「看見恢復」才能解除，不送就永遠解不開）')
     elif not v.ok:

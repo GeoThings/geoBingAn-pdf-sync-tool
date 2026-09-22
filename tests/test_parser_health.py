@@ -214,10 +214,11 @@ def test_deterministic_and_other_failures_do_not_hold():
     assert v.ok and v.stats['deterministic'] == 1 and v.stats['other_error'] == 1
 
 
-def test_hold_exits_4_when_unhealthy(capsys):
+def test_hold_exits_with_dedicated_code_when_unhealthy(capsys):
+    from geobingan_sync.parser_health import EXIT_PARSER_HELD
     with pytest.raises(SystemExit) as e:
         hold_if_unhealthy(skip=False, probe_fn=lambda: Verdict(False, '帳戶沒餘額'))
-    assert e.value.code == 4
+    assert e.value.code == EXIT_PARSER_HELD == 5      # 4 留給真正的異常，不可重載
     assert '暫停上傳' in capsys.readouterr().out
 
 

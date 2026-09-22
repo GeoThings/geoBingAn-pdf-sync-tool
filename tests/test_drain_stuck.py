@@ -65,7 +65,7 @@ def test_unhealthy_sends_one_canary_then_refuses_same_day(tmp_path):
     rc2 = ds.main(probe_fn=lambda: Verdict(False, '帳戶沒餘額'), state_path=sp, now=NOW,
                   fetch_fn=lambda: [_r('9', 'a.pdf', 'pending')], our_names=OURS,
                   retry_fn=ok_retry)
-    assert rc2 == 4 and len(sent) == 1                             # 同日不再送第二隻
+    assert rc2 == 5 and len(sent) == 1                             # 同日不再送第二隻
 
 
 def test_canary_day_not_burned_when_no_candidate(tmp_path):
@@ -129,7 +129,7 @@ def test_canary_unknown_counts_as_consumed(tmp_path):
 
     rc2 = ds.main(probe_fn=lambda: Verdict(False, 'x'), state_path=sp, now=NOW,
                   fetch_fn=lambda: [_r('2', 'a.pdf', 'pending')], our_names=OURS, retry_fn=fn)
-    assert rc2 == 4 and len(sent) == 1                    # 同日不再送，避免重複解析
+    assert rc2 == 5 and len(sent) == 1                    # 同日不再送，避免重複解析
 
 
 def test_canary_consumed_even_if_rc_nonzero_when_sent(tmp_path):
@@ -171,3 +171,23 @@ def test_main_nothing_to_do():
     rc = ds.main(probe_fn=lambda: Verdict(True, 'ok'), fetch_fn=lambda: [], our_names=OURS, now=NOW,
                  retry_fn=lambda i: (_ for _ in ()).throw(AssertionError('不該呼叫')))
     assert rc == 0
+
+# ---------- 結束碼語意不可重載（review P1） ----------
+
+def test_deliberate_hold_uses_dedicated_exit_code(tmp_path):
+    """有意不放行 → EXIT_PARSER_HELD（5），不是 4。"""
+    from geobingan_sync.parser_health import EXIT_PARSER_HELD
+    sp = str(tmp_path / 's.json')
+    ds.save_state({'canary_day': NOW.strftime('%Y-%m-%d')}, sp)
+    rc = ds.main(probe_fn=lambda: Verdict(False, '帳戶沒餘額'), state_path=sp, now=NOW,
+                 fetch_fn=lambda: [], our_names=OURS, retry_fn=_retry({}))
+    assert rc == EXIT_PARSER_HELD == 5
+
+
+def test_real_query_failure_still_exits_4(tmp_path):
+    """retry_parse 查詢失敗／狀態未知仍回 4——必須被巡檢當成異常告警，不可被吞掉。"""
+    sp = str(tmp_path / 's.json')
+    rc = ds.main(probe_fn=lambda: Verdict(True, 'ok'), state_path=sp, now=NOW,
+                 fetch_fn=lambda: [_r('1', 'a.pdf', 'pending')], our_names=OURS,
+                 retry_fn=_retry({'accepted': 0, 'rejected': 0, 'unknown': 0}, rc=4))
+    assert rc == 4

@@ -291,11 +291,14 @@ def check_launchd_jobs():
     import subprocess
     import re
     # 與 launchd/*.plist 一一對應。值＝「這個 job 的正常結束碼」：
-    # drainstuck 的 exit 4 是**設計上的正常結果**（探測到解析引擎異常 → 今天不放行），
-    # 不是 launchd backoff 鎖死。不列進來的話每天都會誤報一次，
+    # drainstuck 的 EXIT_PARSER_HELD（5）是**設計上的正常結果**（探測到解析引擎異常
+    # → 今天不放行），不是 launchd backoff 鎖死；不列進來每天都會誤報一次，
     # 而告警被雜訊稀釋正是這套巡檢要防的事。
+    # **只放行這一個碼**：exit 4（retry_parse 查詢失敗／狀態未知）仍必須告警，
+    # 否則 API／token 故障會被吞掉（review P1）。
+    from geobingan_sync.parser_health import EXIT_PARSER_HELD
     jobs = {'healthcheck': {0}, 'weeklysync': {0}, 'fridayreport': {0},
-            'drainstuck': {0, 4}}
+            'drainstuck': {0, EXIT_PARSER_HELD}}
     uid = os.getuid()
     bad = []
     for job, okay_codes in jobs.items():

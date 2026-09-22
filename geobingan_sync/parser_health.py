@@ -19,6 +19,12 @@ from typing import Callable, Dict, List, Optional, Tuple
 
 STATE_FILE = './state/parser_health.json'
 
+# 結束碼語意（review P1：不可重載）。
+# 5＝**有意不放行**：探測到解析引擎異常，這是設計上的正確行為，排程巡檢視為正常。
+# 4 留給「真正的異常」：retry_parse 的查詢失敗／狀態未知，必須告警。
+# 3＝預算擋下。避免 78（EX_CONFIG 會觸發 launchd backoff 鎖死，見 architecture）。
+EXIT_PARSER_HELD = 5
+
 # 錯誤文字分類。後端 parse_failure_kind 不可信（billing 被標 invalid_json），只看原文。
 BILLING_MARKERS = ('no credits', 'credits remaining', 'add credits', 'billing', 'insufficient_quota')
 QUOTA_MARKERS = ('budget is exhausted', 'estimated-cost budget', 'daily budget')
@@ -295,14 +301,14 @@ def probe(now: Optional[datetime] = None, hours: int = WINDOW_HOURS,
 
 
 def hold_if_unhealthy(skip: bool = False, probe_fn: Callable[[], Verdict] = None) -> Verdict:
-    """上傳前閘門：不健康就印原因並 SystemExit(4)。skip=True 只印不擋（人工繞過）。"""
+    """上傳前閘門：不健康就印原因並 SystemExit(EXIT_PARSER_HELD)。skip=True 只印不擋。"""
     v = (probe_fn or probe)()
     tag = '✅' if v.ok else '🛑'
     print(f'  {tag} 解析引擎探測：{v.reason}')
     if not v.ok and not skip:
         print('\n🛑 解析引擎異常，今日暫停上傳（避免堆出不會自動恢復的 pending/failed）。'
               '人工確認後可加 --skip-parser-health 繞過。')
-        raise SystemExit(4)
+        raise SystemExit(EXIT_PARSER_HELD)
     if not v.ok and skip:
         print('  ⚠️ 已指定 --skip-parser-health，照常上傳')
     return v

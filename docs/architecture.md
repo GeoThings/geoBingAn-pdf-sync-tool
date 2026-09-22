@@ -284,7 +284,7 @@ Shared Drive
     │  max_uploads
     │
     ▼ 解析引擎健康探測（parser_health.probe）：近 24h 我方報告有 billing 失敗，或
-    │  pending ≥6h 且期間零 completed → exit 4 今日不上傳（run_weekly_sync 記失敗並告警）
+    │  pending ≥6h 且期間零 completed → exit 5（EXIT_PARSER_HELD）今日不上傳（run_weekly_sync 記失敗並告警）
     │  只撞應用層閘門（quota）不擋——那是額度用完的正常結果，午夜重置
     │
     ▼ 解析預算守門（PR #80，詳見「告警送達與預算守門」）：

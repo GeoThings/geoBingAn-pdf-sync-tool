@@ -186,9 +186,12 @@ def test_launchd_job_list_matches_plists():
     assert in_code == on_disk, f'巡檢清單 {in_code} 與 launchd/ 的 {on_disk} 不一致'
 
 
-def test_drainstuck_exit4_is_expected():
-    """exit 4＝探測到解析引擎異常、今天不放行，是設計上的正常結果，不可每天誤報。"""
+def test_drainstuck_expected_code_is_the_dedicated_one():
+    """只有「有意不放行」的專屬碼算正常；exit 4（查詢失敗）必須仍告警（review P1）。"""
     import re as _re
+    from geobingan_sync.parser_health import EXIT_PARSER_HELD
     src = _read('health_check.py')
-    m = _re.search(r"'drainstuck': \{([0-9,\s]+)\}", src)
-    assert m and '4' in m.group(1), 'drainstuck 的正常結束碼應含 4'
+    m = _re.search(r"'drainstuck': \{([^}]*)\}", src)
+    assert m, '找不到 drainstuck 的正常結束碼'
+    assert 'EXIT_PARSER_HELD' in m.group(1) and EXIT_PARSER_HELD == 5
+    assert '4' not in m.group(1), 'exit 4 不可列為正常，否則吞掉真正的查詢失敗'
