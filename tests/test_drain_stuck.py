@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from geobingan_sync.parser_health import Verdict
+from geobingan_sync.parser_health import load_state  # noqa: F401
 from geobingan_sync.steps import drain_stuck as ds
 
 NOW = datetime(2026, 9, 22, 0, 20, tzinfo=timezone.utc)
@@ -47,10 +48,107 @@ def test_match_is_extension_insensitive():
     assert ids == ['1']
 
 
-def test_main_refuses_when_parser_unhealthy():
-    called = []
-    rc = ds.main(probe_fn=lambda: Verdict(False, '帳戶沒餘額'), fetch_fn=lambda: [], retry_fn=lambda i: called.append(i) or 0)
-    assert rc == 4 and called == []                       # 不送：retry-parse 端點不查預算，送了只會再被擋
+def test_unhealthy_sends_one_canary_then_refuses_same_day(tmp_path):
+    """held 只能靠「看見恢復」解除；沒人送東西就永遠看不見 → 每天送 1 份 canary 探路。"""
+    sp = str(tmp_path / 's.json')
+    sent = []
+    def ok_retry(i, stats=None):
+        sent.append(i)
+        if stats is not None: stats.update({'accepted': len(i)})
+        return 0
+    rc = ds.main(probe_fn=lambda: Verdict(False, '帳戶沒餘額'), state_path=sp, now=NOW,
+                 fetch_fn=lambda: [_r(str(i), 'a.pdf', 'pending') for i in range(5)],
+                 our_names=OURS, retry_fn=ok_retry)
+    assert rc == 0 and len(sent) == 1 and len(sent[0]) == 1        # 只送 1 份
+    assert ds.load_state(sp)['canary_ids'] == sent[0]              # 記下 id 供探測按 id 補抓
+
+    rc2 = ds.main(probe_fn=lambda: Verdict(False, '帳戶沒餘額'), state_path=sp, now=NOW,
+                  fetch_fn=lambda: [_r('9', 'a.pdf', 'pending')], our_names=OURS,
+                  retry_fn=ok_retry)
+    assert rc2 == 4 and len(sent) == 1                             # 同日不再送第二隻
+
+
+def test_canary_day_not_burned_when_no_candidate(tmp_path):
+    """P2：沒有候選可送時不可記入今日額度——held 的唯一出口是 canary。"""
+    sp = str(tmp_path / 's.json')
+    rc = ds.main(probe_fn=lambda: Verdict(False, 'x'), state_path=sp, now=NOW,
+                 fetch_fn=lambda: [], our_names=OURS, retry_fn=lambda i, stats=None: 0)
+    assert rc == 0 and 'canary_day' not in ds.load_state(sp)
+    sent = []
+    rc2 = ds.main(probe_fn=lambda: Verdict(False, 'x'), state_path=sp, now=NOW,
+                  fetch_fn=lambda: [_r('1', 'a.pdf', 'pending')], our_names=OURS,
+                  retry_fn=lambda i, stats=None: (sent.append(i), stats.update({'accepted': 1}) if stats is not None else None, 0)[-1])
+    assert rc2 == 0 and len(sent) == 1                             # 隔一次仍可探路
+
+
+def test_canary_day_not_burned_when_retry_fails(tmp_path):
+    """P2：retry 失敗（例如預算擋下）也不可記入今日額度。"""
+    sp = str(tmp_path / 's.json')
+    rc = ds.main(probe_fn=lambda: Verdict(False, 'x'), state_path=sp, now=NOW,
+                 fetch_fn=lambda: [_r('1', 'a.pdf', 'pending')], our_names=OURS,
+                 retry_fn=_retry({}, rc=3))
+    assert rc == 3 and 'canary_day' not in ds.load_state(sp)
+
+
+def _retry(stats_payload, rc=0):
+    def fn(i, stats=None):
+        if stats is not None:
+            stats.update(stats_payload)
+        return rc
+    return fn
+
+
+def test_canary_day_not_burned_when_all_rejected(tmp_path):
+    """全被 4xx 明確拒絕＝確定沒消耗 → 當日仍可再探。"""
+    sp = str(tmp_path / 's.json')
+    rc = ds.main(probe_fn=lambda: Verdict(False, 'x'), state_path=sp, now=NOW,
+                 fetch_fn=lambda: [_r('1', 'a.pdf', 'pending')], our_names=OURS,
+                 retry_fn=_retry({'accepted': 0, 'rejected': 1, 'unknown': 0}))
+    assert rc == 0
+    st = ds.load_state(sp)
+    assert 'canary_day' not in st and 'canary_ids' not in st
+
+
+def test_canary_unknown_counts_as_consumed(tmp_path):
+    """P2：逾時／5xx＝結果不明，後端可能已受理 → 保守視為用掉，且保留 id 供後續查。
+
+    與 budget.ReservationLedger 同一個原則：只有確定零成本才退還。
+    否則同日重跑會再送一次、重複解析。
+    """
+    sp = str(tmp_path / 's.json')
+    sent = []
+    def fn(i, stats=None):
+        sent.append(i)
+        if stats is not None: stats.update({'accepted': 0, 'rejected': 0, 'unknown': 1})
+        return 0
+    rc = ds.main(probe_fn=lambda: Verdict(False, 'x'), state_path=sp, now=NOW,
+                 fetch_fn=lambda: [_r('1', 'a.pdf', 'pending')], our_names=OURS, retry_fn=fn)
+    assert rc == 0
+    st = ds.load_state(sp)
+    assert st['canary_day'] == NOW.strftime('%Y-%m-%d') and st['canary_ids'] == ['1']
+
+    rc2 = ds.main(probe_fn=lambda: Verdict(False, 'x'), state_path=sp, now=NOW,
+                  fetch_fn=lambda: [_r('2', 'a.pdf', 'pending')], our_names=OURS, retry_fn=fn)
+    assert rc2 == 4 and len(sent) == 1                    # 同日不再送，避免重複解析
+
+
+def test_canary_consumed_even_if_rc_nonzero_when_sent(tmp_path):
+    """送出去了但整批回 4（有查詢失敗）仍算消耗——送出與否看 stats，不看 exit code。"""
+    sp = str(tmp_path / 's.json')
+    rc = ds.main(probe_fn=lambda: Verdict(False, 'x'), state_path=sp, now=NOW,
+                 fetch_fn=lambda: [_r('1', 'a.pdf', 'pending')], our_names=OURS,
+                 retry_fn=_retry({'accepted': 1, 'rejected': 0, 'unknown': 0}, rc=4))
+    assert rc == 4 and ds.load_state(sp)['canary_day'] == NOW.strftime('%Y-%m-%d')
+
+
+def test_canary_day_recorded_only_on_success(tmp_path):
+    sp = str(tmp_path / 's.json')
+    ds.main(probe_fn=lambda: Verdict(False, 'x'), state_path=sp, now=NOW,
+            fetch_fn=lambda: [_r('1', 'a.pdf', 'pending')], our_names=OURS,
+            retry_fn=lambda i, stats=None: (stats.update({'accepted': 1}) if stats is not None else None, 0)[-1])
+    st = ds.load_state(sp)
+    assert st['canary_day'] == NOW.strftime('%Y-%m-%d') and st.get('canary_sent_at')
+    assert st['canary_ids'] == ['1']
 
 
 def test_main_skip_health_still_sends():

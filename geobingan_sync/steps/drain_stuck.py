@@ -25,7 +25,7 @@ import sys
 from datetime import datetime, timedelta, timezone
 from typing import Callable, List, Set, Tuple
 
-from geobingan_sync.parser_health import classify_error, probe, Verdict
+from geobingan_sync.parser_health import classify_error, load_state, probe, save_state, Verdict
 
 HISTORY_FILE = './state/upload_history_all.json'
 
@@ -40,6 +40,15 @@ def norm_name(name: str) -> str:
     if n.lower().endswith('.pdf'):
         n = n[:-4]
     return n
+
+
+def _takes_stats(fn) -> bool:
+    """retry_fn 是否吃第二個參數（stats dict）——測試常注入單參數的假函式。"""
+    import inspect
+    try:
+        return len(inspect.signature(fn).parameters) >= 2
+    except (TypeError, ValueError):
+        return False
 
 
 def load_our_names(path: str = HISTORY_FILE) -> Set[str]:
@@ -116,14 +125,26 @@ def fetch_candidates(base: str, headers: dict, now: datetime, days: int, get: Ca
 
 def main(days: int = 7, max_items: int = 20, yes: bool = False, skip_parser_health: bool = False,
          budget_path=None, probe_fn: Callable[[], Verdict] = None, now: datetime = None,
-         fetch_fn: Callable = None, retry_fn: Callable = None, our_names: Set[str] = None) -> int:
+         fetch_fn: Callable = None, retry_fn: Callable = None, our_names: Set[str] = None,
+         state_path: str = None) -> int:
     """可注入探測／抓取／重推函式與時鐘供測試；預設走正式路徑。"""
     now = now or datetime.now(timezone.utc)
     v = (probe_fn or probe)()
     print(f"  {'✅' if v.ok else '🛑'} 解析引擎探測：{v.reason}")
+    canary = False
     if not v.ok and not skip_parser_health:
-        print('🛑 不放行：解析引擎異常，重試只會再被擋。加值／修復後再跑，或人工確認後加 --skip-parser-health。')
-        return 4
+        # held 狀態只能靠「看見恢復」解除，但沒人送東西進去就永遠看不見 → 死結。
+        # 出口＝每天送 1 份 canary 探路：成本上限 1 份，結果會進下一輪探測的視窗。
+        st = load_state(state_path) if state_path else load_state()
+        today = (now or datetime.now(timezone.utc)).strftime('%Y-%m-%d')
+        if st.get('canary_day') == today:
+            print('🛑 不放行：解析引擎異常，今日 canary 已送過。等後端修復；'
+                  '人工確認後可加 --skip-parser-health。')
+            return 4
+        canary = True
+        print('  🐤 送 1 份 canary 探路（held 需要「看見恢復」才能解除，不送就永遠解不開）')
+    elif not v.ok:
+        print('  ⚠️ 已指定 --skip-parser-health，照常放行')
 
     if fetch_fn is None:
         from geobingan_sync.steps.upload_pdfs import _get_valid_token
@@ -137,14 +158,45 @@ def main(days: int = 7, max_items: int = 20, yes: bool = False, skip_parser_heal
     ids, skipped = select_stuck(reports, names, now, days=days)
     print(f'📋 近 {days} 天我方上傳的卡住報告：{len(ids)} 份可放行、{len(skipped)} 份確定性失敗不重試')
     if not ids:
-        print('✅ 沒有需要放行的報告')
+        print('✅ 沒有需要放行的報告' + ('(canary 無候選可送，不記入今日額度)' if canary else ''))
         return 0
-    ids = ids[:max_items] if max_items > 0 else ids
-    print(f'   本次放行上限 {max_items}，實際送 {len(ids)} 份（走 retry_parse：先預留日額度再送）')
+    cap = 1 if canary else max_items
+    ids = ids[:cap] if cap > 0 else ids
+    label = 'canary 探路 1 份' if canary else f'上限 {max_items}'
+    print(f'   本次{label}，實際送 {len(ids)} 份（走 retry_parse：先預留日額度再送）')
+    stats: dict = {}
     if retry_fn is None:
         from geobingan_sync.steps.retry_parse import main as retry_main
-        retry_fn = lambda i: retry_main(i, max_items=max_items, yes=yes, budget_path=budget_path)  # noqa: E731
-    return retry_fn(ids)
+        retry_fn = lambda i: retry_main(i, max_items=max_items, yes=yes,          # noqa: E731
+                                        budget_path=budget_path, stats_out=stats)
+    rc = retry_fn(ids, stats) if _takes_stats(retry_fn) else retry_fn(ids)
+    if canary:
+        # 保守結算，與 budget.ReservationLedger 同一個原則（review P2）：
+        # 202 受理＝確定已送；**逾時／連線例外／5xx＝結果不明，後端可能已經受理**，
+        # 同樣算用掉今天的額度，否則同日重跑會再送一次、重複解析。
+        # 只有「確定沒送到」才允許當日再探：全數 4xx 明確拒絕，或根本沒送出
+        # （預算擋下／查不到目標 → stats 空）。
+        accepted = int(stats.get('accepted', 0))
+        unknown = int(stats.get('unknown', 0))
+        consumed = accepted + unknown
+        if consumed >= 1:
+            st = load_state(state_path) if state_path else load_state()
+            st['canary_day'] = today
+            st['canary_sent_at'] = (now or datetime.now(timezone.utc)).isoformat()
+            # 記下 id：canary 重推的是幾天前建立的報告，探測的 24h created_at 視窗
+            # 抓不到它，要按 id 補抓才看得到它有沒有完成（review P1）。
+            # 結果不明時更需要保留 id——那正是要靠後續查詢才知道下場的情況。
+            st['canary_ids'] = list(ids)
+            (save_state(st, state_path) if state_path else save_state(st))
+            if accepted == 0:
+                print(f'  ⚠️ canary 結果不明（{unknown} 份逾時/5xx），保守視為已送出、'
+                      f'記入今日額度；下次探測會按 id 查它的下場')
+        else:
+            rejected = int(stats.get('rejected', 0))
+            why = (f'{rejected} 份全被明確拒絕（4xx）' if rejected
+                   else f'未送出（retry 回 {rc}）')
+            print(f'  ⚠️ canary {why}，確定沒消耗，不記入今日額度，下次仍可探路')
+    return rc
 
 
 if __name__ == '__main__':
