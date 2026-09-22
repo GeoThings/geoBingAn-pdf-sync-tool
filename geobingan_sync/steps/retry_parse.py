@@ -16,7 +16,7 @@
 """
 import sys
 import time
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import requests
 
@@ -82,7 +82,8 @@ def fetch_retryable(ids: List[str], headers) -> Tuple[List[str], List[Tuple[str,
 
 
 def main(ids: List[str], max_items: int = 0, yes: bool = False,
-         override_daily_budget: str = '', budget_path=None) -> int:
+         override_daily_budget: str = '', budget_path=None,
+         stats_out: Optional[dict] = None) -> int:
     """budget_path 僅供測試注入：預設走正式帳本 state/upload_budget.json。
 
     測試若用到正式帳本就會污染當日額度（本檔曾把 retried 由 58 改成 59），
@@ -163,6 +164,11 @@ def main(ids: List[str], max_items: int = 0, yes: bool = False,
         print(f"\n💰 今日累計 {d['units']} 份（上傳 {d['uploaded']}＋重推 {d['retried']}）"
               f" ≈ US${d['est_usd']:.2f} / 日上限 US${DAILY_BUDGET_USD:.0f}")
 
+    if stats_out is not None:
+        # 呼叫端（drain_stuck 的 canary）需要知道「是否真的有一份被受理」——
+        # exit code 0 只代表流程沒出錯，全部被 4xx 拒絕時也是 0（review P2）。
+        stats_out.update({'accepted': accepted, 'rejected': rejected,
+                          'unknown': unknown, 'sent': accepted + rejected + unknown})
     print(f'\n📊 送出結果：受理 {accepted}、拒絕 {rejected}、結果不明 {unknown}')
     print('   受理的報告需要時間解析，可用 health_check 的「解析積壓」追蹤')
     if failures:

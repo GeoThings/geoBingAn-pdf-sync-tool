@@ -250,6 +250,22 @@ def fetch_recent(base: str, headers: dict, now: datetime, hours: int = WINDOW_HO
     return out
 
 
+def fetch_by_ids(base: str, headers: dict, ids: List[str], get: Callable = None) -> List[dict]:
+    """依 id 直接抓 detail。canary 重推的是**幾天前建立**的報告，24h 的 created_at 視窗
+    抓不到它（review P1：canary 成功也解不開 held）——所以按 id 補抓。"""
+    import requests
+    get = get or requests.get
+    out = []
+    for rid in ids:
+        try:
+            resp = get(f'{base}/api/reports/construction-reports/{rid}/', headers=headers, timeout=30)
+            resp.raise_for_status()
+            out.append(resp.json())
+        except Exception:          # noqa: BLE001 — 單筆抓不到就跳過，不影響其餘判斷
+            continue
+    return out
+
+
 def probe(now: Optional[datetime] = None, hours: int = WINDOW_HOURS,
           state_path: str = STATE_FILE) -> Verdict:
     """網路版：取 token、抓近期報告、evaluate（含持久化狀態）。
@@ -264,11 +280,16 @@ def probe(now: Optional[datetime] = None, hours: int = WINDOW_HOURS,
     try:
         base = GEOBINGAN_BASE_URL.rstrip('/')
         headers = {'Authorization': f'Bearer {_get_valid_token()}'}
+        prev = load_state(state_path)
         reports = fetch_recent(base, headers, now, hours=hours, our_names=load_our_names())
+        seen = {r.get('id') for r in reports}
+        extra = [r for r in fetch_by_ids(base, headers, prev.get('canary_ids') or [])
+                 if r.get('id') not in seen]
+        reports = reports + extra
     except Exception as e:  # noqa: BLE001 — 探測失敗＝狀態未知，不能當成健康
         return Verdict(False, f'探測失敗，解析引擎狀態未知：{type(e).__name__}: {str(e)[:80]}',
                        {'probe_error': 1})
-    v, st = evaluate(reports, now, load_state(state_path))
+    v, st = evaluate(reports, now, prev)
     save_state(st, state_path)
     return v
 

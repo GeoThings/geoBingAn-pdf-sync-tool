@@ -148,6 +148,54 @@ def test_state_roundtrip(tmp_path):
     assert load_state(p)['kind'] == 'billing'
 
 
+def test_probe_fetches_canary_by_id_outside_window(monkeypatch, tmp_path):
+    """P1：canary 重推的是幾天前建立的報告，24h created_at 視窗抓不到——必須按 id 補抓。
+
+    不補抓的話 canary 成功也解不開 held，等於唯一出口是死的。
+    """
+    import geobingan_sync.parser_health as ph
+    p = str(tmp_path / 's.json')
+    bad = (NOW - timedelta(hours=30)).isoformat()
+    ph.save_state({'status': 'held', 'kind': 'billing', 'reason': '帳戶無餘額',
+                   'last_bad': bad, 'canary_ids': ['old-1']}, p)
+    canary_done = {'id': 'old-1', 'parse_status': 'completed',
+                   'created_at': (NOW - timedelta(days=5)).isoformat(),
+                   'metadata': {'parsed_at': (NOW - timedelta(minutes=20)).isoformat()}}
+    monkeypatch.setattr(ph, 'fetch_recent', lambda *a, **k: [])          # 視窗內什麼都沒有
+    monkeypatch.setattr(ph, 'fetch_by_ids', lambda base, h, ids, get=None: [canary_done])
+    monkeypatch.setattr('geobingan_sync.steps.upload_pdfs._get_valid_token', lambda: 'tok')
+    monkeypatch.setattr('geobingan_sync.steps.drain_stuck.load_our_names', lambda: set())
+    v = ph.probe(now=NOW, state_path=p)
+    assert v.ok and '已恢復' in v.reason
+    assert ph.load_state(p)['status'] == 'ok'
+
+
+def test_probe_canary_still_pending_keeps_hold(monkeypatch, tmp_path):
+    import geobingan_sync.parser_health as ph
+    p = str(tmp_path / 's.json')
+    ph.save_state({'status': 'held', 'kind': 'billing', 'reason': 'x',
+                   'last_bad': (NOW - timedelta(hours=30)).isoformat(), 'canary_ids': ['old-1']}, p)
+    still = {'id': 'old-1', 'parse_status': 'pending',
+             'created_at': (NOW - timedelta(days=5)).isoformat(), 'metadata': {}}
+    monkeypatch.setattr(ph, 'fetch_recent', lambda *a, **k: [])
+    monkeypatch.setattr(ph, 'fetch_by_ids', lambda base, h, ids, get=None: [still])
+    monkeypatch.setattr('geobingan_sync.steps.upload_pdfs._get_valid_token', lambda: 'tok')
+    monkeypatch.setattr('geobingan_sync.steps.drain_stuck.load_our_names', lambda: set())
+    assert not ph.probe(now=NOW, state_path=p).ok
+
+
+def test_fetch_by_ids_skips_failures():
+    from geobingan_sync.parser_health import fetch_by_ids
+    class R:
+        def __init__(s, p): s._p = p
+        def raise_for_status(s): pass
+        def json(s): return s._p
+    def get(url, headers=None, timeout=None):
+        if url.rstrip('/').endswith('bad'): raise OSError('down')
+        return R({'id': 'good'})
+    assert [r['id'] for r in fetch_by_ids('http://x', {}, ['good', 'bad'], get=get)] == ['good']
+
+
 def test_probe_failure_does_not_clear_hold(monkeypatch, tmp_path):
     """探測本身失敗＝沒有新資訊，不可把先前的 held 寫掉。"""
     import geobingan_sync.parser_health as ph

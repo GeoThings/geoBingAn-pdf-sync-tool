@@ -42,6 +42,15 @@ def norm_name(name: str) -> str:
     return n
 
 
+def _takes_stats(fn) -> bool:
+    """retry_fn 是否吃第二個參數（stats dict）——測試常注入單參數的假函式。"""
+    import inspect
+    try:
+        return len(inspect.signature(fn).parameters) >= 2
+    except (TypeError, ValueError):
+        return False
+
+
 def load_our_names(path: str = HISTORY_FILE) -> Set[str]:
     """上傳歷史的 unique_id 是「資料夾/檔名」，後端報告只有檔名 → 取正規化檔名集合。"""
     if not os.path.exists(path):
@@ -155,21 +164,28 @@ def main(days: int = 7, max_items: int = 20, yes: bool = False, skip_parser_heal
     ids = ids[:cap] if cap > 0 else ids
     label = 'canary 探路 1 份' if canary else f'上限 {max_items}'
     print(f'   本次{label}，實際送 {len(ids)} 份（走 retry_parse：先預留日額度再送）')
+    stats: dict = {}
     if retry_fn is None:
         from geobingan_sync.steps.retry_parse import main as retry_main
-        retry_fn = lambda i: retry_main(i, max_items=max_items, yes=yes, budget_path=budget_path)  # noqa: E731
-    rc = retry_fn(ids)
+        retry_fn = lambda i: retry_main(i, max_items=max_items, yes=yes,          # noqa: E731
+                                        budget_path=budget_path, stats_out=stats)
+    rc = retry_fn(ids, stats) if _takes_stats(retry_fn) else retry_fn(ids)
     if canary:
-        # 只有真的送出去（有候選、retry 回 0）才算用掉今天的 canary（review P2）。
-        # 原本在送出前就寫 canary_day：沒候選或 retry 失敗時會白白鎖掉當日探路，
-        # 而 held 的唯一出口就是 canary，等於把自己關到隔天。
-        if rc == 0:
+        # 只有**至少一份被後端受理（202）**才算用掉今天的 canary（review P2）。
+        # exit 0 不代表送成功：目標狀態已改變或全被 4xx 拒絕時也是 0，
+        # 那樣記帳等於白白鎖掉當日探路，而 held 的唯一出口就是 canary。
+        accepted = int(stats.get('accepted', 0))
+        if rc == 0 and accepted >= 1:
             st = load_state(state_path) if state_path else load_state()
             st['canary_day'] = today
             st['canary_sent_at'] = (now or datetime.now(timezone.utc)).isoformat()
+            # 記下 id：canary 重推的是幾天前建立的報告，探測的 24h created_at 視窗
+            # 抓不到它，要按 id 補抓才看得到它有沒有完成（review P1）。
+            st['canary_ids'] = list(ids)
             (save_state(st, state_path) if state_path else save_state(st))
         else:
-            print(f'  ⚠️ canary 未送成功（retry 回 {rc}），不記入今日額度，下次仍可探路')
+            why = f'retry 回 {rc}' if rc != 0 else '無任何一份被受理（可能狀態已改變或被拒絕）'
+            print(f'  ⚠️ canary 未送成功（{why}），不記入今日額度，下次仍可探路')
     return rc
 
 
