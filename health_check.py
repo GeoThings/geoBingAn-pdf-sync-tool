@@ -294,11 +294,13 @@ def check_launchd_jobs():
     # drainstuck 的 EXIT_PARSER_HELD（5）是**設計上的正常結果**（探測到解析引擎異常
     # → 今天不放行），不是 launchd backoff 鎖死；不列進來每天都會誤報一次，
     # 而告警被雜訊稀釋正是這套巡檢要防的事。
-    # **只放行這一個碼**：exit 4（retry_parse 查詢失敗／狀態未知）仍必須告警，
-    # 否則 API／token 故障會被吞掉（review P1）。
+    # 6（EXIT_PAUSED）＝人為暫停（.pause_upload），同樣是設計結果。
+    # **exit 4 不可列入**：那是 retry_parse 查詢失敗／狀態未知，列進去會把
+    # API／token 故障吞掉變 silent failure（review P1）。
     from geobingan_sync.parser_health import EXIT_PARSER_HELD
+    from geobingan_sync.steps.drain_stuck import EXIT_PAUSED
     jobs = {'healthcheck': {0}, 'weeklysync': {0}, 'fridayreport': {0},
-            'drainstuck': {0, EXIT_PARSER_HELD}}
+            'drainstuck': {0, EXIT_PARSER_HELD, EXIT_PAUSED}}
     uid = os.getuid()
     bad = []
     for job, okay_codes in jobs.items():

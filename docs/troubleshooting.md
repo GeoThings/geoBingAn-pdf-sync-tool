@@ -323,6 +323,7 @@ print(response.json())
 - **只撞應用層閘門（quota）不會觸發**：那是額度用完，午夜重置。
 - **「視窗內沒有任何報告可判斷，且先前為 held」**：探測看不到新資料（例如一天沒上傳），沿用先前的 held——沒有證據不等於健康。`drain_stuck` 每天會送 1 份 canary 探路，恢復後隔天自動解除；狀態存在 `state/parser_health.json`（本機、不入版控）。
 - 人工確認引擎其實正常時，`--skip-parser-health` 可繞過（會印警告）。
+- **`.pause_upload` 同時擋住 08:20 的 `drain_stuck`**（exit 6）：重推吃的是與上傳同一份後端解析額度，額度用完時放行只會堆出不會自動恢復的 failed。
 
 ---
 

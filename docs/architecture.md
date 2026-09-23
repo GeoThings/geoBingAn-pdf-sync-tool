@@ -36,7 +36,7 @@
 | 時間 | LaunchAgent | 內容 |
 |------|-------------|------|
 | 每日 08:00 | `com.geothings.geobingan.healthcheck` | 10 項巡檢：Token／磁碟／同步狀態／API／launchd job（PR #53）／上傳暫停（#57）／解析積壓／解析預算（PR #80）／清單新鮮度／來源資料夾失效（PR #82）；異常經 alert_state 去重後貼 ClickUp，error 級 @（PR #79） |
-| 每日 08:20 | `com.geothings.geobingan.drainstuck` | 放行我方近 7 天卡住的 pending/failed（先探解析引擎健康、走 retry_parse 預留、上限 20；PR #91） |
+| 每日 08:20 | `com.geothings.geobingan.drainstuck` | 放行我方近 7 天卡住的 pending/failed（**先看 `.pause_upload`**、再探解析引擎健康、走 retry_parse 預留、上限 20；PR #91／#96） |
 | 每日 10:00 | `com.geothings.geobingan.weeklysync` | 完整流程（步驟 1-4）+ 週一加步驟 5 產 PDF |
 | 週五 17:00 | `com.geothings.geobingan.fridayreport` | 總結週報 PDF → ClickUp |
 
