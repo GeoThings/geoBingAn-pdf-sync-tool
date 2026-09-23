@@ -29,6 +29,8 @@ from geobingan_sync.parser_health import (classify_error, load_state, probe, sav
                                            Verdict, EXIT_PARSER_HELD)
 
 HISTORY_FILE = './state/upload_history_all.json'
+PAUSE_FILE = './.pause_upload'
+EXIT_PAUSED = 6      # 有意不放行（人為暫停）；與 5（引擎異常）分開，巡檢兩者都算正常
 
 
 def norm_name(name: str) -> str:
@@ -41,6 +43,18 @@ def norm_name(name: str) -> str:
     if n.lower().endswith('.pdf'):
         n = n[:-4]
     return n
+
+
+def _pause_reason(path: str = None):
+    """回暫停檔內容（可能為空字串），沒暫停則回 None。"""
+    path = path or PAUSE_FILE
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path, encoding='utf-8') as f:
+            return f.read().strip()
+    except OSError:
+        return ''          # 讀不到內容也仍然是「有暫停」
 
 
 def _takes_stats(fn) -> bool:
@@ -127,9 +141,21 @@ def fetch_candidates(base: str, headers: dict, now: datetime, days: int, get: Ca
 def main(days: int = 7, max_items: int = 20, yes: bool = False, skip_parser_health: bool = False,
          budget_path=None, probe_fn: Callable[[], Verdict] = None, now: datetime = None,
          fetch_fn: Callable = None, retry_fn: Callable = None, our_names: Set[str] = None,
-         state_path: str = None) -> int:
+         state_path: str = None, pause_file: str = None) -> int:
     """可注入探測／抓取／重推函式與時鐘供測試；預設走正式路徑。"""
     now = now or datetime.now(timezone.utc)
+
+    # 人為暫停優先於一切：重推吃的是**與上傳同一份**後端解析額度，
+    # 額度用完時放行只會堆出不會自動恢復的 failed（2026-09-23 Zhe 裁決）。
+    # 放在探測之前——暫停時連探測都不必打，省得對外連線。
+    paused = _pause_reason(pause_file)
+    if paused is not None:
+        print('⏸️  已暫停放行（偵測到 .pause_upload）：')
+        for line in paused.splitlines()[:3]:
+            print(f'   {line}')
+        print('   恢復：rm .pause_upload')
+        return EXIT_PAUSED
+
     v = (probe_fn or probe)()
     print(f"  {'✅' if v.ok else '🛑'} 解析引擎探測：{v.reason}")
     canary = False

@@ -191,3 +191,58 @@ def test_real_query_failure_still_exits_4(tmp_path):
                  fetch_fn=lambda: [_r('1', 'a.pdf', 'pending')], our_names=OURS,
                  retry_fn=_retry({'accepted': 0, 'rejected': 0, 'unknown': 0}, rc=4))
     assert rc == 4
+
+
+# ---------- 人為暫停（.pause_upload）----------
+
+def test_pause_file_stops_drain_before_probing(tmp_path):
+    """重推吃的是與上傳同一份後端額度；額度用完時放行只會堆出 failed。
+
+    暫停檢查放在探測之前——暫停時連探測都不必對外連線。
+    """
+    pf = tmp_path / '.pause_upload'
+    pf.write_text('本月 OpenAI 額度已用完\n第二行\n', encoding='utf-8')
+    probed = []
+    sent = []
+    rc = ds.main(probe_fn=lambda: probed.append(1) or Verdict(True, 'ok'),
+                 pause_file=str(pf), state_path=str(tmp_path / 's.json'), now=NOW,
+                 fetch_fn=lambda: [_r('1', 'a.pdf', 'pending')], our_names=OURS,
+                 retry_fn=_retry({'accepted': 1}))
+    assert rc == ds.EXIT_PAUSED == 6
+    assert probed == [], '暫停時不該對外探測'
+    assert sent == [], '暫停時不該送出任何重推'
+
+
+def test_no_pause_file_proceeds(tmp_path):
+    sent = []
+    rc = ds.main(probe_fn=lambda: Verdict(True, 'ok'),
+                 pause_file=str(tmp_path / 'nope'), state_path=str(tmp_path / 's.json'), now=NOW,
+                 fetch_fn=lambda: [_r('1', 'a.pdf', 'pending')], our_names=OURS,
+                 retry_fn=lambda i, stats=None: (sent.append(i),
+                                                 stats.update({'accepted': 1}) if stats else None, 0)[-1])
+    assert rc == 0 and sent == [['1']]
+
+
+def test_empty_pause_file_still_pauses(tmp_path):
+    """空的旗標檔也算暫停——存在即是意圖。"""
+    pf = tmp_path / '.pause_upload'
+    pf.write_text('', encoding='utf-8')
+    rc = ds.main(probe_fn=lambda: Verdict(True, 'ok'), pause_file=str(pf),
+                 state_path=str(tmp_path / 's.json'), now=NOW,
+                 fetch_fn=lambda: [], our_names=OURS, retry_fn=_retry({}))
+    assert rc == ds.EXIT_PAUSED
+
+
+def test_pause_exit_code_distinct_from_held_and_failure():
+    """三種結束碼語意不可混：0 正常／4 真異常／5 引擎異常／6 人為暫停。"""
+    from geobingan_sync.parser_health import EXIT_PARSER_HELD
+    assert len({0, 4, EXIT_PARSER_HELD, ds.EXIT_PAUSED}) == 4
+
+
+def test_health_check_treats_pause_exit_as_normal():
+    import re as _re
+    src = open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                            'health_check.py'), encoding='utf-8').read()
+    m = _re.search(r"'drainstuck': \{([^}]*)\}", src)
+    assert m and 'EXIT_PAUSED' in m.group(1) and 'EXIT_PARSER_HELD' in m.group(1)
+    assert '4' not in m.group(1), 'exit 4 仍不可列為正常'
