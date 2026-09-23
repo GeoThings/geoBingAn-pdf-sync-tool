@@ -283,6 +283,17 @@ Shared Drive
     │  cutoff 30 天 rolling（正規化當日 00:00；--catchup-days N 可放大補掃）→
     │  max_uploads
     │
+    ▼ 間接連結解析（link_resolver，PR #95）：來源 URL 取不出 Drive folder id 時
+    │  跟隨轉址／抓頁面找內嵌的 Drive 資料夾；**恰好一個才採用**（兩個以上視為有歧義
+    │  而放棄——猜錯會把別人的資料夾掛到這個建案）。結果快取 14 天，來源 URL 變更即失效。
+    │  URL 來自外部文件＝不可信輸入：逐跳檢查目的地、拒絕內網／回環／link-local。
+    │  **真正的守門在連線層**：連線前查 DNS 驗 IP 擋不住 DNS rebinding（requests 實際
+    │  連線時會再查一次，低 TTL 可讓兩次回不同 IP）。因此於 urllib3 `_new_conn()` 之後、
+    │  送出任何資料之前，用 `getpeername()` 檢查**實際連上的**對端 IP。
+    │  同時 `trust_env=False`、`proxies={}`：走 proxy 時連線由 ProxyManager 建立、
+    │  完全不經過守門，且 peer 是 proxy 的 IP 檢查也沒意義（DNS 與連線都在 proxy 那端）。
+    │  `proxy_manager_for()` 直接 raise，寧可大聲失敗也不要靜默失去防護。
+    │
     ▼ 解析引擎健康探測（parser_health.probe）：近 24h 我方報告有 billing 失敗，或
     │  pending ≥6h 且期間零 completed → exit 5（EXIT_PARSER_HELD）今日不上傳（run_weekly_sync 記失敗並告警）
     │  只撞應用層閘門（quota）不擋——那是額度用完的正常結果，午夜重置
@@ -374,6 +385,7 @@ API project 匹配：116 筆（滑動視窗 + 去重）
 | `sync_status.json` | 執行狀態與歷史 | 每次執行 | 否 |
 | `weekly_snapshots/{date}.json` | sync 後狀態快照（供 compute_diff 算趨勢） | 每次 sync | 否（local-only，見下） |
 | `alert_state_healthcheck.json` / `alert_state_sync.json` | 告警去重狀態（各 producer 一個 namespace；key → level/first_seen/last_sent） | 通知真的送達時 | 否 |
+| `link_resolution.json` | 間接連結解析快取（permit → folder_id／method／resolved_at；14 天保鮮，來源 URL 變更即失效；**失敗也快取**，否則每次同步都會對 43 個解不開的連結重打一輪） | 每日同步 | 否 |
 | `upload_budget.json` + `.lock` | **今日**解析預算帳本（day/uploaded/**retried**/units/est_usd；flock；**跨日歸零**，**台北午夜**換日；舊月格式檔自動視為非今日而歸零） | 上傳或重推預留／退還時 | 否（重推走 `steps.retry_parse`，它自己預留） |
 | `list_fingerprint.json` | 政府清單指紋（source／label／permit_count／sha256／last_changed） | 每次 sync 解析清單後 | 否 |
 | `folder_deaths.json` | 來源資料夾由活轉死的紀錄（append-only，附 detected 日期與 pdf_count）。**fail-closed**：先原子寫入此檔成功才提交 registry——順序相反時，中斷會讓 registry 已存 404、下輪 prior 非 alive，該次死亡永遠偵測不到；讀到損毀 JSON 一律 raise，不靜默重置以免丟失歷史。事件以 `(permit, source_url)` 去重（**不含日期**）——death 已寫、registry 提交失敗時，下一輪（排程每日跑，通常是隔天）prior 仍是 alive、會再次偵測到同一次死亡；鍵若含偵測日，去重只在同一天有效。同一建案換新 folder URL 後再失效會自然形成新事件 | 偵測到新失效時 | 否 |

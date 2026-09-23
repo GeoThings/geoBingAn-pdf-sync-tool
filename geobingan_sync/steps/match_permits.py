@@ -97,6 +97,7 @@ def fetch_gov_pdf_data(city: dict = None) -> Dict[str, dict]:
         all_text = ''.join(p.extract_text() or '' for p in reader.pages)
 
     results = {}
+    unresolved = []
     for permit in mapping:
         norm = normalize_permit(permit)
         if norm:
@@ -104,8 +105,52 @@ def fetch_gov_pdf_data(city: dict = None) -> Dict[str, dict]:
                 'source_url': mapping[permit],
                 'source_folder_id': ps.extract_folder_id_from_url(mapping[permit]),
             }
+            if not results[norm]['source_folder_id']:
+                unresolved.append(norm)
+
+    if unresolved:
+        results = _resolve_indirect_links(results, unresolved)
 
     print(f"  {len(results)} 個建照")
+    return results
+
+
+def _resolve_indirect_links(results: dict, unresolved: list, cache_path: str = None,
+                            resolver=None) -> dict:
+    """對「取不出 Drive 資料夾 id」的來源再走一步（Google Sites 頁面、短網址）。
+
+    2026-09-23 實測：清單 439 案中 73 案不是 Drive 資料夾，其中 30 案只要跟著
+    連結再走一步就會落回 Drive 資料夾（29 個 Sites 頁面內嵌、1 個短網址轉址）。
+
+    **解析失敗不可中斷同步**：這是增強功能，解不開就維持原狀照常跑完。
+    走快取，來源 URL 沒變就不重抓，避免每次同步都去敲別人的網站。
+    """
+    from geobingan_sync.link_resolver import cached_resolve, load_cache, save_cache, CACHE_FILE
+    path = cache_path or CACHE_FILE
+    try:
+        cache = load_cache(path)
+    except Exception:                                   # noqa: BLE001
+        cache = {}
+    hit = 0
+    by_method = {}
+    for permit in unresolved:
+        url = results[permit]['source_url']
+        try:
+            res = cached_resolve(permit, url, cache, resolver=resolver)
+        except Exception as e:                          # noqa: BLE001 — 不可中斷同步
+            print(f"  ⚠️ 連結解析失敗 {permit}: {type(e).__name__}")
+            continue
+        if res.ok:
+            results[permit]['source_folder_id'] = res.folder_id
+            results[permit]['source_link_method'] = res.method
+            hit += 1
+            by_method[res.method] = by_method.get(res.method, 0) + 1
+    try:
+        save_cache(cache, path)
+    except Exception as e:                              # noqa: BLE001
+        print(f"  ⚠️ 連結解析快取寫入失敗: {type(e).__name__}")
+    detail = '、'.join(f'{k} {v}' for k, v in sorted(by_method.items()))
+    print(f"  🔗 間接連結解析: {hit}/{len(unresolved)} 成功" + (f"（{detail}）" if detail else ''))
     return results
 
 
