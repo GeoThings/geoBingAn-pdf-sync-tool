@@ -246,3 +246,11 @@ def test_health_check_treats_pause_exit_as_normal():
     m = _re.search(r"'drainstuck': \{([^}]*)\}", src)
     assert m and 'EXIT_PAUSED' in m.group(1) and 'EXIT_PARSER_HELD' in m.group(1)
     assert '4' not in m.group(1), 'exit 4 仍不可列為正常'
+
+
+def test_default_pause_file_is_isolated_in_tests():
+    """防假綠：確認 conftest 真的把預設路徑換掉了，而不是剛好本機沒有旗標檔。"""
+    import os
+    assert not os.path.exists(ds.PAUSE_FILE), 'PAUSE_FILE 預設值必須是不存在的暫存路徑'
+    assert '.pause_upload' in ds.PAUSE_FILE
+    assert not ds.PAUSE_FILE.startswith('./'), '不可指向 repo 根目錄的正式旗標'

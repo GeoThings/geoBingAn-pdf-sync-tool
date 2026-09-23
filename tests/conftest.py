@@ -41,3 +41,20 @@ def _no_real_email(monkeypatch, request):
         f'{request.node.nodeid} 嘗試真的寄出告警信（{len(attempts)} 次）。\n'
         '   注意 send_email_alert() 會吞掉例外回 False，所以不擋就會真的寄到收件匣。\n'
         '   請 monkeypatch notify.send_email_alert，或注入假的 SMTP client。')
+
+
+@pytest.fixture(autouse=True)
+def _no_real_pause_flag(monkeypatch, tmp_path_factory):
+    """測試一律不得讀到正式目錄的 `.pause_upload`。
+
+    2026-09-23 實際踩到：PR #96 讓 drain_stuck 讀 `./.pause_upload`，而當天營運上
+    真的建了那個檔（本月 OpenAI 額度用完）。沒傳 pause_file 的 12 支測試因此全部
+    回 EXIT_PAUSED，本機紅、CI 綠——**測試結果變成取決於操作者有沒有暫停上傳**。
+
+    與 [[不可碰正式狀態]] 同一類問題（上一次是測試寄出真告警信、再上一次是測試
+    污染預算帳本）。同樣擋在邊界：把預設路徑指向一個不存在的暫存位置，
+    真正要驗暫停行為的測試自己傳 pause_file，不受影響。
+    """
+    from geobingan_sync.steps import drain_stuck
+    fake = tmp_path_factory.mktemp('nopause') / '.pause_upload'   # 刻意不建立
+    monkeypatch.setattr(drain_stuck, 'PAUSE_FILE', str(fake))
