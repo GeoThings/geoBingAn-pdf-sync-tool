@@ -153,7 +153,7 @@ class TestRocPrefixWithMmdd:
         """
         from geobingan_sync.filename_date_parser import _parse_raw
         assert parse_date_from_filename('100測試案觀測報告0101.pdf') == datetime(2011, 1, 1)
-        assert _parse_raw('130測試案觀測報告0101.pdf') == datetime(2041, 1, 1)   # 樣式仍收
+        assert _parse_raw('130測試案觀測報告0101.pdf') == (datetime(2041, 1, 1), 'day')  # 樣式仍收
         assert parse_date_from_filename('130測試案觀測報告0101.pdf') is None      # 但未來日擋掉
         assert _parse_raw('131測試案觀測報告0101.pdf') is None                    # 超出樣式範圍
 
@@ -211,3 +211,41 @@ class TestFutureDatesRejected:
         """低於 2000（民國89）視為解析失敗；下限刻意比樣式契約的民國100 再寬，只擋明顯垃圾。"""
         from geobingan_sync.filename_date_parser import _parse_raw
         assert parse_date_from_filename('監測報表-1937年08月21日.pdf') is None
+
+
+class TestMonthGranularityNotTreatedAsFuture:
+    """月粒度的日期是**合成的月底**，不能用日粒度的「未來」規則判（review P1）。
+
+    9/23 解析「115年09月」會得到 9/30。若照日粒度規則就是未來日而被拒收，
+    本月月報在月底前大半個月都上不了、也不計入新鮮度。
+    """
+
+    NOW = datetime(2026, 9, 23)
+
+    def test_current_month_roc_accepted(self):
+        assert parse_date_from_filename('115年09月.pdf', now=self.NOW) == datetime(2026, 9, 30)
+
+    def test_current_month_western_accepted(self):
+        assert parse_date_from_filename('監測月報202609.pdf', now=self.NOW) == datetime(2026, 9, 30)
+
+    def test_next_month_rejected(self):
+        assert parse_date_from_filename('115年10月.pdf', now=self.NOW) is None
+        assert parse_date_from_filename('監測月報202610.pdf', now=self.NOW) is None
+
+    def test_past_month_accepted(self):
+        assert parse_date_from_filename('115年08月.pdf', now=self.NOW) == datetime(2026, 8, 31)
+
+    def test_month_end_boundary_day_of_month(self):
+        """月底當天解析當月月報仍可。"""
+        assert parse_date_from_filename('115年09月.pdf',
+                                        now=datetime(2026, 9, 30)) == datetime(2026, 9, 30)
+
+    def test_day_granularity_rule_unchanged(self):
+        """日粒度仍用 +2 天容許值，不受月粒度放寬影響。"""
+        assert parse_date_from_filename('報告_1150925.pdf', now=self.NOW) == datetime(2026, 9, 25)
+        assert parse_date_from_filename('報告_1150930.pdf', now=self.NOW) is None
+
+    def test_parse_raw_reports_granularity(self):
+        from geobingan_sync.filename_date_parser import _parse_raw
+        assert _parse_raw('115年09月.pdf') == (datetime(2026, 9, 30), 'month')
+        assert _parse_raw('報告_1150311.pdf') == (datetime(2026, 3, 11), 'day')

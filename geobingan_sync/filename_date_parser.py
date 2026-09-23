@@ -24,11 +24,24 @@ MIN_REASONABLE = datetime(2000, 1, 1)      # 民國 89 年；比樣式契約的�
 FUTURE_TOLERANCE_DAYS = 2      # 容許時區與跨日誤差
 
 
-def _sane(d: Optional[datetime], now: Optional[datetime] = None) -> Optional[datetime]:
-    if d is None:
+def _sane(parsed, now: Optional[datetime] = None) -> Optional[datetime]:
+    """parsed＝(日期, 粒度) 或 None。粒度決定「未來」怎麼算（review P1）。
+
+    月粒度的日期是**合成**的月底（`_month_end`），不是檔名寫的日期。9/23 解析
+    「115年09月」會得到 9/30，用日粒度的規則會判成未來而拒收——本月月報在月底前
+    大半個月都上不了、也不計入新鮮度。所以月粒度只比對「年月」：當月可以，下個月
+    才算未來。
+    """
+    if parsed is None:
         return None
+    d, gran = parsed
     now = now or datetime.now()
-    if d < MIN_REASONABLE or d > now + timedelta(days=FUTURE_TOLERANCE_DAYS):
+    if d < MIN_REASONABLE:
+        return None
+    if gran == 'month':
+        if (d.year, d.month) > (now.year, now.month):
+            return None
+    elif d > now + timedelta(days=FUTURE_TOLERANCE_DAYS):
         return None
     return d
 
@@ -50,15 +63,19 @@ def parse_date_from_filename(filename: str, now: Optional[datetime] = None) -> O
     return _sane(_parse_raw(filename), now)
 
 
-def _parse_raw(filename: str) -> Optional[datetime]:
-    """純樣式比對，不做合理性檢查（由 _sane 負責）。"""
+def _parse_raw(filename: str):
+    """純樣式比對，不做合理性檢查（由 _sane 負責）。
+
+    回 `(datetime, 'day'|'month')` 或 None。月粒度的日期是合成的月底，
+    合理性檢查要用不同規則，所以粒度必須跟著回傳。
+    """
     basename = filename.replace('.pdf', '').replace('.PDF', '')
 
     # 模式1: 西元年完整格式 2026-02-23 或 2026-03-01
     m = re.search(r'(20\d{2})-(\d{2})-(\d{2})', basename)
     if m:
         try:
-            return datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+            return datetime(int(m.group(1)), int(m.group(2)), int(m.group(3))), 'day'
         except ValueError:
             pass
 
@@ -70,7 +87,7 @@ def _parse_raw(filename: str) -> Optional[datetime]:
             month = int(m.group(2))
             day = int(m.group(3))
             if 1 <= month <= 12 and 1 <= day <= 31:
-                return datetime(year, month, day)
+                return datetime(year, month, day), 'day'
         except ValueError:
             pass
 
@@ -80,7 +97,7 @@ def _parse_raw(filename: str) -> Optional[datetime]:
     m = re.search(r'(20\d{2})年(\d{1,2})月(\d{1,2})日', basename)
     if m:
         try:
-            return datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+            return datetime(int(m.group(1)), int(m.group(2)), int(m.group(3))), 'day'
         except ValueError:
             pass
 
@@ -90,7 +107,7 @@ def _parse_raw(filename: str) -> Optional[datetime]:
     if m:
         try:
             roc_year = int(m.group(1))
-            return datetime(roc_year + 1911, int(m.group(2)), int(m.group(3)))
+            return datetime(roc_year + 1911, int(m.group(2)), int(m.group(3))), 'day'
         except ValueError:
             pass
 
@@ -100,7 +117,7 @@ def _parse_raw(filename: str) -> Optional[datetime]:
         try:
             roc_year = int(m.group(1))
             if 100 <= roc_year <= 120:
-                return datetime(roc_year + 1911, int(m.group(2)), int(m.group(3)))
+                return datetime(roc_year + 1911, int(m.group(2)), int(m.group(3))), 'day'
         except ValueError:
             pass
 
@@ -112,7 +129,7 @@ def _parse_raw(filename: str) -> Optional[datetime]:
             month = int(m.group(2))
             day = int(m.group(3))
             if 100 <= roc_year <= 120 and 1 <= month <= 12 and 1 <= day <= 31:
-                return datetime(roc_year + 1911, month, day)
+                return datetime(roc_year + 1911, month, day), 'day'
         except ValueError:
             pass
 
@@ -125,7 +142,7 @@ def _parse_raw(filename: str) -> Optional[datetime]:
             month = int(digits[3:5])
             day = int(digits[5:7])
             if 100 <= roc_year <= 120 and 1 <= month <= 12 and 1 <= day <= 31:
-                return datetime(roc_year + 1911, month, day)
+                return datetime(roc_year + 1911, month, day), 'day'
         except ValueError:
             pass
 
@@ -140,13 +157,13 @@ def _parse_raw(filename: str) -> Optional[datetime]:
                 # 先試西元年
                 year_match = re.search(r'(20\d{2})', basename)
                 if year_match:
-                    return datetime(int(year_match.group(1)), month, day)
+                    return datetime(int(year_match.group(1)), month, day), 'day'
                 # 再試民國年（folder 像 `114年`）
                 roc_match = re.search(r'(?<!\d)(\d{2,3})年(?!\d)', basename)
                 if roc_match:
                     roc_year = int(roc_match.group(1))
                     if 100 <= roc_year <= 130:
-                        return datetime(roc_year + 1911, month, day)
+                        return datetime(roc_year + 1911, month, day), 'day'
                 # 再試檔名開頭的裸民國年前綴（如「115裕光東湖觀測報告0721」）。
                 # 排除「11X建字第…」——那是建照核發年份、不是報告年份，
                 # 誤組會把報告標錯年污染後端監測歷史。
@@ -154,7 +171,7 @@ def _parse_raw(filename: str) -> Optional[datetime]:
                 if prefix_match:
                     roc_year = int(prefix_match.group(1))
                     if 100 <= roc_year <= 130:
-                        return datetime(roc_year + 1911, month, day)
+                        return datetime(roc_year + 1911, month, day), 'day'
         except ValueError:
             pass
 
@@ -166,7 +183,7 @@ def _parse_raw(filename: str) -> Optional[datetime]:
             roc_year = int(m.group(1))
             month = int(m.group(2))
             if 100 <= roc_year <= 130 and 1 <= month <= 12:
-                return _month_end(roc_year + 1911, month)
+                return _month_end(roc_year + 1911, month), 'month'
         except ValueError:
             pass
 
@@ -178,7 +195,7 @@ def _parse_raw(filename: str) -> Optional[datetime]:
             year = int(m.group(1))
             month = int(m.group(2))
             if 1 <= month <= 12:
-                return _month_end(year, month)
+                return _month_end(year, month), 'month'
         except ValueError:
             pass
 
