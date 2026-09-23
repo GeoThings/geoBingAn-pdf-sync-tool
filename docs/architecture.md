@@ -287,6 +287,9 @@ Shared Drive
     │  跟隨轉址／抓頁面找內嵌的 Drive 資料夾；**恰好一個才採用**（兩個以上視為有歧義
     │  而放棄——猜錯會把別人的資料夾掛到這個建案）。結果快取 14 天，來源 URL 變更即失效。
     │  URL 來自外部文件＝不可信輸入：逐跳檢查目的地、拒絕內網／回環／link-local。
+    │  **真正的守門在連線層**：連線前查 DNS 驗 IP 擋不住 DNS rebinding（requests 實際
+    │  連線時會再查一次，低 TTL 可讓兩次回不同 IP）。因此於 urllib3 `_new_conn()` 之後、
+    │  送出任何資料之前，用 `getpeername()` 檢查**實際連上的**對端 IP。
     │
     ▼ 解析引擎健康探測（parser_health.probe）：近 24h 我方報告有 billing 失敗，或
     │  pending ≥6h 且期間零 completed → exit 5（EXIT_PARSER_HELD）今日不上傳（run_weekly_sync 記失敗並告警）

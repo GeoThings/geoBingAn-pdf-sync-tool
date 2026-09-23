@@ -11,6 +11,12 @@
 安全：**URL 來自外部文件**（政府公告的 PDF，內容由各承造人填寫），等同不可信輸入。
 逐跳檢查轉址目的地、拒絕內網／回環／link-local 位址、限制大小與跳數，
 避免把同步流程變成打內網的跳板。
+
+防 DNS rebinding／TOCTOU（review P1）：光在連線「之前」查一次 DNS 並驗證 IP 是不夠的
+——`requests` 實際連線時會**再查一次**，攻擊者用低 TTL 讓第一次回公網、第二次回
+169.254.169.254 就繞過了。所以真正的守門在 `_GuardedHTTPConnection`：TCP 連上之後、
+**送出任何資料之前**，用 `socket.getpeername()` 檢查**實際連到的對端 IP**。
+連線前的 `_is_public_host()` 保留為第一道，可在不連線的情況下擋掉明顯的內網目標。
 """
 import ipaddress
 import json
@@ -123,11 +129,69 @@ def resolve_to_drive_folder(url: str, fetch: Callable = None, sleep: Callable = 
     return Resolution(None, 'none', 'too_many_redirects')
 
 
+class BlockedAddress(Exception):
+    """實際連到的對端位址不被允許（內網／回環／link-local）。"""
+
+
+def _assert_public_peer(sock) -> None:
+    """檢查**實際連上的**對端 IP。這是防 DNS rebinding 的唯一可靠位置。
+
+    在 `_new_conn()` 之後呼叫：TCP 已建立但尚未送出任何請求資料，
+    所以被擋下時不會把 Host 標頭或路徑洩漏給內網服務。
+    """
+    try:
+        peer = sock.getpeername()[0]
+    except OSError as e:
+        raise BlockedAddress(f'peer_unknown:{type(e).__name__}') from e
+    ip = ipaddress.ip_address(peer)
+    if (ip.is_private or ip.is_loopback or ip.is_link_local
+            or ip.is_reserved or ip.is_multicast or ip.is_unspecified):
+        raise BlockedAddress(f'blocked_peer:{ip}')
+
+
+def _guarded_session():
+    """requests session，連線層強制檢查實際對端 IP。"""
+    import requests
+    from requests.adapters import HTTPAdapter
+    from urllib3.connection import HTTPConnection, HTTPSConnection
+    from urllib3.connectionpool import HTTPConnectionPool, HTTPSConnectionPool
+
+    class _GuardedHTTPConnection(HTTPConnection):
+        def _new_conn(self):
+            sock = super()._new_conn()
+            _assert_public_peer(sock)
+            return sock
+
+    class _GuardedHTTPSConnection(HTTPSConnection):
+        def _new_conn(self):
+            sock = super()._new_conn()
+            _assert_public_peer(sock)      # TLS 握手之前就擋掉
+            return sock
+
+    class _GuardedHTTPPool(HTTPConnectionPool):
+        ConnectionCls = _GuardedHTTPConnection
+
+    class _GuardedHTTPSPool(HTTPSConnectionPool):
+        ConnectionCls = _GuardedHTTPSConnection
+
+    class _GuardedAdapter(HTTPAdapter):
+        def init_poolmanager(self, *args, **kwargs):
+            super().init_poolmanager(*args, **kwargs)
+            self.poolmanager.pool_classes_by_scheme = {
+                'http': _GuardedHTTPPool, 'https': _GuardedHTTPSPool}
+
+    sess = requests.Session()
+    adapter = _GuardedAdapter()
+    sess.mount('http://', adapter)
+    sess.mount('https://', adapter)
+    return sess
+
+
 def _http_get(url: str):
     """回 (status, location, body)。不自動跟隨轉址——每一跳都要重新檢查目的地。"""
-    import requests
-    r = requests.get(url, headers={'User-Agent': USER_AGENT}, timeout=TIMEOUT,
-                     allow_redirects=False, stream=True)
+    sess = _guarded_session()
+    r = sess.get(url, headers={'User-Agent': USER_AGENT}, timeout=TIMEOUT,
+                 allow_redirects=False, stream=True)
     loc = r.headers.get('Location', '')
     body = ''
     if not loc:
@@ -139,6 +203,7 @@ def _http_get(url: str):
                 break
         body = b''.join(chunks).decode(r.encoding or 'utf-8', errors='replace')
     r.close()
+    sess.close()
     return r.status_code, loc, body
 
 

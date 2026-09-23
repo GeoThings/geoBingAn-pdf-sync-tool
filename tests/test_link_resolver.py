@@ -248,3 +248,70 @@ def test_host_check_is_injectable_but_defaults_to_real_one():
     sig = inspect.signature(lr.resolve_to_drive_folder)
     assert sig.parameters['host_check'].default is None
     assert not lr.resolve_to_drive_folder('http://127.0.0.1/x', fetch=lambda u: 1 / 0).ok
+
+
+# ---------- DNS rebinding／TOCTOU（review P1） ----------
+
+class _FakeSock:
+    def __init__(self, ip):
+        self._ip = ip
+
+    def getpeername(self):
+        return (self._ip, 443)
+
+
+@pytest.mark.parametrize('ip', ['127.0.0.1', '10.1.2.3', '192.168.0.5',
+                                '169.254.169.254', '172.16.0.1', '0.0.0.0'])
+def test_actual_peer_ip_blocked(ip):
+    """連線層守門看的是**實際連上的**對端 IP，不是先前查到的 IP。"""
+    with pytest.raises(lr.BlockedAddress) as e:
+        lr._assert_public_peer(_FakeSock(ip))
+    assert 'blocked_peer' in str(e.value)
+
+
+def test_actual_peer_public_ip_allowed():
+    lr._assert_public_peer(_FakeSock('8.8.8.8'))     # 不得拋例外
+
+
+def test_peername_failure_is_blocked():
+    """拿不到對端位址就不能放行——未知比已知危險。"""
+    class Broken:
+        def getpeername(self):
+            raise OSError('closed')
+    with pytest.raises(lr.BlockedAddress):
+        lr._assert_public_peer(Broken())
+
+
+def test_dns_rebinding_first_public_then_private_is_caught(monkeypatch):
+    """rebinding 情境：連線前 DNS 回公網（通過前置檢查），實際連上的是內網。
+
+    只做連線前檢查的實作會在這裡放行——這正是 review P1 指出的 TOCTOU 缺口。
+    守門必須在連線之後、送出資料之前，依實際對端 IP 判斷。
+    """
+    # 前置檢查：DNS 回公網 IP → 通過
+    monkeypatch.setattr(lr.socket, 'getaddrinfo',
+                        lambda host, port: [(2, 1, 6, '', ('93.184.216.34', 0))])
+    assert lr._is_public_host('rebind.example')[0] is True
+
+    # 實際連線：對端卻是 metadata 位址 → 連線層擋下
+    with pytest.raises(lr.BlockedAddress):
+        lr._assert_public_peer(_FakeSock('169.254.169.254'))
+
+
+def test_guarded_connection_classes_call_the_check(monkeypatch):
+    """守門真的掛在 _new_conn 上（不是只定義了函式卻沒接上）。"""
+    sess = lr._guarded_session()
+    adapter = sess.get_adapter('https://example.com/')
+    pools = adapter.poolmanager.pool_classes_by_scheme
+    for scheme in ('http', 'https'):
+        conn_cls = pools[scheme].ConnectionCls
+        src = conn_cls._new_conn.__code__.co_names
+        assert '_assert_public_peer' in src, f'{scheme} 的連線類別沒有呼叫守門'
+    sess.close()
+
+
+def test_session_mounts_guarded_adapter_for_both_schemes():
+    sess = lr._guarded_session()
+    for url in ('http://example.com/', 'https://example.com/'):
+        assert type(sess.get_adapter(url)).__name__ == '_GuardedAdapter'
+    sess.close()
