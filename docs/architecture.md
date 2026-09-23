@@ -290,6 +290,9 @@ Shared Drive
     │  **真正的守門在連線層**：連線前查 DNS 驗 IP 擋不住 DNS rebinding（requests 實際
     │  連線時會再查一次，低 TTL 可讓兩次回不同 IP）。因此於 urllib3 `_new_conn()` 之後、
     │  送出任何資料之前，用 `getpeername()` 檢查**實際連上的**對端 IP。
+    │  同時 `trust_env=False`、`proxies={}`：走 proxy 時連線由 ProxyManager 建立、
+    │  完全不經過守門，且 peer 是 proxy 的 IP 檢查也沒意義（DNS 與連線都在 proxy 那端）。
+    │  `proxy_manager_for()` 直接 raise，寧可大聲失敗也不要靜默失去防護。
     │
     ▼ 解析引擎健康探測（parser_health.probe）：近 24h 我方報告有 billing 失敗，或
     │  pending ≥6h 且期間零 completed → exit 5（EXIT_PARSER_HELD）今日不上傳（run_weekly_sync 記失敗並告警）

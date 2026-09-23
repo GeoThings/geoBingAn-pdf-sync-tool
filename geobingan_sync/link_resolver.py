@@ -180,7 +180,18 @@ def _guarded_session():
             self.poolmanager.pool_classes_by_scheme = {
                 'http': _GuardedHTTPPool, 'https': _GuardedHTTPSPool}
 
+        def proxy_manager_for(self, proxy, **kwargs):
+            # 走 proxy 時連線由 ProxyManager 建立，**完全不經過**上面的守門類別；
+            # 而且 peer 會是 proxy 的 IP，檢查它也沒有意義——真正的 DNS 解析與
+            # 連線都發生在 proxy 那一端，內網照樣到得了（review P1 第二條路徑）。
+            # 這支 resolver 不需要 proxy，所以寧可大聲失敗，也不要靜默失去防護。
+            raise BlockedAddress(f'proxy_not_allowed:{proxy}')
+
     sess = requests.Session()
+    # trust_env=False：不讀 HTTP_PROXY／HTTPS_PROXY／NO_PROXY／.netrc。
+    # 預設 True 時，只要環境設了 proxy，連線就會繞過守門。
+    sess.trust_env = False
+    sess.proxies = {}
     adapter = _GuardedAdapter()
     sess.mount('http://', adapter)
     sess.mount('https://', adapter)

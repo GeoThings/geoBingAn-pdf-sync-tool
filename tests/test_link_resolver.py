@@ -315,3 +315,40 @@ def test_session_mounts_guarded_adapter_for_both_schemes():
     for url in ('http://example.com/', 'https://example.com/'):
         assert type(sess.get_adapter(url)).__name__ == '_GuardedAdapter'
     sess.close()
+
+
+# ---------- proxy 繞過（review P1 第二條路徑） ----------
+
+def test_session_ignores_environment_proxies(monkeypatch):
+    """環境設了 proxy 也不得改走 proxy。
+
+    走 proxy 時連線由 ProxyManager 建立，完全不經過 guarded connection；
+    peer 又是 proxy 的 IP，檢查它沒有意義——DNS 解析與連線都在 proxy 那端，
+    內網照樣到得了。
+    """
+    for k in ('HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy', 'ALL_PROXY'):
+        monkeypatch.setenv(k, 'http://evil-proxy.invalid:8080')
+    sess = lr._guarded_session()
+    assert sess.trust_env is False and sess.proxies == {}
+    merged = sess.merge_environment_settings('https://example.com/', {}, None, None, None)
+    assert merged['proxies'] == {}, '仍會走環境 proxy'
+    sess.close()
+
+
+def test_proxy_manager_is_refused_loudly():
+    """就算有人硬塞 proxy 也要大聲失敗，不可靜默失去守門。"""
+    sess = lr._guarded_session()
+    adapter = sess.get_adapter('https://example.com/')
+    with pytest.raises(lr.BlockedAddress) as e:
+        adapter.proxy_manager_for('http://proxy.invalid:3128')
+    assert 'proxy_not_allowed' in str(e.value)
+    sess.close()
+
+
+def test_explicit_proxies_argument_also_blocked(monkeypatch):
+    """requests 走 proxy 時會呼叫 proxy_manager_for；被擋下即無法繞過。"""
+    sess = lr._guarded_session()
+    adapter = sess.get_adapter('http://example.com/')
+    with pytest.raises(lr.BlockedAddress):
+        adapter.proxy_manager_for('http://127.0.0.1:8080')
+    sess.close()
