@@ -146,7 +146,68 @@ class TestRocPrefixWithMmdd:
         assert parse_date_from_filename('114年/0303觀測報告.pdf') == datetime(2025, 3, 3)
 
     def test_roc_prefix_range_boundaries(self):
-        """契約 100–130（與模式6 其他年份來源一致）：100/130 收、131 拒。"""
+        """樣式契約仍是 100–130，但**外層理智區間**會再擋掉未來日。
+
+        民國 130 年＝2041，樣式收得下、實際不可能是監測報告的日期。兩層職責分開：
+        `_parse_raw` 管樣式、`_sane` 管合理性。
+        """
+        from geobingan_sync.filename_date_parser import _parse_raw
         assert parse_date_from_filename('100測試案觀測報告0101.pdf') == datetime(2011, 1, 1)
-        assert parse_date_from_filename('130測試案觀測報告0101.pdf') == datetime(2041, 1, 1)
-        assert parse_date_from_filename('131測試案觀測報告0101.pdf') is None
+        assert _parse_raw('130測試案觀測報告0101.pdf') == datetime(2041, 1, 1)   # 樣式仍收
+        assert parse_date_from_filename('130測試案觀測報告0101.pdf') is None      # 但未來日擋掉
+        assert _parse_raw('131測試案觀測報告0101.pdf') is None                    # 超出樣式範圍
+
+
+class TestWesternYearNotMisreadAsRoc:
+    """西元年中文格式不得被民國年規則吃掉尾三碼（2026→026→民國26→1937）。
+
+    實例：inventory 中 273 筆「忠孝勤靜大樓新建工程-監測報表-2026年08月21日(週報).pdf」
+    被解析成 1937-08-21，佔誤判的大宗。
+    """
+
+    def test_western_year_chinese_format(self):
+        assert parse_date_from_filename(
+            '忠孝勤靜大樓新建工程-監測報表-2026年08月21日(週報).pdf') == datetime(2026, 8, 21)
+
+    def test_western_year_chinese_format_single_digit(self):
+        assert parse_date_from_filename('監測報表-2024年6月2日.pdf') == datetime(2024, 6, 2)
+
+    def test_repeated_pdf_suffix_still_parses(self):
+        """實際檔名有 .pdf.pdf.pdf 疊加。"""
+        assert parse_date_from_filename(
+            '監測報表-2026年08月21日(週報).pdf.pdf.pdf') == datetime(2026, 8, 21)
+
+    def test_roc_chinese_format_unaffected(self):
+        assert parse_date_from_filename('115年03月09日.pdf') == datetime(2026, 3, 9)
+
+
+class TestFutureDatesRejected:
+    """監測報告的檔名日期不可能是未來——解析成未來日一律視為解析失敗。
+
+    實例：53 筆「開挖階段1160202NO.29.pdf」被當成民國116年（2027）。真實日期不明
+    （116 可能是專案編號而非年份），但可以確定不是未來。回 None＝不上傳、不計入
+    新鮮度、排序排最後，與既有 no_date 行為一致；比硬塞未來日安全，因為未來日會讓
+    報告在「報告日期優先」排序中插隊到最前面。
+    """
+
+    def test_future_roc_seven_digit_rejected(self):
+        assert parse_date_from_filename('開挖階段1160202NO.29.pdf',
+                                        now=datetime(2026, 9, 23)) is None
+
+    def test_today_accepted(self):
+        assert parse_date_from_filename('報告_1150923.pdf',
+                                        now=datetime(2026, 9, 23)) == datetime(2026, 9, 23)
+
+    def test_tolerance_allows_slight_future(self):
+        """容許 2 天，吸收時區與跨日誤差。"""
+        assert parse_date_from_filename('報告_1150924.pdf',
+                                        now=datetime(2026, 9, 23)) == datetime(2026, 9, 24)
+
+    def test_beyond_tolerance_rejected(self):
+        assert parse_date_from_filename('報告_1150930.pdf',
+                                        now=datetime(2026, 9, 23)) is None
+
+    def test_ancient_dates_rejected(self):
+        """低於 2000（民國89）視為解析失敗；下限刻意比樣式契約的民國100 再寬，只擋明顯垃圾。"""
+        from geobingan_sync.filename_date_parser import _parse_raw
+        assert parse_date_from_filename('監測報表-1937年08月21日.pdf') is None
