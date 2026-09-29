@@ -526,6 +526,30 @@ upload_pdfs.main()
 
 ## 錯誤處理
 
+### 整體執行時間上限（看門狗）
+
+2026-09-27 實際踩到：Drive 掃描遇到 **51 次 Connection reset**，每次請求各自重試，
+但**整體沒有上限**，一路跑了 **734.6 分鐘（12.2 小時）** 才放棄。兩個後果都很糟：
+
+1. 壓到隔天的排程——launchd 10:00 又起一份，兩份並跑搶同一份狀態檔。
+2. 失敗通知隔天才到，等於失去告警意義。
+
+本機沒有 GNU `timeout`（coreutils 未安裝），所以 `run_weekly_sync.sh` 自帶看門狗：
+背景子程序睡到 `MAX_RUNTIME_SECONDS`（預設 **3600**，正常跑 15–17 分）後寫下 marker、
+`SIGTERM` 主程序，寬限 `TIMEOUT_GRACE_SECONDS`（預設 **60**）後 `SIGKILL`。
+
+三個細節都是刻意的：
+
+- **寬限要夠 `cleanup` 跑完 `record_sync_result`**（要連網發告警信／ClickUp）。太短會在
+  通知送出前就 SIGKILL，變成「超時了但沒人知道」，正是要避免的事。
+- **`trap 'exit 1' TERM`**：不設的話 bash 以 128+15=143 結束，巡檢看到 143 會誤導成
+  「backoff 鎖死」。
+- **超時用獨立的錯誤訊息**，不可混進「未預期的錯誤」——操作者會去查錯的方向。
+
+`MAX_RUNTIME_SECONDS=0` 可關閉（人工長跑補掃時用）。
+
+> `run_friday_report.sh` 目前未加：它只有 44 行、單一 Python 呼叫，尚未出現同類問題。若日後也卡住再比照處理。
+
 ### Shell 級聯保護（v3.1+）
 
 ```
