@@ -719,7 +719,8 @@ class PermitSync:
             self.save_state()
     
     def _resolve_or_skip_indirect(self, mapping: Dict[str, str], resolver=None,
-                                  cache_path: str = None) -> Dict[str, str]:
+                                  cache_path: str = None,
+                                  unsupported_path: str = None) -> Dict[str, str]:
         """把非 Drive 來源解析成 Drive 資料夾；解不出來的**剔除**，不進同步流程。
 
         剔除而非保留的理由：保留只會讓 run() 建出空的目標資料夾、再記一筆同步錯誤，
@@ -744,6 +745,9 @@ class PermitSync:
             print(f"  🔌 非 Drive 來源 {len(adapted)} 案由 adapter 直接處理")
             direct.update(adapted)
         if not indirect:
+            # 仍要寫一次空名單：全部來源都接得到時，名單必須縮成空的。
+            # 早退跳過這一步的話，舊名單會永遠留著，變成只增不減的舊帳。
+            self._record_unsupported([], unsupported_path)
             return direct
 
         from geobingan_sync.link_resolver import (cached_resolve, load_cache, save_cache,
@@ -753,25 +757,47 @@ class PermitSync:
             cache = load_cache(path)
         except Exception:                                   # noqa: BLE001
             cache = {}
-        rescued, skipped = 0, 0
+        rescued, unsupported = 0, []
         for permit, url in indirect:
             try:
                 res = cached_resolve(permit, url, cache, resolver=resolver)
             except Exception as e:                          # noqa: BLE001
                 print(f"  ⚠️ 連結解析失敗 {permit}: {type(e).__name__}")
-                skipped += 1
+                unsupported.append((permit, url, f'resolve_error:{type(e).__name__}'))
                 continue
             if res.ok:
                 direct[permit] = f'https://drive.google.com/drive/folders/{res.folder_id}'
                 rescued += 1
             else:
-                skipped += 1
+                unsupported.append((permit, url, res.note or 'unresolved'))
+        skipped = len(unsupported)
         try:
             save_cache(cache, path)
         except Exception as e:                              # noqa: BLE001
             print(f"  ⚠️ 連結解析快取寫入失敗: {type(e).__name__}")
         print(f"  🔗 間接連結：解析成功 {rescued} 案納入同步、{skipped} 案非 Drive 空間暫不支援（已跳過，不建空資料夾）")
+        self._record_unsupported(unsupported, unsupported_path)
         return direct
+
+    def _record_unsupported(self, entries, path: str = None):
+        """把本輪接不到的來源寫成名單。
+
+        被剔除的建案原本在系統裡完全消失——沒有名單、沒有原因、沒有時間，要回答
+        「哪些建案拿不到資料、為什麼」只能重跑一輪人工探測。缺口大部分不是工程
+        問題（承造人給的連結需要帳號），要走對外溝通，而對外溝通需要一份維護中
+        的名單。
+
+        以本輪的集合重寫（不是累加）：建案換了連結或我們補上 adapter，就要從名單
+        消失，否則會變成只增不減的舊帳。寫入失敗不可中斷同步。
+        """
+        from geobingan_sync import unsupported_sources as us
+        try:
+            data = us.build(entries, previous=us.load(path))
+            us.save(data, path)
+            for fam, n, status, date, _note in us.summarise(data)[:4]:
+                print(f"     · {fam} {n} 案（{status}，{date} 探測）")
+        except Exception as e:                              # noqa: BLE001
+            print(f"  ⚠️ 未支援來源名單寫入失敗: {type(e).__name__}")
 
     def run(self):
         print("="*70)

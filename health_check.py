@@ -278,6 +278,52 @@ def check_folder_deaths(path=None, now=None, window_days=DEATH_WINDOW_DAYS):
         return 'warning', f'失效資料夾檢查失敗: {e}'
 
 
+def check_unsupported_sources(path=None, now=None, new_window_days=14):
+    """清單上有、但我們接不到的來源。
+
+    這個檢查不是「系統壞了」的燈號，是**缺口的可見度**——被剔除的建案原本在系統
+    裡完全消失。平時綠燈並附上家族分佈；近 N 天內**新出現**的才升警告，因為那代表
+    某個原本接得到的來源剛剛失聯，是新的資料流失訊號。
+
+    家族結論帶探測日期一起顯示：那是點時間的觀察，不是永久事實。
+    """
+    from datetime import datetime as _dt, timedelta
+    from geobingan_sync import unsupported_sources as us
+    try:
+        try:
+            data = us.load(path)
+        except json.JSONDecodeError as e:
+            return 'warning', f'未支援來源名單損毀、無法判讀（{e}）；請檢查 state/unsupported_sources.json'
+        if not data:
+            return 'ok', '尚無未支援來源名單（同步尚未跑過）'
+        sources = data.get('sources') or {}
+        if not sources:
+            return 'ok', '清單上的來源全部接得到'
+        now = now or _dt.now()
+        cutoff = (now - timedelta(days=new_window_days)).strftime('%Y-%m-%d')
+        # 「新增」= 基準建立**之後**才出現，且在觀察窗內。
+        # 只看 first_seen 是不夠的：基準剛建立那幾天所有 first_seen 都很新，
+        # 整份名單都會被算成新事故。
+        baseline = str(data.get('baseline_since') or '')
+        fresh = ([] if data.get('first_run') else
+                 [p for p, i in sources.items()
+                  if baseline and str(i.get('first_seen', '')) > baseline
+                  and str(i.get('first_seen', '')) >= cutoff])
+        rows = us.summarise(data)
+        brief = '；'.join(f'{fam} {n}（{status}，{date}{"" if date == "未探測" else " 探測"}）'
+                          for fam, n, status, date, _ in rows[:4])
+        if fresh:
+            names = '、'.join(sorted(fresh)[:3])
+            return 'warning', (f'{len(sources)} 案來源接不到，其中 {len(fresh)} 案為近 '
+                               f'{new_window_days} 天新增：{names}{"…" if len(fresh) > 3 else ""}'
+                               f'——新失聯要確認去向。{brief}')
+        if data.get('first_run'):
+            return 'ok', f'{len(sources)} 案來源接不到（首輪建立基準，下輪起才判定新增）。{brief}'
+        return 'ok', f'{len(sources)} 案來源接不到（近 {new_window_days} 天無新增）。{brief}'
+    except Exception as e:
+        return 'warning', f'未支援來源檢查失敗: {e}'
+
+
 def check_launchd_jobs():
     """檢查所有 launchd 排程 job 的最後執行狀態（清單見 jobs；新增 plist 時必須同步加入，否則鎖死不會被巡到）。
 
@@ -339,6 +385,7 @@ DEFAULT_CHECKS = [
     ('解析預算', check_budget),
     ('清單新鮮度', check_list_freshness),
     ('來源資料夾', check_folder_deaths),
+    ('未支援來源', check_unsupported_sources),
 ]
 
 

@@ -58,3 +58,16 @@ def _no_real_pause_flag(monkeypatch, tmp_path_factory):
     from geobingan_sync.steps import drain_stuck
     fake = tmp_path_factory.mktemp('nopause') / '.pause_upload'   # 刻意不建立
     monkeypatch.setattr(drain_stuck, 'PAUSE_FILE', str(fake))
+
+
+@pytest.fixture(autouse=True)
+def _no_real_unsupported_file(monkeypatch, tmp_path_factory):
+    """測試一律不得寫到正式的 `state/unsupported_sources.json`。
+
+    同 `_no_real_pause_flag` 的理由，擋在邊界而不是要每支測試自己記得傳路徑：
+    `_resolve_or_skip_indirect` 預設會寫這個檔，既有測試呼叫它時不會知道要隔離，
+    一寫下去就把營運中的名單（含 first_seen）換成測試資料。
+    """
+    from geobingan_sync import unsupported_sources
+    fake = tmp_path_factory.mktemp('unsupported') / 'unsupported_sources.json'
+    monkeypatch.setattr(unsupported_sources, 'UNSUPPORTED_FILE', str(fake))
