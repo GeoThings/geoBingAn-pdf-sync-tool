@@ -20,7 +20,7 @@ import csv
 import requests
 
 _session = requests.Session()
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Dict, Optional
 from collections import Counter
 
@@ -170,20 +170,48 @@ def _extract_folder_id_from_url(url: str):
     return None
 
 
-def fetch_source_folder_names(gov_data: dict, drive_service, prior_registry: dict = None):
+RECHECK_DEAD_AFTER_DAYS = 7      # 已標 404 的資料夾多久重驗一次
+
+
+def _due_for_recheck(prior: dict, now: datetime) -> bool:
+    """已標 404 的是否該重驗。沒有時間戳（舊資料）一律重驗一次，先把基準補上。"""
+    ts = prior.get('gov_pdf_url_checked_at')
+    if not ts:
+        return True
+    try:
+        t = datetime.fromisoformat(str(ts))
+    except (TypeError, ValueError):
+        return True
+    if t.tzinfo is not None:
+        t = t.replace(tzinfo=None)
+    return (now - t) >= timedelta(days=RECHECK_DEAD_AFTER_DAYS)
+
+
+def fetch_source_folder_names(gov_data: dict, drive_service, prior_registry: dict = None,
+                              now: datetime = None):
     """從來源 Google Drive 資料夾名稱提取建案名稱 + 順便記錄 URL 活/死狀態。
 
-    回傳 (names, statuses)：
+    回傳 (names, statuses, checked_at)：
       names[permit_no] = 清理後的建案名稱
       statuses[permit_no] = 'alive' / '404' / 'error'
     政府 PDF 從 2025-01-23 後沒更新，所裡面的 URL 會持續腐爛。記錄狀態
     讓週報統計表能列出，並週報後可彙整給建管處請求更新 PDF。
 
-    已知 404 快取（prior_registry）：政府 PDF 凍結後仍持續列著已被監測公司
-    刪除的 Drive 資料夾，每次 build 都對這些 folder_id 空打 files().get 只為
-    再拿一次 404，log 噪音隨時間累積（見 tools/cleanup_stale_folders.py）。
-    Drive folder_id 一旦 404 即永久失效（該 ID 不會復活），故上次已記錄
-    gov_pdf_url_status == '404' 者本次沿用、跳過 API 呼叫、不再噴警告。
+    回傳第三個值 checked_at[permit_no] = ISO 時間戳，只含本次**實際打過 API** 的，
+    供呼叫端寫回 registry（被快取跳過的要保留舊時間戳）。
+
+    已知 404 快取（prior_registry）：政府 PDF 凍結後仍持續列著已失效的 Drive
+    資料夾，每次 build 都對這些 folder_id 空打 files().get 只為再拿一次 404，
+    log 噪音隨時間累積（見 tools/cleanup_stale_folders.py）。故上次已記錄
+    gov_pdf_url_status == '404' 者暫時沿用、跳過 API 呼叫、不再噴警告。
+
+    ⚠️ 但**不是永久沿用**（2026-09-29 修正）。舊版註解寫「該 ID 不會復活」，
+    這個假設是錯的：API 回 404 有兩種成因——資料夾被刪除，或**公開分享被取消**。
+    後者隨時可以改回來，而我們一旦標 404 就再也不重驗，恢復永遠看不到。
+    實測當時有 66 個建案被標 404，其中 38 個我方已有 PDF、合計 2,107 份，
+    全都卡在這個假設上。與「沒有證據不等於健康」是同一類錯誤：把一次觀測
+    當成永久事實。
+    → 改為每 RECHECK_DEAD_AFTER_DAYS 天重驗一次；沒有時間戳的舊資料立刻重驗一次。
 
     ⚠️ 快取鍵必須綁「同一個 folder ID」，不能只綁建照號：若日後同一建照
     的 source_url 換成新的 Drive folder（新 ID），舊 404 記錄不得套用到新
@@ -193,8 +221,11 @@ def fetch_source_folder_names(gov_data: dict, drive_service, prior_registry: dic
     print("📂 來源 2: Drive 來源資料夾名稱...")
     from googleapiclient.errors import HttpError
     prior_registry = prior_registry or {}
+    now = now or datetime.now()
     names = {}
     statuses = {}
+    checked_at = {}
+    revived = []
     skipped_dead = 0
     for permit, info in gov_data.items():
         fid = info.get('source_folder_id')
@@ -202,8 +233,9 @@ def fetch_source_folder_names(gov_data: dict, drive_service, prior_registry: dic
             continue
         prior = prior_registry.get(permit, {})
         prior_fid = _extract_folder_id_from_url(prior.get('source_url', ''))
-        if prior.get('gov_pdf_url_status') == '404' and prior_fid == fid:
-            # 同一 folder ID 已確認永久失效：沿用 404，不重打 API、不噴噪音。
+        was_dead = prior.get('gov_pdf_url_status') == '404' and prior_fid == fid
+        if was_dead and not _due_for_recheck(prior, now):
+            # 同一 folder ID 近期已確認失效：暫時沿用，不重打 API、不噴噪音。
             statuses[permit] = '404'
             skipped_dead += 1
             continue
@@ -212,6 +244,9 @@ def fetch_source_folder_names(gov_data: dict, drive_service, prior_registry: dic
                 fileId=fid, fields='name', supportsAllDrives=True
             ).execute()
             statuses[permit] = 'alive'
+            checked_at[permit] = now.isoformat()
+            if was_dead:
+                revived.append(permit)
             raw_name = folder.get('name', '')
             clean = extract_name_from_text(raw_name)
             if clean:
@@ -219,17 +254,23 @@ def fetch_source_folder_names(gov_data: dict, drive_service, prior_registry: dic
         except HttpError as e:
             if e.resp.status == 404:
                 statuses[permit] = '404'
+                checked_at[permit] = now.isoformat()     # 記下重驗時間，下次才知道何時再驗
             else:
-                statuses[permit] = 'error'
-            print(f"  ⚠️ Drive 資料夾讀取失敗 {permit}: {e}")
+                statuses[permit] = 'error'               # error 不寫時間戳：狀態未知不可當成已驗
+            if not was_dead:
+                print(f"  ⚠️ Drive 資料夾讀取失敗 {permit}: {e}")
         except Exception as e:
             statuses[permit] = 'error'
-            print(f"  ⚠️ Drive 資料夾讀取失敗 {permit}: {e}")
+            if not was_dead:
+                print(f"  ⚠️ Drive 資料夾讀取失敗 {permit}: {e}")
 
     print(f"  {len(names)} 個有名稱（狀態：alive={sum(1 for s in statuses.values() if s=='alive')}, "
           f"404={sum(1 for s in statuses.values() if s=='404')}, error={sum(1 for s in statuses.values() if s=='error')}"
           f"；跳過已知失效 {skipped_dead}）")
-    return names, statuses
+    if revived:
+        print(f"  🔄 先前失效的來源資料夾已恢復 {len(revived)} 個：{'、'.join(revived[:5])}"
+              + (" 等" if len(revived) > 5 else ""))
+    return names, statuses, checked_at
 
 
 # ==================== 來源 3: Drive PDF 檔名 ====================
@@ -449,7 +490,8 @@ def build_registry(city: dict = None):
 
     # 取得所有來源
     gov_data = fetch_gov_pdf_data(city=city)
-    source_names, gov_url_statuses = fetch_source_folder_names(gov_data, drive_service, prior_registry=registry)
+    source_names, gov_url_statuses, gov_url_checked_at = fetch_source_folder_names(
+        gov_data, drive_service, prior_registry=registry)
     drive_names = fetch_drive_pdf_names(drive_service)
     api_projects = fetch_api_projects()
     report_permits = fetch_api_report_categories()
@@ -637,7 +679,15 @@ def build_registry(city: dict = None):
         if permit in gov_data:
             entry['source_url'] = gov_data[permit].get('source_url', '')
         if permit in gov_url_statuses:
+            prev_status = entry.get('gov_pdf_url_status')
             entry['gov_pdf_url_status'] = gov_url_statuses[permit]
+            # 只有本次實際打過 API 的才更新時間戳；被快取跳過的要保留舊值，
+            # 否則永遠不會到期、又變回「永久失效」。
+            if permit in gov_url_checked_at:
+                entry['gov_pdf_url_checked_at'] = gov_url_checked_at[permit]
+            if prev_status == '404' and gov_url_statuses[permit] == 'alive':
+                entry['gov_pdf_url_revived_at'] = gov_url_checked_at.get(
+                    permit, datetime.now().isoformat())
 
         if changed:
             updated += 1
