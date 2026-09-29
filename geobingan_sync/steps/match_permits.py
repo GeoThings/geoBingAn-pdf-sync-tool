@@ -170,6 +170,37 @@ def _extract_folder_id_from_url(url: str):
     return None
 
 
+def apply_url_probe(entry: dict, outcome: str, checked_at: str = None,
+                    now: str = None) -> None:
+    """把一次來源 URL 探測結果寫進 registry entry（純函式，便於跨輪測試）。
+
+    核心規則：``gov_pdf_url_status`` 記錄的是「最後一次**有定論**的觀測」。
+    error（逾時 / 5xx / 網路失敗）屬於無定論，**不得覆寫**既有狀態。
+
+    為什麼（review P2，2026-09-29）：舊版讓 error 蓋掉 404，於是
+    404 → error → alive 這條路上，第三輪的 prior 已不是 404，復活既不會
+    記 ``gov_pdf_url_revived_at`` 也不會公告——一次暫時性 API 錯誤就永久
+    截斷了「復活不能無聲」的保證。同一個根因也讓 alive → error → 404
+    漏掉新失效告警，因為 ``detect_folder_deaths`` 只認 alive→404。兩個
+    方向都由這一條規則一起修好。
+
+    無定論時改記 ``gov_pdf_url_probe_error_at``，讓「一直探測不到」本身
+    看得見；下次有定論就清掉。狀態未知不等於已驗過，故也不動
+    ``gov_pdf_url_checked_at``，下一輪會立刻重驗。
+    """
+    now = now or datetime.now().isoformat()
+    if outcome == 'error':
+        entry['gov_pdf_url_probe_error_at'] = now
+        return
+    prev = entry.get('gov_pdf_url_status')
+    entry['gov_pdf_url_status'] = outcome
+    if checked_at:
+        entry['gov_pdf_url_checked_at'] = checked_at
+    entry.pop('gov_pdf_url_probe_error_at', None)
+    if prev == '404' and outcome == 'alive':
+        entry['gov_pdf_url_revived_at'] = checked_at or now
+
+
 RECHECK_DEAD_AFTER_DAYS = 7      # 已標 404 的資料夾多久重驗一次
 
 
@@ -197,8 +228,11 @@ def fetch_source_folder_names(gov_data: dict, drive_service, prior_registry: dic
     政府 PDF 從 2025-01-23 後沒更新，所裡面的 URL 會持續腐爛。記錄狀態
     讓週報統計表能列出，並週報後可彙整給建管處請求更新 PDF。
 
-    回傳第三個值 checked_at[permit_no] = ISO 時間戳，只含本次**實際打過 API** 的，
-    供呼叫端寫回 registry（被快取跳過的要保留舊時間戳）。
+    statuses 是本輪的**原始探測結果**（含 error）；要不要覆寫 registry 內既有的
+    狀態由 apply_url_probe() 決定——error 無定論，不得覆寫。
+
+    回傳第三個值 checked_at[permit_no] = ISO 時間戳，只含本次**實際打過 API 且有
+    定論**的，供呼叫端寫回 registry（被快取跳過的要保留舊時間戳）。
 
     已知 404 快取（prior_registry）：政府 PDF 凍結後仍持續列著已失效的 Drive
     資料夾，每次 build 都對這些 folder_id 空打 files().get 只為再拿一次 404，
@@ -255,14 +289,16 @@ def fetch_source_folder_names(gov_data: dict, drive_service, prior_registry: dic
             if e.resp.status == 404:
                 statuses[permit] = '404'
                 checked_at[permit] = now.isoformat()     # 記下重驗時間，下次才知道何時再驗
+                if not was_dead:                         # 已知失效的重驗不再噴噪音
+                    print(f"  ⚠️ Drive 資料夾讀取失敗 {permit}: {e}")
             else:
-                statuses[permit] = 'error'               # error 不寫時間戳：狀態未知不可當成已驗
-            if not was_dead:
+                # error 不寫時間戳：狀態未知不可當成已驗。且一律印出——快取當初要
+                # 消除的是「重複的 404」，不是 API 故障，後者本身就該被看見。
+                statuses[permit] = 'error'
                 print(f"  ⚠️ Drive 資料夾讀取失敗 {permit}: {e}")
         except Exception as e:
             statuses[permit] = 'error'
-            if not was_dead:
-                print(f"  ⚠️ Drive 資料夾讀取失敗 {permit}: {e}")
+            print(f"  ⚠️ Drive 資料夾讀取失敗 {permit}: {e}")
 
     print(f"  {len(names)} 個有名稱（狀態：alive={sum(1 for s in statuses.values() if s=='alive')}, "
           f"404={sum(1 for s in statuses.values() if s=='404')}, error={sum(1 for s in statuses.values() if s=='error')}"
@@ -679,15 +715,10 @@ def build_registry(city: dict = None):
         if permit in gov_data:
             entry['source_url'] = gov_data[permit].get('source_url', '')
         if permit in gov_url_statuses:
-            prev_status = entry.get('gov_pdf_url_status')
-            entry['gov_pdf_url_status'] = gov_url_statuses[permit]
-            # 只有本次實際打過 API 的才更新時間戳；被快取跳過的要保留舊值，
+            # 時間戳只在本次實際打過 API 且有定論時才給；被快取跳過的要保留舊值，
             # 否則永遠不會到期、又變回「永久失效」。
-            if permit in gov_url_checked_at:
-                entry['gov_pdf_url_checked_at'] = gov_url_checked_at[permit]
-            if prev_status == '404' and gov_url_statuses[permit] == 'alive':
-                entry['gov_pdf_url_revived_at'] = gov_url_checked_at.get(
-                    permit, datetime.now().isoformat())
+            apply_url_probe(entry, gov_url_statuses[permit],
+                            checked_at=gov_url_checked_at.get(permit))
 
         if changed:
             updated += 1
@@ -785,6 +816,12 @@ def detect_folder_deaths(prior_statuses: dict, registry: dict) -> list:
     - 首次出現就 404（prior 無紀錄）不算——那是既有的歷史失效，不是新的資料流失。
     - error→404 不算——error 可能只是暫時性 API 失敗。
     對應 111建字第0311號 事故：253 份監測報告的來源資料夾被刪、數月後才發現。
+
+    ⚠️ 「error→404 不算」本身曾是個漏洞：舊版會把 error 寫進 registry，於是
+    alive → error → 404 這條路上 prior 已經是 error，真正的失效就靜悄悄漏掉。
+    2026-09-29 起 apply_url_probe() 不再讓 error 覆寫有定論的狀態，prior 會
+    保留 alive，這條路因此能被認出來。下面這條規則改為純粹的防禦性保留，
+    對付舊 registry 裡殘留的 error。
     """
     deaths = []
     for permit, info in sorted(registry.items()):

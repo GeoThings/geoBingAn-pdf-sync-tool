@@ -186,3 +186,114 @@ def test_error_status_does_not_update_timestamp():
     _, statuses, checked = fetch_source_folder_names(_gov(), svc, prior_registry=prior, now=NOW)
     assert statuses['111建字第0058號'] == 'error'
     assert '111建字第0058號' not in checked
+
+
+# ---------- 跨三輪：一次暫時性 error 不得截斷世系（review P2，2026-09-29）----------
+#
+# 舊版讓 error 覆寫 gov_pdf_url_status，於是 404 → error → alive 這條路上，
+# 第三輪的 prior 已經不是 404，復活既不記 revived_at 也不公告——「復活不能
+# 無聲」的保證被一次 API 逾時永久截斷。同一個根因也讓 alive → error → 404
+# 漏掉新失效告警。修法是同一條規則：error 無定論，不得覆寫有定論的狀態。
+#
+# 三輪都用**同一個 folder ID**：換了 ID 就不是同一個資料夾復活，那條路徑由
+# test_folder_id_changed_is_revalidated 管。
+
+from geobingan_sync.steps.match_permits import apply_url_probe, detect_folder_deaths
+
+ROUND = [NOW - timedelta(days=16), NOW - timedelta(days=8), NOW]
+FID = 'samefolder'
+
+
+class _Svc:
+    """對任何 fileId 都給同一種結果的假 Drive service。"""
+
+    def __init__(self, outcome):
+        self.outcome = outcome
+        self.queried = []
+        from googleapiclient.errors import HttpError
+
+        class _Resp:
+            status = 404
+            reason = 'notFound'
+        self._nf = HttpError(_Resp(), b'nf')
+
+    def files(self):
+        outer = self
+
+        class _F:
+            def get(self, fileId=None, **kw):
+                outer.queried.append(fileId)
+
+                class _R:
+                    def execute(self_inner):
+                        if outer.outcome == '404':
+                            raise outer._nf
+                        if outer.outcome == 'error':
+                            raise RuntimeError('timeout')
+                        return {'name': '力麒松江總部大樓'}
+                return _R()
+        return _F()
+
+
+def _round(entry, outcome, now):
+    """跑一輪：探測 → 依規則寫回 entry。回傳本輪原始探測結果。"""
+    gov = {'P': {'source_folder_id': FID}}
+    prior = {'P': dict(entry)}
+    svc = _Svc(outcome)
+    _, statuses, checked = fetch_source_folder_names(gov, svc, prior_registry=prior, now=now)
+    apply_url_probe(entry, statuses['P'], checked_at=checked.get('P'), now=now.isoformat())
+    return statuses['P'], svc
+
+
+def test_dead_then_error_then_alive_is_still_announced(capsys):
+    """404 → error → alive：中間那次逾時不可讓復活變成無聲。"""
+    entry = {'gov_pdf_url_status': '404', 'source_url': _url(FID),
+             'gov_pdf_url_checked_at': ROUND[0].isoformat()}
+
+    # 第二輪：到期重驗，但 API 掛了 → 無定論
+    outcome, svc = _round(entry, 'error', ROUND[1])
+    assert outcome == 'error' and FID in svc.queried
+    assert entry['gov_pdf_url_status'] == '404', 'error 不可覆寫已確認的 404'
+    assert entry['gov_pdf_url_probe_error_at'] == ROUND[1].isoformat()
+    assert entry['gov_pdf_url_checked_at'] == ROUND[0].isoformat(), '無定論不可延後下次重驗'
+
+    # 第三輪：同一個資料夾恢復分享
+    capsys.readouterr()
+    outcome, _ = _round(entry, 'alive', ROUND[2])
+    assert outcome == 'alive'
+    assert entry['gov_pdf_url_status'] == 'alive'
+    assert entry['gov_pdf_url_revived_at'] == ROUND[2].isoformat(), '復活必須留下紀錄'
+    assert '已恢復' in capsys.readouterr().out, '復活必須公告'
+    assert 'gov_pdf_url_probe_error_at' not in entry, '有定論後要清掉探測失敗標記'
+
+
+def test_alive_then_error_then_404_is_still_a_death():
+    """alive → error → 404：同一個根因的反方向，新失效不可被逾時吃掉。"""
+    entry = {'gov_pdf_url_status': 'alive', 'source_url': _url(FID),
+             'gov_pdf_url_checked_at': ROUND[0].isoformat()}
+    prior_snapshot = {'P': entry['gov_pdf_url_status']}   # build_registry 開頭取的快照
+
+    assert _round(entry, 'error', ROUND[1])[0] == 'error'
+    assert entry['gov_pdf_url_status'] == 'alive', 'error 不可覆寫已確認的 alive'
+
+    # 第三輪真的死了。快照取自「上一次有定論的狀態」，故仍是 alive。
+    assert _round(entry, '404', ROUND[2])[0] == '404'
+    deaths = detect_folder_deaths(prior_snapshot, {'P': entry})
+    assert [d['permit'] for d in deaths] == ['P'], '暫時性錯誤不可讓真正的失效漏報'
+
+
+def test_error_alone_never_writes_status():
+    """從未有過定論的建案，error 也不可憑空寫出一個狀態。"""
+    entry = {'source_url': _url(FID)}
+    assert _round(entry, 'error', ROUND[2])[0] == 'error'
+    assert 'gov_pdf_url_status' not in entry
+    assert 'gov_pdf_url_checked_at' not in entry
+    assert entry['gov_pdf_url_probe_error_at'] == ROUND[2].isoformat()
+
+
+def test_api_error_is_not_silenced_for_dead_folders(capsys):
+    """已知失效的重驗遇到 API 故障要印出來：快取要消除的是重複 404，不是故障。"""
+    entry = {'gov_pdf_url_status': '404', 'source_url': _url(FID),
+             'gov_pdf_url_checked_at': ROUND[0].isoformat()}
+    _round(entry, 'error', ROUND[1])
+    assert '讀取失敗' in capsys.readouterr().out
