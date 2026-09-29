@@ -586,10 +586,85 @@ class PermitSync:
         """取得當前 thread 的 Drive service（並行時用 thread-local，序列時用全域）"""
         return get_thread_drive_service()
 
+    def upload_remote_file(self, src, target_folder_id: str):
+        """把非 Drive 來源的一個檔案下載後上傳進目標資料夾。
+
+        與 copy_file 的差別只在來源：那邊是 Drive→Drive 的 files().copy，
+        這邊沒有 source file id，只能下載位元組再 create。去重、子資料夾、
+        目標結構全部共用同一套，不另開一條規則。
+        """
+        from geobingan_sync.source_adapters import fetch_pdf_bytes
+
+        final_folder_id = target_folder_id
+        if src.path:
+            final_folder_id = self.get_or_create_subfolder(target_folder_id, src.path)
+            if not final_folder_id:
+                return None, None
+        data = fetch_pdf_bytes(src.url)          # 失敗會拋 AdapterError，由呼叫端逐檔處理
+        media = MediaIoBaseUpload(io.BytesIO(data), mimetype='application/pdf', resumable=True)
+        created = self._get_svc().files().create(
+            body={'name': src.name, 'parents': [final_folder_id], 'mimeType': 'application/pdf'},
+            media_body=media, fields='id', supportsAllDrives=True).execute()
+        return created['id'], final_folder_id
+
+    def _sync_via_adapter(self, permit_no: str, source_url: str, target_folder_id: str, adapter):
+        """非 Drive 來源的同步路徑。
+
+        一個檔案失敗不可拖垮整案，一案失敗不可拖垮整輪——這條路走的是外部網站，
+        逾時與格式異常是常態不是例外。
+        """
+        from geobingan_sync.source_adapters import AdapterError
+
+        self._print(f"  🔌 來源類型: {adapter.name}")
+        try:
+            files = adapter.list_files(source_url)
+        except AdapterError as e:
+            self._print(f"  ⚠️ 來源列檔失敗: {e}")
+            with self._state_lock:
+                self.state['errors'].append(
+                    {'permit': permit_no, 'error': f'{adapter.name}:{e}'})
+            self.save_state()
+            return
+
+        self.preload_target_files(target_folder_id, permit_no)
+        copied = failed = 0
+        for src in files:
+            if self.check_file_exists(target_folder_id, src.name, src.path, permit_no):
+                continue
+            try:
+                file_id, _ = self.upload_remote_file(src, target_folder_id)
+            except AdapterError as e:
+                self._print(f"    ⚠️ 取檔失敗 {src.name}: {e}")
+                failed += 1
+                continue
+            except Exception as e:                          # noqa: BLE001
+                self._print(f"    ⚠️ 上傳失敗 {src.name}: {type(e).__name__}")
+                failed += 1
+                continue
+            if file_id:
+                self._print(f"    🆕 發現新檔並上傳: {src.name}")
+                copied += 1
+                if permit_no in self._target_file_cache:
+                    key = f"{src.path}/{src.name}" if src.path else src.name
+                    self._target_file_cache[permit_no].add(key)
+
+        if copied or failed:
+            self._print(f"  📊 更新完成: 新增 {copied} 個" + (f"、失敗 {failed} 個" if failed else ""))
+        with self._state_lock:
+            self.state['processed'][permit_no] = True
+            if failed:
+                self.state['errors'].append(
+                    {'permit': permit_no, 'error': f'{adapter.name}:{failed} 個檔案取得失敗'})
+        self.save_state()
+
     def sync_permit(self, permit_no: str, source_url: str, target_folder_id: str):
         self._print(f"\n🔄 監測建案: {permit_no}")
         source_folder_id = self.extract_folder_id_from_url(source_url)
         if not source_folder_id:
+            from geobingan_sync.source_adapters import find_adapter
+            adapter = find_adapter(source_url)
+            if adapter:
+                return self._sync_via_adapter(permit_no, source_url, target_folder_id, adapter)
             with self._state_lock:
                 self.state['errors'].append({'permit': permit_no, 'error': 'Invalid URL ID'})
             return
@@ -650,12 +725,21 @@ class PermitSync:
 
         解析失敗不可中斷同步：任何例外都只記錄、該案剔除、其餘照跑。
         """
-        direct, indirect = {}, []
+        from geobingan_sync.source_adapters import find_adapter
+
+        direct, indirect, adapted = {}, [], {}
         for permit, url in mapping.items():
             if self.extract_folder_id_from_url(url):
                 direct[permit] = url
+            elif find_adapter(url):
+                # 有 adapter 的維持原始 URL 進同步，由 sync_permit 分流；
+                # 不必再花一次網路請求去解析成 Drive（它本來就不在 Drive）。
+                adapted[permit] = url
             else:
                 indirect.append((permit, url))
+        if adapted:
+            print(f"  🔌 非 Drive 來源 {len(adapted)} 案由 adapter 直接處理")
+            direct.update(adapted)
         if not indirect:
             return direct
 
