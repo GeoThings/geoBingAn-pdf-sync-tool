@@ -18,6 +18,10 @@ from .base import AdapterError, SourceFile
 #: 已驗證的前台主機 → 後端 API 主機。新增前台要先實測過 API 形狀。
 _HOSTS = {'public.redsun.tw': 'public-be.redsun.tw'}
 
+#: 取檔時允許連到的主機（含轉址每一跳）。目前檔案與 API 同一台、沒有 CDN。
+#: 平台日後若改走 CDN，把 CDN 主機加在這裡，不要放寬 base 的逐跳規則。
+DOWNLOAD_HOSTS = frozenset({'public-be.redsun.tw'})
+
 _SITE_RE = re.compile(r'^/site/(\d+)/?$')
 
 
@@ -53,6 +57,7 @@ def _parse(url: str):
 
 class RedsunAdapter:
     name = 'redsun'
+    download_hosts = DOWNLOAD_HOSTS
 
     def matches(self, url: str) -> bool:
         return _parse(url) is not None
@@ -95,7 +100,8 @@ class RedsunAdapter:
             out.append(SourceFile(
                 name=str(name), url=_file_url(api_host, str(href)),
                 modified=str(a.get('updatedAt') or a.get('createdAt') or ''),
-                size=int(a.get('size') or 0)))
+                size=int(a.get('size') or 0),
+                allowed_hosts=self.download_hosts))
         if not out:
             raise AdapterError('no_pdf_in_payload')
         return out

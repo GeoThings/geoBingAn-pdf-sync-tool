@@ -70,7 +70,8 @@ def test_list_files_joins_relative_url_to_verified_host():
     payload = _payload([_f('a.pdf', '/uploads/a_1.pdf', size=120, updatedAt='2026-09-14T00:23:49Z')])
     out = RedsunAdapter().list_files(SITE, fetch=lambda u: (200, '', payload))
     assert out == [SourceFile(name='a.pdf', url='https://public-be.redsun.tw/uploads/a_1.pdf',
-                              path='', modified='2026-09-14T00:23:49Z', size=120)]
+                              path='', modified='2026-09-14T00:23:49Z', size=120,
+                              allowed_hosts=frozenset({'public-be.redsun.tw'}))]
 
 
 def test_non_pdf_entries_are_ignored():
@@ -131,55 +132,184 @@ def test_file_url_off_host_or_odd_scheme_is_rejected(href):
         _file_url('public-be.redsun.tw', href)
 
 
-# ---------- 取檔邊界 ----------
+# ---------- 取檔邊界：逐跳驗證（review P1）----------
+#
+# 原本用 requests 的 allow_redirects=True，等於只驗了第一個網址：白名單主機回一個
+# 302 就能把我們導去任意公網主機，而連線層守門只擋得掉內網 IP、擋不了「跑去別人家」。
+# 跳數上限也是事後才數，超額的那一台早就被敲過了。
+
+HOSTS = frozenset({'ok.test'})
+
 
 class _Resp:
-    def __init__(self, body=b'%PDF-1.7 ok', status=200, hist=0):
-        self._b, self.status_code, self.history = body, status, [None] * hist
+    def __init__(self, body=b'%PDF-1.7 ok', status=200, location=''):
+        self._b, self.status_code = body, status
+        self.headers = {'Location': location} if location else {}
 
     def iter_content(self, n):
         for i in range(0, len(self._b), n):
             yield self._b[i:i + n]
 
-
-class _Sess:
-    def __init__(self, resp): self._r = resp
-    def get(self, *a, **k): return self._r
     def close(self): pass
 
 
-def _sf(resp):
-    return lambda: _Sess(resp)
+class _RecordingSess:
+    """記下**實際發出**的每一個請求網址。斷言「某一跳不得被請求」只能靠這個。"""
+
+    def __init__(self, route):
+        self.requested = []
+        self._route = route          # url -> _Resp，或 callable(url) -> _Resp
+
+    def get(self, url, **kw):
+        assert kw.get('allow_redirects') is False, '必須自己逐跳跟轉址'
+        self.requested.append(url)
+        r = self._route(url) if callable(self._route) else self._route.get(url)
+        if r is None:
+            raise AssertionError(f'測試未預期的請求：{url}')
+        return r
+
+    def close(self): pass
+
+
+def _fetch(route, url='https://ok.test/a.pdf', hosts=HOSTS, **kw):
+    sess = _RecordingSess(route)
+    try:
+        data = fetch_pdf_bytes(url, hosts, session_factory=lambda: sess, **kw)
+    except AdapterError as e:
+        return sess, e, None
+    return sess, None, data
 
 
 def test_fetch_pdf_bytes_happy_path():
-    assert fetch_pdf_bytes('https://x.test/a.pdf',
-                           session_factory=_sf(_Resp(b'%PDF-1.7 body'))) == b'%PDF-1.7 body'
+    sess, err, data = _fetch({'https://ok.test/a.pdf': _Resp(b'%PDF-1.7 body')})
+    assert err is None and data == b'%PDF-1.7 body'
+    assert sess.requested == ['https://ok.test/a.pdf']
+
+
+def test_empty_allowed_hosts_is_refused():
+    """沒人宣告允許範圍＝不准連，不可變成「沒設定就是不限制」。"""
+    sess = _RecordingSess({})
+    with pytest.raises(AdapterError, match='no_allowed_hosts'):
+        fetch_pdf_bytes('https://ok.test/a.pdf', frozenset(), session_factory=lambda: sess)
+    assert sess.requested == []
+
+
+def test_same_host_redirect_is_followed():
+    sess, err, data = _fetch({
+        'https://ok.test/a.pdf': _Resp(location='https://ok.test/real/a.pdf'),
+        'https://ok.test/real/a.pdf': _Resp(b'%PDF-1.7 x')})
+    assert err is None and data == b'%PDF-1.7 x'
+    assert sess.requested == ['https://ok.test/a.pdf', 'https://ok.test/real/a.pdf']
+
+
+def test_relative_redirect_is_joined_then_validated():
+    sess, err, data = _fetch({
+        'https://ok.test/d/a.pdf': _Resp(location='/files/a.pdf'),
+        'https://ok.test/files/a.pdf': _Resp(b'%PDF-1.7 y')},
+        url='https://ok.test/d/a.pdf')
+    assert err is None and data == b'%PDF-1.7 y'
+    assert sess.requested[-1] == 'https://ok.test/files/a.pdf'
+
+
+def test_off_host_redirect_is_not_requested():
+    """核心回歸：轉去白名單外的主機，第二次請求**不得發出**。"""
+    sess, err, _ = _fetch({'https://ok.test/a.pdf': _Resp(location='https://evil.test/a.pdf')})
+    assert err is not None and 'host_not_allowed:evil.test' in str(err)
+    assert sess.requested == ['https://ok.test/a.pdf'], '越界的那一跳不可被請求'
+
+
+def test_redirect_to_lookalike_host_is_not_requested():
+    sess, err, _ = _fetch({'https://ok.test/a.pdf': _Resp(location='https://ok.test.evil.test/a.pdf')})
+    assert 'host_not_allowed' in str(err)
+    assert len(sess.requested) == 1
+
+
+@pytest.mark.parametrize('location,expect', [
+    ('http://127.0.0.1/a.pdf', 'host_not_allowed'),
+    ('http://169.254.169.254/latest/meta-data', 'host_not_allowed'),
+    ('http://10.0.0.5/a.pdf', 'host_not_allowed'),
+    ('http://10.0.0.5:8080/a.pdf', 'port_not_allowed'),   # 埠號規則先擋下，也是正確拒絕
+    ('http://[::1]/a.pdf', 'host_not_allowed'),
+])
+def test_redirect_to_internal_address_is_not_requested(location, expect):
+    """連線層守門是最後一道；主機白名單要讓它根本不必出手。"""
+    sess, err, _ = _fetch({'https://ok.test/a.pdf': _Resp(location=location)})
+    assert expect in str(err)
+    assert sess.requested == ['https://ok.test/a.pdf']
+
+
+def test_redirect_adding_a_port_is_not_requested():
+    """白名單是主機名。允許改埠等於允許連到同名主機上的其他服務。"""
+    sess, err, _ = _fetch({'https://ok.test/a.pdf': _Resp(location='https://ok.test:9000/a.pdf')})
+    assert 'port_not_allowed:9000' in str(err)
+    assert sess.requested == ['https://ok.test/a.pdf']
+
+
+@pytest.mark.parametrize('location', ['file:///etc/passwd', 'ftp://ok.test/a.pdf',
+                                      'gopher://ok.test/a'])
+def test_redirect_changing_scheme_is_not_requested(location):
+    sess, err, _ = _fetch({'https://ok.test/a.pdf': _Resp(location=location)})
+    assert 'bad_scheme' in str(err) or 'host_not_allowed' in str(err)
+    assert sess.requested == ['https://ok.test/a.pdf']
+
+
+def test_hop_cap_counts_requests_and_stops_before_exceeding():
+    """跳數上限算的是**總請求數**，而且要在發請求前檢查。
+
+    max_hops=5 → 最多發出 5 次請求；第 6 跳不得被請求。
+    """
+    def loop(url):
+        n = int(url.rsplit('/', 1)[1])
+        return _Resp(location=f'https://ok.test/{n + 1}')
+    sess, err, _ = _fetch(loop, url='https://ok.test/1')
+    assert 'too_many_hops' in str(err)
+    assert len(sess.requested) == 5, f'實際發出 {len(sess.requested)} 次'
+    assert 'https://ok.test/6' not in sess.requested
+
+
+def test_hop_cap_is_configurable_and_respected():
+    def loop(url):
+        return _Resp(location='https://ok.test/next')
+    sess, err, _ = _fetch(loop, max_hops=2)
+    assert 'too_many_hops' in str(err) and len(sess.requested) == 2
 
 
 def test_oversize_raises_instead_of_truncating():
     """截斷會把半份壞掉的 PDF 放進監測報告資料夾，比缺一份更糟——
     後續解析拿到壞檔，錯誤會一路往下傳。"""
-    with pytest.raises(AdapterError, match='too_large'):
-        fetch_pdf_bytes('https://x.test/a.pdf', max_bytes=8,
-                        session_factory=_sf(_Resp(b'%PDF-1.7' + b'x' * 5000)))
+    sess, err, _ = _fetch({'https://ok.test/a.pdf': _Resp(b'%PDF-1.7' + b'x' * 5000)},
+                          max_bytes=8)
+    assert 'too_large' in str(err)
 
 
 def test_non_pdf_content_is_rejected():
     """不信 Content-Type，只信內容本身。對方回什麼標頭不由我們決定。"""
-    with pytest.raises(AdapterError, match='not_pdf'):
-        fetch_pdf_bytes('https://x.test/a.pdf',
-                        session_factory=_sf(_Resp('<!doctype html><html>登入'.encode('utf-8'))))
+    sess, err, _ = _fetch({'https://ok.test/a.pdf':
+                           _Resp('<!doctype html><html>登入'.encode('utf-8'))})
+    assert 'not_pdf' in str(err)
 
 
 def test_non_200_is_rejected():
-    with pytest.raises(AdapterError, match='http_403'):
-        fetch_pdf_bytes('https://x.test/a.pdf', session_factory=_sf(_Resp(status=403)))
+    sess, err, _ = _fetch({'https://ok.test/a.pdf': _Resp(status=403)})
+    assert 'http_403' in str(err)
 
 
-def test_too_many_redirects_is_rejected():
-    with pytest.raises(AdapterError, match='too_many_redirects'):
-        fetch_pdf_bytes('https://x.test/a.pdf', session_factory=_sf(_Resp(hist=9)))
+def test_initial_url_off_host_is_never_requested():
+    sess, err, _ = _fetch({}, url='https://evil.test/a.pdf')
+    assert 'host_not_allowed:evil.test' in str(err)
+    assert sess.requested == []
+
+
+def test_adapter_declares_download_hosts():
+    """adapter 沒宣告 download_hosts，SourceFile 就帶不出白名單，取檔會 fail-closed。"""
+    for a in ADAPTERS:
+        assert getattr(a, 'download_hosts', None), f'{a.name} 未宣告 download_hosts'
+
+
+def test_listed_files_carry_allowed_hosts():
+    payload = _payload([_f('a.pdf', '/uploads/a.pdf')])
+    out = RedsunAdapter().list_files(SITE, fetch=lambda u: (200, '', payload))
+    assert out[0].allowed_hosts == frozenset({'public-be.redsun.tw'})
 
 
 # ---------- 管線：adapter 能處理的必須真的進到同步 ----------

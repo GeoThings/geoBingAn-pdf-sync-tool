@@ -600,7 +600,10 @@ class PermitSync:
             final_folder_id = self.get_or_create_subfolder(target_folder_id, src.path)
             if not final_folder_id:
                 return None, None
-        data = fetch_pdf_bytes(src.url)          # 失敗會拋 AdapterError，由呼叫端逐檔處理
+        # allowed_hosts 由 adapter 宣告並隨 SourceFile 傳進來：取檔時**每一跳**都要
+        # 落在那些主機上。空的會被 fetch_pdf_bytes 拒絕（fail-closed），不會變成
+        # 「沒宣告就等於不限制」。失敗拋 AdapterError，由呼叫端逐檔處理。
+        data = fetch_pdf_bytes(src.url, src.allowed_hosts)
         media = MediaIoBaseUpload(io.BytesIO(data), mimetype='application/pdf', resumable=True)
         created = self._get_svc().files().create(
             body={'name': src.name, 'parents': [final_folder_id], 'mimeType': 'application/pdf'},
