@@ -36,6 +36,20 @@ echo "[$(date '+%F %T')] === run_weekly_sync.sh triggered (PID=$$, PPID=$PPID) =
 # 日誌檔案（使用日期時間命名）
 LOG_FILE="$LOG_DIR/weekly_sync_$(date +%Y%m%d_%H%M%S).log"
 
+# ── 整體執行時間上限（看門狗）────────────────────────────────────────────
+# 2026-09-27 實際踩到：Drive 掃描遇到 51 次 Connection reset，每次請求各自重試，
+# 但**整體沒有上限**，一路跑了 734.6 分鐘（12.2 小時）才放棄。後果：
+#   1. 壓到隔天的排程（launchd 10:00 又起一份，兩份並跑搶同一份狀態檔）
+#   2. 失敗通知隔天才到，等於失去告警意義
+# 本機沒有 GNU timeout（coreutils 未安裝），所以自己看門。邏輯在 lib/watchdog.sh
+# （抽出來才測得到；兩個 review P1 的理由也寫在那裡）。
+MAX_RUNTIME_SECONDS="${MAX_RUNTIME_SECONDS:-3600}"     # 預設 60 分（正常 15–17 分）
+TIMEOUT_GRACE_SECONDS="${TIMEOUT_GRACE_SECONDS:-60}"   # SIGTERM 到 SIGKILL 的寬限
+TIMEOUT_MARKER="$LOG_DIR/.weeklysync_timeout.$$"
+WAS_TIMEOUT=0
+# shellcheck source=lib/watchdog.sh
+source "$SCRIPT_DIR/lib/watchdog.sh"
+
 # 狀態變數
 SYNCED_COUNT=0
 UPLOADED_COUNT=0
@@ -62,7 +76,13 @@ cleanup() {
     DURATION_SECONDS=$((END_TIME - START_TIME))
 
     # 如果有未捕獲的錯誤
-    if [ $exit_code -ne 0 ] && [ $HAS_ERROR -eq 0 ]; then
+    # 超時要講清楚是超時，不可混進「未預期的錯誤」——操作者會去查錯的方向
+    if [ -f "$TIMEOUT_MARKER" ]; then
+        rm -f "$TIMEOUT_MARKER"
+        WAS_TIMEOUT=1
+        HAS_ERROR=1
+        ERROR_MESSAGE="執行超過 ${MAX_RUNTIME_SECONDS}s 上限被終止（正常 15–17 分；多為 Drive 連線重置後無上限重試）"
+    elif [ $exit_code -ne 0 ] && [ $HAS_ERROR -eq 0 ]; then
         HAS_ERROR=1
         ERROR_MESSAGE="未預期的錯誤 (exit code: $exit_code)"
     fi
@@ -91,6 +111,14 @@ cleanup() {
     echo "" | tee -a "$LOG_FILE"
     echo "========================================" | tee -a "$LOG_FILE"
     DURATION_MINUTES=$(echo "scale=1; $DURATION_SECONDS / 60" | bc)
+    # 看門狗在這裡才取消，而且只在**非超時**路徑取消（review P1-2）：
+    #  - 取消得太早 → cleanup／通知卡住時沒人殺它，宣稱的 grace 是假的
+    #  - 超時路徑不取消 → 讓 wd 的 grace→SIGKILL 真的生效
+    #  - 正常路徑放最後 → cleanup 本身也受同一個期限保護
+    if [ "${WAS_TIMEOUT}" -eq 0 ]; then
+        wd_stop
+    fi
+
     if [ $HAS_ERROR -eq 0 ]; then
         echo "✅ 週期同步執行完成 - $(date)" | tee -a "$LOG_FILE"
     else
@@ -121,7 +149,12 @@ handle_error() {
 
 echo "========================================" | tee -a "$LOG_FILE"
 echo "🚀 開始執行週期同步 - $(date)" | tee -a "$LOG_FILE"
+echo "   ⏱️  執行時間上限 ${MAX_RUNTIME_SECONDS}s" | tee -a "$LOG_FILE"
 echo "========================================" | tee -a "$LOG_FILE"
+# SIGTERM 時走正常的 cleanup 並回確定的結束碼。
+# 不設的話 bash 會以 128+15=143 結束，巡檢看到 143 會誤導成「backoff 鎖死」。
+trap 'exit 1' TERM
+wd_start
 
 # 啟動虛擬環境（關鍵步驟，失敗會觸發 set -e 退出）
 if [ ! -f "$SCRIPT_DIR/venv/bin/activate" ]; then

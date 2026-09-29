@@ -526,6 +526,42 @@ upload_pdfs.main()
 
 ## 錯誤處理
 
+### 整體執行時間上限（看門狗）
+
+2026-09-27 實際踩到：Drive 掃描遇到 **51 次 Connection reset**，每次請求各自重試，
+但**整體沒有上限**，一路跑了 **734.6 分鐘（12.2 小時）** 才放棄。兩個後果都很糟：
+
+1. 壓到隔天的排程——launchd 10:00 又起一份，兩份並跑搶同一份狀態檔。
+2. 失敗通知隔天才到，等於失去告警意義。
+
+本機沒有 GNU `timeout`（coreutils 未安裝），所以 `run_weekly_sync.sh` 自帶看門狗：
+背景子程序睡到 `MAX_RUNTIME_SECONDS`（預設 **3600**，正常跑 15–17 分）後寫下 marker、
+`SIGTERM` 主程序，寬限 `TIMEOUT_GRACE_SECONDS`（預設 **60**）後 `SIGKILL`。
+
+邏輯放在 `lib/watchdog.sh`（`wd_start`／`wd_stop`／`wd_kill_tree`），**抽出來才測得到**：
+`tests/test_watchdog.py` 透過 `tests/fixtures/watchdog_harness.sh` source 正式那一份跑真流程，
+而不是在測試裡抄一份邏輯——抄的那份會和正式的走鐘，等於沒測。
+
+五個細節都是刻意的：
+
+- **要殺整棵子程序樹**（review P1）。`kill -TERM $$` 不會動到 python／tee，它們會變成
+  orphan 繼續掃 Drive、繼續寫狀態檔，隔天照樣和新排程衝突——超時等於沒做。
+  `wd_kill_tree` 先把後代收集完再一起送訊號：父死後子程序會被 reparent，
+  `pgrep -P` 就再也找不到它們。
+- **cleanup 不可在一開始就取消看門狗**（review P1）。取消掉的話，負責「寬限後 SIGKILL」
+  的程序就不存在了，宣稱的 grace 是假的。→ 超時路徑**不取消**；正常路徑在 cleanup
+  **最後**才取消，讓 cleanup 本身也受同一個期限保護。
+
+- **寬限要夠 `cleanup` 跑完 `record_sync_result`**（要連網發告警信／ClickUp）。太短會在
+  通知送出前就 SIGKILL，變成「超時了但沒人知道」，正是要避免的事。
+- **`trap 'exit 1' TERM`**：不設的話 bash 以 128+15=143 結束，巡檢看到 143 會誤導成
+  「backoff 鎖死」。
+- **超時用獨立的錯誤訊息**，不可混進「未預期的錯誤」——操作者會去查錯的方向。
+
+`MAX_RUNTIME_SECONDS=0` 可關閉（人工長跑補掃時用）。
+
+> `run_friday_report.sh` 目前未加：它只有 44 行、單一 Python 呼叫，尚未出現同類問題。若日後也卡住再比照處理。
+
 ### Shell 級聯保護（v3.1+）
 
 ```
