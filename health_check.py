@@ -81,9 +81,18 @@ def check_disk():
     return 'ok', f'{free_gb:.1f} GB 可用'
 
 
-def check_last_sync():
-    """檢查最近一次同步狀態"""
-    status_file = './state/sync_status.json'
+#: 模組常數而非寫死字串，測試才擋得住（否則檢查結果會取決於本機有沒有這個檔）
+SYNC_STATUS_FILE = './state/sync_status.json'
+SYNC_STALE_DAYS = 10              # check_last_sync 超過這個天數才報同步停擺
+
+
+def check_last_sync(path=None, now=None):
+    """檢查最近一次同步狀態。
+
+    path／now 可注入：check_unsupported_sources 會**直接呼叫這支**來判斷「同步
+    停擺是否已經有人報了」，不自己複製門檻（見那支的說明）。
+    """
+    status_file = path or SYNC_STATUS_FILE
     if not os.path.exists(status_file):
         return 'warning', '找不到同步狀態檔案'
 
@@ -95,8 +104,8 @@ def check_last_sync():
         if not last_run:
             return 'warning', '尚未執行過同步'
 
-        days_ago = (datetime.now() - datetime.fromisoformat(last_run)).days
-        if days_ago > 10:
+        days_ago = ((now or datetime.now()) - datetime.fromisoformat(last_run)).days
+        if days_ago > SYNC_STALE_DAYS:
             return 'warning', f'距離上次同步已 {days_ago} 天（{last_run[:10]}）'
         elif last_status == 'failure':
             return 'warning', f'上次同步失敗（{last_run[:10]}）'
@@ -279,8 +288,6 @@ def check_folder_deaths(path=None, now=None, window_days=DEATH_WINDOW_DAYS):
 
 
 UNSUPPORTED_STALE_HOURS = 48      # 每日排程，容忍漏跑一次；再久就是名單本身停更了
-#: 模組常數而非寫死字串，測試才擋得住（否則檢查結果會取決於本機有沒有這個檔）
-SYNC_STATUS_FILE = './state/sync_status.json'
 
 
 def _last_sync_time(path=None):
@@ -322,9 +329,13 @@ def check_unsupported_sources(path=None, now=None, new_window_days=14,
         if not data:
             if last_sync is None:
                 return 'ok', '尚無未支援來源名單（同步尚未跑過）'
-            if (now - last_sync) > timedelta(hours=stale_hours):
-                # 同步本身就停了，由 check_last_sync 負責報，這裡不重複告警
-                return 'ok', f'尚無未支援來源名單（同步已停 {(now - last_sync).days} 天）'
+            sync_level, sync_msg = check_last_sync(path=sync_status_path, now=now)
+            if sync_level != 'ok':
+                # 只有在「同步狀態」檢查**確實會亮燈**時才讓給它報。
+                # 早先版本用自己的 48 小時門檻抑制告警，但 check_last_sync 要超過
+                # 10 天才報 → 最後一次成功同步在 3～10 天前而名單缺失時，兩邊
+                # 同時綠燈，出現告警真空（review P2）。門檻不複製，直接問它。
+                return 'ok', f'尚無未支援來源名單（同步狀態已另行告警：{sync_msg}）'
             return 'warning', (f'同步已於 {last_sync:%Y-%m-%d %H:%M} 執行，卻找不到未支援來源名單'
                                f'——名單寫入可能一直失敗，缺口目前沒有任何紀錄')
         gen_raw = data.get('generated_at') or ''

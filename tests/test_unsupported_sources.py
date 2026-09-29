@@ -294,11 +294,16 @@ def test_missing_list_without_any_sync_is_ok(tmp_path):
 
 
 def test_missing_list_when_sync_itself_stopped_does_not_double_alert(tmp_path):
-    """同步本身停了由 check_last_sync 報，這裡不重複告警。"""
+    """同步本身停到 check_last_sync 會報時，這裡不重複告警。
+
+    「會不會報」直接問 check_last_sync，不複製門檻——複製過就出過事（見下方
+    test_no_alerting_vacuum_between_thresholds）。
+    """
+    p = _sync_status(tmp_path, NOW - timedelta(days=30))
+    assert health_check.check_last_sync(path=p, now=NOW)[0] != 'ok', '前提：同步檢查確實會亮'
     level, msg = health_check.check_unsupported_sources(
-        path=str(tmp_path / 'nope.json'), now=NOW,
-        sync_status_path=_sync_status(tmp_path, NOW - timedelta(days=9)))
-    assert level == 'ok' and '同步已停' in msg
+        path=str(tmp_path / 'nope.json'), now=NOW, sync_status_path=p)
+    assert level == 'ok' and '已另行告警' in msg
 
 
 @pytest.mark.parametrize('gen', [None, '', 'not-a-date', 12345])
@@ -318,3 +323,53 @@ def test_fresh_list_still_reports_normally(tmp_path):
     level, msg = health_check.check_unsupported_sources(
         path=p, now=NOW, sync_status_path=_sync_status(tmp_path, NOW))
     assert level == 'ok' and '無新增' in msg
+
+
+# ---------- 兩個檢查之間不可有告警真空（re-review P2）----------
+#
+# 早先版本用自己的 48 小時門檻抑制告警，說「交給 check_last_sync」——但那支要
+# 超過 10 天才報。最後一次成功同步在 3～10 天前而名單缺失時，**兩邊同時綠燈**。
+# 修法是不複製門檻：直接呼叫 check_last_sync，只有它真的會亮才讓給它。
+
+@pytest.mark.parametrize('days', [3, 10])
+def test_missing_list_still_alerts_between_thresholds(tmp_path, days):
+    """reviewer 指定的兩個點：最後同步 3 天／10 天前且成功，名單缺失。"""
+    p = _sync_status(tmp_path, NOW - timedelta(days=days))
+    assert health_check.check_last_sync(path=p, now=NOW)[0] == 'ok', '前提：同步檢查此時不會亮'
+    level, msg = health_check.check_unsupported_sources(
+        path=str(tmp_path / 'nope.json'), now=NOW, sync_status_path=p)
+    assert level == 'warning' and '找不到' in msg, msg
+
+
+@pytest.mark.parametrize('days', list(range(0, 31)))
+def test_no_alerting_vacuum_between_thresholds(tmp_path, days):
+    """掃過整段區間：名單缺失時，兩個燈至少要亮一個。
+
+    點測試只證明選中的那兩格沒事；門檻一旦再度分叉，真空會出現在沒測到的那格。
+    """
+    p = _sync_status(tmp_path, NOW - timedelta(days=days))
+    sync_level, _ = health_check.check_last_sync(path=p, now=NOW)
+    uns_level, _ = health_check.check_unsupported_sources(
+        path=str(tmp_path / 'nope.json'), now=NOW, sync_status_path=p)
+    assert 'ok' != sync_level or 'ok' != uns_level, (
+        f'最後同步 {days} 天前、名單缺失，兩個檢查卻都是綠燈')
+
+
+def test_failed_last_sync_also_suppresses(tmp_path):
+    """check_last_sync 也會因『上次同步失敗』亮燈，抑制條件要跟著涵蓋。"""
+    p = tmp_path / 'ss.json'
+    p.write_text(json.dumps({'last_run': (NOW - timedelta(hours=2)).isoformat(),
+                             'last_status': 'failure'}), encoding='utf-8')
+    assert health_check.check_last_sync(path=str(p), now=NOW)[0] != 'ok'
+    level, msg = health_check.check_unsupported_sources(
+        path=str(tmp_path / 'nope.json'), now=NOW, sync_status_path=str(p))
+    assert level == 'ok' and '已另行告警' in msg
+
+
+def test_stale_list_alerts_regardless_of_sync_state(tmp_path):
+    """名單過期是名單自己的問題，不因同步也在告警而被吞掉。"""
+    old = us.build(_entries(), now=NOW - timedelta(days=30))
+    p = _write(tmp_path, _entries(), now=NOW - timedelta(days=5), previous=old)
+    level, msg = health_check.check_unsupported_sources(
+        path=p, now=NOW, sync_status_path=_sync_status(tmp_path, NOW - timedelta(days=30)))
+    assert level == 'warning' and '未更新' in msg
