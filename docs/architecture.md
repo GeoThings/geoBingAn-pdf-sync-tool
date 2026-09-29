@@ -538,7 +538,19 @@ upload_pdfs.main()
 背景子程序睡到 `MAX_RUNTIME_SECONDS`（預設 **3600**，正常跑 15–17 分）後寫下 marker、
 `SIGTERM` 主程序，寬限 `TIMEOUT_GRACE_SECONDS`（預設 **60**）後 `SIGKILL`。
 
-三個細節都是刻意的：
+邏輯放在 `lib/watchdog.sh`（`wd_start`／`wd_stop`／`wd_kill_tree`），**抽出來才測得到**：
+`tests/test_watchdog.py` 透過 `tests/fixtures/watchdog_harness.sh` source 正式那一份跑真流程，
+而不是在測試裡抄一份邏輯——抄的那份會和正式的走鐘，等於沒測。
+
+五個細節都是刻意的：
+
+- **要殺整棵子程序樹**（review P1）。`kill -TERM $$` 不會動到 python／tee，它們會變成
+  orphan 繼續掃 Drive、繼續寫狀態檔，隔天照樣和新排程衝突——超時等於沒做。
+  `wd_kill_tree` 先把後代收集完再一起送訊號：父死後子程序會被 reparent，
+  `pgrep -P` 就再也找不到它們。
+- **cleanup 不可在一開始就取消看門狗**（review P1）。取消掉的話，負責「寬限後 SIGKILL」
+  的程序就不存在了，宣稱的 grace 是假的。→ 超時路徑**不取消**；正常路徑在 cleanup
+  **最後**才取消，讓 cleanup 本身也受同一個期限保護。
 
 - **寬限要夠 `cleanup` 跑完 `record_sync_result`**（要連網發告警信／ClickUp）。太短會在
   通知送出前就 SIGKILL，變成「超時了但沒人知道」，正是要避免的事。

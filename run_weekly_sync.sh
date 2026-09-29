@@ -41,33 +41,14 @@ LOG_FILE="$LOG_DIR/weekly_sync_$(date +%Y%m%d_%H%M%S).log"
 # 但**整體沒有上限**，一路跑了 734.6 分鐘（12.2 小時）才放棄。後果：
 #   1. 壓到隔天的排程（launchd 10:00 又起一份，兩份並跑搶同一份狀態檔）
 #   2. 失敗通知隔天才到，等於失去告警意義
-# 本機沒有 GNU timeout（coreutils 未安裝），所以自己看門：背景子程序睡到期限後
-# 殺掉整個 process group。期限內正常結束則取消看門狗。
+# 本機沒有 GNU timeout（coreutils 未安裝），所以自己看門。邏輯在 lib/watchdog.sh
+# （抽出來才測得到；兩個 review P1 的理由也寫在那裡）。
 MAX_RUNTIME_SECONDS="${MAX_RUNTIME_SECONDS:-3600}"     # 預設 60 分（正常 15–17 分）
 TIMEOUT_GRACE_SECONDS="${TIMEOUT_GRACE_SECONDS:-60}"   # SIGTERM 到 SIGKILL 的寬限
 TIMEOUT_MARKER="$LOG_DIR/.weeklysync_timeout.$$"
-
-start_watchdog() {
-    [ "${MAX_RUNTIME_SECONDS}" -le 0 ] && return 0     # 0 = 關閉（人工長跑時用）
-    local target=$$
-    (
-        sleep "${MAX_RUNTIME_SECONDS}"
-        kill -0 "$target" 2>/dev/null || exit 0        # 已正常結束
-        echo "TIMEOUT" > "$TIMEOUT_MARKER"
-        echo "" | tee -a "$LOG_FILE"
-        echo "⏱️  已達執行時間上限 ${MAX_RUNTIME_SECONDS}s，強制終止（避免壓到下一次排程）" | tee -a "$LOG_FILE"
-        kill -TERM "$target" 2>/dev/null
-        # 寬限要夠 cleanup 跑完 record_sync_result（要連網發告警信／ClickUp）。
-        # 太短會在通知送出前 SIGKILL，變成「超時了但沒人知道」——正是要避免的事。
-        sleep "${TIMEOUT_GRACE_SECONDS}"
-        kill -KILL "$target" 2>/dev/null               # 還不走就硬殺
-    ) &
-    WATCHDOG_PID=$!
-}
-
-stop_watchdog() {
-    [ -n "${WATCHDOG_PID:-}" ] && kill "${WATCHDOG_PID}" 2>/dev/null || true
-}
+WAS_TIMEOUT=0
+# shellcheck source=lib/watchdog.sh
+source "$SCRIPT_DIR/lib/watchdog.sh"
 
 # 狀態變數
 SYNCED_COUNT=0
@@ -95,10 +76,10 @@ cleanup() {
     DURATION_SECONDS=$((END_TIME - START_TIME))
 
     # 如果有未捕獲的錯誤
-    stop_watchdog
     # 超時要講清楚是超時，不可混進「未預期的錯誤」——操作者會去查錯的方向
     if [ -f "$TIMEOUT_MARKER" ]; then
         rm -f "$TIMEOUT_MARKER"
+        WAS_TIMEOUT=1
         HAS_ERROR=1
         ERROR_MESSAGE="執行超過 ${MAX_RUNTIME_SECONDS}s 上限被終止（正常 15–17 分；多為 Drive 連線重置後無上限重試）"
     elif [ $exit_code -ne 0 ] && [ $HAS_ERROR -eq 0 ]; then
@@ -130,6 +111,14 @@ cleanup() {
     echo "" | tee -a "$LOG_FILE"
     echo "========================================" | tee -a "$LOG_FILE"
     DURATION_MINUTES=$(echo "scale=1; $DURATION_SECONDS / 60" | bc)
+    # 看門狗在這裡才取消，而且只在**非超時**路徑取消（review P1-2）：
+    #  - 取消得太早 → cleanup／通知卡住時沒人殺它，宣稱的 grace 是假的
+    #  - 超時路徑不取消 → 讓 wd 的 grace→SIGKILL 真的生效
+    #  - 正常路徑放最後 → cleanup 本身也受同一個期限保護
+    if [ "${WAS_TIMEOUT}" -eq 0 ]; then
+        wd_stop
+    fi
+
     if [ $HAS_ERROR -eq 0 ]; then
         echo "✅ 週期同步執行完成 - $(date)" | tee -a "$LOG_FILE"
     else
@@ -165,7 +154,7 @@ echo "========================================" | tee -a "$LOG_FILE"
 # SIGTERM 時走正常的 cleanup 並回確定的結束碼。
 # 不設的話 bash 會以 128+15=143 結束，巡檢看到 143 會誤導成「backoff 鎖死」。
 trap 'exit 1' TERM
-start_watchdog
+wd_start
 
 # 啟動虛擬環境（關鍵步驟，失敗會觸發 set -e 退出）
 if [ ! -f "$SCRIPT_DIR/venv/bin/activate" ]; then
