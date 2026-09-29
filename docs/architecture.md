@@ -290,6 +290,14 @@ Shared Drive
     │  `extract_folder_id_from_url` 同時限定 Drive 主機：其他空間常帶 `?id=`／`?oid=`，
     │  寬鬆比對會抓出假 folder id 再拿去查 Drive。
     │
+    ▼ **`parse_pdf_list` 有兩個 consumer，必須分流**（PR #99 review P1）：
+    │  match_permits 要完整清單（含非 Drive，供 registry／監控），
+    │  但 PermitSync.run() 假設來源能直接抽出 folder id。不分流的話 run() 會為
+    │  74 個非 Drive 網址都先建好 Shared Drive 目標資料夾，之後才在 sync_permit
+    │  因 Invalid URL ID 失敗 —— 留下空資料夾與同步錯誤紀錄。
+    │  → `run()` 在 `create_target_folder` **之前**呼叫 `_resolve_or_skip_indirect()`：
+    │    解得出來的換成 Drive 網址納入同步（實測 27 案），解不開的**剔除**（47 案）。
+    │
     ▼ 間接連結解析（link_resolver，PR #95）：來源 URL 取不出 Drive folder id 時
     │  跟隨轉址／抓頁面找內嵌的 Drive 資料夾；**恰好一個才採用**（兩個以上視為有歧義
     │  而放棄——猜錯會把別人的資料夾掛到這個建案）。結果快取 14 天，來源 URL 變更即失效。

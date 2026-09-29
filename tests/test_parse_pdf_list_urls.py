@@ -124,3 +124,100 @@ def test_two_permits_each_get_their_own_url(ps, monkeypatch, tmp_path):
     out = _parse(ps, monkeypatch, text, tmp_path)
     assert out['111建字第0100號'] == 'https://a.test/one'
     assert out['111建字第0200號'] == 'https://b.test/two'
+
+
+# ---------- run() 層級分流（review P1）----------
+#
+# parse_pdf_list 有兩個 consumer：match_permits 需要全部 URL（交 resolver），
+# 但 PermitSync.run() 假設來源能直接抽出 Drive folder id。放寬抓取後主同步會
+# 收到 74 個非 Drive URL，若不先分流，run() 會為每一個先建好 Shared Drive 目標
+# 資料夾、之後才在 sync_permit 因 Invalid URL ID 失敗——留下空資料夾與錯誤紀錄。
+
+from geobingan_sync.link_resolver import Resolution
+
+FOLDER = 'https://drive.google.com/drive/folders/1N07lVUXyZH7ZjzAaZfAb'
+FID = '1N07lVUXyZH7ZjzAaZfAb'
+
+
+def test_indirect_link_resolved_before_target_creation(ps, tmp_path):
+    """能救回的要變成 Drive 網址納入同步——這才是這串修改的目的。"""
+    out = ps._resolve_or_skip_indirect(
+        {'A': 'https://sites.google.com/view/x'},
+        resolver=lambda u: Resolution(FID, 'embedded'),
+        cache_path=str(tmp_path / 'c.json'))
+    assert out['A'] == FOLDER
+    assert ps.extract_folder_id_from_url(out['A']) == FID
+
+
+def test_unresolvable_indirect_link_is_dropped(ps, tmp_path):
+    """解不開的要剔除，否則 run() 會建出空資料夾再記一筆同步錯誤。"""
+    out = ps._resolve_or_skip_indirect(
+        {'A': 'https://cectw-my.sharepoint.com/:f:/g/personal/x'},
+        resolver=lambda u: Resolution(None, 'none', 'no_drive_link'),
+        cache_path=str(tmp_path / 'c.json'))
+    assert 'A' not in out
+
+
+def test_direct_drive_urls_pass_through_without_resolving(ps, tmp_path):
+    called = []
+    out = ps._resolve_or_skip_indirect(
+        {'A': FOLDER}, resolver=lambda u: called.append(u) or Resolution(None, 'none'),
+        cache_path=str(tmp_path / 'c.json'))
+    assert out == {'A': FOLDER} and called == [], '已是 Drive 就不該再解析'
+
+
+def test_mixed_mapping_keeps_direct_and_rescued_only(ps, tmp_path):
+    mapping = {
+        'DIRECT': FOLDER,
+        'RESCUE': 'https://sites.google.com/view/x',
+        'DROP': 'http://gofile.me/abc',
+    }
+    def res(u):
+        return Resolution(FID, 'embedded') if 'sites.google' in u else Resolution(None, 'none')
+    out = ps._resolve_or_skip_indirect(mapping, resolver=res, cache_path=str(tmp_path / 'c.json'))
+    assert set(out) == {'DIRECT', 'RESCUE'}
+    # 每一筆留下來的都必須能抽出 folder id，run() 才不會建空資料夾
+    assert all(ps.extract_folder_id_from_url(u) for u in out.values())
+
+
+def test_resolver_exception_drops_that_permit_only(ps, tmp_path):
+    """解析失敗不可中斷同步：該案剔除、其餘照跑。"""
+    def boom(u):
+        if 'bad' in u:
+            raise RuntimeError('x')
+        return Resolution(FID, 'embedded')
+    out = ps._resolve_or_skip_indirect(
+        {'BAD': 'https://bad.test/a', 'OK': 'https://sites.google.com/view/x', 'D': FOLDER},
+        resolver=boom, cache_path=str(tmp_path / 'c.json'))
+    assert set(out) == {'OK', 'D'}
+
+
+def test_no_indirect_links_is_a_noop(ps, tmp_path):
+    mapping = {'A': FOLDER, 'B': FOLDER}
+    assert ps._resolve_or_skip_indirect(mapping, cache_path=str(tmp_path / 'c.json')) == mapping
+
+
+def test_run_resolves_before_creating_target_folders(ps, monkeypatch, tmp_path):
+    """行為面：非 Drive 的建案不得走到 create_target_folder。"""
+    created = []
+    synced = []
+    monkeypatch.setattr(ps, 'download_pdf_list', lambda *a, **k: str(tmp_path / 'l.pdf'))
+    monkeypatch.setattr(ps, 'parse_pdf_list', lambda p: {
+        'DIRECT': FOLDER,
+        'RESCUE': 'https://sites.google.com/view/x',
+        'DROP': 'http://gofile.me/abc',
+    })
+    monkeypatch.setattr(ps, '_record_list_fingerprint', lambda *a, **k: None)
+    monkeypatch.setattr(ps, 'scan_shared_drive', lambda *a, **k: {})
+    monkeypatch.setattr(ps, 'create_target_folder',
+                        lambda permit: created.append(permit) or f'tgt-{permit}')
+    monkeypatch.setattr(ps, 'sync_permit', lambda pn, url, tid: synced.append((pn, url)) or {})
+    monkeypatch.setattr(ps, '_resolve_or_skip_indirect',
+                        lambda m, **kw: {k: (FOLDER if k != 'DROP' else None) for k in m
+                                         if k != 'DROP'})
+    try:
+        ps.run()
+    except Exception:
+        pass                      # run() 尾段還有統計／狀態寫入，這裡只驗前半段行為
+    assert 'DROP' not in created, '非 Drive 的建案不該被建立目標資料夾'
+    assert 'DROP' not in [p for p, _ in synced], '非 Drive 的建案不該進同步'

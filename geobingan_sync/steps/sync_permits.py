@@ -598,6 +598,52 @@ class PermitSync:
                 self.state['errors'].append({'permit': permit_no, 'error': str(e)})
             self.save_state()
     
+    def _resolve_or_skip_indirect(self, mapping: Dict[str, str], resolver=None,
+                                  cache_path: str = None) -> Dict[str, str]:
+        """把非 Drive 來源解析成 Drive 資料夾；解不出來的**剔除**，不進同步流程。
+
+        剔除而非保留的理由：保留只會讓 run() 建出空的目標資料夾、再記一筆同步錯誤，
+        對操作者是雜訊，對資料是零收益。解不開的那些由 health_check 的來源資料夾
+        檢查與 registry 繼續追蹤（match_permits 仍會看到完整清單）。
+
+        解析失敗不可中斷同步：任何例外都只記錄、該案剔除、其餘照跑。
+        """
+        direct, indirect = {}, []
+        for permit, url in mapping.items():
+            if self.extract_folder_id_from_url(url):
+                direct[permit] = url
+            else:
+                indirect.append((permit, url))
+        if not indirect:
+            return direct
+
+        from geobingan_sync.link_resolver import (cached_resolve, load_cache, save_cache,
+                                                  CACHE_FILE)
+        path = cache_path or CACHE_FILE
+        try:
+            cache = load_cache(path)
+        except Exception:                                   # noqa: BLE001
+            cache = {}
+        rescued, skipped = 0, 0
+        for permit, url in indirect:
+            try:
+                res = cached_resolve(permit, url, cache, resolver=resolver)
+            except Exception as e:                          # noqa: BLE001
+                print(f"  ⚠️ 連結解析失敗 {permit}: {type(e).__name__}")
+                skipped += 1
+                continue
+            if res.ok:
+                direct[permit] = f'https://drive.google.com/drive/folders/{res.folder_id}'
+                rescued += 1
+            else:
+                skipped += 1
+        try:
+            save_cache(cache, path)
+        except Exception as e:                              # noqa: BLE001
+            print(f"  ⚠️ 連結解析快取寫入失敗: {type(e).__name__}")
+        print(f"  🔗 間接連結：解析成功 {rescued} 案納入同步、{skipped} 案非 Drive 空間暫不支援（已跳過，不建空資料夾）")
+        return direct
+
     def run(self):
         print("="*70)
         print(f"🚀 建築執照監測資料同步工具 v5.1 ({self.city_name})")
@@ -611,6 +657,13 @@ class PermitSync:
             self.permit_mapping = self.parse_pdf_list(pdf_path)
             self._record_list_fingerprint()
         self.target_folders = self.scan_shared_drive()
+
+        # 解析間接連結**必須在建立目標資料夾之前**（review P1）。
+        # parse_pdf_list 現在抓任何 http(s)，主同步因此會收到 74 個非 Drive 網址。
+        # 若不先處理，run() 會為每一個都先建好 Shared Drive 目標資料夾，之後才在
+        # sync_permit 因 Invalid URL ID 失敗 —— 留下一堆空資料夾與同步錯誤紀錄，
+        # 而 resolver 救得回來的 27 案也還是沒被同步到。
+        self.permit_mapping = self._resolve_or_skip_indirect(self.permit_mapping)
 
         permit_list = list(self.permit_mapping.items())
         # 隨機打亂，確保每次執行檢查不同建案
