@@ -24,12 +24,23 @@ wd_descendants() {
 }
 
 # 對 pid 與其所有後代送訊號。先收集完整清單再送，避免 reparent 造成漏殺。
+#
+# ⚠️ 必須排除自己：看門狗子程序本身就是主 shell 的後代，不排除的話它會把自己
+# 一起殺掉，「寬限後 SIGKILL」那一段就永遠不會執行——grace 又變成假的。
+# 這個 bug 在 macOS 本機「通過」了、在 Linux CI 才紅：純粹是誰先被殺到的時序差異，
+# 屬於環境相依的假綠，比直接壞掉更危險。呼叫端用 WD_SELF 指定要排除的 pid。
 wd_kill_tree() {
     local pid=$1 sig=$2 p
+    local skip=""
+    if [ -n "${WD_SELF:-}" ]; then
+        skip="${WD_SELF} $(wd_descendants "${WD_SELF}")"
+    fi
     local list
     list="$(wd_descendants "$pid") $pid"
     for p in $list; do
-        [ -n "$p" ] && kill "-$sig" "$p" 2>/dev/null || true
+        [ -n "$p" ] || continue
+        case " $skip " in *" $p "*) continue ;; esac
+        kill "-$sig" "$p" 2>/dev/null || true
     done
 }
 
@@ -37,6 +48,7 @@ wd_start() {
     [ "${MAX_RUNTIME_SECONDS}" -le 0 ] && return 0      # 0 = 關閉（人工長跑用）
     local target=$$
     (
+        WD_SELF=$BASHPID          # 排除自己與自己的後代，否則會殺掉負責 SIGKILL 的自己
         sleep "${MAX_RUNTIME_SECONDS}"
         kill -0 "$target" 2>/dev/null || exit 0         # 已正常結束
         echo "TIMEOUT" > "$TIMEOUT_MARKER"
