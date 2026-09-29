@@ -81,9 +81,18 @@ def check_disk():
     return 'ok', f'{free_gb:.1f} GB 可用'
 
 
-def check_last_sync():
-    """檢查最近一次同步狀態"""
-    status_file = './state/sync_status.json'
+#: 模組常數而非寫死字串，測試才擋得住（否則檢查結果會取決於本機有沒有這個檔）
+SYNC_STATUS_FILE = './state/sync_status.json'
+SYNC_STALE_DAYS = 10              # check_last_sync 超過這個天數才報同步停擺
+
+
+def check_last_sync(path=None, now=None):
+    """檢查最近一次同步狀態。
+
+    path／now 可注入：check_unsupported_sources 會**直接呼叫這支**來判斷「同步
+    停擺是否已經有人報了」，不自己複製門檻（見那支的說明）。
+    """
+    status_file = path or SYNC_STATUS_FILE
     if not os.path.exists(status_file):
         return 'warning', '找不到同步狀態檔案'
 
@@ -95,8 +104,8 @@ def check_last_sync():
         if not last_run:
             return 'warning', '尚未執行過同步'
 
-        days_ago = (datetime.now() - datetime.fromisoformat(last_run)).days
-        if days_ago > 10:
+        days_ago = ((now or datetime.now()) - datetime.fromisoformat(last_run)).days
+        if days_ago > SYNC_STALE_DAYS:
             return 'warning', f'距離上次同步已 {days_ago} 天（{last_run[:10]}）'
         elif last_status == 'failure':
             return 'warning', f'上次同步失敗（{last_run[:10]}）'
@@ -278,6 +287,94 @@ def check_folder_deaths(path=None, now=None, window_days=DEATH_WINDOW_DAYS):
         return 'warning', f'失效資料夾檢查失敗: {e}'
 
 
+UNSUPPORTED_STALE_HOURS = 48      # 每日排程，容忍漏跑一次；再久就是名單本身停更了
+
+
+def _last_sync_time(path=None):
+    """最近一次同步時間；讀不到就回 None（代表無從判斷，不是「沒跑過」）。"""
+    from datetime import datetime as _dt
+    try:
+        with open(path or SYNC_STATUS_FILE, encoding='utf-8') as f:
+            raw = (json.load(f) or {}).get('last_run') or ''
+        return _dt.fromisoformat(raw) if raw else None
+    except Exception:                                   # noqa: BLE001
+        return None
+
+
+def check_unsupported_sources(path=None, now=None, new_window_days=14,
+                              sync_status_path=None,
+                              stale_hours=UNSUPPORTED_STALE_HOURS):
+    """清單上有、但我們接不到的來源。
+
+    這個檢查不是「系統壞了」的燈號，是**缺口的可見度**——被剔除的建案原本在系統
+    裡完全消失。平時綠燈並附上家族分佈；基準建立後**新出現**的才升警告，因為那
+    代表某個原本接得到的來源剛剛失聯，是新的資料流失訊號。
+
+    家族結論帶探測日期一起顯示：那是點時間的觀察，不是永久事實。
+
+    ⚠️ 也要檢查**這個機制本身還活著**（review P2）。名單寫入失敗刻意不中斷同步
+    （它是可見度、不是同步本身），代價是失敗會無聲：舊檔會一直回報「無新增」綠燈，
+    第一次就寫不出來則會永遠回報「尚未跑過」綠燈。所以同步跑過之後缺檔、或
+    generated_at 過期，都要升警告——否則正是這支功能要消滅的那種無聲失效。
+    """
+    from datetime import datetime as _dt, timedelta
+    from geobingan_sync import unsupported_sources as us
+    try:
+        now = now or _dt.now()
+        last_sync = _last_sync_time(sync_status_path)
+        try:
+            data = us.load(path)
+        except json.JSONDecodeError as e:
+            return 'warning', f'未支援來源名單損毀、無法判讀（{e}）；請檢查 state/unsupported_sources.json'
+        if not data:
+            if last_sync is None:
+                return 'ok', '尚無未支援來源名單（同步尚未跑過）'
+            sync_level, sync_msg = check_last_sync(path=sync_status_path, now=now)
+            if sync_level != 'ok':
+                # 只有在「同步狀態」檢查**確實會亮燈**時才讓給它報。
+                # 早先版本用自己的 48 小時門檻抑制告警，但 check_last_sync 要超過
+                # 10 天才報 → 最後一次成功同步在 3～10 天前而名單缺失時，兩邊
+                # 同時綠燈，出現告警真空（review P2）。門檻不複製，直接問它。
+                return 'ok', f'尚無未支援來源名單（同步狀態已另行告警：{sync_msg}）'
+            return 'warning', (f'同步已於 {last_sync:%Y-%m-%d %H:%M} 執行，卻找不到未支援來源名單'
+                               f'——名單寫入可能一直失敗，缺口目前沒有任何紀錄')
+        gen_raw = data.get('generated_at') or ''
+        try:
+            gen = _dt.fromisoformat(gen_raw)
+        except (TypeError, ValueError):
+            return 'warning', f'未支援來源名單缺少可判讀的 generated_at（{gen_raw!r}）——無法確認是否仍在更新'
+        age = now - gen
+        if age > timedelta(hours=stale_hours):
+            hrs = int(age.total_seconds() // 3600)
+            return 'warning', (f'未支援來源名單已 {hrs} 小時未更新（最後 {gen:%Y-%m-%d %H:%M}）'
+                               f'——寫入可能持續失敗，名單內容已不可信')
+        sources = data.get('sources') or {}
+        if not sources:
+            return 'ok', '清單上的來源全部接得到'
+        cutoff = (now - timedelta(days=new_window_days)).strftime('%Y-%m-%d')
+        # 「新增」= 基準建立**之後**才出現，且在觀察窗內。
+        # 只看 first_seen 是不夠的：基準剛建立那幾天所有 first_seen 都很新，
+        # 整份名單都會被算成新事故。
+        baseline = str(data.get('baseline_since') or '')
+        fresh = ([] if data.get('first_run') else
+                 [p for p, i in sources.items()
+                  if baseline and str(i.get('first_seen', '')) > baseline
+                  and str(i.get('first_seen', '')) >= cutoff])
+        rows = us.summarise(data)
+        brief = '；'.join(f'{fam} {n}（{status}，{date}{"" if date == "未探測" else " 探測"}）'
+                          for fam, n, status, date, _ in rows[:4])
+        if fresh:
+            names = '、'.join(sorted(fresh)[:3])
+            return 'warning', (f'{len(sources)} 案來源接不到，其中 {len(fresh)} 案為近 '
+                               f'{new_window_days} 天新增：{names}{"…" if len(fresh) > 3 else ""}'
+                               f'——新失聯要確認去向。{brief}')
+        if data.get('first_run'):
+            return 'ok', f'{len(sources)} 案來源接不到（首輪建立基準，下輪起才判定新增）。{brief}'
+        return 'ok', f'{len(sources)} 案來源接不到（近 {new_window_days} 天無新增）。{brief}'
+    except Exception as e:
+        return 'warning', f'未支援來源檢查失敗: {e}'
+
+
 def check_launchd_jobs():
     """檢查所有 launchd 排程 job 的最後執行狀態（清單見 jobs；新增 plist 時必須同步加入，否則鎖死不會被巡到）。
 
@@ -339,6 +436,7 @@ DEFAULT_CHECKS = [
     ('解析預算', check_budget),
     ('清單新鮮度', check_list_freshness),
     ('來源資料夾', check_folder_deaths),
+    ('未支援來源', check_unsupported_sources),
 ]
 
 
