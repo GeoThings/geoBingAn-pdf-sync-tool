@@ -16,7 +16,7 @@ def test_detects_only_alive_to_404():
     registry = {
         'A': {'gov_pdf_url_status': '404', 'name': '南港段', 'pdf_count': 253},
         'B': {'gov_pdf_url_status': '404'},          # 本來就死 → 不算新失效
-        'C': {'gov_pdf_url_status': '404'},          # error→404 可能只是暫時失敗 → 不算
+        'C': {'gov_pdf_url_status': '404'},          # error→404 不算（防禦舊殘留，見下方三輪測試）
         'D': {'gov_pdf_url_status': 'alive'},        # 仍活著
         'E': {'gov_pdf_url_status': '404'},          # 首次出現就死（無 prior）→ 歷史失效
     }
