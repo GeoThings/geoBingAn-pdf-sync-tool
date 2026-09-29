@@ -71,3 +71,17 @@ def _no_real_unsupported_file(monkeypatch, tmp_path_factory):
     from geobingan_sync import unsupported_sources
     fake = tmp_path_factory.mktemp('unsupported') / 'unsupported_sources.json'
     monkeypatch.setattr(unsupported_sources, 'UNSUPPORTED_FILE', str(fake))
+
+
+@pytest.fixture(autouse=True)
+def _no_real_sync_status(monkeypatch, tmp_path_factory):
+    """測試一律不得讀到正式的 `state/sync_status.json`。
+
+    `check_unsupported_sources` 會拿最近一次同步時間來判斷「同步跑過卻沒名單」。
+    若讀到正式檔，檢查結果就取決於本機今天有沒有跑過同步——在 worktree 綠、在
+    正式目錄紅，或反過來。同 `.pause_upload` 的教訓：擋在邊界，要驗這段行為的
+    測試自己傳 sync_status_path。
+    """
+    import health_check
+    fake = tmp_path_factory.mktemp('nosync') / 'sync_status.json'   # 刻意不建立
+    monkeypatch.setattr(health_check, 'SYNC_STATUS_FILE', str(fake))

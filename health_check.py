@@ -278,28 +278,68 @@ def check_folder_deaths(path=None, now=None, window_days=DEATH_WINDOW_DAYS):
         return 'warning', f'失效資料夾檢查失敗: {e}'
 
 
-def check_unsupported_sources(path=None, now=None, new_window_days=14):
+UNSUPPORTED_STALE_HOURS = 48      # 每日排程，容忍漏跑一次；再久就是名單本身停更了
+#: 模組常數而非寫死字串，測試才擋得住（否則檢查結果會取決於本機有沒有這個檔）
+SYNC_STATUS_FILE = './state/sync_status.json'
+
+
+def _last_sync_time(path=None):
+    """最近一次同步時間；讀不到就回 None（代表無從判斷，不是「沒跑過」）。"""
+    from datetime import datetime as _dt
+    try:
+        with open(path or SYNC_STATUS_FILE, encoding='utf-8') as f:
+            raw = (json.load(f) or {}).get('last_run') or ''
+        return _dt.fromisoformat(raw) if raw else None
+    except Exception:                                   # noqa: BLE001
+        return None
+
+
+def check_unsupported_sources(path=None, now=None, new_window_days=14,
+                              sync_status_path=None,
+                              stale_hours=UNSUPPORTED_STALE_HOURS):
     """清單上有、但我們接不到的來源。
 
     這個檢查不是「系統壞了」的燈號，是**缺口的可見度**——被剔除的建案原本在系統
-    裡完全消失。平時綠燈並附上家族分佈；近 N 天內**新出現**的才升警告，因為那代表
-    某個原本接得到的來源剛剛失聯，是新的資料流失訊號。
+    裡完全消失。平時綠燈並附上家族分佈；基準建立後**新出現**的才升警告，因為那
+    代表某個原本接得到的來源剛剛失聯，是新的資料流失訊號。
 
     家族結論帶探測日期一起顯示：那是點時間的觀察，不是永久事實。
+
+    ⚠️ 也要檢查**這個機制本身還活著**（review P2）。名單寫入失敗刻意不中斷同步
+    （它是可見度、不是同步本身），代價是失敗會無聲：舊檔會一直回報「無新增」綠燈，
+    第一次就寫不出來則會永遠回報「尚未跑過」綠燈。所以同步跑過之後缺檔、或
+    generated_at 過期，都要升警告——否則正是這支功能要消滅的那種無聲失效。
     """
     from datetime import datetime as _dt, timedelta
     from geobingan_sync import unsupported_sources as us
     try:
+        now = now or _dt.now()
+        last_sync = _last_sync_time(sync_status_path)
         try:
             data = us.load(path)
         except json.JSONDecodeError as e:
             return 'warning', f'未支援來源名單損毀、無法判讀（{e}）；請檢查 state/unsupported_sources.json'
         if not data:
-            return 'ok', '尚無未支援來源名單（同步尚未跑過）'
+            if last_sync is None:
+                return 'ok', '尚無未支援來源名單（同步尚未跑過）'
+            if (now - last_sync) > timedelta(hours=stale_hours):
+                # 同步本身就停了，由 check_last_sync 負責報，這裡不重複告警
+                return 'ok', f'尚無未支援來源名單（同步已停 {(now - last_sync).days} 天）'
+            return 'warning', (f'同步已於 {last_sync:%Y-%m-%d %H:%M} 執行，卻找不到未支援來源名單'
+                               f'——名單寫入可能一直失敗，缺口目前沒有任何紀錄')
+        gen_raw = data.get('generated_at') or ''
+        try:
+            gen = _dt.fromisoformat(gen_raw)
+        except (TypeError, ValueError):
+            return 'warning', f'未支援來源名單缺少可判讀的 generated_at（{gen_raw!r}）——無法確認是否仍在更新'
+        age = now - gen
+        if age > timedelta(hours=stale_hours):
+            hrs = int(age.total_seconds() // 3600)
+            return 'warning', (f'未支援來源名單已 {hrs} 小時未更新（最後 {gen:%Y-%m-%d %H:%M}）'
+                               f'——寫入可能持續失敗，名單內容已不可信')
         sources = data.get('sources') or {}
         if not sources:
             return 'ok', '清單上的來源全部接得到'
-        now = now or _dt.now()
         cutoff = (now - timedelta(days=new_window_days)).strftime('%Y-%m-%d')
         # 「新增」= 基準建立**之後**才出現，且在觀察窗內。
         # 只看 first_seen 是不夠的：基準剛建立那幾天所有 first_seen 都很新，

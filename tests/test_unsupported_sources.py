@@ -253,3 +253,68 @@ def test_source_appearing_after_baseline_is_flagged(tmp_path):
     p = _write(tmp_path, _entries(), now=NOW, previous=second)
     level, msg = health_check.check_unsupported_sources(path=p, now=NOW)
     assert level == 'warning' and 'B' in msg and 'A' not in msg.split('：')[1]
+
+
+# ---------- 可見度機制本身不可無聲失效（review P2）----------
+#
+# 名單寫入失敗刻意不中斷同步（它是可見度、不是同步本身），代價是失敗會無聲：
+# 舊檔一直回報「無新增」綠燈，第一次就寫不出來則永遠回報「尚未跑過」綠燈。
+# 那正是這支功能要消滅的那種無聲失效。
+
+def _sync_status(tmp_path, last_run):
+    p = tmp_path / 'sync_status.json'
+    p.write_text(json.dumps({'last_run': last_run.isoformat(), 'last_status': 'success'}),
+                 encoding='utf-8')
+    return str(p)
+
+
+def test_stale_list_is_not_a_green_light(tmp_path):
+    """內容正常但 generated_at 已過期 → 名單停止更新，不可回綠燈。"""
+    old = us.build(_entries(), now=NOW - timedelta(days=30))
+    p = _write(tmp_path, _entries(), now=NOW - timedelta(days=5), previous=old)
+    level, msg = health_check.check_unsupported_sources(
+        path=p, now=NOW, sync_status_path=_sync_status(tmp_path, NOW))
+    assert level == 'warning' and '未更新' in msg, msg
+
+
+def test_missing_list_after_a_sync_is_a_warning(tmp_path):
+    """同步跑過了卻找不到名單 → 寫入從一開始就失敗。"""
+    level, msg = health_check.check_unsupported_sources(
+        path=str(tmp_path / 'nope.json'), now=NOW,
+        sync_status_path=_sync_status(tmp_path, NOW - timedelta(hours=2)))
+    assert level == 'warning' and '找不到' in msg, msg
+
+
+def test_missing_list_without_any_sync_is_ok(tmp_path):
+    """全新環境還沒跑過同步，缺檔是正常的。"""
+    level, msg = health_check.check_unsupported_sources(
+        path=str(tmp_path / 'nope.json'), now=NOW,
+        sync_status_path=str(tmp_path / 'no_sync.json'))
+    assert level == 'ok' and '尚未跑過' in msg
+
+
+def test_missing_list_when_sync_itself_stopped_does_not_double_alert(tmp_path):
+    """同步本身停了由 check_last_sync 報，這裡不重複告警。"""
+    level, msg = health_check.check_unsupported_sources(
+        path=str(tmp_path / 'nope.json'), now=NOW,
+        sync_status_path=_sync_status(tmp_path, NOW - timedelta(days=9)))
+    assert level == 'ok' and '同步已停' in msg
+
+
+@pytest.mark.parametrize('gen', [None, '', 'not-a-date', 12345])
+def test_unreadable_generated_at_is_a_warning(tmp_path, gen):
+    p = tmp_path / 'u.json'
+    d = us.build(_entries(), now=NOW)
+    d['generated_at'] = gen
+    p.write_text(json.dumps(d, ensure_ascii=False), encoding='utf-8')
+    level, msg = health_check.check_unsupported_sources(
+        path=str(p), now=NOW, sync_status_path=_sync_status(tmp_path, NOW))
+    assert level == 'warning' and 'generated_at' in msg
+
+
+def test_fresh_list_still_reports_normally(tmp_path):
+    old = us.build(_entries(), now=NOW - timedelta(days=60))
+    p = _write(tmp_path, _entries(), now=NOW, previous=old)
+    level, msg = health_check.check_unsupported_sources(
+        path=p, now=NOW, sync_status_path=_sync_status(tmp_path, NOW))
+    assert level == 'ok' and '無新增' in msg
