@@ -283,6 +283,13 @@ Shared Drive
     │  cutoff 30 天 rolling（正規化當日 00:00；--catchup-days N 可放大補掃）→
     │  max_uploads
     │
+    ▼ 清單解析（parse_pdf_list）：抓**任何** http(s) 連結，交下游判斷能不能用。
+    │  舊版只抓 drive.google.com 開頭 → 71 案在此被當「無連結」丟掉，
+    │  link_resolver 只收到 2 個候選而非 73（模組測過了，但正式管線沒餵到料）。
+    │  字元集用 RFC 3986 含 `:`——少了它 SharePoint 的 `/:f:/g/...` 會被切斷。
+    │  `extract_folder_id_from_url` 同時限定 Drive 主機：其他空間常帶 `?id=`／`?oid=`，
+    │  寬鬆比對會抓出假 folder id 再拿去查 Drive。
+    │
     ▼ 間接連結解析（link_resolver，PR #95）：來源 URL 取不出 Drive folder id 時
     │  跟隨轉址／抓頁面找內嵌的 Drive 資料夾；**恰好一個才採用**（兩個以上視為有歧義
     │  而放棄——猜錯會把別人的資料夾掛到這個建案）。結果快取 14 天，來源 URL 變更即失效。

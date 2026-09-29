@@ -278,25 +278,25 @@ class PermitSync:
             # 提取這段區域的文字
             chunk_text = clean_text[start_pos:end_pos]
             
-            # 步驟 3: 在區域內搜尋 Google Drive 連結
-            # 這裡使用寬鬆的 Regex，只要是 https://drive.google.com 開頭都抓
-            # 並抓取直到遇到非 URL 安全字符 (防止抓到下一個欄位的中文)
-            url_match = re.search(r'(https://drive\.google\.com[a-zA-Z0-9/._?=%&-]+)', chunk_text)
-            
+            # 步驟 3: 在區域內搜尋**任何** http(s) 連結
+            #
+            # 舊版只抓 `https://drive.google.com` 開頭，於是 Google Sites／SharePoint／
+            # gofile／Dropbox／Synology 等 20 幾種空間在這一步就被當成「無連結」丟掉
+            # （實測 439 案中 71 案）。PR #95 的 link_resolver 因此收不到料——只拿到 2 個
+            # 候選而不是 73 個，等於白做。抓進來、交給下游判斷能不能用才對。
+            #
+            # 字元集用 RFC 3986 的允許字元（含 `:`）。上面已把所有空白移除，所以邊界
+            # 靠中文字自然截斷；少了 `:` 的話 SharePoint 的 `/:f:/g/...` 會在第一個冒號
+            # 就被切斷。
+            url_match = re.search(r"(https?://[A-Za-z0-9\-._~:/?#\[\]@!$&'()*+,;=%]+)", chunk_text)
+
             if url_match:
                 url = url_match.group(1)
                 normalized = _normalize_permit(permit_no) or permit_no
                 permit_mapping[normalized] = url
                 count_found += 1
             else:
-                # 只有當找不到 Google 連結時，才嘗試找 OneDrive (選配)
-                onedrive_match = re.search(r'(https://(?:1drv\.ms|onedrive\.live\.com)[\w/._?=%&-]+)', chunk_text)
-                if onedrive_match:
-                     # 暫時只支援識別，不支援下載 OneDrive (需 Azure 驗證)
-                     print(f"  ⚠️ 跳過 OneDrive 連結: {permit_no}")
-                else:
-                     # print(f"  ⚠️ 無連結: {permit_no}") # 除錯用
-                     count_missed += 1
+                count_missed += 1
 
         print(f"✅ 解析完成: 成功配對 {len(permit_mapping)} 個 (無連結/無效: {count_missed} 個)")
         
@@ -350,14 +350,27 @@ class PermitSync:
         raw_folders = list_top_level_folders(get_drive_service(), self.shared_drive_id)
         return {item['name']: item['id'] for item in raw_folders}
     
+    # 只有 Google Drive 的網址才談得上 folder id。清單裡還有 SharePoint／Dropbox／
+    # Synology／mega 等 20 幾種空間，它們的網址常帶 `?id=` 或 `?oid=`，
+    # 舊版的寬鬆 `id=` 後備規則會從中抓出假的 folder id（實測 `?oid=AbC123XyZ`
+    # 也會中），然後拿它去查 Drive——查不到還算好，查到別人的資料夾更糟。
+    _DRIVE_HOSTS = ('drive.google.com', 'docs.google.com')
+
     def extract_folder_id_from_url(self, url: str) -> str:
+        if not url:
+            return None
+        from urllib.parse import urlparse
+        host = (urlparse(url).hostname or '').lower()
+        if not any(host == h or host.endswith('.' + h) for h in self._DRIVE_HOSTS):
+            return None
+
         # 支援 /folders/ID 和 /open?id=ID 兩種格式
         match = re.search(r'/folders/([a-zA-Z0-9_-]+)', url)
         if match: return match.group(1)
-        
-        match_id = re.search(r'id=([a-zA-Z0-9_-]+)', url)
+
+        match_id = re.search(r'(?:[?&])id=([a-zA-Z0-9_-]+)', url)
         if match_id: return match_id.group(1)
-        
+
         return None
     
     def list_files_recursive(self, folder_id: str, path: str = "") -> List[Tuple[str, str, str, str]]:
