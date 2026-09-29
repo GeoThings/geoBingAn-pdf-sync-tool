@@ -125,6 +125,29 @@ def resolve_list_pdf_url(page_url: str, timeout: int = 30):
         return None
 
 
+# 頁尾殘留特徵：網址結尾是「數字/數字」。只用來出聲提醒，不用來修剪——
+# 真實網址結尾也可能長得像 `/12/30`，靠樣式猜會誤傷。
+_PAGE_FOOTER_LEAK = re.compile(r'\d{1,3}/\d{1,3}$')
+
+
+def strip_page_footer(text: str, page_no: int, total_pages: int) -> str:
+    r"""移除單頁文字結尾的頁碼（形如 ``19 / 37``）。
+
+    為什麼非移不可：parse_pdf_list 會把**所有空白**清掉，才能把被 PDF 斷行的
+    網址接回來。頁碼因此直接黏在該頁最後一個網址尾巴上——
+    ``...VjC1l`` + ``19 / 37`` → ``...VjC1l19/37``。
+
+    黏在 query string 後面只是雜訊，但**黏在 Drive folder ID 尾巴上會把 ID 改壞**，
+    打 Drive API 必然 404，我們就把活的來源判成死的。2026-09-29 實測台北市清單
+    440 案中 19 個 folder ID 被改壞，其中 14 個資料夾其實讀得到、已累積 791 份
+    PDF，卻全被標成失效、從此收不到新報告。
+
+    比對的是**這一頁真正的頁碼**（``page_no``／``total_pages``），不是猜
+    ``\d+/\d+`` 樣式——真實網址結尾也可能長得像 ``/12/30``，用樣式修剪會誤傷。
+    """
+    return re.sub(rf'\s*{page_no}\s*/\s*{total_pages}\s*$', '', text)
+
+
 class PermitSync:
     def __init__(self, city: dict = None):
         self.city = city or {}
@@ -243,9 +266,13 @@ class PermitSync:
         print("\n📖 解析 PDF 列表 (智慧分塊演算法)...")
         with open(pdf_path, 'rb') as f:
             pdf_reader = pypdf.PdfReader(f)
-            all_text = ''.join(p.extract_text() or '' for p in pdf_reader.pages)
-        
-        # 移除空白，接合斷行
+            pages = pdf_reader.pages
+            total = len(pages)
+            all_text = ''.join(
+                strip_page_footer(p.extract_text() or '', i, total)
+                for i, p in enumerate(pages, 1))
+
+        # 移除空白，接合斷行（網址常被 PDF 斷行，所以連空白一起清掉）
         clean_text = re.sub(r'\s+', '', all_text)
         permit_mapping = {}
 
@@ -297,6 +324,14 @@ class PermitSync:
                 count_found += 1
             else:
                 count_missed += 1
+
+        # 回歸偵測：頁碼格式若哪天變了（例如改成「第 1 頁，共 37 頁」），
+        # strip_page_footer 會靜靜地失效，網址又開始被汙染而沒人知道。
+        # 這裡掃一次殘留特徵，讓它至少出聲。
+        leaked = [p for p, u in permit_mapping.items() if _PAGE_FOOTER_LEAK.search(u)]
+        if leaked:
+            print(f"  ⚠️ {len(leaked)} 個網址結尾疑似殘留頁碼（頁尾格式可能已變）："
+                  f"{'、'.join(leaked[:5])}")
 
         print(f"✅ 解析完成: 成功配對 {len(permit_mapping)} 個 (無連結/無效: {count_missed} 個)")
         
