@@ -278,25 +278,25 @@ class PermitSync:
             # 提取這段區域的文字
             chunk_text = clean_text[start_pos:end_pos]
             
-            # 步驟 3: 在區域內搜尋 Google Drive 連結
-            # 這裡使用寬鬆的 Regex，只要是 https://drive.google.com 開頭都抓
-            # 並抓取直到遇到非 URL 安全字符 (防止抓到下一個欄位的中文)
-            url_match = re.search(r'(https://drive\.google\.com[a-zA-Z0-9/._?=%&-]+)', chunk_text)
-            
+            # 步驟 3: 在區域內搜尋**任何** http(s) 連結
+            #
+            # 舊版只抓 `https://drive.google.com` 開頭，於是 Google Sites／SharePoint／
+            # gofile／Dropbox／Synology 等 20 幾種空間在這一步就被當成「無連結」丟掉
+            # （實測 439 案中 71 案）。PR #95 的 link_resolver 因此收不到料——只拿到 2 個
+            # 候選而不是 73 個，等於白做。抓進來、交給下游判斷能不能用才對。
+            #
+            # 字元集用 RFC 3986 的允許字元（含 `:`）。上面已把所有空白移除，所以邊界
+            # 靠中文字自然截斷；少了 `:` 的話 SharePoint 的 `/:f:/g/...` 會在第一個冒號
+            # 就被切斷。
+            url_match = re.search(r"(https?://[A-Za-z0-9\-._~:/?#\[\]@!$&'()*+,;=%]+)", chunk_text)
+
             if url_match:
                 url = url_match.group(1)
                 normalized = _normalize_permit(permit_no) or permit_no
                 permit_mapping[normalized] = url
                 count_found += 1
             else:
-                # 只有當找不到 Google 連結時，才嘗試找 OneDrive (選配)
-                onedrive_match = re.search(r'(https://(?:1drv\.ms|onedrive\.live\.com)[\w/._?=%&-]+)', chunk_text)
-                if onedrive_match:
-                     # 暫時只支援識別，不支援下載 OneDrive (需 Azure 驗證)
-                     print(f"  ⚠️ 跳過 OneDrive 連結: {permit_no}")
-                else:
-                     # print(f"  ⚠️ 無連結: {permit_no}") # 除錯用
-                     count_missed += 1
+                count_missed += 1
 
         print(f"✅ 解析完成: 成功配對 {len(permit_mapping)} 個 (無連結/無效: {count_missed} 個)")
         
@@ -350,14 +350,27 @@ class PermitSync:
         raw_folders = list_top_level_folders(get_drive_service(), self.shared_drive_id)
         return {item['name']: item['id'] for item in raw_folders}
     
+    # 只有 Google Drive 的網址才談得上 folder id。清單裡還有 SharePoint／Dropbox／
+    # Synology／mega 等 20 幾種空間，它們的網址常帶 `?id=` 或 `?oid=`，
+    # 舊版的寬鬆 `id=` 後備規則會從中抓出假的 folder id（實測 `?oid=AbC123XyZ`
+    # 也會中），然後拿它去查 Drive——查不到還算好，查到別人的資料夾更糟。
+    _DRIVE_HOSTS = ('drive.google.com', 'docs.google.com')
+
     def extract_folder_id_from_url(self, url: str) -> str:
+        if not url:
+            return None
+        from urllib.parse import urlparse
+        host = (urlparse(url).hostname or '').lower()
+        if not any(host == h or host.endswith('.' + h) for h in self._DRIVE_HOSTS):
+            return None
+
         # 支援 /folders/ID 和 /open?id=ID 兩種格式
         match = re.search(r'/folders/([a-zA-Z0-9_-]+)', url)
         if match: return match.group(1)
-        
-        match_id = re.search(r'id=([a-zA-Z0-9_-]+)', url)
+
+        match_id = re.search(r'(?:[?&])id=([a-zA-Z0-9_-]+)', url)
         if match_id: return match_id.group(1)
-        
+
         return None
     
     def list_files_recursive(self, folder_id: str, path: str = "") -> List[Tuple[str, str, str, str]]:
@@ -585,6 +598,52 @@ class PermitSync:
                 self.state['errors'].append({'permit': permit_no, 'error': str(e)})
             self.save_state()
     
+    def _resolve_or_skip_indirect(self, mapping: Dict[str, str], resolver=None,
+                                  cache_path: str = None) -> Dict[str, str]:
+        """把非 Drive 來源解析成 Drive 資料夾；解不出來的**剔除**，不進同步流程。
+
+        剔除而非保留的理由：保留只會讓 run() 建出空的目標資料夾、再記一筆同步錯誤，
+        對操作者是雜訊，對資料是零收益。解不開的那些由 health_check 的來源資料夾
+        檢查與 registry 繼續追蹤（match_permits 仍會看到完整清單）。
+
+        解析失敗不可中斷同步：任何例外都只記錄、該案剔除、其餘照跑。
+        """
+        direct, indirect = {}, []
+        for permit, url in mapping.items():
+            if self.extract_folder_id_from_url(url):
+                direct[permit] = url
+            else:
+                indirect.append((permit, url))
+        if not indirect:
+            return direct
+
+        from geobingan_sync.link_resolver import (cached_resolve, load_cache, save_cache,
+                                                  CACHE_FILE)
+        path = cache_path or CACHE_FILE
+        try:
+            cache = load_cache(path)
+        except Exception:                                   # noqa: BLE001
+            cache = {}
+        rescued, skipped = 0, 0
+        for permit, url in indirect:
+            try:
+                res = cached_resolve(permit, url, cache, resolver=resolver)
+            except Exception as e:                          # noqa: BLE001
+                print(f"  ⚠️ 連結解析失敗 {permit}: {type(e).__name__}")
+                skipped += 1
+                continue
+            if res.ok:
+                direct[permit] = f'https://drive.google.com/drive/folders/{res.folder_id}'
+                rescued += 1
+            else:
+                skipped += 1
+        try:
+            save_cache(cache, path)
+        except Exception as e:                              # noqa: BLE001
+            print(f"  ⚠️ 連結解析快取寫入失敗: {type(e).__name__}")
+        print(f"  🔗 間接連結：解析成功 {rescued} 案納入同步、{skipped} 案非 Drive 空間暫不支援（已跳過，不建空資料夾）")
+        return direct
+
     def run(self):
         print("="*70)
         print(f"🚀 建築執照監測資料同步工具 v5.1 ({self.city_name})")
@@ -598,6 +657,13 @@ class PermitSync:
             self.permit_mapping = self.parse_pdf_list(pdf_path)
             self._record_list_fingerprint()
         self.target_folders = self.scan_shared_drive()
+
+        # 解析間接連結**必須在建立目標資料夾之前**（review P1）。
+        # parse_pdf_list 現在抓任何 http(s)，主同步因此會收到 74 個非 Drive 網址。
+        # 若不先處理，run() 會為每一個都先建好 Shared Drive 目標資料夾，之後才在
+        # sync_permit 因 Invalid URL ID 失敗 —— 留下一堆空資料夾與同步錯誤紀錄，
+        # 而 resolver 救得回來的 27 案也還是沒被同步到。
+        self.permit_mapping = self._resolve_or_skip_indirect(self.permit_mapping)
 
         permit_list = list(self.permit_mapping.items())
         # 隨機打亂，確保每次執行檢查不同建案

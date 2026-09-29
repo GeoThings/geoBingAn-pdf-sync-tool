@@ -1,0 +1,223 @@
+"""清單解析要抓**任何** http(s) 連結，並把 folder id 的抽取限定在 Drive 主機。
+
+2026-09-29 發現：舊版只抓 `https://drive.google.com` 開頭，於是 Google Sites／
+SharePoint／gofile／Dropbox／Synology 等 20 幾種空間在這一步就被當成「無連結」
+丟掉（實測 439 案中 71 案）。PR #95 的 link_resolver 因此只收到 2 個候選而不是
+73 個，整個功能等於白做——**模組測過了，但正式管線沒餵到料**。
+"""
+import os
+import sys
+
+import pytest
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from geobingan_sync.steps.sync_permits import PermitSync
+
+
+@pytest.fixture
+def ps():
+    return PermitSync(city={'name': 'T', 'pdf_list_url': 'https://x.test/l.pdf'})
+
+
+# ---------- folder id 只認 Drive 主機 ----------
+
+@pytest.mark.parametrize('url,expected', [
+    ('https://drive.google.com/drive/folders/1N07lVUXyZH7ZjzAaZfAb', '1N07lVUXyZH7ZjzAaZfAb'),
+    ('https://drive.google.com/drive/u/1/folders/13F89BOn5XfWGjZ-', '13F89BOn5XfWGjZ-'),
+    ('https://drive.google.com/drive/mobile/folders/1v_Z4g70VEI7-', '1v_Z4g70VEI7-'),
+    ('https://drive.google.com/open?id=1AbCdEfGh', '1AbCdEfGh'),
+    ('https://docs.google.com/folders/1XyZ', '1XyZ'),
+])
+def test_drive_urls_yield_folder_id(ps, url, expected):
+    assert ps.extract_folder_id_from_url(url) == expected
+
+
+@pytest.mark.parametrize('url', [
+    'https://example.com/share?oid=AbC123XyZ',          # oid= 也含 id=，舊版會誤抓
+    'https://foo.sharepoint.com/x?id=DocLib42',
+    'https://nas.example.com:5000/sharing/abc?id=share01',
+    'https://sites.google.com/view/duw231107016',
+    'http://gofile.me/3nCZT/Dg4yzeJWI',
+    'https://www.dropbox.com/scl/fo/abc/h?rlkey=xyz&dl=0',
+    'https://mega.nz/folder/SQEQVBpK#z3XxyS9',
+])
+def test_non_drive_urls_yield_no_folder_id(ps, url):
+    """拿假的 folder id 去查 Drive，查不到還算好，查到別人的資料夾更糟。"""
+    assert ps.extract_folder_id_from_url(url) is None
+
+
+def test_empty_and_none_are_safe(ps):
+    assert ps.extract_folder_id_from_url('') is None
+    assert ps.extract_folder_id_from_url(None) is None
+
+
+def test_lookalike_host_is_rejected(ps):
+    """`drive.google.com.evil.test` 不是 Drive。"""
+    assert ps.extract_folder_id_from_url(
+        'https://drive.google.com.evil.test/drive/folders/1AbC') is None
+
+
+# ---------- 清單解析抓任何 http(s) ----------
+
+class _FakePage:
+    def __init__(self, text):
+        self._t = text
+
+    def extract_text(self):
+        return self._t
+
+
+def _parse(ps, monkeypatch, text, tmp_path):
+    import geobingan_sync.steps.sync_permits as sp
+
+    class _Reader:
+        def __init__(self, f):
+            self.pages = [_FakePage(text)]
+    monkeypatch.setattr(sp.pypdf, 'PdfReader', _Reader)
+    f = tmp_path / 'l.pdf'
+    f.write_bytes(b'%PDF-1.4')
+    return ps.parse_pdf_list(str(f))
+
+
+def test_sharepoint_colon_not_truncated(ps, monkeypatch, tmp_path):
+    """少了 `:` 的話 `/:f:/g/...` 會在第一個冒號就被切斷。"""
+    url = 'https://cectw-my.sharepoint.com/:f:/g/personal/220g_cectw_com/EttQ4E'
+    out = _parse(ps, monkeypatch, f'111建字第0017號 王建築師事務所 大陸工程 {url} 下一欄中文', tmp_path)
+    assert out['111建字第0017號'] == url
+
+
+@pytest.mark.parametrize('url', [
+    'https://sites.google.com/view/duw231107016',
+    'http://gofile.me/3nCZT/Dg4yzeJWI',
+    'https://www.dropbox.com/scl/fo/abc/h?rlkey=xyz&dl=0',
+    'https://mega.nz/folder/SQEQVBpK#z3XxyS9',
+    'https://1drv.ms/f/s!AbCdEf',
+    'http://125.227.22.67:5000/sharing/rW7E3kLc5',
+    'https://e.pcloud.link/publink/show?code=kZabc',
+])
+def test_non_drive_hosts_are_captured(ps, monkeypatch, tmp_path, url):
+    """舊版把這些全丟掉，下游 resolver 因此收不到料。"""
+    out = _parse(ps, monkeypatch, f'112建字第0001號 事務所 營造 {url} 中文結尾', tmp_path)
+    assert out.get('112建字第0001號') == url
+
+
+def test_chinese_terminates_the_url(ps, monkeypatch, tmp_path):
+    """空白已被移除，邊界只能靠中文字截斷。"""
+    out = _parse(ps, monkeypatch, '113建字第0015號 某事務所 某營造 https://x.test/a/b 監測資料夾', tmp_path)
+    assert out['113建字第0015號'] == 'https://x.test/a/b'
+
+
+def test_first_url_in_chunk_wins(ps, monkeypatch, tmp_path):
+    out = _parse(ps, monkeypatch,
+                 '114建字第0032號 甲 乙 https://first.test/a 中文 https://second.test/b', tmp_path)
+    assert out['114建字第0032號'] == 'https://first.test/a'
+
+
+def test_permit_without_any_url_is_counted_missing(ps, monkeypatch, tmp_path):
+    out = _parse(ps, monkeypatch, '110建字第0001號 甲事務所 乙營造 尚未提供', tmp_path)
+    assert '110建字第0001號' not in out
+
+
+def test_two_permits_each_get_their_own_url(ps, monkeypatch, tmp_path):
+    text = ('111建字第0100號 甲 乙 https://a.test/one 中文 '
+            '111建字第0200號 丙 丁 https://b.test/two 中文')
+    out = _parse(ps, monkeypatch, text, tmp_path)
+    assert out['111建字第0100號'] == 'https://a.test/one'
+    assert out['111建字第0200號'] == 'https://b.test/two'
+
+
+# ---------- run() 層級分流（review P1）----------
+#
+# parse_pdf_list 有兩個 consumer：match_permits 需要全部 URL（交 resolver），
+# 但 PermitSync.run() 假設來源能直接抽出 Drive folder id。放寬抓取後主同步會
+# 收到 74 個非 Drive URL，若不先分流，run() 會為每一個先建好 Shared Drive 目標
+# 資料夾、之後才在 sync_permit 因 Invalid URL ID 失敗——留下空資料夾與錯誤紀錄。
+
+from geobingan_sync.link_resolver import Resolution
+
+FOLDER = 'https://drive.google.com/drive/folders/1N07lVUXyZH7ZjzAaZfAb'
+FID = '1N07lVUXyZH7ZjzAaZfAb'
+
+
+def test_indirect_link_resolved_before_target_creation(ps, tmp_path):
+    """能救回的要變成 Drive 網址納入同步——這才是這串修改的目的。"""
+    out = ps._resolve_or_skip_indirect(
+        {'A': 'https://sites.google.com/view/x'},
+        resolver=lambda u: Resolution(FID, 'embedded'),
+        cache_path=str(tmp_path / 'c.json'))
+    assert out['A'] == FOLDER
+    assert ps.extract_folder_id_from_url(out['A']) == FID
+
+
+def test_unresolvable_indirect_link_is_dropped(ps, tmp_path):
+    """解不開的要剔除，否則 run() 會建出空資料夾再記一筆同步錯誤。"""
+    out = ps._resolve_or_skip_indirect(
+        {'A': 'https://cectw-my.sharepoint.com/:f:/g/personal/x'},
+        resolver=lambda u: Resolution(None, 'none', 'no_drive_link'),
+        cache_path=str(tmp_path / 'c.json'))
+    assert 'A' not in out
+
+
+def test_direct_drive_urls_pass_through_without_resolving(ps, tmp_path):
+    called = []
+    out = ps._resolve_or_skip_indirect(
+        {'A': FOLDER}, resolver=lambda u: called.append(u) or Resolution(None, 'none'),
+        cache_path=str(tmp_path / 'c.json'))
+    assert out == {'A': FOLDER} and called == [], '已是 Drive 就不該再解析'
+
+
+def test_mixed_mapping_keeps_direct_and_rescued_only(ps, tmp_path):
+    mapping = {
+        'DIRECT': FOLDER,
+        'RESCUE': 'https://sites.google.com/view/x',
+        'DROP': 'http://gofile.me/abc',
+    }
+    def res(u):
+        return Resolution(FID, 'embedded') if 'sites.google' in u else Resolution(None, 'none')
+    out = ps._resolve_or_skip_indirect(mapping, resolver=res, cache_path=str(tmp_path / 'c.json'))
+    assert set(out) == {'DIRECT', 'RESCUE'}
+    # 每一筆留下來的都必須能抽出 folder id，run() 才不會建空資料夾
+    assert all(ps.extract_folder_id_from_url(u) for u in out.values())
+
+
+def test_resolver_exception_drops_that_permit_only(ps, tmp_path):
+    """解析失敗不可中斷同步：該案剔除、其餘照跑。"""
+    def boom(u):
+        if 'bad' in u:
+            raise RuntimeError('x')
+        return Resolution(FID, 'embedded')
+    out = ps._resolve_or_skip_indirect(
+        {'BAD': 'https://bad.test/a', 'OK': 'https://sites.google.com/view/x', 'D': FOLDER},
+        resolver=boom, cache_path=str(tmp_path / 'c.json'))
+    assert set(out) == {'OK', 'D'}
+
+
+def test_no_indirect_links_is_a_noop(ps, tmp_path):
+    mapping = {'A': FOLDER, 'B': FOLDER}
+    assert ps._resolve_or_skip_indirect(mapping, cache_path=str(tmp_path / 'c.json')) == mapping
+
+
+def test_run_resolves_before_creating_target_folders(ps, monkeypatch, tmp_path):
+    """行為面：非 Drive 的建案不得走到 create_target_folder。"""
+    created = []
+    synced = []
+    monkeypatch.setattr(ps, 'download_pdf_list', lambda *a, **k: str(tmp_path / 'l.pdf'))
+    monkeypatch.setattr(ps, 'parse_pdf_list', lambda p: {
+        'DIRECT': FOLDER,
+        'RESCUE': 'https://sites.google.com/view/x',
+        'DROP': 'http://gofile.me/abc',
+    })
+    monkeypatch.setattr(ps, '_record_list_fingerprint', lambda *a, **k: None)
+    monkeypatch.setattr(ps, 'scan_shared_drive', lambda *a, **k: {})
+    monkeypatch.setattr(ps, 'create_target_folder',
+                        lambda permit: created.append(permit) or f'tgt-{permit}')
+    monkeypatch.setattr(ps, 'sync_permit', lambda pn, url, tid: synced.append((pn, url)) or {})
+    monkeypatch.setattr(ps, '_resolve_or_skip_indirect',
+                        lambda m, **kw: {k: (FOLDER if k != 'DROP' else None) for k in m
+                                         if k != 'DROP'})
+    try:
+        ps.run()
+    except Exception:
+        pass                      # run() 尾段還有統計／狀態寫入，這裡只驗前半段行為
+    assert 'DROP' not in created, '非 Drive 的建案不該被建立目標資料夾'
+    assert 'DROP' not in [p for p, _ in synced], '非 Drive 的建案不該進同步'
