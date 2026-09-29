@@ -144,8 +144,15 @@ def strip_page_footer(text: str, page_no: int, total_pages: int) -> str:
 
     比對的是**這一頁真正的頁碼**（``page_no``／``total_pages``），不是猜
     ``\d+/\d+`` 樣式——真實網址結尾也可能長得像 ``/12/30``，用樣式修剪會誤傷。
+
+    光比對頁碼還不夠（review P2）：第 19 頁的合法網址若正好以 ``/19/37`` 結尾，
+    數字就跟頁碼完全一樣，只看數字分不出來。因此**要求頁碼前有空白邊界或位於
+    字串開頭**——實際 PDF 每頁都是 ``...網址\n19 / 37``，37 頁無一例外。沒有
+    邊界時代表抽取結果把兩者黏成一團，已經無法與合法網址區分，寧可保守不剪；
+    parse_pdf_list 解析完會掃殘留特徵並出聲，不會無聲吞掉。
     """
-    return re.sub(rf'\s*{page_no}\s*/\s*{total_pages}\s*$', '', text)
+    page, total = re.escape(str(page_no)), re.escape(str(total_pages))
+    return re.sub(rf'(?:^|\s)\s*{page}\s*/\s*{total}\s*$', '', text)
 
 
 class PermitSync:

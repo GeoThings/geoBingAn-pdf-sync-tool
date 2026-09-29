@@ -249,17 +249,51 @@ def _parse_pages(ps, monkeypatch, texts, tmp_path):
 
 
 @pytest.mark.parametrize('text,page,total,expected', [
-    ('...VjC1l\n19 / 37', 19, 37, '...VjC1l'),      # 實際 PDF 的樣子
-    ('...VjC1l19 / 37', 19, 37, '...VjC1l'),
-    ('...VjC1l19/37', 19, 37, '...VjC1l'),          # 已無空白
-    ('...VjC1l19 / 37   \n', 19, 37, '...VjC1l'),   # 後面還有空白
-    ('...X1919 / 37', 19, 37, '...X19'),            # 內容本身結尾就是 19
-    ('...X1 / 37', 1, 37, '...X'),
-    ('https://x.test/a/12/30', 19, 37, 'https://x.test/a/12/30'),   # 不是本頁頁碼 → 不動
-    ('...X第19頁共37頁', 19, 37, '...X第19頁共37頁'),                # 格式不同 → 不動
+    ('...VjC1l\n19 / 37', 19, 37, '...VjC1l'),        # 實際 PDF 的樣子：頁碼前有換行
+    ('...VjC1l \n 19 / 37 \n', 19, 37, '...VjC1l'),   # 前後多餘空白
+    ('...VjC1l\n19/37', 19, 37, '...VjC1l'),          # 頁碼中間沒空白也算
+    ('...X19\n19 / 37', 19, 37, '...X19'),            # 內容結尾剛好也是 19
+    ('19 / 37', 19, 37, ''),                          # 整頁只有頁碼（開頭即邊界）
+    ('...X\n1 / 37', 1, 37, '...X'),
 ])
-def test_strip_page_footer(text, page, total, expected):
+def test_strip_page_footer_removes_real_footer(text, page, total, expected):
     assert strip_page_footer(text, page, total) == expected
+
+
+@pytest.mark.parametrize('text,page,total', [
+    # review P2 的反例：第 19 頁、合法網址正好以 /19/37 結尾，數字與頁碼完全相同。
+    # 只比對數字分不出來，必須靠「頁碼前有邊界」才安全。
+    ('https://nas.example/share/19/37', 19, 37),
+    ('https://nas.example.com:5000/sharing/a/19/37', 19, 37),
+    # 抽取結果把頁碼黏成一團（無任何邊界）→ 已無法與合法網址區分，保守保留。
+    # 這種情況由 parse_pdf_list 的殘留掃描出聲，不會無聲吞掉。
+    ('...VjC1l19 / 37', 19, 37),
+    ('...VjC1l19/37', 19, 37),
+    # 不是本頁頁碼 / 格式不同 → 一律不動
+    ('https://x.test/a/12/30', 19, 37),
+    ('...X第19頁共37頁', 19, 37),
+])
+def test_strip_page_footer_keeps_ambiguous_text(text, page, total):
+    assert strip_page_footer(text, page, total) == text
+
+
+def test_legit_url_ending_in_page_number_survives_real_footer(ps, monkeypatch, tmp_path):
+    """第 19/37 頁上，網址結尾正好是 /19/37：只能剪掉真正的頁尾，網址要原封不動。"""
+    url = 'https://nas.example.com:5000/sharing/a/19/37'
+    pages = [f'第 {i} 頁內容\n{i} / 37' for i in range(1, 19)]
+    pages.append(f'建照號碼 監造人 承造人 連結\n111建字第0099號 甲 乙 {url}\n19 / 37')
+    pages += [f'第 {i} 頁內容\n{i} / 37' for i in range(20, 38)]
+    out = _parse_pages(ps, monkeypatch, pages, tmp_path)
+    assert out['111建字第0099號'] == url
+
+
+def test_footer_without_boundary_is_kept_and_announced(ps, monkeypatch, tmp_path, capsys):
+    """抽取沒給分隔時保守保留，但一定要出聲——保守不等於沉默。"""
+    fid = '1AbCdEfGhIjKlMnOpQrStUvWxYz012345'
+    pages = [f'110建字第0004號 甲 乙 https://drive.google.com/drive/folders/{fid}19 / 37']
+    out = _parse_pages(ps, monkeypatch, pages, tmp_path)
+    assert out['110建字第0004號'].endswith('19/37'), '無邊界時不剪'
+    assert '殘留頁碼' in capsys.readouterr().out
 
 
 def test_page_footer_does_not_corrupt_folder_id(ps, monkeypatch, tmp_path):
