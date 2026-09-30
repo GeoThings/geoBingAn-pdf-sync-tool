@@ -175,20 +175,30 @@ def test_adapter_failure_message_does_not_say_upload_failed():
 # 而那個例外發生在 record_sync_result 裡——整輪狀態就記不下來，比計數錯更嚴重。
 
 from datetime import timezone
-TPE = timezone(timedelta(hours=8))
+
+#: **本機**的 UTC 位移。naive 時間在本專案一律指本地時間，所以要構造「同一瞬間
+#: 的 aware 版本」必須用本機位移，不能寫死 +08:00——CI 跑 UTC，寫死就會變成
+#: 在比兩個不同的瞬間，測試於是依賴執行機器的時區（本機綠、CI 紅）。
+LOCAL_TZ = datetime.now().astimezone().tzinfo
+OTHER_TZ = timezone(timedelta(hours=8 if datetime.now().astimezone().utcoffset()
+                              != timedelta(hours=8) else -5))
+
+
+def _local_aware(dt):
+    """同一個本地時刻的 aware 版本。"""
+    return dt.replace(tzinfo=LOCAL_TZ)
 
 
 def test_aware_run_started_against_naive_file_does_not_raise(tmp_path):
     sr.write(sr.SYNC, {'synced': 5}, now=NOW, base=str(tmp_path))
-    aware = NOW.replace(tzinfo=TPE)
-    d = sr.read(sr.SYNC, not_before=aware, base=str(tmp_path))
+    d = sr.read(sr.SYNC, not_before=_local_aware(NOW), base=str(tmp_path))
     assert d is not None and d['synced'] == 5
 
 
 def test_aware_file_against_naive_run_started_does_not_raise(tmp_path):
     p = tmp_path / 'step_result_sync.json'
     p.write_text(json.dumps({'synced': 7,
-                             'generated_at': NOW.replace(tzinfo=TPE).isoformat()}),
+                             'generated_at': _local_aware(NOW).isoformat()}),
                  encoding='utf-8')
     assert sr.read(sr.SYNC, not_before=NOW, base=str(tmp_path))['synced'] == 7
 
@@ -197,8 +207,26 @@ def test_aware_stale_file_is_still_detected_as_stale(tmp_path):
     """統一時區不能順手把新鮮度檢查弄丟。"""
     p = tmp_path / 'step_result_sync.json'
     p.write_text(json.dumps({'synced': 9,
-                             'generated_at': (NOW - timedelta(days=1)).replace(
-                                 tzinfo=TPE).isoformat()}), encoding='utf-8')
+                             'generated_at': _local_aware(NOW - timedelta(days=1)).isoformat()}),
+                 encoding='utf-8')
+    assert sr.read(sr.SYNC, not_before=NOW, base=str(tmp_path)) is None
+
+
+def test_comparison_is_by_instant_not_by_wall_clock(tmp_path):
+    """換算後比的是**瞬間**，不是牆上時鐘的數字。
+
+    檔案標 10:00+08:00、本輪開始標 10:00 本地時間：只有本機剛好是 +08:00 時兩者
+    才是同一瞬間。刻意用另一個位移，斷言判斷依據是實際時刻。
+    """
+    p = tmp_path / 'step_result_sync.json'
+    far_future = (NOW + timedelta(days=1)).replace(tzinfo=OTHER_TZ)
+    p.write_text(json.dumps({'synced': 3, 'generated_at': far_future.isoformat()}),
+                 encoding='utf-8')
+    assert sr.read(sr.SYNC, not_before=NOW, base=str(tmp_path))['synced'] == 3, \
+        '明日的時刻無論哪個位移都不該被判成過期'
+    long_past = (NOW - timedelta(days=30)).replace(tzinfo=OTHER_TZ)
+    p.write_text(json.dumps({'synced': 4, 'generated_at': long_past.isoformat()}),
+                 encoding='utf-8')
     assert sr.read(sr.SYNC, not_before=NOW, base=str(tmp_path)) is None
 
 
@@ -222,7 +250,7 @@ def test_read_counts_with_aware_run_started(tmp_path):
     """整條路徑：record_sync_result 收到帶時區的字串也要正常取數。"""
     sr.write(sr.SYNC, {'synced': 2499}, now=NOW, base=str(tmp_path))
     sr.write(sr.UPLOAD, {'uploaded': 15, 'failed': 2}, now=NOW, base=str(tmp_path))
-    assert read_counts(run_started=NOW.replace(tzinfo=TPE).isoformat(),
+    assert read_counts(run_started=_local_aware(NOW).isoformat(),
                        base=str(tmp_path)) == (2499, 15, 2)
 
 
@@ -271,9 +299,9 @@ def test_early_exit_paths_all_record_a_result():
 # ---------- 多城市：同一輪內累加，不是後者覆蓋前者 ----------
 
 def test_accumulate_adds_within_the_same_run(tmp_path):
-    sr.accumulate(sr.SYNC, {'synced': 10, 'permits_with_new': 2},
+    sr.accumulate(sr.SYNC, {'synced': 10, 'permits_with_new': 2}, now=NOW,
                   base=str(tmp_path), run_started=NOW.isoformat())
-    sr.accumulate(sr.SYNC, {'synced': 5, 'permits_with_new': 1},
+    sr.accumulate(sr.SYNC, {'synced': 5, 'permits_with_new': 1}, now=NOW,
                   base=str(tmp_path), run_started=NOW.isoformat())
     d = sr.read(sr.SYNC, base=str(tmp_path))
     assert d['synced'] == 15 and d['permits_with_new'] == 3
@@ -282,14 +310,15 @@ def test_accumulate_adds_within_the_same_run(tmp_path):
 def test_accumulate_ignores_previous_run(tmp_path):
     """跨輪不可累加到舊數字。"""
     sr.write(sr.SYNC, {'synced': 999}, now=NOW - timedelta(days=1), base=str(tmp_path))
-    sr.accumulate(sr.SYNC, {'synced': 10}, base=str(tmp_path), run_started=NOW.isoformat())
+    sr.accumulate(sr.SYNC, {'synced': 10}, now=NOW, base=str(tmp_path),
+                  run_started=NOW.isoformat())
     assert sr.read(sr.SYNC, base=str(tmp_path))['synced'] == 10
 
 
 def test_accumulate_keeps_latest_note(tmp_path):
-    sr.accumulate(sr.UPLOAD, {'uploaded': 0, 'failed': 0, 'note': 'a'},
+    sr.accumulate(sr.UPLOAD, {'uploaded': 0, 'failed': 0, 'note': 'a'}, now=NOW,
                   base=str(tmp_path), run_started=NOW.isoformat())
-    sr.accumulate(sr.UPLOAD, {'uploaded': 3, 'failed': 0, 'note': 'b'},
+    sr.accumulate(sr.UPLOAD, {'uploaded': 3, 'failed': 0, 'note': 'b'}, now=NOW,
                   base=str(tmp_path), run_started=NOW.isoformat())
     d = sr.read(sr.UPLOAD, base=str(tmp_path))
     assert d['uploaded'] == 3 and d['note'] == 'b'
