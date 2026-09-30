@@ -1,4 +1,4 @@
-"""政府清單指紋：偵測清單更新、疑似停更，以及「靜默退回靜態舊清單」。
+r"""政府清單指紋：偵測清單更新、疑似停更，以及「靜默退回靜態舊清單」。
 
 PR #78 讓 sync 先從建管處發布頁動態解析當前清單連結，失敗才退回寫死的靜態
 網址。但退回只印一行 log、沒有任何告警——建管處哪天改版導致解析失效，我們會
@@ -9,6 +9,20 @@ PR #78 讓 sync 先從建管處發布頁動態解析當前清單連結，失敗�
 - label：檔名（通常帶民國日期，如 表單回復_1150902.pdf）
 - permit_count / sha256：以「排序後的建照號集合」計算，忽略 PDF 重新編碼的雜訊
 - last_changed：內容最後一次真正變動的時間（超過門檻未變 = 疑似停更）
+- basis：指紋的計算基準（見下）
+
+⚠️ 指紋必須只反映**對方的清單**，不可混入我方的解析能力（2026-09-30 實際踩到）。
+原本取的是「解析出連結的建照」，於是 PR #99 讓解析改抓任何 http(s) 連結之後，
+集合從 368 變 440、指紋跟著變，機制就發出「清單已更新，新增 72 筆」——政府那邊
+一個字都沒改，新增的 72 筆全部是我們原本丟掉的非 Drive 連結。
+
+後果不只是一則假通知：`last_changed` 被推到當天，而「疑似停更」是靠這個欄位判定，
+等於我們自己把停更偵測的時鐘重置了。反方向更糟——解析若退化而漏掉建照，會報
+「移除 N 筆」，看起來像政府下架了建案。
+
+所以改成取「PDF 裡實際存在的建照號」（用 `\d{2,3}建字第\d{3,5}號` 在全文找，
+不受連結解析影響）。涵蓋率屬於我方能力，記在 unsupported_sources 名單。
+`basis` 欄位記下計算基準；基準變更時走**遷移**而非「清單已更新」，見 update()。
 """
 import hashlib
 import json
@@ -17,8 +31,32 @@ from datetime import datetime
 from pathlib import Path
 from typing import Iterable, Optional, Tuple
 
+class EmptyPermitSet(ValueError):
+    """抽不到任何建照號——解析壞了，不是政府清空了清單。
+
+    **全空一律 fail-closed，不分有沒有基線。**
+
+    已有基線時（review P1）：照寫下去會①誤報「移除 440 筆」並排入通知 ②把基線
+    覆蓋成空的，下一輪再誤報「新增 440 筆」③把 last_changed 推到當天、重設停更
+    時鐘。
+
+    沒有基線時（review 第二輪 P2）：全新安裝、狀態檔遺失、或新城市首次執行若碰上
+    解析失敗，會建出一個 **0 筆的基線**；解析恢復後就把全部建照誤報成「新增 N 筆」。
+    我第一版把守門條件寫成「且已有基線」，正好漏掉這條路。實測空基線後恢復兩筆，
+    確實產生「新增 2 筆」通知。
+
+    政府清單不存在「零筆」這種合法狀態，所以空集合永遠是我方解析失效。拋例外讓
+    呼叫端整步失敗（shell 會記 error 並告警），不要留下看起來正常的錯資料。
+    """
+
+
 STALE_DAYS = 60          # 指紋超過這麼久沒變 → 疑似停更
 DEFAULT_FILENAME = 'list_fingerprint.json'
+
+#: 目前的指紋基準：清單 PDF 裡實際存在的建照號。
+BASIS_PERMITS_IN_PDF = 'permits_in_pdf'
+#: 舊基準（檔案裡沒有 basis 欄位者）：只含解析出連結的建照。
+BASIS_LEGACY_WITH_LINKS = 'permits_with_links'
 
 
 def compute_digest(permits: Iterable[str]) -> str:
@@ -68,23 +106,50 @@ class ListFingerprint:
         return data
 
     def update(self, label: str, source: str, permits: Iterable[str],
-               now: Optional[datetime] = None) -> Tuple[bool, Optional[str], dict]:
+               now: Optional[datetime] = None, basis: str = BASIS_PERMITS_IN_PDF,
+               permits_with_links: Optional[int] = None) -> Tuple[bool, Optional[str], dict]:
         """記錄本次清單身分。
 
         Returns:
             (changed, summary, state)
-            changed：內容指紋是否與上次不同（首次建立基線時為 False，避免無意義通知）
+            changed：內容指紋是否與上次不同（首次建立基線、或基準遷移時為 False）
             summary：changed 為 True 時的人類可讀摘要，否則 None
+
+        **基準遷移**：指紋的計算基準若與檔案裡記的不同（例如從舊的「解析出連結的
+        建照」換成「PDF 裡的建照」），指紋必然改變，但那不是對方改了清單。此時
+        一律不報「清單已更新」、**不推進 last_changed**（否則會把疑似停更的時鐘
+        重置），只記下新基準與遷移時間。
         """
         now = now or datetime.now()
         permits = sorted(set(permits or []))
-        digest = compute_digest(permits)
         prev = self.load()
         first_time = not prev.get('sha256')
-        changed = bool(prev.get('sha256')) and prev.get('sha256') != digest
+
+        # 一筆都抽不到 → 解析壞了，不是政府清空清單。在**寫入之前**擋下。
+        # 不分有沒有基線：沒有基線時寫下去會留下 0 筆基線，解析恢復後把全部建照
+        # 誤報成新增（review 第二輪 P2）。
+        if not permits:
+            baseline = len(prev.get('permits') or [])
+            where = f'基線有 {baseline} 筆' if baseline else '目前尚無基線'
+            raise EmptyPermitSet(
+                f'清單解析未取得任何建照號（{where}）——研判為 PDF 文字抽取或建照'
+                f'正則失效。指紋不予更新，避免留下 0 筆基線導致下一輪誤報新增；'
+                f'請檢查 {prev.get("label") or label or "清單 PDF"} 是否改版')
+
+        digest = compute_digest(permits)
+        prev_basis = prev.get('basis') or BASIS_LEGACY_WITH_LINKS
+        migrated = (not first_time) and prev_basis != basis
+        changed = (bool(prev.get('sha256')) and prev.get('sha256') != digest
+                   and not migrated)
 
         summary = None
         pending = list(prev.get('pending_notices') or [])
+        discarded = []
+        if migrated and pending:
+            # 舊基準留下的待送通知無法在新基準下驗證（9/30 那則假通知正是這樣產生
+            # 的），送出去等於把已知可疑的訊息推給操作者。丟棄但不靜默：留在 state
+            # 裡並由呼叫端印出（review P2）。
+            discarded, pending = pending, []
         if changed:
             added, removed = diff_permits(prev.get('permits', []), permits)
             summary = format_change(label, source, added, removed, len(permits))
@@ -95,6 +160,7 @@ class ListFingerprint:
         state = {
             'source': source,
             'label': label,
+            'basis': basis,
             'permit_count': len(permits),
             'sha256': digest,
             'permits': permits,
@@ -103,6 +169,14 @@ class ListFingerprint:
             'last_change_summary': summary or prev.get('last_change_summary'),
             'pending_notices': pending,
         }
+        if permits_with_links is not None:
+            # 純資訊：我方解析出連結的數量。**不參與指紋**，否則又把涵蓋率混進來。
+            state['permits_with_links'] = int(permits_with_links)
+        if migrated:
+            state['basis_migrated_at'] = now.isoformat()
+            state['basis_migrated_from'] = prev_basis
+            if discarded:
+                state['basis_migration_discarded_notices'] = discarded
         return changed, summary, self.save(state)
 
 

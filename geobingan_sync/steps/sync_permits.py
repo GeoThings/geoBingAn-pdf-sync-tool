@@ -168,6 +168,10 @@ class PermitSync:
         # 本次實際使用的清單身分（供 list_fingerprint 記錄；'動態' 表示從發布頁解析成功）
         self.list_source = ''
         self.list_label = ''
+        # 清單 PDF 裡**實際存在**的建照號（不管有沒有解析出連結）。指紋要用這個：
+        # 用「有連結的」當指紋，等於把「對方的清單」和「我方的解析能力」混成同一
+        # 個數字，我們改解析器就會被記成對方改清單（2026-09-30 實際誤報一次）。
+        self.permits_in_list = []
         self.csv_path = self.city.get('csv_path', '')
         self.shared_drive_id = self.city.get('shared_drive_id') or SHARED_DRIVE_ID
         self.target_folders = {}
@@ -299,6 +303,9 @@ class PermitSync:
 
         count_found = 0
         count_missed = 0
+        # 與 permit_mapping 用同一套正規化，兩邊的集合才可比較
+        self.permits_in_list = sorted({_normalize_permit(m.group(1)) or m.group(1)
+                                       for m in permit_matches})
 
         # 步驟 2: 遍歷每個建案，搜尋它「領地」內的網址
         for i in range(len(permit_matches)):
@@ -363,9 +370,24 @@ class PermitSync:
         # 靜態舊清單、指紋卻沒寫成功，health_check 會讀到上一輪的 source=動態、
         # 看不出這次的 fallback——正是 B1 要消除的 silent fallback。例外往上傳，
         # 讓同步步驟失敗（shell 會記 error 並告警），不要拿可能過期的清單繼續掃描。
+        # 指紋取「PDF 裡的建照號」而非「解析出連結的建照」。涵蓋率屬於我方能力，
+        # 記在 unsupported_sources 名單與同步日誌，不該混進對方清單的指紋。
         changed, summary, state = fp.update(
-            self.list_label, self.list_source, self.permit_mapping.keys())
+            self.list_label, self.list_source,
+            # 刻意不寫 `or permit_mapping.keys()` 當回退：那會在 permits_in_list
+            # 為空時靜默用回錯的基準，正是這支要修的問題。缺欄位就大聲壞掉。
+            self.permits_in_list,
+            permits_with_links=len(self.permit_mapping))
         print(f"🧾 清單指紋: {state['label']}（{state['source']}，{state['permit_count']} 筆建照）")
+        if state.get('basis_migrated_at') == state.get('last_checked'):
+            print(f"🔀 指紋基準已從 {state.get('basis_migrated_from')} 遷移為 {state.get('basis')}"
+                  f"（不視為清單變更，未推進 last_changed）")
+        dropped = state.get('basis_migration_discarded_notices') or []
+        if dropped and state.get('basis_migrated_at') == state.get('last_checked'):
+            # 丟棄不可靜默：舊基準的待送通知無法在新基準下驗證，但要讓人知道丟了什麼
+            print(f"   ⚠️ 同時丟棄舊基準留下的 {len(dropped)} 則待送通知（無法在新基準下驗證）:")
+            for d in dropped[:3]:
+                print(f"      · {d[:100]}")
         if changed and summary:
             print(f"🆕 {summary}")
 
