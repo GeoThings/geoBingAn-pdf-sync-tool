@@ -892,7 +892,9 @@ class PermitSync:
         """
         from geobingan_sync import step_results
         try:
-            step_results.write(step_results.SYNC, {
+            # accumulate 而非 write：run() 是每個城市跑一次，直接覆蓋會讓
+            # 後一個城市蓋掉前一個的數字（目前只啟用台北市，那是剛好沒事）
+            step_results.accumulate(step_results.SYNC, {
                 'synced': self.copied_total,
                 'permits_with_new': self.permits_with_new,
                 'adapter_uploaded': self.adapter_uploaded,

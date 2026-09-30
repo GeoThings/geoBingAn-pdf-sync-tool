@@ -165,3 +165,139 @@ def test_adapter_failure_message_does_not_say_upload_failed():
     offenders = [ln.strip() for ln in printed if '上傳失敗' in ln]
     assert not offenders, f'同步步驟印出了「上傳失敗」字樣: {offenders}'
     assert any('寫入目標資料夾失敗' in ln for ln in printed), '前提：改用了新的措辭'
+
+
+# ---------- P1：時區格式不一致不可讓記錄整輪崩潰 ----------
+#
+# shell 的 `date -Iseconds` 在 macOS 回帶時區的 2026-09-30T11:50:32+08:00，
+# 結果檔用 datetime.now() 寫的是 naive。直接相比會拋
+# TypeError: can't compare offset-naive and offset-aware datetimes，
+# 而那個例外發生在 record_sync_result 裡——整輪狀態就記不下來，比計數錯更嚴重。
+
+from datetime import timezone
+TPE = timezone(timedelta(hours=8))
+
+
+def test_aware_run_started_against_naive_file_does_not_raise(tmp_path):
+    sr.write(sr.SYNC, {'synced': 5}, now=NOW, base=str(tmp_path))
+    aware = NOW.replace(tzinfo=TPE)
+    d = sr.read(sr.SYNC, not_before=aware, base=str(tmp_path))
+    assert d is not None and d['synced'] == 5
+
+
+def test_aware_file_against_naive_run_started_does_not_raise(tmp_path):
+    p = tmp_path / 'step_result_sync.json'
+    p.write_text(json.dumps({'synced': 7,
+                             'generated_at': NOW.replace(tzinfo=TPE).isoformat()}),
+                 encoding='utf-8')
+    assert sr.read(sr.SYNC, not_before=NOW, base=str(tmp_path))['synced'] == 7
+
+
+def test_aware_stale_file_is_still_detected_as_stale(tmp_path):
+    """統一時區不能順手把新鮮度檢查弄丟。"""
+    p = tmp_path / 'step_result_sync.json'
+    p.write_text(json.dumps({'synced': 9,
+                             'generated_at': (NOW - timedelta(days=1)).replace(
+                                 tzinfo=TPE).isoformat()}), encoding='utf-8')
+    assert sr.read(sr.SYNC, not_before=NOW, base=str(tmp_path)) is None
+
+
+@pytest.mark.parametrize('raw', ['2026-09-30T10:00:00+08:00', '2026-09-30T10:00:00'])
+def test_parse_run_started_normalises_to_naive(raw):
+    got = sr.parse_run_started(raw)
+    assert got is not None and got.tzinfo is None
+
+
+def test_shell_iso_format_round_trips(tmp_path):
+    """用 shell 實際產生的字串跑一次，不要只用手寫的假值。"""
+    raw = subprocess.run(['bash', '-c', 'date -Iseconds 2>/dev/null || date +%Y-%m-%dT%H:%M:%S'],
+                         capture_output=True, text=True).stdout.strip()
+    started = sr.parse_run_started(raw)
+    assert started is not None and started.tzinfo is None
+    sr.write(sr.SYNC, {'synced': 1}, base=str(tmp_path))          # now()＝naive
+    assert sr.read(sr.SYNC, not_before=started, base=str(tmp_path)) is not None
+
+
+def test_read_counts_with_aware_run_started(tmp_path):
+    """整條路徑：record_sync_result 收到帶時區的字串也要正常取數。"""
+    sr.write(sr.SYNC, {'synced': 2499}, now=NOW, base=str(tmp_path))
+    sr.write(sr.UPLOAD, {'uploaded': 15, 'failed': 2}, now=NOW, base=str(tmp_path))
+    assert read_counts(run_started=NOW.replace(tzinfo=TPE).isoformat(),
+                       base=str(tmp_path)) == (2499, 15, 2)
+
+
+# ---------- P2：確定沒上傳是量到的 0，不是未取得 ----------
+
+def _upload_main_early_exit(tmp_path, monkeypatch, note):
+    """直接測 _record_upload_result：它是所有早退點共用的那一支。"""
+    import geobingan_sync.steps.upload_pdfs as up
+    monkeypatch.setenv('SYNC_RUN_STARTED', NOW.isoformat())
+    monkeypatch.setattr(sr, '_BASE', str(tmp_path))
+    up._record_upload_result(0, 0, note=note)
+    return sr.read(sr.UPLOAD, base=str(tmp_path))
+
+
+@pytest.mark.parametrize('note', ['nothing_to_upload', 'budget_blocked', 'cancelled'])
+def test_determinate_zero_is_recorded(tmp_path, monkeypatch, note):
+    d = _upload_main_early_exit(tmp_path, monkeypatch, note)
+    assert d is not None, '確定沒上傳也要留下紀錄，否則摘要會報「未取得」'
+    assert d['uploaded'] == 0 and d['failed'] == 0 and d['note'] == note
+
+
+def test_early_exit_paths_all_record_a_result():
+    """守門：main() 裡每個「確定沒上傳」的 sys.exit 前面都要有紀錄。
+
+    只修被指出的那一個不夠——同形態的其他早退也會落回「未取得」。
+
+    只掃 main() 函式本體。`__main__` 的 KeyboardInterrupt 不算：中斷時可能已經
+    上傳了幾份，我們**確實不知道**數量，報「未取得」才對。第一版掃整個檔案就被
+    那段打中——掃原始碼的守門測試要把範圍縮到真正在意的區塊。
+    """
+    lines = open(os.path.join(REPO, 'geobingan_sync/steps/upload_pdfs.py'),
+                 encoding='utf-8').read().split('\n')
+    start = next(i for i, ln in enumerate(lines) if ln.startswith('def main('))
+    end = next((i for i, ln in enumerate(lines[start + 1:], start + 1)
+                if ln.startswith('def ') or ln.startswith("if __name__")), len(lines))
+    body = lines[start:end]
+    exits = [(i, ln) for i, ln in enumerate(body)
+             if 'sys.exit(0)' in ln or 'sys.exit(3)' in ln]
+    assert exits, '前提：main() 裡有確定沒上傳的早退'
+    for i, ln in exits:
+        window = '\n'.join(body[max(0, i - 4):i])
+        assert '_record_upload_result' in window, (
+            f'main() 第 {start + i + 1} 行的 {ln.strip()} 之前沒有寫出上傳計數')
+
+
+# ---------- 多城市：同一輪內累加，不是後者覆蓋前者 ----------
+
+def test_accumulate_adds_within_the_same_run(tmp_path):
+    sr.accumulate(sr.SYNC, {'synced': 10, 'permits_with_new': 2},
+                  base=str(tmp_path), run_started=NOW.isoformat())
+    sr.accumulate(sr.SYNC, {'synced': 5, 'permits_with_new': 1},
+                  base=str(tmp_path), run_started=NOW.isoformat())
+    d = sr.read(sr.SYNC, base=str(tmp_path))
+    assert d['synced'] == 15 and d['permits_with_new'] == 3
+
+
+def test_accumulate_ignores_previous_run(tmp_path):
+    """跨輪不可累加到舊數字。"""
+    sr.write(sr.SYNC, {'synced': 999}, now=NOW - timedelta(days=1), base=str(tmp_path))
+    sr.accumulate(sr.SYNC, {'synced': 10}, base=str(tmp_path), run_started=NOW.isoformat())
+    assert sr.read(sr.SYNC, base=str(tmp_path))['synced'] == 10
+
+
+def test_accumulate_keeps_latest_note(tmp_path):
+    sr.accumulate(sr.UPLOAD, {'uploaded': 0, 'failed': 0, 'note': 'a'},
+                  base=str(tmp_path), run_started=NOW.isoformat())
+    sr.accumulate(sr.UPLOAD, {'uploaded': 3, 'failed': 0, 'note': 'b'},
+                  base=str(tmp_path), run_started=NOW.isoformat())
+    d = sr.read(sr.UPLOAD, base=str(tmp_path))
+    assert d['uploaded'] == 3 and d['note'] == 'b'
+
+
+def test_producers_use_accumulate_not_write():
+    """守門：產生端若改回 write，多城市就會互相覆蓋。"""
+    for rel in ('geobingan_sync/steps/sync_permits.py', 'geobingan_sync/steps/upload_pdfs.py'):
+        src = open(os.path.join(REPO, rel), encoding='utf-8').read()
+        assert 'step_results.write(' not in src, f'{rel} 應改用 accumulate'
+        assert 'step_results.accumulate(' in src

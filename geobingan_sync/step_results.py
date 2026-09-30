@@ -49,6 +49,25 @@ def write(step: str, data: dict, now: datetime = None, base: str = None) -> str:
     return p
 
 
+def _naive_local(dt: datetime):
+    """統一成 naive 本地時間再比較。
+
+    為什麼（review P1）：shell 的 `date -Iseconds` 在 macOS 會回**帶時區**的
+    `2026-09-30T11:50:32+08:00`，而結果檔用 `datetime.now()` 寫的是 naive。
+    直接相比會拋 `TypeError: can't compare offset-naive and offset-aware
+    datetimes`，而這個例外發生在 record_sync_result 裡——整輪的狀態就記不下來，
+    比計數錯還嚴重。
+
+    ⚠️ 兩邊都要過這一關，只轉一邊等於沒轉。台北無日光節約時間，naive 本地時間
+    不會有重複時刻的歧義；若日後要支援有 DST 的時區，這裡要改成一律 aware。
+    """
+    if dt is None:
+        return None
+    if dt.tzinfo is not None and dt.tzinfo.utcoffset(dt) is not None:
+        return dt.astimezone().replace(tzinfo=None)
+    return dt
+
+
 def read(step: str, not_before: datetime = None, base: str = None):
     """回本輪的結果，拿不到就回 None（未取得）。
 
@@ -68,7 +87,7 @@ def read(step: str, not_before: datetime = None, base: str = None):
             gen = datetime.fromisoformat(str(raw))
         except (TypeError, ValueError):
             return None
-        if gen < not_before:
+        if _naive_local(gen) < _naive_local(not_before):
             return None
     return data
 
@@ -78,10 +97,39 @@ def parse_run_started(raw: str):
     if not raw:
         return None
     try:
-        return datetime.fromisoformat(str(raw))
+        return _naive_local(datetime.fromisoformat(str(raw)))
     except (TypeError, ValueError):
         pass
     try:                                   # 也接受 epoch 秒（shell 的 date +%s）
         return datetime.fromtimestamp(int(str(raw).strip()))
     except (TypeError, ValueError, OverflowError, OSError):
         return None
+
+
+_RUN_STARTED_ENV = 'SYNC_RUN_STARTED'
+
+
+def accumulate(step: str, data: dict, base: str = None, run_started: str = None,
+               now: datetime = None) -> str:
+    """把數字**加進本輪**的結果，而不是覆蓋。
+
+    `main()` / `run()` 是每個城市跑一次，直接 write 會讓後一個城市蓋掉前一個的
+    數字。目前只啟用台北市所以看不出來，但那是「剛好沒事」，不是正確。
+
+    上一輪殘留的檔案不算（比對本輪開始時間），所以跨輪不會累加到舊數字。
+    """
+    started = parse_run_started(run_started if run_started is not None
+                                else os.environ.get(_RUN_STARTED_ENV, ''))
+    prev = read(step, not_before=started, base=base) or {}
+    merged = {}
+    for key in set(prev) | set(data):
+        if key == 'generated_at':
+            continue
+        a, b = prev.get(key), data.get(key)
+        if isinstance(a, (int, float)) and isinstance(b, (int, float)):
+            merged[key] = a + b
+        elif isinstance(a, (int, float)) and b is None:
+            merged[key] = a
+        else:
+            merged[key] = b if b is not None else a
+    return write(step, merged, now=now, base=base)
