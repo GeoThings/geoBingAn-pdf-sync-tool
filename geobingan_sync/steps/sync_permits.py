@@ -379,6 +379,15 @@ class PermitSync:
             self.permits_in_list,
             permits_with_links=len(self.permit_mapping))
         print(f"🧾 清單指紋: {state['label']}（{state['source']}，{state['permit_count']} 筆建照）")
+        if state.get('basis_migrated_at') == state.get('last_checked'):
+            print(f"🔀 指紋基準已從 {state.get('basis_migrated_from')} 遷移為 {state.get('basis')}"
+                  f"（不視為清單變更，未推進 last_changed）")
+        dropped = state.get('basis_migration_discarded_notices') or []
+        if dropped and state.get('basis_migrated_at') == state.get('last_checked'):
+            # 丟棄不可靜默：舊基準的待送通知無法在新基準下驗證，但要讓人知道丟了什麼
+            print(f"   ⚠️ 同時丟棄舊基準留下的 {len(dropped)} 則待送通知（無法在新基準下驗證）:")
+            for d in dropped[:3]:
+                print(f"      · {d[:100]}")
         if changed and summary:
             print(f"🆕 {summary}")
 

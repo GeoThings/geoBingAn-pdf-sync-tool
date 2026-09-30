@@ -3,6 +3,8 @@ import os
 import sys
 from datetime import datetime, timedelta
 
+import pytest
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from geobingan_sync.list_fingerprint import (compute_digest, diff_permits, assess,
                                              format_change, ListFingerprint)
@@ -330,3 +332,135 @@ def test_fingerprint_call_uses_permits_in_list_not_mapping():
     call = code[code.index('fp.update('):]
     assert 'self.permits_in_list' in call, '指紋必須用「PDF 裡的建照」當基準'
     assert 'permit_mapping.keys()' not in call, '指紋不可用「有連結的建照」當基準'
+
+
+# ---------- review P1：解析全掛時必須 fail-closed ----------
+#
+# 已有 440 筆基線卻一筆都抽不到（PDF 文字抽取或建照正則失效），原本會照寫下去：
+# ①誤報「移除 440 筆」並排入通知 ②把基線覆蓋成空的，下一輪再誤報「新增 440 筆」
+# ③把 last_changed 推到當天、重設停更時鐘。三個後果都比「同步這一步失敗」嚴重。
+
+from geobingan_sync.list_fingerprint import EmptyPermitSet
+
+BASE440 = [f'110建字第{i:04d}號' for i in range(1, 441)]
+
+
+def test_empty_permits_with_existing_baseline_raises(tmp_path):
+    fp = ListFingerprint(tmp_path / 'f.json')
+    fp.update('v1.pdf', '動態', BASE440, now=T0)
+    with pytest.raises(EmptyPermitSet, match='440 筆'):
+        fp.update('v1.pdf', '動態', [], now=T0 + timedelta(days=5))
+
+
+def test_baseline_survives_a_failed_parse(tmp_path):
+    """最關鍵：擋下來之後基線必須完好，否則下一輪會誤報「新增 440 筆」。"""
+    fp = ListFingerprint(tmp_path / 'f.json')
+    fp.update('v1.pdf', '動態', BASE440, now=T0)
+    with pytest.raises(EmptyPermitSet):
+        fp.update('v1.pdf', '動態', [], now=T0 + timedelta(days=5))
+    st = fp.load()
+    assert st['permit_count'] == 440 and len(st['permits']) == 440
+    assert st['last_changed'] == T0.isoformat(), '不可推進停更時鐘'
+    assert st['pending_notices'] == [], '不可排入假的移除通知'
+
+
+def test_recovery_after_a_failed_parse_is_not_a_change(tmp_path):
+    """解析修好後再跑，因為基線沒被毀，不該報任何變更。"""
+    fp = ListFingerprint(tmp_path / 'f.json')
+    fp.update('v1.pdf', '動態', BASE440, now=T0)
+    with pytest.raises(EmptyPermitSet):
+        fp.update('v1.pdf', '動態', [], now=T0 + timedelta(days=5))
+    changed, summary, st = fp.update('v1.pdf', '動態', BASE440, now=T0 + timedelta(days=6))
+    assert changed is False and summary is None
+    assert st['last_changed'] == T0.isoformat()
+
+
+def test_empty_permits_without_baseline_is_allowed(tmp_path):
+    """還沒有基線時寫空的沒有破壞性（首次建立），不要因此擋住。"""
+    fp = ListFingerprint(tmp_path / 'f.json')
+    changed, summary, st = fp.update('v1.pdf', '動態', [], now=T0)
+    assert changed is False and st['permit_count'] == 0
+
+
+def test_genuine_removals_are_still_reported(tmp_path):
+    """守門不可誤擋真實的移除：只有「全空」才算解析失效。"""
+    fp = ListFingerprint(tmp_path / 'f.json')
+    fp.update('v1.pdf', '動態', BASE440, now=T0)
+    changed, summary, _ = fp.update('v2.pdf', '動態', BASE440[:100], now=T0 + timedelta(days=1))
+    assert changed is True and '移除 340 筆' in summary
+
+
+def test_sync_step_propagates_empty_parse_failure(tmp_path, monkeypatch):
+    """管線層：例外要往上傳，讓同步這一步失敗（shell 才會告警）。"""
+    import geobingan_sync.steps.sync_permits as sp
+    fp = ListFingerprint(tmp_path / 'f.json')
+    fp.update('v1.pdf', '動態', BASE440, now=T0)
+    monkeypatch.setattr(sp, 'ListFingerprint', lambda *a, **k: fp, raising=False)
+    import geobingan_sync.list_fingerprint as lf
+    monkeypatch.setattr(lf, 'ListFingerprint', lambda *a, **k: fp)
+    ps = sp.PermitSync.__new__(sp.PermitSync)
+    ps.list_label, ps.list_source = 'v1.pdf', '動態'
+    ps.permit_mapping = {}
+    ps.permits_in_list = []
+    with pytest.raises(EmptyPermitSet):
+        ps._record_list_fingerprint()
+    assert fp.load()['permit_count'] == 440, '基線必須完好'
+
+
+# ---------- review P2：遷移不可送出舊基準留下的待送通知 ----------
+
+def test_migration_discards_stale_pending_notices(tmp_path):
+    """舊基準的待送通知無法在新基準下驗證（9/30 那則假通知正是這樣產生的）。"""
+    fp = ListFingerprint(tmp_path / 'f.json')
+    fp.update('v1.pdf', '動態', ['A'], now=T0, basis=BASIS_LEGACY_WITH_LINKS)
+    fp.update('v2.pdf', '動態', ['A', 'B'], now=T0 + timedelta(days=1),
+              basis=BASIS_LEGACY_WITH_LINKS)
+    assert fp.load()['pending_notices'], '前提：遷移前有待送通知'
+    data = fp.load(); data.pop('basis', None); fp.save(data)
+
+    changed, summary, st = fp.update('v2.pdf', '動態', ['A', 'B', 'C'],
+                                     now=T0 + timedelta(days=2))
+    assert changed is False and summary is None
+    assert st['pending_notices'] == [], '舊基準的通知不可留在佇列被送出'
+    assert len(st['basis_migration_discarded_notices']) == 1, '丟棄要留紀錄，不可靜默'
+    assert '新增 1 筆' in st['basis_migration_discarded_notices'][0]
+
+
+def test_migration_without_pending_records_nothing_extra(tmp_path):
+    fp = ListFingerprint(tmp_path / 'f.json')
+    fp.update('v1.pdf', '動態', ['A'], now=T0, basis=BASIS_LEGACY_WITH_LINKS)
+    data = fp.load(); data.pop('basis', None); data['pending_notices'] = []; fp.save(data)
+    _c, _s, st = fp.update('v1.pdf', '動態', ['A', 'B'], now=T0 + timedelta(days=1))
+    assert 'basis_migration_discarded_notices' not in st
+
+
+def test_pending_after_migration_still_works_normally(tmp_path):
+    """遷移之後的真實變更仍要正常排入待送佇列。"""
+    fp = ListFingerprint(tmp_path / 'f.json')
+    fp.update('v1.pdf', '動態', ['A'], now=T0, basis=BASIS_LEGACY_WITH_LINKS)
+    data = fp.load(); data.pop('basis', None); fp.save(data)
+    fp.update('v1.pdf', '動態', ['A', 'B'], now=T0 + timedelta(days=1))      # 遷移
+    _c, _s, st = fp.update('v2.pdf', '動態', ['A', 'B', 'C'], now=T0 + timedelta(days=2))
+    assert len(st['pending_notices']) == 1 and '新增 1 筆' in st['pending_notices'][0]
+
+
+def test_sync_step_announces_discarded_notices(tmp_path, monkeypatch, capsys):
+    """丟棄不可靜默——操作者要看得到丟了什麼。"""
+    import geobingan_sync.steps.sync_permits as sp
+    fp = ListFingerprint(tmp_path / 'f.json')
+    fp.update('v1.pdf', '動態', ['A'], now=T0, basis=BASIS_LEGACY_WITH_LINKS)
+    fp.update('v2.pdf', '動態', ['A', 'B'], now=T0 + timedelta(days=1),
+              basis=BASIS_LEGACY_WITH_LINKS)
+    data = fp.load(); data.pop('basis', None); fp.save(data)
+
+    monkeypatch.setattr(sp.PermitSync, '_send_list_change_notice', staticmethod(lambda n: True))
+    monkeypatch.setattr(sp, 'ListFingerprint', lambda *a, **k: fp, raising=False)
+    import geobingan_sync.list_fingerprint as lf
+    monkeypatch.setattr(lf, 'ListFingerprint', lambda *a, **k: fp)
+    ps = sp.PermitSync.__new__(sp.PermitSync)
+    ps.list_label, ps.list_source = 'v2.pdf', '動態'
+    ps.permit_mapping = {'A': '', 'B': '', 'C': ''}
+    ps.permits_in_list = ['A', 'B', 'C']
+    ps._record_list_fingerprint()
+    out = capsys.readouterr().out
+    assert '指紋基準已從' in out and '丟棄舊基準留下的 1 則' in out

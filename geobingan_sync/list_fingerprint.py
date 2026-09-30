@@ -31,6 +31,19 @@ from datetime import datetime
 from pathlib import Path
 from typing import Iterable, Optional, Tuple
 
+class EmptyPermitSet(ValueError):
+    """已有基線卻抽不到任何建照號——解析壞了，不是政府清空了清單。
+
+    fail-closed 的理由（review P1）：若照寫下去，會①誤報「移除 440 筆」並排入通知
+    ②把基線覆蓋成空的，下一輪再誤報「新增 440 筆」③把 last_changed 推到當天、
+    重設停更時鐘。三個後果都比「同步這一步失敗」嚴重得多，所以拋例外讓呼叫端整步
+    失敗（shell 會記 error 並告警），保住基線。
+
+    這與本模組既有的紀律一致：指紋是 fail-closed 的核心狀態，寧可大聲失敗，
+    不要留下看起來正常的錯資料。
+    """
+
+
 STALE_DAYS = 60          # 指紋超過這麼久沒變 → 疑似停更
 DEFAULT_FILENAME = 'list_fingerprint.json'
 
@@ -103,9 +116,17 @@ class ListFingerprint:
         """
         now = now or datetime.now()
         permits = sorted(set(permits or []))
-        digest = compute_digest(permits)
         prev = self.load()
         first_time = not prev.get('sha256')
+
+        # 已有基線卻一筆都抽不到 → 解析壞了，不是政府清空清單。在**寫入之前**擋下。
+        if not permits and prev.get('permits'):
+            raise EmptyPermitSet(
+                f'清單解析未取得任何建照號，但基線有 {len(prev["permits"])} 筆——'
+                f'研判為 PDF 文字抽取或建照正則失效。指紋不予更新以保住基線；'
+                f'請檢查 {prev.get("label") or "清單 PDF"} 是否改版')
+
+        digest = compute_digest(permits)
         prev_basis = prev.get('basis') or BASIS_LEGACY_WITH_LINKS
         migrated = (not first_time) and prev_basis != basis
         changed = (bool(prev.get('sha256')) and prev.get('sha256') != digest
@@ -113,6 +134,12 @@ class ListFingerprint:
 
         summary = None
         pending = list(prev.get('pending_notices') or [])
+        discarded = []
+        if migrated and pending:
+            # 舊基準留下的待送通知無法在新基準下驗證（9/30 那則假通知正是這樣產生
+            # 的），送出去等於把已知可疑的訊息推給操作者。丟棄但不靜默：留在 state
+            # 裡並由呼叫端印出（review P2）。
+            discarded, pending = pending, []
         if changed:
             added, removed = diff_permits(prev.get('permits', []), permits)
             summary = format_change(label, source, added, removed, len(permits))
@@ -138,6 +165,8 @@ class ListFingerprint:
         if migrated:
             state['basis_migrated_at'] = now.isoformat()
             state['basis_migrated_from'] = prev_basis
+            if discarded:
+                state['basis_migration_discarded_notices'] = discarded
         return changed, summary, self.save(state)
 
 
