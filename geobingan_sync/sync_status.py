@@ -122,9 +122,9 @@ class SyncStatus:
 
     def end_run(self,
                 status: str = 'success',
-                synced_pdfs: int = 0,
-                uploaded_pdfs: int = 0,
-                failed_uploads: int = 0,
+                synced_pdfs: Optional[int] = 0,
+                uploaded_pdfs: Optional[int] = 0,
+                failed_uploads: Optional[int] = 0,
                 error_message: Optional[str] = None,
                 duration_seconds: Optional[int] = None):
         """
@@ -168,9 +168,19 @@ class SyncStatus:
             stats["success_count"] += 1
         else:
             stats["failure_count"] += 1
-        stats["total_synced_pdfs"] += synced_pdfs
-        stats["total_uploaded_pdfs"] += uploaded_pdfs
-        stats["total_failed_uploads"] += failed_uploads
+        # None＝本輪沒量到。當成 0 加進累計，等於把量測失敗寫成「確實是 0」，
+        # 累計數字就永遠偏低而且沒人看得出來（2026-09-30 的教訓：119 次執行的
+        # total_synced_pdfs 都是 0，因為 shell 的 grep 樣式早就不匹配了）。
+        unavailable = [k for k, v in (('synced', synced_pdfs), ('uploaded', uploaded_pdfs),
+                                     ('failed', failed_uploads)) if v is None]
+        if synced_pdfs is not None:
+            stats["total_synced_pdfs"] += synced_pdfs
+        if uploaded_pdfs is not None:
+            stats["total_uploaded_pdfs"] += uploaded_pdfs
+        if failed_uploads is not None:
+            stats["total_failed_uploads"] += failed_uploads
+        if unavailable:
+            stats["counts_unavailable_runs"] = stats.get("counts_unavailable_runs", 0) + 1
 
         # 添加歷史記錄
         history_entry = {
@@ -182,6 +192,9 @@ class SyncStatus:
             "failed": failed_uploads,
             "duration_seconds": round(duration_seconds)
         }
+        if unavailable:
+            # 留在歷史裡，之後看趨勢時才知道那幾格的 null 是「沒量到」而非 0
+            history_entry["counts_unavailable"] = unavailable
         if error_message:
             history_entry["error"] = error_message
 
@@ -199,9 +212,13 @@ class SyncStatus:
         print(f"📊 執行摘要")
         print(f"{'='*50}")
         print(f"狀態: {'✅ 成功' if status == 'success' else '❌ 失敗' if status == 'failure' else '⚠️ 部分完成'}")
-        print(f"同步 PDF: {synced_pdfs}")
-        print(f"上傳 PDF: {uploaded_pdfs}")
-        print(f"上傳失敗: {failed_uploads}")
+        def _n(v):
+            return '未取得' if v is None else v
+        print(f"同步 PDF: {_n(synced_pdfs)}")
+        print(f"上傳 PDF: {_n(uploaded_pdfs)}")
+        print(f"上傳失敗: {_n(failed_uploads)}")
+        if unavailable:
+            print(f"⚠️ 以下計數本輪未取得（結果檔缺失或非本輪）: {'、'.join(unavailable)}")
         print(f"執行時間: {duration_minutes:.1f} 分鐘")
         if error_message:
             print(f"錯誤訊息: {error_message}")

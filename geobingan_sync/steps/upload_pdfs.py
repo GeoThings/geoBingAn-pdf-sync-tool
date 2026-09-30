@@ -958,6 +958,15 @@ def main(city: dict = None, catchup_days: int = None, yes: bool = False,
     print(f"✅ 成功上傳: {success_count} 個檔案")
     print(f"❌ 失敗: {error_count} 個檔案")
 
+    # 數量寫成資料，不讓 shell 從日誌人話裡撈。原本 shell grep 的是「報告上傳成功」
+    # ——那是**後端回應文字**被我方原樣印出，對方改一個字計數就靜默歸零。
+    try:
+        from geobingan_sync import step_results
+        step_results.write(step_results.UPLOAD,
+                           {'uploaded': success_count, 'failed': error_count})
+    except Exception as e:                                  # noqa: BLE001
+        print(f"⚠️ 上傳結果數量寫入失敗: {type(e).__name__}——本輪計數將顯示為未取得")
+
     if state['errors']:
         print(f"\n❌ 失敗的檔案:")
         for error in state['errors']:

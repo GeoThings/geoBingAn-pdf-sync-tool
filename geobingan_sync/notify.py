@@ -227,8 +227,8 @@ def send_notification(title: str, message: str, use_line: bool = True, use_macos
     return results
 
 
-def send_success(synced: int = 0, uploaded: int = 0, failed: int = 0,
-                 duration_minutes: Optional[float] = None):
+def send_success(synced: Optional[int] = 0, uploaded: Optional[int] = 0,
+                 failed: Optional[int] = 0, duration_minutes: Optional[float] = None):
     """
     發送成功摘要通知
 
@@ -241,11 +241,19 @@ def send_success(synced: int = 0, uploaded: int = 0, failed: int = 0,
     title = "✅ geoBingAn 同步完成"
 
     parts = []
-    if synced > 0:
+    # None＝本輪沒量到。要說出來，不可當成 0 而靜靜省略——省略跟「真的是 0」
+    # 在畫面上長得一樣，量測壞掉就沒人知道（2026-09-30 的教訓）。
+    if synced is None:
+        parts.append("同步: 未取得")
+    elif synced > 0:
         parts.append(f"同步: {synced}")
-    if uploaded > 0:
+    if uploaded is None:
+        parts.append("上傳: 未取得")
+    elif uploaded > 0:
         parts.append(f"上傳: {uploaded}")
-    if failed > 0:
+    if failed is None:
+        parts.append("失敗: 未取得")
+    elif failed > 0:
         parts.append(f"失敗: {failed}")
 
     message = " | ".join(parts) if parts else "執行完成"
