@@ -121,10 +121,18 @@ def test_stale_files_give_none_not_last_run_numbers(tmp_path):
     assert read_counts(run_started=NOW.isoformat(), base=str(tmp_path)) == (None, None, None)
 
 
-def test_no_run_started_skips_freshness_check(tmp_path):
-    """傳不到開始時間時不要因此全部變未取得——寧可用檔案內容，也別無謂丟掉。"""
+@pytest.mark.parametrize('raw', ['', 'garbage'])
+def test_no_run_started_means_unavailable_not_stale_numbers(tmp_path, raw):
+    """拿不到本輪起點就無法確認結果檔屬於本輪，一律回未取得。
+
+    原本這條的理由寫「寧可用檔案內容，也別無謂丟掉」——那是錯的，而且違反本模組
+    自己的原則：沿用上一輪的數字＝把昨天的報成今天的，「錯的數字看起來像對的」
+    比「未取得」更糟。
+    """
     sr.write(sr.SYNC, {'synced': 4}, now=NOW - timedelta(days=5), base=str(tmp_path))
-    assert read_counts(run_started='', base=str(tmp_path))[0] == 4
+    sr.write(sr.UPLOAD, {'uploaded': 9, 'failed': 1}, now=NOW - timedelta(days=5),
+             base=str(tmp_path))
+    assert read_counts(run_started=raw, base=str(tmp_path)) == (None, None, None)
 
 
 # ---------- shell 不得再從日誌撈計數 ----------
@@ -330,3 +338,44 @@ def test_producers_use_accumulate_not_write():
         src = open(os.path.join(REPO, rel), encoding='utf-8').read()
         assert 'step_results.write(' not in src, f'{rel} 應改用 accumulate'
         assert 'step_results.accumulate(' in src
+
+
+# ---------- P2：邊界不可放棄，否則跨輪累加（review 第三輪）----------
+#
+# accumulate 原本在拿不到 SYNC_RUN_STARTED 時用 read(not_before=None)，
+# 那是「不檢查新鮮度」＝fail-open。直接執行 CLI 就會把上一輪的數字繼續加上去：
+# 實測昨天 synced=100、本輪新增 2，寫成 102。
+
+def test_accumulate_without_boundary_does_not_carry_over(tmp_path, monkeypatch):
+    """核心回歸：沒有 SYNC_RUN_STARTED 時也不可累加到上一輪。"""
+    monkeypatch.delenv('SYNC_RUN_STARTED', raising=False)
+    sr.write(sr.SYNC, {'synced': 100}, now=datetime.now() - timedelta(days=1),
+             base=str(tmp_path))
+    sr.accumulate(sr.SYNC, {'synced': 2}, base=str(tmp_path))
+    assert sr.read(sr.SYNC, base=str(tmp_path))['synced'] == 2, '不可變成 102'
+
+
+def test_accumulate_without_boundary_still_adds_within_one_process(tmp_path, monkeypatch):
+    """城市迴歸跑在同一行程，同輪仍要相加——備援邊界不能把這件事也擋掉。"""
+    monkeypatch.delenv('SYNC_RUN_STARTED', raising=False)
+    sr.accumulate(sr.SYNC, {'synced': 2}, base=str(tmp_path))
+    sr.accumulate(sr.SYNC, {'synced': 3}, base=str(tmp_path))
+    assert sr.read(sr.SYNC, base=str(tmp_path))['synced'] == 5
+
+
+@pytest.mark.parametrize('raw', ['', 'garbage'])
+def test_accumulate_with_invalid_boundary_does_not_carry_over(tmp_path, monkeypatch, raw):
+    monkeypatch.setenv('SYNC_RUN_STARTED', raw)
+    sr.write(sr.UPLOAD, {'uploaded': 50, 'failed': 5},
+             now=datetime.now() - timedelta(days=2), base=str(tmp_path))
+    sr.accumulate(sr.UPLOAD, {'uploaded': 1, 'failed': 0}, base=str(tmp_path))
+    d = sr.read(sr.UPLOAD, base=str(tmp_path))
+    assert (d['uploaded'], d['failed']) == (1, 0)
+
+
+def test_accumulate_never_reads_with_no_boundary():
+    """守門：accumulate 不可再把 None 邊界直接餵給 read。"""
+    src = open(os.path.join(REPO, 'geobingan_sync/step_results.py'), encoding='utf-8').read()
+    body = src[src.index('def accumulate('):]
+    assert '_PROCESS_STARTED' in body, 'accumulate 必須有邊界備援'
+    assert 'if started is None:' in body

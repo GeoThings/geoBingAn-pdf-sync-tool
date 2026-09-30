@@ -108,6 +108,11 @@ def parse_run_started(raw: str):
 
 _RUN_STARTED_ENV = 'SYNC_RUN_STARTED'
 
+#: 本行程啟動時間。accumulate 的邊界**備援**——拿不到 SYNC_RUN_STARTED 時用它，
+#: 絕不退回「沒有邊界」。城市迴圈跑在同一個行程裡，所以這個邊界足以讓同輪相加；
+#: 而不同次 CLI 執行是不同行程，就不會累加到上一輪（review P2）。
+_PROCESS_STARTED = datetime.now()
+
 
 def accumulate(step: str, data: dict, base: str = None, run_started: str = None,
                now: datetime = None) -> str:
@@ -120,6 +125,12 @@ def accumulate(step: str, data: dict, base: str = None, run_started: str = None,
     """
     started = parse_run_started(run_started if run_started is not None
                                 else os.environ.get(_RUN_STARTED_ENV, ''))
+    if started is None:
+        # 邊界不可放棄。read(not_before=None) 是「不檢查新鮮度」，對累加而言是
+        # fail-open：直接執行 CLI（沒有 SYNC_RUN_STARTED）就會把上一輪的數字繼續
+        # 加上去——實測昨天 synced=100、本輪新增 2，寫成 102（review P2）。
+        # 退而用本行程啟動時間：同輪（城市迴圈）仍相加，跨次執行則不會。
+        started = _PROCESS_STARTED
     prev = read(step, not_before=started, base=base) or {}
     merged = {}
     for key in set(prev) | set(data):

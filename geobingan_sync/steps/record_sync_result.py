@@ -40,6 +40,13 @@ def read_counts(run_started: str = '', upload_skipped: str = '', base: str = Non
     """
     from geobingan_sync import step_results
     not_before = step_results.parse_run_started(run_started)
+    if not_before is None:
+        # 同一個 fail-open 也在讀取端：沒有本輪起點就無法判斷結果檔是不是本輪的，
+        # 沿用等於把上一輪的數字報成今天的——照本模組自己的話，「錯的數字看起來
+        # 像對的」比「未取得」更糟。所以一律回未取得。
+        print('⚠️ 未取得本輪開始時間（SYNC_RUN_STARTED），無法確認結果檔屬於本輪，'
+              '計數一律視為未取得')
+        return None, None, None
     sync = step_results.read(step_results.SYNC, not_before=not_before, base=base)
     synced = sync.get('synced') if isinstance(sync, dict) else None
 
