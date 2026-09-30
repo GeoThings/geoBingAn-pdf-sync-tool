@@ -375,11 +375,31 @@ def test_recovery_after_a_failed_parse_is_not_a_change(tmp_path):
     assert st['last_changed'] == T0.isoformat()
 
 
-def test_empty_permits_without_baseline_is_allowed(tmp_path):
-    """還沒有基線時寫空的沒有破壞性（首次建立），不要因此擋住。"""
+def test_empty_permits_without_baseline_also_raises(tmp_path):
+    """全新安裝／狀態檔遺失／新城市首次執行也不可寫出 0 筆基線。
+
+    我第一版把守門條件寫成「且已有基線」，漏掉這條路：0 筆基線一旦寫下去，
+    解析恢復後會把全部建照誤報成「新增 N 筆」（review 第二輪 P2，實測重現）。
+    政府清單不存在「零筆」這種合法狀態。
+    """
     fp = ListFingerprint(tmp_path / 'f.json')
-    changed, summary, st = fp.update('v1.pdf', '動態', [], now=T0)
-    assert changed is False and st['permit_count'] == 0
+    with pytest.raises(EmptyPermitSet, match='尚無基線'):
+        fp.update('v1.pdf', '動態', [], now=T0)
+    assert fp.load() == {}, '不可留下任何基線'
+
+
+def test_no_zero_baseline_can_be_created_so_recovery_is_not_a_change(tmp_path):
+    """reviewer 的重現序列：空基線 → 恢復兩筆 → 誤報「新增 2 筆」。
+
+    擋住第一步之後，恢復那一輪變成「首次建立基線」，不該報任何變更。
+    """
+    fp = ListFingerprint(tmp_path / 'f.json')
+    with pytest.raises(EmptyPermitSet):
+        fp.update('v1.pdf', '動態', [], now=T0)
+    changed, summary, st = fp.update('v1.pdf', '動態', ['A', 'B'], now=T0 + timedelta(days=1))
+    assert changed is False and summary is None
+    assert st['pending_notices'] == [], '不可產生「新增 2 筆」通知'
+    assert st['permit_count'] == 2
 
 
 def test_genuine_removals_are_still_reported(tmp_path):
@@ -464,3 +484,27 @@ def test_sync_step_announces_discarded_notices(tmp_path, monkeypatch, capsys):
     ps._record_list_fingerprint()
     out = capsys.readouterr().out
     assert '指紋基準已從' in out and '丟棄舊基準留下的 1 則' in out
+
+
+def test_sync_step_fails_on_empty_parse_with_no_baseline(tmp_path, monkeypatch):
+    """管線層：全新安裝碰上解析失敗，同步這一步要失敗，不可靜靜建出 0 筆基線。"""
+    import geobingan_sync.steps.sync_permits as sp
+    fp = ListFingerprint(tmp_path / 'f.json')
+    assert fp.load() == {}, '前提：尚無基線'
+    monkeypatch.setattr(sp, 'ListFingerprint', lambda *a, **k: fp, raising=False)
+    import geobingan_sync.list_fingerprint as lf
+    monkeypatch.setattr(lf, 'ListFingerprint', lambda *a, **k: fp)
+    ps = sp.PermitSync.__new__(sp.PermitSync)
+    ps.list_label, ps.list_source = 'v1.pdf', '動態'
+    ps.permit_mapping = {}
+    ps.permits_in_list = []
+    with pytest.raises(EmptyPermitSet):
+        ps._record_list_fingerprint()
+    assert fp.load() == {}, '不可留下任何狀態'
+
+
+def test_error_message_names_the_pdf_even_without_baseline(tmp_path):
+    """沒有基線時 prev 沒有 label，訊息要退用本次的 label，不能變成空白。"""
+    fp = ListFingerprint(tmp_path / 'f.json')
+    with pytest.raises(EmptyPermitSet, match='表單回復_1150902.pdf'):
+        fp.update('表單回復_1150902.pdf', '動態', [], now=T0)

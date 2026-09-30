@@ -32,15 +32,21 @@ from pathlib import Path
 from typing import Iterable, Optional, Tuple
 
 class EmptyPermitSet(ValueError):
-    """已有基線卻抽不到任何建照號——解析壞了，不是政府清空了清單。
+    """抽不到任何建照號——解析壞了，不是政府清空了清單。
 
-    fail-closed 的理由（review P1）：若照寫下去，會①誤報「移除 440 筆」並排入通知
-    ②把基線覆蓋成空的，下一輪再誤報「新增 440 筆」③把 last_changed 推到當天、
-    重設停更時鐘。三個後果都比「同步這一步失敗」嚴重得多，所以拋例外讓呼叫端整步
-    失敗（shell 會記 error 並告警），保住基線。
+    **全空一律 fail-closed，不分有沒有基線。**
 
-    這與本模組既有的紀律一致：指紋是 fail-closed 的核心狀態，寧可大聲失敗，
-    不要留下看起來正常的錯資料。
+    已有基線時（review P1）：照寫下去會①誤報「移除 440 筆」並排入通知 ②把基線
+    覆蓋成空的，下一輪再誤報「新增 440 筆」③把 last_changed 推到當天、重設停更
+    時鐘。
+
+    沒有基線時（review 第二輪 P2）：全新安裝、狀態檔遺失、或新城市首次執行若碰上
+    解析失敗，會建出一個 **0 筆的基線**；解析恢復後就把全部建照誤報成「新增 N 筆」。
+    我第一版把守門條件寫成「且已有基線」，正好漏掉這條路。實測空基線後恢復兩筆，
+    確實產生「新增 2 筆」通知。
+
+    政府清單不存在「零筆」這種合法狀態，所以空集合永遠是我方解析失效。拋例外讓
+    呼叫端整步失敗（shell 會記 error 並告警），不要留下看起來正常的錯資料。
     """
 
 
@@ -119,12 +125,16 @@ class ListFingerprint:
         prev = self.load()
         first_time = not prev.get('sha256')
 
-        # 已有基線卻一筆都抽不到 → 解析壞了，不是政府清空清單。在**寫入之前**擋下。
-        if not permits and prev.get('permits'):
+        # 一筆都抽不到 → 解析壞了，不是政府清空清單。在**寫入之前**擋下。
+        # 不分有沒有基線：沒有基線時寫下去會留下 0 筆基線，解析恢復後把全部建照
+        # 誤報成新增（review 第二輪 P2）。
+        if not permits:
+            baseline = len(prev.get('permits') or [])
+            where = f'基線有 {baseline} 筆' if baseline else '目前尚無基線'
             raise EmptyPermitSet(
-                f'清單解析未取得任何建照號，但基線有 {len(prev["permits"])} 筆——'
-                f'研判為 PDF 文字抽取或建照正則失效。指紋不予更新以保住基線；'
-                f'請檢查 {prev.get("label") or "清單 PDF"} 是否改版')
+                f'清單解析未取得任何建照號（{where}）——研判為 PDF 文字抽取或建照'
+                f'正則失效。指紋不予更新，避免留下 0 筆基線導致下一輪誤報新增；'
+                f'請檢查 {prev.get("label") or label or "清單 PDF"} 是否改版')
 
         digest = compute_digest(permits)
         prev_basis = prev.get('basis') or BASIS_LEGACY_WITH_LINKS
