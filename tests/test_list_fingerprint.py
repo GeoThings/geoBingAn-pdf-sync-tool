@@ -124,6 +124,9 @@ def test_sync_clears_pending_only_when_delivered(tmp_path, monkeypatch):
     ps = sp.PermitSync.__new__(sp.PermitSync)
     ps.list_label, ps.list_source = 'v2.pdf', '動態'
     ps.permit_mapping = {'a': '', 'b': ''}
+    # 指紋基準改為「PDF 裡的建照號」，測試物件要提供該欄位（production 由
+    # parse_pdf_list 設定）。不提供就 AttributeError，那是刻意的：缺欄位要大聲壞掉。
+    ps.permits_in_list = ['a', 'b']
     monkeypatch.setattr(sp, 'ListFingerprint', lambda *a, **k: fp, raising=False)
     import geobingan_sync.list_fingerprint as lf
     monkeypatch.setattr(lf, 'ListFingerprint', lambda *a, **k: fp)
@@ -152,6 +155,9 @@ def test_fingerprint_write_failure_aborts_sync(tmp_path, monkeypatch):
     ps = sp.PermitSync.__new__(sp.PermitSync)
     ps.list_label, ps.list_source = 'legacy.pdf', '靜態'              # 本輪退回靜態
     ps.permit_mapping = {'a': '', 'b': ''}
+    # 指紋基準改為「PDF 裡的建照號」，測試物件要提供該欄位（production 由
+    # parse_pdf_list 設定）。不提供就 AttributeError，那是刻意的：缺欄位要大聲壞掉。
+    ps.permits_in_list = ['a', 'b']
     try:
         ps._record_list_fingerprint()
         assert False, '應該要 raise，讓同步步驟失敗'
@@ -175,6 +181,152 @@ def test_notice_failure_does_not_abort_sync(tmp_path, monkeypatch):
     ps = sp.PermitSync.__new__(sp.PermitSync)
     ps.list_label, ps.list_source = 'v2.pdf', '動態'
     ps.permit_mapping = {'a': '', 'b': ''}
+    # 指紋基準改為「PDF 裡的建照號」，測試物件要提供該欄位（production 由
+    # parse_pdf_list 設定）。不提供就 AttributeError，那是刻意的：缺欄位要大聲壞掉。
+    ps.permits_in_list = ['a', 'b']
     ps._record_list_fingerprint()                       # 不應拋出
     assert fp.load()['pending_notices'], '通知未送達應保留待重試'
     assert fp.load()['label'] == 'v2.pdf'               # 指紋本身照常更新
+
+
+# ---------- 指紋只能反映對方的清單，不可混入我方解析能力（2026-09-30）----------
+#
+# 原本取「解析出連結的建照」，於是 PR #99 讓解析改抓任何 http(s) 之後，集合從 368
+# 變 440、指紋跟著變，機制發出「清單已更新，新增 72 筆」——政府一個字都沒改，
+# 新增的 72 筆全是我們原本丟掉的非 Drive 連結（實測比對確認）。
+#
+# 後果不只假通知：last_changed 被推到當天，而「疑似停更」靠它判定，等於我們自己
+# 把停更偵測的時鐘重置了。反方向更糟——解析退化漏掉建照會報「移除 N 筆」，
+# 看起來像政府下架建案。
+
+from geobingan_sync.list_fingerprint import (BASIS_LEGACY_WITH_LINKS, BASIS_PERMITS_IN_PDF)
+
+LISTED = ['110建字第0001號', '110建字第0002號', '110建字第0003號']
+
+
+def test_digest_ignores_our_link_coverage(tmp_path):
+    """同一份清單，我方解析出的連結數變了，指紋不可變。"""
+    fp = ListFingerprint(tmp_path / 'f.json')
+    fp.update('v1.pdf', '動態', LISTED, now=T0, permits_with_links=1)
+    changed, summary, state = fp.update('v1.pdf', '動態', LISTED,
+                                        now=T0 + timedelta(days=1), permits_with_links=3)
+    assert changed is False and summary is None, '解析涵蓋率變動不是清單更新'
+    assert state['last_changed'] == T0.isoformat(), '不可推進停更時鐘'
+    assert state['permits_with_links'] == 3, '涵蓋率仍要記錄，只是不進指紋'
+
+
+def test_real_list_change_is_still_detected(tmp_path):
+    fp = ListFingerprint(tmp_path / 'f.json')
+    fp.update('v1.pdf', '動態', LISTED, now=T0)
+    changed, summary, state = fp.update('v2.pdf', '動態', LISTED + ['111建字第0009號'],
+                                        now=T0 + timedelta(days=1))
+    assert changed is True and '新增 1 筆' in summary
+    assert state['last_changed'] == (T0 + timedelta(days=1)).isoformat()
+
+
+def test_removed_permits_still_detected(tmp_path):
+    fp = ListFingerprint(tmp_path / 'f.json')
+    fp.update('v1.pdf', '動態', LISTED, now=T0)
+    changed, summary, _ = fp.update('v2.pdf', '動態', LISTED[:-1], now=T0 + timedelta(days=1))
+    assert changed is True and '移除 1 筆' in summary
+
+
+# ---------- 基準遷移 ----------
+
+def _legacy_state(tmp_path, permits, now):
+    """寫一份舊格式（沒有 basis 欄位）的指紋檔。"""
+    fp = ListFingerprint(tmp_path / 'f.json')
+    fp.update('v1.pdf', '動態', permits, now=now, basis=BASIS_LEGACY_WITH_LINKS)
+    data = fp.load()
+    data.pop('basis', None)          # 舊檔真的沒有這個欄位
+    fp.save(data)
+    return fp
+
+
+def test_basis_migration_is_not_reported_as_a_list_change(tmp_path):
+    """切換基準時指紋必然改變，但那不是對方改了清單。"""
+    fp = _legacy_state(tmp_path, ['110建字第0001號'], T0)          # 舊：只有 1 筆有連結
+    changed, summary, state = fp.update('v1.pdf', '動態', LISTED,  # 新：清單其實有 3 筆
+                                        now=T0 + timedelta(days=10))
+    assert changed is False and summary is None
+    assert state['pending_notices'] == [], '遷移不可排入變更通知'
+    assert state['basis'] == BASIS_PERMITS_IN_PDF
+    assert state['basis_migrated_from'] == BASIS_LEGACY_WITH_LINKS
+    assert state['basis_migrated_at'] == (T0 + timedelta(days=10)).isoformat()
+
+
+def test_basis_migration_does_not_reset_the_stale_clock(tmp_path):
+    """最關鍵的一條：遷移不可把 last_changed 推到今天，否則停更偵測歸零。"""
+    fp = _legacy_state(tmp_path, ['110建字第0001號'], T0)
+    _c, _s, state = fp.update('v1.pdf', '動態', LISTED, now=T0 + timedelta(days=50))
+    assert state['last_changed'] == T0.isoformat()
+    level, msg = assess(state, now=T0 + timedelta(days=61))
+    assert level == 'warning' and '疑似停更' in msg, '遷移後仍要看得出清單很久沒變'
+
+
+def test_change_after_migration_is_detected_normally(tmp_path):
+    fp = _legacy_state(tmp_path, ['110建字第0001號'], T0)
+    fp.update('v1.pdf', '動態', LISTED, now=T0 + timedelta(days=1))          # 遷移
+    changed, summary, state = fp.update('v2.pdf', '動態', LISTED + ['111建字第0009號'],
+                                        now=T0 + timedelta(days=2))
+    assert changed is True and '新增 1 筆' in summary
+    assert state['last_changed'] == (T0 + timedelta(days=2)).isoformat()
+
+
+def test_migration_happens_only_once(tmp_path):
+    fp = _legacy_state(tmp_path, ['110建字第0001號'], T0)
+    fp.update('v1.pdf', '動態', LISTED, now=T0 + timedelta(days=1))
+    _c, _s, state = fp.update('v1.pdf', '動態', LISTED, now=T0 + timedelta(days=2))
+    assert state.get('basis_migrated_at') is None or \
+        state['basis_migrated_at'] == (T0 + timedelta(days=1)).isoformat()
+
+
+def test_first_baseline_records_basis(tmp_path):
+    fp = ListFingerprint(tmp_path / 'f.json')
+    changed, _s, state = fp.update('v1.pdf', '動態', LISTED, now=T0)
+    assert changed is False and state['basis'] == BASIS_PERMITS_IN_PDF
+    assert 'basis_migrated_at' not in state, '首次建立不是遷移'
+
+
+# ---------- 管線：指紋必須拿到「PDF 裡的建照」而不是「有連結的建照」 ----------
+
+def test_parse_collects_permits_without_links(tmp_path, monkeypatch):
+    """沒有連結的建照也要進 permits_in_list，否則指紋又會跟著解析能力跑。"""
+    import geobingan_sync.steps.sync_permits as sp
+
+    class _Page:
+        def extract_text(self):
+            return ('110建字第0001號 甲 乙 https://drive.google.com/drive/folders/'
+                    '1AbCdEfGhIjKlMnOpQrStUvWxYz012345 中文 '
+                    '110建字第0002號 丙 丁 尚未提供 '
+                    '110建字第0003號 戊 己 中文尚未提供\n1 / 1')
+
+    class _Reader:
+        def __init__(self, f):
+            self.pages = [_Page()]
+    monkeypatch.setattr(sp.pypdf, 'PdfReader', _Reader)
+    f = tmp_path / 'l.pdf'
+    f.write_bytes(b'%PDF-1.4')
+    ps = sp.PermitSync(city={'name': 'T', 'pdf_list_url': 'https://x.test/l.pdf'})
+    mapping = ps.parse_pdf_list(str(f))
+    assert set(mapping) == {'110建字第0001號'}, '只有第一個有連結'
+    assert ps.permits_in_list == ['110建字第0001號', '110建字第0002號', '110建字第0003號'], \
+        '三個建照都在清單裡，指紋要用這個'
+
+
+def test_fingerprint_call_uses_permits_in_list_not_mapping():
+    """守門：若改回用 permit_mapping.keys()，指紋又會跟著我方解析能力跑。
+
+    只掃**程式碼行**。解釋這件事的註解裡本來就會提到 permit_mapping.keys()，
+    掃原始碼的守門測試第三次被自己的註解打中了——範圍要縮到真正在意的東西。
+    """
+    import os
+    path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                        'geobingan_sync/steps/sync_permits.py')
+    src = open(path, encoding='utf-8').read()
+    body = src[src.index('def _record_list_fingerprint'):]
+    body = body[:body.index('\n    def ', 10)]
+    code = '\n'.join(ln for ln in body.split('\n') if not ln.lstrip().startswith('#'))
+    call = code[code.index('fp.update('):]
+    assert 'self.permits_in_list' in call, '指紋必須用「PDF 裡的建照」當基準'
+    assert 'permit_mapping.keys()' not in call, '指紋不可用「有連結的建照」當基準'
