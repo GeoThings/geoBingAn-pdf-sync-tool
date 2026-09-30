@@ -778,6 +778,26 @@ def select_pdfs_to_upload(all_pdfs: List[Dict], uploaded_files, *, cutoff: datet
     return picked, counts
 
 
+def _record_upload_result(uploaded: int, failed: int, note: str = ''):
+    """把上傳數量寫成資料。
+
+    **確定沒上傳也要寫。** review P2：原本只在正常結尾寫，於是「沒有待上傳檔案」
+    這種早退（sys.exit(0)）不會留下紀錄，摘要就報「未取得」——那違反本功能的核心
+    不變式：量到的 0 必須與沒量到分得開。預算擋下、使用者取消也一樣，都是我們
+    **知道**沒上傳。
+
+    寫入失敗不可影響上傳流程，但也不可無聲。
+    """
+    try:
+        from geobingan_sync import step_results
+        payload = {'uploaded': uploaded, 'failed': failed}
+        if note:
+            payload['note'] = note
+        step_results.accumulate(step_results.UPLOAD, payload)
+    except Exception as e:                                  # noqa: BLE001
+        print(f"⚠️ 上傳結果數量寫入失敗: {type(e).__name__}——本輪計數將顯示為未取得")
+
+
 def main(city: dict = None, catchup_days: int = None, yes: bool = False,
          override_daily_budget: str = '', skip_parser_health: bool = False):
     """主程式
@@ -886,6 +906,7 @@ def main(city: dict = None, catchup_days: int = None, yes: bool = False,
         print(f"  💰 {m}")
     if pdfs_to_upload and blocked:
         print(f"\n🛑 已擋下：{blocked}")
+        _record_upload_result(0, 0, note='budget_blocked')
         sys.exit(3)
     if reserved < len(pdfs_to_upload):
         pdfs_to_upload = pdfs_to_upload[:reserved]   # 已依 Drive 修改時間降序，裁切保留最新
@@ -895,6 +916,7 @@ def main(city: dict = None, catchup_days: int = None, yes: bool = False,
         print(f"\n⚠️  所有 PDF 都已上傳過了！")
         print("\n如要重新上傳，請刪除狀態檔案:")
         print(f"  rm {STATE_FILE}")
+        _record_upload_result(0, 0, note='nothing_to_upload')     # 量到的 0，不是未取得
         sys.exit(0)
 
     print(f"\n📋 將上傳以下 {len(pdfs_to_upload)} 個最新 PDF:")
@@ -909,6 +931,7 @@ def main(city: dict = None, catchup_days: int = None, yes: bool = False,
         response = input(f"\n是否繼續上傳這 {len(pdfs_to_upload)} 個檔案? (y/n): ")
         if response.lower() != 'y':
             print("👋 已取消")
+            _record_upload_result(0, 0, note='cancelled')
             sys.exit(0)
 
     # 上傳
@@ -957,6 +980,10 @@ def main(city: dict = None, catchup_days: int = None, yes: bool = False,
     print("=" * 60)
     print(f"✅ 成功上傳: {success_count} 個檔案")
     print(f"❌ 失敗: {error_count} 個檔案")
+
+    # 數量寫成資料，不讓 shell 從日誌人話裡撈。原本 shell grep 的是「報告上傳成功」
+    # ——那是**後端回應文字**被我方原樣印出，對方改一個字計數就靜默歸零。
+    _record_upload_result(success_count, error_count)
 
     if state['errors']:
         print(f"\n❌ 失敗的檔案:")

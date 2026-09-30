@@ -51,12 +51,16 @@ WAS_TIMEOUT=0
 source "$SCRIPT_DIR/lib/watchdog.sh"
 
 # 狀態變數
-SYNCED_COUNT=0
-UPLOADED_COUNT=0
-FAILED_COUNT=0
+# 計數不再從日誌 grep（2026-09-30：三個樣式都靜默失準，見 geobingan_sync/step_results.py）。
+# 各步驟把數字寫進 state/step_result_*.json，record_sync_result 讀資料。
+# 這裡只傳「本輪何時開始」讓它判斷結果檔是本輪的，以及上傳是否被跳過。
+UPLOAD_SKIPPED=""
 HAS_ERROR=0
 ERROR_MESSAGE=""
 START_TIME=$(date +%s)
+# ISO 格式的開始時間：record_sync_result 用它判斷結果檔是本輪寫的還是上一輪殘留。
+# 沿用舊檔會把昨天的數字報成今天的，比報「未取得」更糟。
+RUN_STARTED_ISO=$(date -Iseconds 2>/dev/null || date +%Y-%m-%dT%H:%M:%S)
 
 # 今天是週幾（ISO: 1=Mon..7=Sun）— commit message 標籤 + 步驟 5 是否產 PDF 都用這個
 # WEEKDAY 取值若失敗（極罕）會是空字串、後續比較 "1" 為 false、保守視為非週一（skip PDF + Daily label）
@@ -95,9 +99,8 @@ cleanup() {
 
     # 使用環境變數傳遞給 Python，避免字串注入問題
     export SYNC_STATUS="$STATUS"
-    export SYNC_SYNCED_COUNT="$SYNCED_COUNT"
-    export SYNC_UPLOADED_COUNT="$UPLOADED_COUNT"
-    export SYNC_FAILED_COUNT="$FAILED_COUNT"
+    export SYNC_RUN_STARTED="${RUN_STARTED_ISO}"
+    export SYNC_UPLOAD_SKIPPED="${UPLOAD_SKIPPED}"
     export SYNC_DURATION_SECONDS="$DURATION_SECONDS"
     export SYNC_ERROR_MESSAGE="$ERROR_MESSAGE"
 
@@ -237,9 +240,6 @@ if ! python3 -m geobingan_sync.steps.sync_permits 2>&1 | tee -a "$LOG_FILE"; the
     STEP1_FAILED=1
 fi
 
-# 從日誌解析同步數量
-SYNCED_COUNT=$(grep -o "新增 [0-9]* 個 PDF" "$LOG_FILE" 2>/dev/null | tail -1 | grep -o "[0-9]*" || echo "0")
-
 # 如果步驟 1 失敗，跳過後續依賴步驟
 if [ $STEP1_FAILED -ne 0 ]; then
     echo "⚠️  步驟 1 失敗，跳過步驟 2-3（依賴同步資料）" | tee -a "$LOG_FILE"
@@ -256,6 +256,8 @@ if [ -f "$SCRIPT_DIR/.pause_upload" ]; then
     echo "" | tee -a "$LOG_FILE"
     echo "⏸️  步驟 2/4: 上傳已暫停（偵測到 .pause_upload 旗標，恢復：rm .pause_upload）" | tee -a "$LOG_FILE"
     sed 's/^/   /' "$SCRIPT_DIR/.pause_upload" 2>/dev/null | tee -a "$LOG_FILE" || true
+    # 跳過是「確定沒上傳」，不是「沒量到」——要讓摘要報 0 而不是未取得
+    UPLOAD_SKIPPED="paused"
 else
     echo "" | tee -a "$LOG_FILE"
     echo "📤 步驟 2/4: 上傳最近 7 天的 PDF 到 Backend..." | tee -a "$LOG_FILE"
@@ -275,13 +277,6 @@ else
         STEP2_FAILED=1
     fi
 fi
-
-# 從日誌解析上傳數量（確保只取單一數字）
-UPLOADED_COUNT=$(grep -c "報告上傳成功" "$LOG_FILE" 2>/dev/null | head -1 | tr -d '\n' || echo "0")
-FAILED_COUNT=$(grep -c "上傳失敗" "$LOG_FILE" 2>/dev/null | head -1 | tr -d '\n' || echo "0")
-# 確保是有效數字
-[[ "$UPLOADED_COUNT" =~ ^[0-9]+$ ]] || UPLOADED_COUNT=0
-[[ "$FAILED_COUNT" =~ ^[0-9]+$ ]] || FAILED_COUNT=0
 
 # 步驟 2.5: 建案名稱交叉比對
 echo "" | tee -a "$LOG_FILE"

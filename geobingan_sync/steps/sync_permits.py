@@ -172,6 +172,12 @@ class PermitSync:
         self.shared_drive_id = self.city.get('shared_drive_id') or SHARED_DRIVE_ID
         self.target_folders = {}
         self.permit_mapping = {}
+        # 本輪實際新增的數量。以前靠 shell grep 日誌反推，樣式漂掉就靜默歸零
+        # （2026-09-30 查出累計 119 次執行都報 0）。改由這裡累加後寫成資料。
+        self.copied_total = 0
+        self.adapter_uploaded = 0
+        self.adapter_failed = 0
+        self.permits_with_new = 0
         self.state = self.load_state()
         self.restricted_files = []
         self._state_lock = threading.Lock()
@@ -641,7 +647,9 @@ class PermitSync:
                 failed += 1
                 continue
             except Exception as e:                          # noqa: BLE001
-                self._print(f"    ⚠️ 上傳失敗 {src.name}: {type(e).__name__}")
+                # 刻意不用「上傳失敗」字樣：那在本專案語彙裡指 geoBingAn 後端上傳，
+                # 兩件事混在一起會讓操作者查錯方向（舊 shell 還曾用它 grep 計數）
+                self._print(f"    ⚠️ 寫入目標資料夾失敗 {src.name}: {type(e).__name__}")
                 failed += 1
                 continue
             if file_id:
@@ -654,6 +662,11 @@ class PermitSync:
         if copied or failed:
             self._print(f"  📊 更新完成: 新增 {copied} 個" + (f"、失敗 {failed} 個" if failed else ""))
         with self._state_lock:
+            self.copied_total += copied
+            self.adapter_uploaded += copied
+            self.adapter_failed += failed
+            if copied:
+                self.permits_with_new += 1
             self.state['processed'][permit_no] = True
             if failed:
                 self.state['errors'].append(
@@ -707,6 +720,10 @@ class PermitSync:
 
             if copied > 0:
                 self._print(f"  📊 更新完成: 新增 {copied} 個")
+            with self._state_lock:
+                self.copied_total += copied
+                if copied:
+                    self.permits_with_new += 1
 
             with self._state_lock:
                 self.state['processed'][permit_no] = True
@@ -861,6 +878,33 @@ class PermitSync:
                 except Exception as e:
                     permit_no = futures[future]
                     self._print(f"  ❌ {permit_no} 未預期錯誤: {e}")
+
+        self._write_step_result()
+
+    def _write_step_result(self):
+        """把本輪的數量寫成資料，給 record_sync_result 讀。
+
+        以前是 shell 用 grep 從日誌反推，樣式跟訊息漂開之後就靜默回 0——累計
+        119 次執行的 total_synced_pdfs 一直是 0，而 9/30 那輪實際新增 2,499 份。
+        數字由**產生它的這一步**寫出來，消費端不必猜我們印了什麼字。
+
+        寫入失敗不可中斷同步：它是統計，不是同步本身。但也不可無聲，所以印出來。
+        """
+        from geobingan_sync import step_results
+        try:
+            # accumulate 而非 write：run() 是每個城市跑一次，直接覆蓋會讓
+            # 後一個城市蓋掉前一個的數字（目前只啟用台北市，那是剛好沒事）
+            step_results.accumulate(step_results.SYNC, {
+                'synced': self.copied_total,
+                'permits_with_new': self.permits_with_new,
+                'adapter_uploaded': self.adapter_uploaded,
+                'adapter_failed': self.adapter_failed,
+            })
+            print(f"\n📊 本輪新增 {self.copied_total} 份（{self.permits_with_new} 個建案）"
+                  + (f"，其中 adapter 上傳 {self.adapter_uploaded} 份" if self.adapter_uploaded else ""))
+        except Exception as e:                              # noqa: BLE001
+            print(f"⚠️ 同步結果數量寫入失敗: {type(e).__name__}——本輪計數將顯示為未取得")
+
 
 if __name__ == '__main__':
     import argparse

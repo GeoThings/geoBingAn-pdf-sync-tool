@@ -6,11 +6,13 @@
 
 環境變數：
 - SYNC_STATUS: 執行狀態 (success/failure)
-- SYNC_SYNCED_COUNT: 同步的 PDF 數量
-- SYNC_UPLOADED_COUNT: 上傳的 PDF 數量
-- SYNC_FAILED_COUNT: 上傳失敗的數量
+- SYNC_RUN_STARTED: 本輪開始時間（ISO 或 epoch）；用來判定結果檔是本輪的還是上一輪殘留
+- SYNC_UPLOAD_SKIPPED: 上傳步驟被跳過的原因（例如 paused）；有值代表「確定沒上傳」
 - SYNC_DURATION_SECONDS: 執行秒數
 - SYNC_ERROR_MESSAGE: 錯誤訊息（失敗時）
+
+數量不再由 shell grep 日誌反推（2026-09-30：三個計數器都靜默失準），改由各步驟
+寫進 state/step_result_*.json。讀不到就是 None＝**未取得**，不是 0。
 """
 
 import os
@@ -27,14 +29,43 @@ from datetime import datetime
 SYNC_ALERT_KEY = '同步執行'
 
 
+def read_counts(run_started: str = '', upload_skipped: str = '', base: str = None):
+    """從各步驟寫出的結果檔取數量。拿不到回 None（未取得），**不回 0**。
+
+    「沒量到」與「量到是 0」必須分得開。回 0 就是把量測失敗偽裝成正常結果，
+    那正是舊版 grep 計數的毛病：119 次執行都報 0，沒人發現樣式早就不匹配。
+
+    上傳步驟被跳過（例如 .pause_upload）時是**確定沒上傳**，回 0 才對——
+    那是量到的 0，不是沒量到。
+    """
+    from geobingan_sync import step_results
+    not_before = step_results.parse_run_started(run_started)
+    if not_before is None:
+        # 同一個 fail-open 也在讀取端：沒有本輪起點就無法判斷結果檔是不是本輪的，
+        # 沿用等於把上一輪的數字報成今天的——照本模組自己的話，「錯的數字看起來
+        # 像對的」比「未取得」更糟。所以一律回未取得。
+        print('⚠️ 未取得本輪開始時間（SYNC_RUN_STARTED），無法確認結果檔屬於本輪，'
+              '計數一律視為未取得')
+        return None, None, None
+    sync = step_results.read(step_results.SYNC, not_before=not_before, base=base)
+    synced = sync.get('synced') if isinstance(sync, dict) else None
+
+    if upload_skipped:
+        return synced, 0, 0
+    up = step_results.read(step_results.UPLOAD, not_before=not_before, base=base)
+    if not isinstance(up, dict):
+        return synced, None, None
+    return synced, up.get('uploaded'), up.get('failed')
+
+
 def main():
     # 從環境變數讀取（安全，不會有注入問題）
     status = os.environ.get('SYNC_STATUS', 'success')
-    synced_count = int(os.environ.get('SYNC_SYNCED_COUNT', '0'))
-    uploaded_count = int(os.environ.get('SYNC_UPLOADED_COUNT', '0'))
-    failed_count = int(os.environ.get('SYNC_FAILED_COUNT', '0'))
     duration_seconds = int(os.environ.get('SYNC_DURATION_SECONDS', '0'))
     error_message = os.environ.get('SYNC_ERROR_MESSAGE', '')
+    synced_count, uploaded_count, failed_count = read_counts(
+        run_started=os.environ.get('SYNC_RUN_STARTED', ''),
+        upload_skipped=os.environ.get('SYNC_UPLOAD_SKIPPED', ''))
 
     # 記錄執行結果
     sync_status = SyncStatus()
