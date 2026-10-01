@@ -732,7 +732,8 @@ def select_pdfs_to_upload(all_pdfs: List[Dict], uploaded_files, *, cutoff: datet
         dup_skipped（run 內去重跳過的 unique_id 清單，供 operator 分辨
         良性同名重複 vs 真同名撞檔）。
     """
-    from geobingan_sync.filename_date_parser import parse_date_from_filename
+    from geobingan_sync.filename_date_parser import (parse_date_from_filename,
+                                                      report_date_for_upload)
 
     def _filename_date(pdf):
         d = parse_date_from_filename(pdf.get('name', ''))
@@ -785,7 +786,15 @@ def select_pdfs_to_upload(all_pdfs: List[Dict], uploaded_files, *, cutoff: datet
         # 日期已經算出來了，附在 pdf 上帶到上傳那一步。
         # 不附的話上傳時就沒有日期可送，後端只能退回「上傳日」——那正是
         # 2026-10-01 查出的缺陷：report_date 存的是我們上傳的時間，不是報告的日期。
-        pdf['report_date'] = fd.strftime('%Y-%m-%d')
+        #
+        # ⚠️ 不可直接用 fd。月粒度的 fd 是**合成的月底**，對 cutoff 比對與排序是
+        # 合理近似，但當成報告日期送出去，當月月報在月初就會變成未來日期
+        # （2026-10-01 上傳「115年10月」會送 2026-10-31，未來 30 天）。
+        # report_date_for_upload 負責消化粒度並夾掉未來（review P1）。
+        pdf['report_date'] = report_date_for_upload(pdf.get('name', ''))
+        if pdf['report_date'] is None and pdf.get('folder_name'):
+            pdf['report_date'] = report_date_for_upload(
+                pdf['folder_name'] + '/' + pdf['name'])
         picked.append(pdf)
         seen_this_run.add(unique_id)
         if max_uploads > 0 and len(picked) >= max_uploads:

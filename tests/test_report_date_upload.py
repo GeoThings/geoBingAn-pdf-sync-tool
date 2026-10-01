@@ -129,3 +129,77 @@ def test_upload_call_site_sends_report_date():
     call = src[src.index('result = upload_to_geobingan('):]
     call = call[:call.index(')') + 1]
     assert 'report_date=' in call, f'呼叫點沒帶 report_date: {call}'
+
+
+# ---------- review P1：月粒度的合成月底不可當成報告日期送出 ----------
+#
+# parser 對「115年10月」這種只有年月的檔名會**合成**月底（_month_end）。那對 cutoff
+# 比對與排序是合理近似，但當成報告日期送出去，當月月報在月初就變成未來日期：
+# 2026-10-01 上傳「監測月報115年10月.pdf」會送 2026-10-31，未來 30 天。
+# 那會把 latest_report_date 推到未來，比原本的「上傳日」更糟——正好污染本功能
+# 要修的那個指標。
+
+from geobingan_sync.filename_date_parser import (parse_date_with_granularity,
+                                                 report_date_for_upload)
+
+OCT1 = datetime(2026, 10, 1)
+
+
+class _FrozenDatetime(datetime):
+    @classmethod
+    def now(cls, tz=None):
+        return OCT1
+
+
+@pytest.mark.parametrize('name', ['監測月報115年10月.pdf', '監測月報202610.pdf',
+                                  '115年10月工地監測月報.pdf'])
+def test_current_month_report_is_not_sent_as_a_future_date(name):
+    got = parse_date_with_granularity(name, now=OCT1)
+    assert got is not None and got[1] == 'month'
+    assert got[0] == datetime(2026, 10, 31), '前提：parser 合成的是月底'
+    assert report_date_for_upload(name, now=OCT1) == '2026-10-01', '不可送未來的月底'
+
+
+def test_past_month_report_still_sends_month_end():
+    """過去的月份沒有未來問題，月底是「涵蓋到哪天」最好的單一日期近似。"""
+    assert report_date_for_upload('114年04月月報.pdf', now=OCT1) == '2025-04-30'
+
+
+@pytest.mark.parametrize('today,expected', [
+    (datetime(2026, 10, 1), '2026-10-01'),
+    (datetime(2026, 10, 15), '2026-10-15'),
+    (datetime(2026, 10, 31), '2026-10-31'),
+    (datetime(2026, 11, 5), '2026-10-31'),      # 月份過完就送月底
+])
+def test_current_month_is_clamped_to_today(today, expected):
+    assert report_date_for_upload('監測月報115年10月.pdf', now=today) == expected
+
+
+def test_day_granularity_is_unchanged():
+    assert report_date_for_upload('112建0079-初值報告20260930.pdf', now=OCT1) == '2026-09-30'
+    assert report_date_for_upload('宏林TOP31-基地監測報告-1150930.pdf', now=OCT1) == '2026-09-30'
+
+
+def test_no_future_date_is_ever_sent():
+    """通則：任何粒度都不送未來日期。日粒度的合理性檢查容許 ±2 天時區誤差，
+    那對 cutoff 是對的，但不該寫進資料。"""
+    tomorrow = (OCT1 + timedelta(days=1)).strftime('%Y%m%d')
+    name = f'某工地報告{tomorrow}.pdf'
+    got = parse_date_with_granularity(name, now=OCT1)
+    assert got is not None and got[0] > OCT1, '前提：容許誤差讓它通過合理性檢查'
+    assert report_date_for_upload(name, now=OCT1) == '2026-10-01', '仍不可送未來'
+
+
+def test_unparseable_name_sends_nothing():
+    assert report_date_for_upload('沒有日期.pdf', now=OCT1) is None
+
+
+def test_selection_uses_the_clamped_date_not_the_synthetic_month_end(monkeypatch):
+    """管線層：挑選階段附上的必須是夾過的日期，不是 cutoff 用的那個月底。"""
+    import geobingan_sync.filename_date_parser as fdp
+    monkeypatch.setattr(fdp, 'datetime', _FrozenDatetime)
+    picked, _ = select_pdfs_to_upload([_pdf('監測月報115年10月.pdf')],
+                                      uploaded_files=[], cutoff=datetime(2026, 9, 1))
+    assert picked, '當月月報仍要能被選上（cutoff 比對用月底，這點不可退化）'
+    assert picked[0]['report_date'] == '2026-10-01', f"實際 {picked[0]['report_date']}"
+
