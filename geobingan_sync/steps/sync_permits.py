@@ -639,11 +639,70 @@ class PermitSync:
         # （fail-closed），不會變成「沒宣告就等於不限制」。
         data = fetch_pdf_bytes(src.url, src.allowed_hosts,
                                allowed_host_suffixes=src.allowed_host_suffixes)
+        return self.upload_bytes(src.name, data, final_folder_id), final_folder_id
+
+    def upload_bytes(self, name: str, data: bytes, folder_id: str):
+        """把位元組建成目標資料夾裡的 PDF。單檔與整包兩條路共用這一段。"""
         media = MediaIoBaseUpload(io.BytesIO(data), mimetype='application/pdf', resumable=True)
         created = self._get_svc().files().create(
-            body={'name': src.name, 'parents': [final_folder_id], 'mimeType': 'application/pdf'},
+            body={'name': name, 'parents': [folder_id], 'mimeType': 'application/pdf'},
             media_body=media, fields='id', supportsAllDrives=True).execute()
-        return created['id'], final_folder_id
+        return created['id']
+
+    def _sync_via_bundle(self, permit_no: str, source_url: str, target_folder_id: str, adapter):
+        """整包來源的同步路徑：adapter 下載並解壓，我們逐檔去重後上傳。
+
+        與逐檔路徑共用去重（check_file_exists）、子資料夾與 upload_bytes，只有取檔
+        方式不同。一個檔案失敗不拖垮整案；整包失敗不拖垮整輪。
+        """
+        from geobingan_sync.source_adapters import AdapterError
+
+        self.preload_target_files(target_folder_id, permit_no)
+        copied = failed = seen = 0
+        try:
+            for src, data in adapter.fetch_all(source_url):
+                seen += 1
+                if self.check_file_exists(target_folder_id, src.name, src.path, permit_no):
+                    continue
+                try:
+                    folder_id = target_folder_id
+                    if src.path:
+                        folder_id = self.get_or_create_subfolder(target_folder_id, src.path)
+                        if not folder_id:
+                            failed += 1
+                            continue
+                    self.upload_bytes(src.name, data, folder_id)
+                except Exception as e:                      # noqa: BLE001
+                    self._print(f"    ⚠️ 寫入目標資料夾失敗 {src.name}: {type(e).__name__}")
+                    failed += 1
+                    continue
+                self._print(f"    🆕 發現新檔並上傳: {src.name}")
+                copied += 1
+                if permit_no in self._target_file_cache:
+                    key = f"{src.path}/{src.name}" if src.path else src.name
+                    self._target_file_cache[permit_no].add(key)
+        except AdapterError as e:
+            self._print(f"  ⚠️ 整包取得失敗: {e}")
+            with self._state_lock:
+                self.state['errors'].append({'permit': permit_no,
+                                             'error': f'{adapter.name}:{e}'})
+            self.save_state()
+            return
+
+        if seen:
+            self._print(f"  📊 整包 {seen} 份，新增 {copied} 個"
+                        + (f"、失敗 {failed} 個" if failed else ""))
+        with self._state_lock:
+            self.copied_total += copied
+            self.adapter_uploaded += copied
+            self.adapter_failed += failed
+            if copied:
+                self.permits_with_new += 1
+            self.state['processed'][permit_no] = True
+            if failed:
+                self.state['errors'].append(
+                    {'permit': permit_no, 'error': f'{adapter.name}:{failed} 個檔案寫入失敗'})
+        self.save_state()
 
     def _sync_via_adapter(self, permit_no: str, source_url: str, target_folder_id: str, adapter):
         """非 Drive 來源的同步路徑。
@@ -654,6 +713,11 @@ class PermitSync:
         from geobingan_sync.source_adapters import AdapterError
 
         self._print(f"  🔌 來源類型: {adapter.name}")
+        if hasattr(adapter, 'fetch_all'):
+            # 整包來源：平台沒有便宜的列檔方式，只能一次下載整包再解壓。
+            # 走自己的路而不是硬塞進 list_files + 逐檔取檔——那會為每個檔案
+            # 重複下載整包（實測最大一包 284MB）。
+            return self._sync_via_bundle(permit_no, source_url, target_folder_id, adapter)
         try:
             files = adapter.list_files(source_url)
         except AdapterError as e:
