@@ -487,7 +487,7 @@ def download_pdf(service, file_id: str, file_name: str, max_retries: int = 3) ->
 
 
 def upload_to_geobingan(pdf_content: bytes, file_name: str, project_code: str,
-                        max_retries: int = 3) -> Optional[dict]:
+                        max_retries: int = 3, report_date: str = None) -> Optional[dict]:
     """
     回傳（預算結算依此分類）：
     - dict：成功，或可能已送達（502/504、逾時/連線錯誤重試耗盡）→ 視為已消耗
@@ -516,6 +516,17 @@ def upload_to_geobingan(pdf_content: bytes, file_name: str, project_code: str,
         'report_type': 'weekly',  # daily, weekly, monthly, incident, inspection
         'primary_language': 'zh-TW'
     }
+    # 報告日期（2026-10-01 修正）。不送的話後端只有 JSON 上傳才會從內容抽日期，
+    # PDF 一律 `report_date = timezone.now().date()`，也就是**我們上傳的那天**。
+    # 而 report_date 有索引、是預設排序依據、也餵給 latest_report_date 之類的聚合，
+    # 於是「某工地最近一份報告是什麼時候」實際量到的是「我們最近一次上傳是什麼時候」。
+    # 日期我方早就有（parse_date_from_filename），只是以前沒送。
+    if report_date:
+        data['report_date'] = report_date
+    else:
+        # 挑選階段保證每份都有日期（fd 為 None 會被 no_date 跳過），所以走到這裡
+        # 代表有別的呼叫路徑沒附日期。不可靜默——後端會退回上傳日而且看不出來。
+        print(f"  ⚠️ {file_name} 沒有報告日期可送，後端將退回上傳日（report_date 會失準）")
 
     retry_delays = [5, 15, 30]  # 指數退避延遲（秒）
 
@@ -658,7 +669,8 @@ def process_single_pdf(service, pdf: Dict, state: dict, idx: int, total: int,
         return {'success': False, 'pdf': pdf, 'result': None, 'error': 'day_rolled_over'}
 
     # 上傳
-    result = upload_to_geobingan(pdf_content, pdf['name'], pdf['folder_name'])
+    result = upload_to_geobingan(pdf_content, pdf['name'], pdf['folder_name'],
+                                 report_date=pdf.get('report_date'))
 
     if result:
         unique_id = f"{pdf['folder_name']}/{pdf['name']}"
@@ -720,7 +732,8 @@ def select_pdfs_to_upload(all_pdfs: List[Dict], uploaded_files, *, cutoff: datet
         dup_skipped（run 內去重跳過的 unique_id 清單，供 operator 分辨
         良性同名重複 vs 真同名撞檔）。
     """
-    from geobingan_sync.filename_date_parser import parse_date_from_filename
+    from geobingan_sync.filename_date_parser import (parse_date_from_filename,
+                                                      report_date_for_upload)
 
     def _filename_date(pdf):
         d = parse_date_from_filename(pdf.get('name', ''))
@@ -770,6 +783,18 @@ def select_pdfs_to_upload(all_pdfs: List[Dict], uploaded_files, *, cutoff: datet
             counts['too_old'] += 1
             continue
 
+        # 日期已經算出來了，附在 pdf 上帶到上傳那一步。
+        # 不附的話上傳時就沒有日期可送，後端只能退回「上傳日」——那正是
+        # 2026-10-01 查出的缺陷：report_date 存的是我們上傳的時間，不是報告的日期。
+        #
+        # ⚠️ 不可直接用 fd。月粒度的 fd 是**合成的月底**，對 cutoff 比對與排序是
+        # 合理近似，但當成報告日期送出去，當月月報在月初就會變成未來日期
+        # （2026-10-01 上傳「115年10月」會送 2026-10-31，未來 30 天）。
+        # report_date_for_upload 負責消化粒度並夾掉未來（review P1）。
+        pdf['report_date'] = report_date_for_upload(pdf.get('name', ''))
+        if pdf['report_date'] is None and pdf.get('folder_name'):
+            pdf['report_date'] = report_date_for_upload(
+                pdf['folder_name'] + '/' + pdf['name'])
         picked.append(pdf)
         seen_this_run.add(unique_id)
         if max_uploads > 0 and len(picked) >= max_uploads:
@@ -778,7 +803,8 @@ def select_pdfs_to_upload(all_pdfs: List[Dict], uploaded_files, *, cutoff: datet
     return picked, counts
 
 
-def _record_upload_result(uploaded: int, failed: int, note: str = ''):
+def _record_upload_result(uploaded: int, failed: int, note: str = '',
+                          missing_report_date: int = 0):
     """把上傳數量寫成資料。
 
     **確定沒上傳也要寫。** review P2：原本只在正常結尾寫，於是「沒有待上傳檔案」
@@ -793,6 +819,8 @@ def _record_upload_result(uploaded: int, failed: int, note: str = ''):
         payload = {'uploaded': uploaded, 'failed': failed}
         if note:
             payload['note'] = note
+        if missing_report_date:
+            payload['missing_report_date'] = missing_report_date
         step_results.accumulate(step_results.UPLOAD, payload)
     except Exception as e:                                  # noqa: BLE001
         print(f"⚠️ 上傳結果數量寫入失敗: {type(e).__name__}——本輪計數將顯示為未取得")
@@ -941,6 +969,11 @@ def main(city: dict = None, catchup_days: int = None, yes: bool = False,
 
     success_count = 0
     error_count = 0
+    # 缺報告日期的筆數也要可量測。只印一行警告會被日誌淹掉，而這個欄位失準不會
+    # 讓任何功能壞掉——正是會活很久的那種缺陷（同 #104 的教訓）。
+    missing_date_count = sum(1 for p in pdfs_to_upload if not p.get('report_date'))
+    if missing_date_count:
+        print(f"  ⚠️ {missing_date_count} 份沒有報告日期可送，後端將退回上傳日")
     # 預留預設視為已消耗：只對「確定零成本」的失敗（下載失敗/後端明確拒絕）立即退 1 份；
     # 結束（含中斷）只退還從未嘗試的份數。成功後才中斷、或結果不明，都保留在帳上（保守高估）。
     ledger = ReservationLedger(mb, reserved, day=reserved_day)   # 退還只作用於預留當日，跨日 no-op
@@ -983,7 +1016,8 @@ def main(city: dict = None, catchup_days: int = None, yes: bool = False,
 
     # 數量寫成資料，不讓 shell 從日誌人話裡撈。原本 shell grep 的是「報告上傳成功」
     # ——那是**後端回應文字**被我方原樣印出，對方改一個字計數就靜默歸零。
-    _record_upload_result(success_count, error_count)
+    _record_upload_result(success_count, error_count,
+                          missing_report_date=missing_date_count)
 
     if state['errors']:
         print(f"\n❌ 失敗的檔案:")

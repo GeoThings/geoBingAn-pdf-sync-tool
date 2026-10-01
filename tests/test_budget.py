@@ -277,7 +277,8 @@ def test_day_guard_right_before_post_blocks_after_slow_download(tmp_path, monkey
         clock['now'] = D1                                              # 下載期間跨日
         return b'%PDF'
     monkeypatch.setattr(up, 'download_pdf', slow_download)
-    monkeypatch.setattr(up, 'upload_to_geobingan', lambda c, n, f: posted.append(n) or {'id': 'x'})
+    monkeypatch.setattr(up, 'upload_to_geobingan',
+                        lambda c, n, f, **kw: posted.append(n) or {'id': 'x'})
     monkeypatch.setattr(up, 'save_state', lambda state: None)
     monkeypatch.setattr(up, 'add_to_history', lambda uid: None)
 
@@ -302,7 +303,8 @@ def test_day_guard_same_day_allows_post(tmp_path, monkeypatch):
     L = ReservationLedger(mb, reserved, day=data['day'], clock=lambda: D0)
     posted = []
     monkeypatch.setattr(up, 'download_pdf', lambda s, f, n: b'%PDF')
-    monkeypatch.setattr(up, 'upload_to_geobingan', lambda c, n, f: posted.append(n) or {'id': 'x'})
+    monkeypatch.setattr(up, 'upload_to_geobingan',
+                        lambda c, n, f, **kw: posted.append(n) or {'id': 'x'})
     monkeypatch.setattr(up, 'save_state', lambda state: None)
     monkeypatch.setattr(up, 'add_to_history', lambda uid: None)
     r = up.process_single_pdf(None, {'id': 'f', 'name': 'a.pdf', 'folder_name': 'X'},

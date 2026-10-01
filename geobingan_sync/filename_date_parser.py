@@ -63,6 +63,52 @@ def parse_date_from_filename(filename: str, now: Optional[datetime] = None) -> O
     return _sane(_parse_raw(filename), now)
 
 
+def parse_date_with_granularity(filename: str, now: Optional[datetime] = None):
+    """同 parse_date_from_filename，但保留粒度：回 `(datetime, 'day'|'month')` 或 None。
+
+    為什麼需要公開粒度（review P1）：月粒度的日期是**合成**的月底，原本只供
+    cutoff 比對與排序使用，那個用途下月底是合理的近似。但如果直接把它當成「報告
+    日期」送給後端，**當月月報在月初上傳就會送出未來日期**——2026-10-01 上傳
+    「監測月報115年10月.pdf」會送 2026-10-31，整整未來 30 天。那會把
+    latest_report_date 推到未來，比原本的「上傳日」更糟，而且正好污染本功能要
+    修的那個指標。
+    """
+    return _sane_keep_granularity(_parse_raw(filename), now)
+
+
+def _sane_keep_granularity(parsed, now: Optional[datetime] = None):
+    """與 _sane 同一套合理性規則，但回傳 (日期, 粒度)。"""
+    if parsed is None:
+        return None
+    d, gran = parsed
+    kept = _sane(parsed, now)
+    return None if kept is None else (kept, gran)
+
+
+def report_date_for_upload(filename: str, now: Optional[datetime] = None) -> Optional[str]:
+    """算出可以送給後端的報告日期字串（YYYY-MM-DD），或 None。
+
+    兩條規則：
+
+    1. **月粒度送 min(月底, 今天)。** 月底是我們合成的、不是檔名寫的，直接送會在
+       當月變成未來日期。過去的月份仍送月底（那是「這份月報涵蓋到哪天」最好的單一
+       日期近似）；當月則送到今天為止——「我們知道這個月到今天為止有資料」。
+    2. **任何粒度都不送未來日期。** 日粒度的合理性檢查允許 FUTURE_TOLERANCE_DAYS
+       的時區／跨日誤差，那對 cutoff 是對的，但不該寫進資料。一律夾到今天。
+
+    後端目前沒有粒度欄位，所以粒度只能在這裡消化掉；日後若後端加了欄位，這裡
+    改成原值直送並附粒度即可。
+    """
+    got = parse_date_with_granularity(filename, now)
+    if got is None:
+        return None
+    d, _gran = got
+    today = (now or datetime.now()).replace(hour=0, minute=0, second=0, microsecond=0)
+    if d > today:
+        d = today
+    return d.strftime('%Y-%m-%d')
+
+
 def _parse_raw(filename: str):
     """純樣式比對，不做合理性檢查（由 _sane 負責）。
 
