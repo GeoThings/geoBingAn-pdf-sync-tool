@@ -364,7 +364,9 @@ def _wire(ps, monkeypatch, adapter, uploads, fail_on=()):
     monkeypatch.setattr(ps, 'check_file_exists', lambda *a, **k: False)
     monkeypatch.setattr(ps, 'save_state', lambda *a, **k: None)
 
-    def _upload(src, target):
+    # **kwargs：production 簽名會長（加了 adapter= 掛勾）。替身收死簽名的話，每次
+    # 加參數這些無關的測試都會以 TypeError 斷掉、看起來像功能壞了（9/30 已踩過一次）。
+    def _upload(src, target, **kw):
         if src.name in fail_on:
             raise AdapterError('boom')
         uploads.append(src.name)

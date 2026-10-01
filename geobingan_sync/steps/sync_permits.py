@@ -614,7 +614,7 @@ class PermitSync:
         """取得當前 thread 的 Drive service（並行時用 thread-local，序列時用全域）"""
         return get_thread_drive_service()
 
-    def upload_remote_file(self, src, target_folder_id: str):
+    def upload_remote_file(self, src, target_folder_id: str, adapter=None):
         """把非 Drive 來源的一個檔案下載後上傳進目標資料夾。
 
         與 copy_file 的差別只在來源：那邊是 Drive→Drive 的 files().copy，
@@ -628,10 +628,17 @@ class PermitSync:
             final_folder_id = self.get_or_create_subfolder(target_folder_id, src.path)
             if not final_folder_id:
                 return None, None
-        # allowed_hosts 由 adapter 宣告並隨 SourceFile 傳進來：取檔時**每一跳**都要
-        # 落在那些主機上。空的會被 fetch_pdf_bytes 拒絕（fail-closed），不會變成
-        # 「沒宣告就等於不限制」。失敗拋 AdapterError，由呼叫端逐檔處理。
-        data = fetch_pdf_bytes(src.url, src.allowed_hosts)
+        # 有些平台列檔時拿不到下載網址，要在**取檔前一刻**再換一次（換來的網址短效，
+        # 提早換會讓大批次的後段全部過期）。沒有這個方法的 adapter 走原路。
+        resolve = getattr(adapter, 'resolve_download', None) if adapter else None
+        if resolve is not None:
+            src = resolve(src)
+
+        # allowed_hosts／allowed_host_suffixes 由 adapter 宣告並隨 SourceFile 傳進來：
+        # 取檔時**每一跳**都要落在允許範圍內。兩者皆空會被 fetch_pdf_bytes 拒絕
+        # （fail-closed），不會變成「沒宣告就等於不限制」。
+        data = fetch_pdf_bytes(src.url, src.allowed_hosts,
+                               allowed_host_suffixes=src.allowed_host_suffixes)
         media = MediaIoBaseUpload(io.BytesIO(data), mimetype='application/pdf', resumable=True)
         created = self._get_svc().files().create(
             body={'name': src.name, 'parents': [final_folder_id], 'mimeType': 'application/pdf'},
@@ -663,7 +670,7 @@ class PermitSync:
             if self.check_file_exists(target_folder_id, src.name, src.path, permit_no):
                 continue
             try:
-                file_id, _ = self.upload_remote_file(src, target_folder_id)
+                file_id, _ = self.upload_remote_file(src, target_folder_id, adapter=adapter)
             except AdapterError as e:
                 self._print(f"    ⚠️ 取檔失敗 {src.name}: {e}")
                 failed += 1

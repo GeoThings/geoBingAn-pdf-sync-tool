@@ -33,9 +33,15 @@ class SourceFile:
     path: str = ''          # 相對子資料夾；空字串＝放在建案資料夾根層
     modified: str = ''      # ISO 時間，可空
     size: int = 0
-    #: 取這個檔案時**每一跳**都必須落在這些主機上（含轉址）。adapter 負責填；
-    #: 空的代表沒人宣告過允許範圍，fetch_pdf_bytes 會直接拒絕（fail-closed）。
+    #: 取這個檔案時**每一跳**都必須落在這些主機上（含轉址），**精確比對**。
+    #: adapter 負責填；空的代表沒人宣告過允許範圍，fetch_pdf_bytes 會拒絕（fail-closed）。
     allowed_hosts: FrozenSet[str] = frozenset()
+    #: 允許的主機**後綴**（等於該網域本身、或其子網域）。只在平台用動態子網域發檔時
+    #: 才宣告——pCloud 的取檔主機是 API 回應裡才知道的 `esgp1.pcloud.com`／
+    #: `edef5.pcloud.com`，Dropbox 是 `uc<隨機>.dl.dropboxusercontent.com`，
+    #: 兩者都無法事先列舉。刻意與 allowed_hosts **分開欄位**而不是讓精確清單也兼做
+    #: 後綴：否則既有的 `public-be.redsun.tw` 會悄悄變成允許它所有子網域。
+    allowed_host_suffixes: FrozenSet[str] = frozenset()
 
 
 class SourceAdapter(Protocol):
@@ -44,6 +50,13 @@ class SourceAdapter(Protocol):
     def matches(self, url: str) -> bool: ...
 
     def list_files(self, url: str) -> List[SourceFile]: ...
+
+    # 選用：取檔**之前**把 SourceFile 換成帶真實下載網址的版本。
+    # 為什麼需要這個掛勾：有些平台列檔時拿不到下載網址，要再呼叫一次 API 換，
+    # 而換來的網址是**短效**的（pCloud 實測約 1 小時到期）。在 list_files 就換會
+    # 讓大批次的後段全部過期，所以必須緊貼下載那一刻才換。
+    # 沒有這個方法的 adapter 走原路，list_files 給的 url 直接用。
+    def resolve_download(self, src: SourceFile) -> SourceFile: ...
 
 
 def _session():
@@ -54,7 +67,8 @@ def _session():
     return _guarded_session()
 
 
-def _assert_fetchable(url: str, allowed_hosts: FrozenSet[str]) -> None:
+def _assert_fetchable(url: str, allowed_hosts: FrozenSet[str],
+                      allowed_host_suffixes: FrozenSet[str] = frozenset()) -> None:
     """在**發出請求之前**檢查這一跳的目的地。
 
     只驗第一個網址是不夠的（review P1）：白名單主機只要回一個 302，就能把我們
@@ -68,12 +82,37 @@ def _assert_fetchable(url: str, allowed_hosts: FrozenSet[str]) -> None:
         # 白名單是主機名，不含埠號。允許改埠等於允許連到同名主機上的其他服務。
         raise AdapterError(f'port_not_allowed:{u.port}')
     host = (u.hostname or '').lower()
-    if host not in allowed_hosts:
-        raise AdapterError(f'host_not_allowed:{host or "(none)"}')
+    if host in allowed_hosts:
+        return
+    for suffix in allowed_host_suffixes or ():
+        # 標籤邊界要對齊：`== suffix` 或 `.suffix` 結尾。只用 endswith(suffix) 會讓
+        # `evil-pcloud.com` 通過；少了 `== suffix` 則該網域本身會被擋掉。
+        if host == suffix or host.endswith('.' + suffix):
+            return
+    raise AdapterError(f'host_not_allowed:{host or "(none)"}')
+
+
+MIN_SUFFIX_LABELS = 2          # 後綴至少要兩段（擋掉打成 'com'／'tw' 這種過寬的值）
+
+
+def _check_suffixes(suffixes) -> frozenset:
+    """後綴白名單的防呆。只擋明顯過寬的值；真正的把關仍是 code review。
+
+    後綴只來自 adapter 的程式碼常數、不來自 payload，所以這裡不是安全邊界，是
+    防打錯：`com` 或空字串會讓整個規則失效，而且不會有任何徵兆。
+    """
+    out = set()
+    for raw in suffixes or ():
+        sfx = str(raw).strip().lower().lstrip('.')
+        if not sfx or len(sfx.split('.')) < MIN_SUFFIX_LABELS:
+            raise AdapterError(f'suffix_too_broad:{raw!r}（至少需 {MIN_SUFFIX_LABELS} 段網域）')
+        out.add(sfx)
+    return frozenset(out)
 
 
 def fetch_pdf_bytes(url: str, allowed_hosts: FrozenSet[str], max_bytes: int = MAX_FILE_BYTES,
-                    session_factory: Callable = None, max_hops: int = MAX_FETCH_HOPS) -> bytes:
+                    session_factory: Callable = None, max_hops: int = MAX_FETCH_HOPS,
+                    allowed_host_suffixes: FrozenSet[str] = frozenset()) -> bytes:
     """下載並確認真的是 PDF，否則拋 AdapterError。
 
     三個刻意的選擇：
@@ -91,14 +130,15 @@ def fetch_pdf_bytes(url: str, allowed_hosts: FrozenSet[str], max_bytes: int = MA
     """
     from geobingan_sync.link_resolver import USER_AGENT
     hosts = frozenset(h.lower() for h in (allowed_hosts or ()))
-    if not hosts:
+    suffixes = _check_suffixes(allowed_host_suffixes)
+    if not hosts and not suffixes:
         raise AdapterError('no_allowed_hosts')      # 沒人宣告允許範圍＝不准連
 
     sess = (session_factory or _session)()
     current = url
     try:
         for _hop in range(max_hops):
-            _assert_fetchable(current, hosts)       # ← 發出請求之前
+            _assert_fetchable(current, hosts, suffixes)   # ← 發出請求之前
             r = sess.get(current, headers={'User-Agent': USER_AGENT}, timeout=TIMEOUT,
                          stream=True, allow_redirects=False)
             location = r.headers.get('Location', '')
