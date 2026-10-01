@@ -317,3 +317,120 @@ def test_sync_routes_bundle_adapters_to_the_bundle_path(monkeypatch):
                         lambda self, *a, **k: calls.append('bundle_path'))
     ps._sync_via_adapter('111建字第0001號', FOLDER, 'target', _Bundle())
     assert calls == ['bundle_path'], '有 fetch_all 的 adapter 必須走整包路徑'
+
+
+# ---------- review P1：失敗的整包不可被標記已取用 ----------
+#
+# mark_fetched 原本放在 finally，於是壞 zip、解壓上限錯誤、或消費端中途停止都會寫出
+# 成功時間戳，接下來七天不再重試。已實測壞 zip 拋錯後隔天 is_due 仍是 False。
+# 沒標記的代價只是下一輪重抓一次，方向是安全的。
+
+def _bad_zip_path():
+    fd, p = tempfile.mkstemp(suffix='.zip')
+    os.write(fd, b'not a zip at all')
+    os.close(fd)
+    return p
+
+
+def test_bad_bundle_is_not_marked_as_fetched(tmp_path):
+    p = _state(tmp_path)
+    bad = _bad_zip_path()
+    with pytest.raises(AdapterError, match='bad_zip'):
+        list(DropboxAdapter().fetch_all(FOLDER, now=NOW, state_path=p,
+                                        stream=_fake_stream(bad)))
+    assert is_due(_parse(FOLDER), now=NOW + timedelta(days=1), state_path=p) is True, \
+        '失敗的整包必須下一輪就重試，不可等七天'
+
+
+def test_extraction_limit_error_is_not_marked(tmp_path):
+    """解壓上限擋下來也是失敗，同樣不可標記。"""
+    p = _state(tmp_path)
+    z = _zip([(f'f{i}.pdf', PDF) for i in range(12)], path=str(tmp_path / 'b.zip'))
+
+    def _limited(path, **kw):
+        return iter_zip_pdfs(path, max_members=10)
+    with pytest.raises(AdapterError, match='too_many_members'):
+        list(DropboxAdapter().fetch_all(FOLDER, now=NOW, state_path=p,
+                                        stream=_fake_stream(z), iter_pdfs=_limited))
+    assert is_due(_parse(FOLDER), now=NOW, state_path=p) is True
+
+
+def test_abandoned_iteration_is_not_marked(tmp_path):
+    """消費端中途停止（例如預算用完）也不算取用完成。"""
+    p = _state(tmp_path)
+    z = _zip([('a.pdf', PDF), ('b.pdf', PDF), ('c.pdf', PDF)], path=str(tmp_path / 'b.zip'))
+    gen = DropboxAdapter().fetch_all(FOLDER, now=NOW, state_path=p, stream=_fake_stream(z))
+    next(gen)                      # 只取第一份就放棄
+    gen.close()
+    assert is_due(_parse(FOLDER), now=NOW, state_path=p) is True
+    assert not os.path.exists(z), '中途放棄也要刪暫存檔'
+
+
+def test_successful_bundle_is_marked(tmp_path):
+    """對照組：真的跑完才寫時間戳。"""
+    p = _state(tmp_path)
+    z = _zip([('a.pdf', PDF)], path=str(tmp_path / 'b.zip'))
+    list(DropboxAdapter().fetch_all(FOLDER, now=NOW, state_path=p, stream=_fake_stream(z)))
+    assert is_due(_parse(FOLDER), now=NOW, state_path=p) is False
+
+
+# ---------- review P2：並行更新取用狀態不可互相覆寫 ----------
+#
+# 建案是並行處理的（ThreadPoolExecutor），三個 Dropbox 案子都寫同一個狀態檔。
+# 無鎖的 read-modify-write 實測 24 個並行寫入只剩 4 個，而且只帶 PID 的暫存檔名
+# 讓同行程的執行緒共用同一路徑 → 先完成的 os.replace 把它搬走，後到的 FileNotFoundError。
+
+def test_concurrent_marks_do_not_lose_updates(tmp_path):
+    import threading
+    p = _state(tmp_path)
+    errors = []
+
+    def _w(i):
+        try:
+            mark_fetched(f'bundle-{i}', i, now=NOW, state_path=p)
+        except Exception as e:                      # noqa: BLE001
+            errors.append(f'{type(e).__name__}: {e}')
+
+    threads = [threading.Thread(target=_w, args=(i,)) for i in range(24)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert errors == [], f'並行寫入不該拋例外：{errors[:2]}'
+    saved = json.load(open(p, encoding='utf-8'))
+    assert len(saved) == 24, f'24 個 key 應全部留下，實際 {len(saved)}'
+    assert all(f'bundle-{i}' in saved for i in range(24))
+
+
+def test_concurrent_marks_keep_each_bundle_independent(tmp_path):
+    """最實際的情境：三個 Dropbox 建案同時抓完。"""
+    import threading
+    p = _state(tmp_path)
+    keys = [_parse(f'https://www.dropbox.com/scl/fo/f{i}/h?dl=0&rlkey=x') for i in range(3)]
+    ts = [threading.Thread(target=mark_fetched, args=(k, 10),
+                           kwargs={'now': NOW, 'state_path': p}) for k in keys]
+    for t in ts:
+        t.start()
+    for t in ts:
+        t.join()
+    for k in keys:
+        assert is_due(k, now=NOW, state_path=p) is False, f'{k} 的時間戳被覆寫掉了'
+
+
+def test_temp_file_name_is_unique_per_call(tmp_path):
+    """只帶 PID 的暫存檔名會讓同行程的執行緒互撞。"""
+    import geobingan_sync.source_adapters.dropbox as dbx
+    p = _state(tmp_path)
+    seen = []
+    real = dbx.os.replace
+
+    def _spy(src, dst):
+        seen.append(src)
+        return real(src, dst)
+    dbx.os.replace = _spy
+    try:
+        mark_fetched('a', 1, now=NOW, state_path=p)
+        mark_fetched('b', 1, now=NOW, state_path=p)
+    finally:
+        dbx.os.replace = real
+    assert len(seen) == 2 and seen[0] != seen[1], f'暫存檔名重複: {seen}'

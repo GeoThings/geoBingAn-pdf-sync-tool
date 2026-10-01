@@ -21,6 +21,8 @@
 import json
 import os
 import re
+import tempfile
+import threading
 from datetime import datetime, timedelta
 from typing import Iterator, List, Tuple
 from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
@@ -68,15 +70,27 @@ def _load_state(path: str = None) -> dict:
         return {}
 
 
+#: 整包狀態的讀改寫要互斥。建案是並行處理的（ThreadPoolExecutor），而三個 Dropbox
+#: 案子都寫同一個檔；無鎖的 read-modify-write 會互相覆寫。實測 24 個並行寫入只剩 4 個。
+_STATE_LOCK = threading.Lock()
+
+
 def _save_state(data: dict, path: str = None) -> None:
+    """原子寫入。暫存檔名必須**每次唯一**——只帶 PID 的話同行程的執行緒會共用同一個
+    暫存路徑，先完成的那個 os.replace 會把它搬走，後到的就 FileNotFoundError（實測過）。
+    """
     p = path or STATE_FILE
     d = os.path.dirname(p)
     if d:
         os.makedirs(d, exist_ok=True)
-    tmp = f'{p}.{os.getpid()}.tmp'
-    with open(tmp, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=1)
-    os.replace(tmp, p)
+    fd, tmp = tempfile.mkstemp(prefix=os.path.basename(p) + '.', suffix='.tmp', dir=d or '.')
+    try:
+        with os.fdopen(fd, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=1)
+        os.replace(tmp, p)
+    except BaseException:
+        _unlink(tmp)
+        raise
 
 
 def is_due(key: str, now: datetime = None, state_path: str = None,
@@ -101,9 +115,13 @@ def is_due(key: str, now: datetime = None, state_path: str = None,
 
 def mark_fetched(key: str, pdf_count: int, now: datetime = None,
                  state_path: str = None) -> None:
-    st = _load_state(state_path)
-    st[key] = {'fetched_at': (now or datetime.now()).isoformat(), 'pdf_count': int(pdf_count)}
-    _save_state(st, state_path)
+    """記下這一包抓過了。**整段讀改寫都在鎖內**，否則並行的建案會互相覆寫時間戳，
+    結果是大包被反覆下載（實測 24 個並行寫入只剩 4 個）。"""
+    with _STATE_LOCK:
+        st = _load_state(state_path)
+        st[key] = {'fetched_at': (now or datetime.now()).isoformat(),
+                   'pdf_count': int(pdf_count)}
+        _save_state(st, state_path)
 
 
 class DropboxAdapter:
@@ -139,14 +157,21 @@ class DropboxAdapter:
                       allowed_host_suffixes=self.download_host_suffixes,
                       max_bytes=MAX_BUNDLE_BYTES)
         count = 0
+        completed = False
         try:
             for folder, fname, data in iter_pdfs(path):
                 count += 1
                 yield SourceFile(name=fname, url=dl, path=folder, size=len(data)), data
+            completed = True
         finally:
             _unlink(path)
-            try:
-                mark_fetched(dl, count, now=now, state_path=state_path)
-            except Exception as e:                            # noqa: BLE001
-                print(f'    ⚠️ 整包取用時間戳寫入失敗: {type(e).__name__}'
-                      f'——下一輪會重抓整包')
+            # **只有真的跑完才標記**（review P1）。原本放在 finally 無條件標記，於是
+            # 壞 zip、解壓上限錯誤、或消費端中途停止都會寫出成功時間戳，接下來七天
+            # 不再重試——已實測壞 zip 拋錯後隔天 is_due 仍是 False。
+            # 沒標記的代價只是下一輪重抓一次，方向是安全的。
+            if completed:
+                try:
+                    mark_fetched(dl, count, now=now, state_path=state_path)
+                except Exception as e:                        # noqa: BLE001
+                    print(f'    ⚠️ 整包取用時間戳寫入失敗: {type(e).__name__}'
+                          f'——下一輪會重抓整包')
