@@ -16,10 +16,11 @@
 pCloud 1 案、MEGA 1 案。新增 adapter 前先實測列檔，不要憑主機名推測。
 """
 from .base import AdapterError, SourceFile, fetch_pdf_bytes
+from .dropbox import DropboxAdapter
 from .pcloud import PCloudAdapter
 from .redsun import RedsunAdapter
 
-ADAPTERS = (RedsunAdapter(), PCloudAdapter())
+ADAPTERS = (RedsunAdapter(), PCloudAdapter(), DropboxAdapter())
 
 __all__ = ['ADAPTERS', 'AdapterError', 'SourceFile', 'fetch_pdf_bytes', 'find_adapter']
 
