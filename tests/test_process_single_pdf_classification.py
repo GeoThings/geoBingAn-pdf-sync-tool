@@ -10,7 +10,10 @@ PDF = {'id': 'f1', 'name': 'a.pdf', 'folder_name': '111建字第0001號'}
 
 def _setup(monkeypatch, download, upload):
     monkeypatch.setattr(up, 'download_pdf', lambda service, fid, name: download)
-    monkeypatch.setattr(up, 'upload_to_geobingan', lambda content, name, folder: upload)
+    # **kwargs：production 的簽名會長（2026-10-01 加了 report_date）。替身收死簽名的話，
+    # 每次加欄位這些無關的測試都會以 TypeError 斷掉，看起來像功能壞了。
+    monkeypatch.setattr(up, 'upload_to_geobingan',
+                        lambda content, name, folder, **kw: upload)
     monkeypatch.setattr(up, 'save_state', lambda state: None)
     monkeypatch.setattr(up, 'add_to_history', lambda uid: None)
 
