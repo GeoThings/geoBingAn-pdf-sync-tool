@@ -584,7 +584,9 @@ def test_summarise_prefers_measured_verdict_over_handwritten():
     d['sources']['A'].update({'probe_verdict': VERDICT_UNKNOWN,
                               'probed_at': NOW.isoformat()})
     fam, n, status, date, _ = us.summarise(d)[0]
-    assert fam == 'SharePoint' and '實測' in status and date == '2026-09-29'[:0] + NOW.strftime('%Y-%m-%d')
+    assert fam == 'SharePoint' and n == 1
+    assert status == '可開啟但未支援，實測 1/1', '實測要蓋掉手寫的「需登入」'
+    assert date == NOW.strftime('%Y-%m-%d')
 
 
 def test_summarise_marks_mixed_verdicts_within_a_family():
@@ -592,11 +594,89 @@ def test_summarise_marks_mixed_verdicts_within_a_family():
                   ('B', 'https://b-my.sharepoint.com/b', '')], now=NOW)
     d['sources']['A'].update({'probe_verdict': VERDICT_AUTH, 'probed_at': NOW.isoformat()})
     d['sources']['B'].update({'probe_verdict': VERDICT_UNKNOWN, 'probed_at': NOW.isoformat()})
-    _fam, _n, status, _date, _ = us.summarise(d)[0]
-    assert status.startswith('混合：')
+    _fam, n, status, _date, _ = us.summarise(d)[0]
+    assert n == 2
+    assert status == '混合：需登入 1、可開啟但未支援 1，實測 2/2', \
+        '不一致要逐項列案數，家族只是分類不是證據單位'
 
 
 def test_summarise_falls_back_to_handwritten_when_never_probed():
     d = us.build([('A', 'https://x-my.sharepoint.com/a', '')], now=NOW)
     _fam, _n, status, date, _ = us.summarise(d)[0]
     assert status == '需登入' and date == '2026-09-29', '沒測過才用手寫結論'
+
+
+# ---------- review P2①：部分實測不可擴張成家族結論 ----------
+
+def test_summarise_does_not_extend_partial_probe_to_whole_family():
+    """2 案裡只測了 1 案，不可印成「2 案需登入（實測）」。
+
+    counts 是家族全體、verdicts 只有測過的，兩者不可混用。這正是這支程式要修掉
+    的那個錯（手寫結論以家族為粒度），在彙總層又犯一次就等於沒修。
+    """
+    d = us.build([('A', 'https://a-my.sharepoint.com/a', ''),
+                  ('B', 'https://b-my.sharepoint.com/b', '')], now=NOW)
+    d['sources']['A'].update({'probe_verdict': VERDICT_AUTH, 'probed_at': NOW.isoformat()})
+    _fam, n, status, _date, _ = us.summarise(d)[0]
+    assert n == 2
+    assert status == '需登入，實測 1/2', f'不可宣稱兩案都實測過: {status}'
+
+
+def test_summarise_coverage_fraction_distinguishes_full_from_sampled():
+    """16/16 與 1/16 必須長得不一樣，否則讀的人分不出全測與抽驗。"""
+    full = us.build([(f'P{i}', f'https://h{i}-my.sharepoint.com/a', '') for i in range(4)],
+                    now=NOW)
+    for info in full['sources'].values():
+        info.update({'probe_verdict': VERDICT_AUTH, 'probed_at': NOW.isoformat()})
+    sampled = us.build([(f'P{i}', f'https://h{i}-my.sharepoint.com/a', '') for i in range(4)],
+                       now=NOW)
+    sampled['sources']['P0'].update({'probe_verdict': VERDICT_AUTH,
+                                     'probed_at': NOW.isoformat()})
+    assert us.summarise(full)[0][2] == '需登入，實測 4/4'
+    assert us.summarise(sampled)[0][2] == '需登入，實測 1/4'
+
+
+def test_summarise_mixed_partial_also_reports_coverage():
+    """混合 + 部分實測：逐項案數與涵蓋率都要在。"""
+    d = us.build([(f'P{i}', f'https://{i}.1.2.3/a', '') for i in range(4)], now=NOW)
+    d['sources']['P0'].update({'probe_verdict': VERDICT_UNREACHABLE,
+                               'probed_at': NOW.isoformat()})
+    d['sources']['P1'].update({'probe_verdict': VERDICT_UNREACHABLE,
+                               'probed_at': NOW.isoformat()})
+    d['sources']['P2'].update({'probe_verdict': VERDICT_UNKNOWN,
+                               'probed_at': NOW.isoformat()})
+    _fam, n, status, _date, _ = us.summarise(d)[0]
+    assert n == 4
+    assert status == '混合：連不上 2、可開啟但未支援 1，實測 3/4'
+
+
+# ---------- review P2②：未來時間戳不可永久延後重測 ----------
+
+def test_future_probe_timestamp_falls_open_to_probing():
+    """2099-01-01 可以解析，但不可能是真的觀測時間。
+
+    now - last 會是負數 → 永遠 < interval → 這一案到 2099 年都不再探測。
+    時鐘跳動或手動改壞資料都會踩到，必須跟毀損同樣 fail-open。
+    """
+    assert due_for_probe({'probed_at': '2099-01-01T00:00:00'}, now=NOW) is True
+    assert due_for_probe({'probed_at': (NOW + timedelta(seconds=1)).isoformat()},
+                         now=NOW) is True
+    assert due_for_probe({'probed_at': (NOW + timedelta(days=365 * 73)).isoformat()},
+                         now=NOW) is True
+
+
+def test_future_timestamp_is_actually_reprobed_and_timestamp_repaired():
+    """不只 predicate——probe_due 真的要重測，並把壞時間戳寫回正常值。"""
+    d = us.build([('A', 'https://x-my.sharepoint.com/a', '')], now=NOW)
+    d['sources']['A'].update({'probe_verdict': VERDICT_AUTH,
+                              'probed_at': '2099-01-01T00:00:00'})
+    probed, _recovered = us.probe_due(
+        d, now=NOW, fetch=_fetch((302, 'https://x.test/_forms/default.aspx', '')))
+    assert probed == 1, '未來時間戳必須被重測'
+    assert d['sources']['A']['probed_at'] == NOW.isoformat(), '壞時間戳要被修回來'
+
+
+def test_timestamp_exactly_now_is_not_reprobed_twice_in_one_run():
+    """修①不可反過來把同一輪剛測完的案子又測一次（probed_at == now 不是未來）。"""
+    info = {'probed_at': NOW.isoformat()}
+    assert due_for_probe(info, now=NOW) is False

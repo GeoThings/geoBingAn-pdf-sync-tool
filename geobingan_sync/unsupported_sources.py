@@ -138,7 +138,13 @@ def due_for_probe(info: dict, now: datetime = None,
         return True
     if last.tzinfo is not None:
         last = last.astimezone().replace(tzinfo=None)
-    return ((now or datetime.now()) - last) >= timedelta(days=interval_days)
+    now = now or datetime.now()
+    # 未來的時間戳不可能是真的觀測時間（時鐘跳動或手動改壞）。這也要當毀損處理，
+    # 否則 now - last 是負數、永遠不到期——實測塞 2099-01-01 可以把這一案卡到 2099 年。
+    # 同 fail-open 原則：不可信的時間戳倒向重測那側。
+    if last > now:
+        return True
+    return (now - last) >= timedelta(days=interval_days)
 
 
 def probe_due(data: dict, now: datetime = None, fetch=None,
@@ -215,17 +221,20 @@ def build(entries, previous=None, now=None) -> dict:
 
 
 #: 自動探測的 verdict → 人看得懂的說法。只講測得出來的，不替 JS 外殼下結論。
+#  「，實測 k/n」的涵蓋率由 summarise 補上，標籤本身不帶——家族裡測了幾案是
+#  彙總時才知道的事，寫死在標籤裡就會謊報涵蓋率。
 _VERDICT_LABEL = {
-    VERDICT_AUTH: '需登入（實測）',
-    VERDICT_UNREACHABLE: '連不上（實測）',
-    VERDICT_UNKNOWN: '可開啟但未支援（實測）',
+    VERDICT_AUTH: '需登入',
+    VERDICT_UNREACHABLE: '連不上',
+    VERDICT_UNKNOWN: '可開啟但未支援',
 }
 
 
 def summarise(data: dict) -> list:
     """依家族彙總，數量多的在前。回傳 [(family, count, status, evidence_date, note)]。
 
-    有實測結果就用實測（含最後一次測的日期）；同家族內 verdict 不一致時標「混合」。
+    有實測結果就用實測，並且**把涵蓋率寫進狀態**（「實測 k/n」）。同家族內 verdict
+    不一致時逐項列出各自案數，不只標「混合」——家族只是分類，不是證據單位。
     沒測過才退回 FAMILY_FINDINGS 的人工結論——那是 2026-09-29 手寫的，會過期，
     所以只當備援。
     """
@@ -236,22 +245,32 @@ def summarise(data: dict) -> list:
         counts[fam] = counts.get(fam, 0) + 1
         v = info.get('probe_verdict')
         if v:
-            verdicts.setdefault(fam, set()).add(v)
+            # 用計數而非 set：set 會讓「2 案裡只測了 1 案」印成整個家族的結論，
+            # 把單案證據擴張成家族結論——正是這支程式要修掉的那個錯。
+            fam_v = verdicts.setdefault(fam, {})
+            fam_v[v] = fam_v.get(v, 0) + 1
             d = str(info.get('probed_at') or '')[:10]
             if d:
                 probed_dates[fam] = max(probed_dates.get(fam, ''), d)
     out = []
     for fam, n in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0])):
         vs = verdicts.get(fam)
-        if vs and len(vs) == 1:
-            status = _VERDICT_LABEL.get(next(iter(vs)), '未確認')
-            out.append((fam, n, status, probed_dates.get(fam, '') or '未探測', ''))
-        elif vs:
-            label = '、'.join(sorted(_VERDICT_LABEL.get(v, v) for v in vs))
-            out.append((fam, n, f'混合：{label}', probed_dates.get(fam, '') or '未探測', ''))
-        else:
+        if not vs:
             status, date, note = FAMILY_FINDINGS.get(fam, ('未確認', '未探測', ''))
             out.append((fam, n, status, date, note))
+            continue
+        k = sum(vs.values())
+        # 分母是家族全體、分子是實際測過的，兩個數字必須一起出現，
+        # 讀的人才分得出「16/16 全測」與「1/16 抽到一案」。
+        coverage = f'，實測 {k}/{n}'
+        if len(vs) == 1:
+            status = _VERDICT_LABEL.get(next(iter(vs)), '未確認') + coverage
+        else:
+            parts = sorted(vs.items(), key=lambda kv: (-kv[1], kv[0]))
+            status = ('混合：'
+                      + '、'.join(f'{_VERDICT_LABEL.get(v, v)} {c}' for v, c in parts)
+                      + coverage)
+        out.append((fam, n, status, probed_dates.get(fam, '') or '未探測', ''))
     return out
 
 
