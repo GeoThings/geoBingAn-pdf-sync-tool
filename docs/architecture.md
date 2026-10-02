@@ -216,8 +216,9 @@ iCloud Drive `Desktop & Documents` 同步是 macOS 預設開啟的、會把 `~/D
 ### CI Pipeline
 
 ```
-GitHub Actions → pytest tests/ → Python 3.11 + 3.12 → 909 tests
+GitHub Actions → pytest tests/ → Python 3.11 + 3.12（全套，條數見 CI）
 觸發條件：push to main / PR to main
+刻意不在此釘精確 case 數：每新增一支測試就過期，且條數不是架構契約
 ```
 
 ## 資料流
@@ -749,6 +750,18 @@ run_weekly_sync.sh
 | 全部已上傳 / 使用者取消 | 0 | 正常結束 |
 | 上傳完成（有成功有失敗） | 0 | 正常結束 |
 | 未預期例外 | 1 | `if !` 觸發 handle_error |
+| 預算擋下（單次門檻未確認／日額度耗盡） | 3 | 記失敗並告警 |
+| 重推查詢失敗（fail-closed，查不到不當成沒有） | 4 | 記失敗並**告警** |
+| 解析引擎異常，今日不放行 | 5 | `EXIT_PARSER_HELD`，設計上的正常結果 |
+| 上傳暫停（`.pause_upload`） | 6 | `EXIT_PAUSED`，設計上的正常結果 |
+
+`health_check` 的 launchd 巡檢判斷「這個 job 是否正常結束」時：
+
+    drainstuck 正常結束碼＝{0, 5, 6}
+
+其餘一律告警。**exit 4 不在正常集合**——它代表重推查詢失敗，列為正常就會吞掉真正的
+查詢失敗（這句話被 review 抓過兩次：#93 的 PR 內一次、#110 文件一次，所以上面那行
+正規敘述由 `test_docs_consistency` 與 `health_check.py` 的 jobs 定義自動比對）。
 
 ## 檔名日期解析
 
