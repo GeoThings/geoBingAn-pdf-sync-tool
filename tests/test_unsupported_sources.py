@@ -373,3 +373,310 @@ def test_stale_list_alerts_regardless_of_sync_state(tmp_path):
     level, msg = health_check.check_unsupported_sources(
         path=p, now=NOW, sync_status_path=_sync_status(tmp_path, NOW - timedelta(days=30)))
     assert level == 'warning' and '未更新' in msg
+
+
+# ---------- 定期實測：把「需登入」從手寫常數換成測出來的 ----------
+#
+# FAMILY_FINDINGS 是 2026-09-29 人工探測後**手寫**的結論，會過期：承造人改好了權限
+# 我們不會知道（同 #100 失效資料夾永不重驗的那個錯）。改成定期實測。
+#
+# ⚠️ 自動探測刻意只認 **URL 層級**證據。9/29 我用 body 關鍵字判斷，把 Dropbox 與
+# Synology gofile 都判錯——那些頁面本來就含 signin 字串，是 JS 外殼不是登入牆，
+# 最後要用真實瀏覽器才分得出來。所以 HTTP 200 一律是 reachable_unknown，不下結論。
+
+from geobingan_sync.unsupported_sources import (PROBE_INTERVAL_DAYS, VERDICT_AUTH,
+                                                VERDICT_UNKNOWN, VERDICT_UNREACHABLE,
+                                                due_for_probe, probe_due, probe_once)
+
+
+def _fetch(*responses):
+    """依序回傳 (status, location, body)。"""
+    seq = list(responses)
+    calls = []
+
+    def _f(url):
+        calls.append(url)
+        return seq.pop(0) if seq else (200, '', '')
+    _f.calls = calls
+    return _f
+
+
+@pytest.mark.parametrize('location,marker', [
+    ('/_forms/default.aspx?ReturnUrl=%2fx', '/_forms/default.aspx'),
+    ('https://x.sharepoint.com/_layouts/15/sharepointerror.aspx?scenario=Y', 'sharepointerror.aspx'),
+    ('https://accounts.google.com/v3/signin/identifier?x=1', 'accounts.google.com/v3/signin'),
+    ('https://login.microsoftonline.com/common/oauth2', 'login.microsoftonline.com'),
+])
+def test_auth_redirect_is_detected(location, marker):
+    v, note = probe_once('https://x.test/a', fetch=_fetch((302, location, '')))
+    assert v == VERDICT_AUTH and note == marker
+
+
+def test_relative_auth_redirect_is_detected():
+    """SharePoint 回的是相對路徑，一樣要認得出來。
+
+    注意：marker 是子字串比對，相對路徑本身就含得到，所以這條**不是**在驗
+    urljoin（原本的測試名稱寫錯了，注回「拿掉 urljoin」時它照樣綠）。
+    urljoin 真正的作用見下一條。
+    """
+    v, _ = probe_once('https://x.sharepoint.com/:f:/g/p/E1',
+                      fetch=_fetch((302, '/_forms/default.aspx', '')))
+    assert v == VERDICT_AUTH
+
+
+def test_relative_redirect_is_resolved_before_the_next_hop():
+    """urljoin 的真正作用：讓**下一跳**拿到絕對網址。
+
+    不 urljoin 的話 current 會變成 '/step2'，下一次請求就不是合法網址。
+    這條是注回驗證逼出來的——原本沒有任何測試擋得住拿掉 urljoin。
+    """
+    f = _fetch((302, '/step2', ''), (200, '', 'ok'))
+    v, _ = probe_once('https://x.test/dir/a', fetch=f)
+    assert v == VERDICT_UNKNOWN
+    assert f.calls == ['https://x.test/dir/a', 'https://x.test/step2'], \
+        f'第二跳應收到絕對網址，實際 {f.calls}'
+
+
+def test_protocol_relative_redirect_is_resolved():
+    f = _fetch((302, '//other.test/x', ''), (200, '', 'ok'))
+    probe_once('https://x.test/a', fetch=f)
+    assert f.calls[1] == 'https://other.test/x'
+
+
+def test_http_200_is_never_claimed_as_needing_login():
+    """核心：JS 外殼也是 200。9/29 用 body 關鍵字判斷把 Dropbox／gofile 判錯。"""
+    body = '<html>...signin...login...Access via Synology...</html>'
+    v, note = probe_once('https://gofile.me/a/b', fetch=_fetch((200, '', body)))
+    assert v == VERDICT_UNKNOWN and note == 'http_200'
+
+
+@pytest.mark.parametrize('status', [404, 403, 500, 503])
+def test_non_200_is_unreachable(status):
+    v, note = probe_once('https://x.test/a', fetch=_fetch((status, '', '')))
+    assert v == VERDICT_UNREACHABLE and note == f'http_{status}'
+
+
+def test_connection_error_is_unreachable():
+    def _boom(_u):
+        raise TimeoutError('slow')
+    v, note = probe_once('http://1.2.3.4:5000/a', fetch=_boom)
+    assert v == VERDICT_UNREACHABLE and note == 'TimeoutError'
+
+
+def test_redirect_chain_is_followed_then_resolved():
+    f = _fetch((302, 'https://a.test/1', ''), (302, 'https://a.test/2', ''), (200, '', 'ok'))
+    v, _ = probe_once('https://x.test/a', fetch=f)
+    assert v == VERDICT_UNKNOWN and len(f.calls) == 3
+
+
+def test_redirect_loop_is_bounded():
+    def _loop(_u):
+        return (302, 'https://x.test/again', '')
+    v, note = probe_once('https://x.test/a', fetch=_loop)
+    assert v == VERDICT_UNREACHABLE and 'too_many_hops' in note
+
+
+# ---------- 重測間隔 ----------
+
+def test_never_probed_is_due():
+    assert due_for_probe({}, now=NOW) is True
+
+
+def test_not_due_within_interval():
+    info = {'probed_at': (NOW - timedelta(days=PROBE_INTERVAL_DAYS - 1)).isoformat()}
+    assert due_for_probe(info, now=NOW) is False
+
+
+def test_due_after_interval():
+    info = {'probed_at': (NOW - timedelta(days=PROBE_INTERVAL_DAYS)).isoformat()}
+    assert due_for_probe(info, now=NOW) is True
+
+
+@pytest.mark.parametrize('bad', ['', 'not-a-date', None, 12345])
+def test_corrupt_probe_timestamp_falls_open_to_probing(bad):
+    """髒資料不可以讓某一案永遠不重測。"""
+    assert due_for_probe({'probed_at': bad}, now=NOW) is True
+
+
+# ---------- probe_due 與恢復偵測 ----------
+
+def _data(**verdicts):
+    d = us.build([(p, f'https://{p}.test/x', '') for p in verdicts], now=NOW)
+    for p, v in verdicts.items():
+        if v:
+            d['sources'][p]['probe_verdict'] = v
+            d['sources'][p]['probed_at'] = (NOW - timedelta(days=30)).isoformat()
+    return d
+
+
+def test_probe_due_records_verdict_and_timestamp():
+    d = _data(A=None)
+    n, rec = probe_due(d, now=NOW, fetch=_fetch((302, '/_forms/default.aspx', '')))
+    info = d['sources']['A']
+    assert (n, rec) == (1, [])
+    assert info['probe_verdict'] == VERDICT_AUTH
+    assert info['probed_at'] == NOW.isoformat()
+
+
+def test_recovery_from_auth_is_reported():
+    """先前要登入、現在回 200 → 對方可能改好權限，必須出聲。"""
+    d = _data(A=VERDICT_AUTH)
+    n, rec = probe_due(d, now=NOW, fetch=_fetch((200, '', '<html>x</html>')))
+    assert (n, rec) == (1, ['A'])
+    assert d['sources']['A']['probe_recovered_at'] == NOW.isoformat()
+
+
+def test_recovery_from_unreachable_is_reported():
+    d = _data(A=VERDICT_UNREACHABLE)
+    _n, rec = probe_due(d, now=NOW, fetch=_fetch((200, '', 'x')))
+    assert rec == ['A']
+
+
+def test_still_auth_is_not_a_recovery():
+    d = _data(A=VERDICT_AUTH)
+    _n, rec = probe_due(d, now=NOW, fetch=_fetch((302, '/_forms/default.aspx', '')))
+    assert rec == [] and 'probe_recovered_at' not in d['sources']['A']
+
+
+def test_first_probe_returning_200_is_not_a_recovery():
+    """沒有先前結論就談不上恢復——否則第一輪會把整份名單報成好消息。"""
+    d = _data(A=None)
+    _n, rec = probe_due(d, now=NOW, fetch=_fetch((200, '', 'x')))
+    assert rec == []
+
+
+def test_probe_due_skips_fresh_entries():
+    d = _data(A=VERDICT_AUTH)
+    d['sources']['A']['probed_at'] = NOW.isoformat()
+
+    def _never(_u):
+        raise AssertionError('未到間隔不該重測')
+    n, rec = probe_due(d, now=NOW, fetch=_never)
+    assert (n, rec) == (0, [])
+
+
+def test_max_probes_bounds_one_round():
+    d = _data(**{f'P{i}': VERDICT_AUTH for i in range(6)})
+    n, _rec = probe_due(d, now=NOW, fetch=lambda u: (200, '', 'x'), max_probes=2)
+    assert n == 2
+
+
+# ---------- 探測結果跟著連結走 ----------
+
+def test_probe_result_is_kept_when_url_unchanged():
+    d = _data(A=VERDICT_AUTH)
+    again = us.build([('A', 'https://A.test/x', '')], previous=d, now=NOW)
+    assert again['sources']['A']['probe_verdict'] == VERDICT_AUTH
+
+
+def test_probe_result_is_dropped_when_url_changes():
+    """舊結論套到新連結＝憑空宣稱沒測過的事（同 #100 快取鍵綁實體 ID 的教訓）。"""
+    d = _data(A=VERDICT_AUTH)
+    again = us.build([('A', 'https://A.test/CHANGED', '')], previous=d, now=NOW)
+    assert 'probe_verdict' not in again['sources']['A']
+    assert due_for_probe(again['sources']['A'], now=NOW) is True
+
+
+# ---------- 彙總以實測為主 ----------
+
+def test_summarise_prefers_measured_verdict_over_handwritten():
+    d = us.build([('A', 'https://x-my.sharepoint.com/a', '')], now=NOW)
+    d['sources']['A'].update({'probe_verdict': VERDICT_UNKNOWN,
+                              'probed_at': NOW.isoformat()})
+    fam, n, status, date, _ = us.summarise(d)[0]
+    assert fam == 'SharePoint' and n == 1
+    assert status == '可開啟但未支援，實測 1/1', '實測要蓋掉手寫的「需登入」'
+    assert date == NOW.strftime('%Y-%m-%d')
+
+
+def test_summarise_marks_mixed_verdicts_within_a_family():
+    d = us.build([('A', 'https://a-my.sharepoint.com/a', ''),
+                  ('B', 'https://b-my.sharepoint.com/b', '')], now=NOW)
+    d['sources']['A'].update({'probe_verdict': VERDICT_AUTH, 'probed_at': NOW.isoformat()})
+    d['sources']['B'].update({'probe_verdict': VERDICT_UNKNOWN, 'probed_at': NOW.isoformat()})
+    _fam, n, status, _date, _ = us.summarise(d)[0]
+    assert n == 2
+    assert status == '混合：需登入 1、可開啟但未支援 1，實測 2/2', \
+        '不一致要逐項列案數，家族只是分類不是證據單位'
+
+
+def test_summarise_falls_back_to_handwritten_when_never_probed():
+    d = us.build([('A', 'https://x-my.sharepoint.com/a', '')], now=NOW)
+    _fam, _n, status, date, _ = us.summarise(d)[0]
+    assert status == '需登入' and date == '2026-09-29', '沒測過才用手寫結論'
+
+
+# ---------- review P2①：部分實測不可擴張成家族結論 ----------
+
+def test_summarise_does_not_extend_partial_probe_to_whole_family():
+    """2 案裡只測了 1 案，不可印成「2 案需登入（實測）」。
+
+    counts 是家族全體、verdicts 只有測過的，兩者不可混用。這正是這支程式要修掉
+    的那個錯（手寫結論以家族為粒度），在彙總層又犯一次就等於沒修。
+    """
+    d = us.build([('A', 'https://a-my.sharepoint.com/a', ''),
+                  ('B', 'https://b-my.sharepoint.com/b', '')], now=NOW)
+    d['sources']['A'].update({'probe_verdict': VERDICT_AUTH, 'probed_at': NOW.isoformat()})
+    _fam, n, status, _date, _ = us.summarise(d)[0]
+    assert n == 2
+    assert status == '需登入，實測 1/2', f'不可宣稱兩案都實測過: {status}'
+
+
+def test_summarise_coverage_fraction_distinguishes_full_from_sampled():
+    """16/16 與 1/16 必須長得不一樣，否則讀的人分不出全測與抽驗。"""
+    full = us.build([(f'P{i}', f'https://h{i}-my.sharepoint.com/a', '') for i in range(4)],
+                    now=NOW)
+    for info in full['sources'].values():
+        info.update({'probe_verdict': VERDICT_AUTH, 'probed_at': NOW.isoformat()})
+    sampled = us.build([(f'P{i}', f'https://h{i}-my.sharepoint.com/a', '') for i in range(4)],
+                       now=NOW)
+    sampled['sources']['P0'].update({'probe_verdict': VERDICT_AUTH,
+                                     'probed_at': NOW.isoformat()})
+    assert us.summarise(full)[0][2] == '需登入，實測 4/4'
+    assert us.summarise(sampled)[0][2] == '需登入，實測 1/4'
+
+
+def test_summarise_mixed_partial_also_reports_coverage():
+    """混合 + 部分實測：逐項案數與涵蓋率都要在。"""
+    d = us.build([(f'P{i}', f'https://{i}.1.2.3/a', '') for i in range(4)], now=NOW)
+    d['sources']['P0'].update({'probe_verdict': VERDICT_UNREACHABLE,
+                               'probed_at': NOW.isoformat()})
+    d['sources']['P1'].update({'probe_verdict': VERDICT_UNREACHABLE,
+                               'probed_at': NOW.isoformat()})
+    d['sources']['P2'].update({'probe_verdict': VERDICT_UNKNOWN,
+                               'probed_at': NOW.isoformat()})
+    _fam, n, status, _date, _ = us.summarise(d)[0]
+    assert n == 4
+    assert status == '混合：連不上 2、可開啟但未支援 1，實測 3/4'
+
+
+# ---------- review P2②：未來時間戳不可永久延後重測 ----------
+
+def test_future_probe_timestamp_falls_open_to_probing():
+    """2099-01-01 可以解析，但不可能是真的觀測時間。
+
+    now - last 會是負數 → 永遠 < interval → 這一案到 2099 年都不再探測。
+    時鐘跳動或手動改壞資料都會踩到，必須跟毀損同樣 fail-open。
+    """
+    assert due_for_probe({'probed_at': '2099-01-01T00:00:00'}, now=NOW) is True
+    assert due_for_probe({'probed_at': (NOW + timedelta(seconds=1)).isoformat()},
+                         now=NOW) is True
+    assert due_for_probe({'probed_at': (NOW + timedelta(days=365 * 73)).isoformat()},
+                         now=NOW) is True
+
+
+def test_future_timestamp_is_actually_reprobed_and_timestamp_repaired():
+    """不只 predicate——probe_due 真的要重測，並把壞時間戳寫回正常值。"""
+    d = us.build([('A', 'https://x-my.sharepoint.com/a', '')], now=NOW)
+    d['sources']['A'].update({'probe_verdict': VERDICT_AUTH,
+                              'probed_at': '2099-01-01T00:00:00'})
+    probed, _recovered = us.probe_due(
+        d, now=NOW, fetch=_fetch((302, 'https://x.test/_forms/default.aspx', '')))
+    assert probed == 1, '未來時間戳必須被重測'
+    assert d['sources']['A']['probed_at'] == NOW.isoformat(), '壞時間戳要被修回來'
+
+
+def test_timestamp_exactly_now_is_not_reprobed_twice_in_one_run():
+    """修①不可反過來把同一輪剛測完的案子又測一次（probed_at == now 不是未來）。"""
+    info = {'probed_at': NOW.isoformat()}
+    assert due_for_probe(info, now=NOW) is False

@@ -903,6 +903,20 @@ class PermitSync:
         from geobingan_sync import unsupported_sources as us
         try:
             data = us.build(entries, previous=us.load(path))
+            # 對到期的案子重測一次。手寫的「需登入」結論會過期——承造人改好了權限
+            # 我們不會知道（同 #100 失效資料夾永不重驗的那個錯）。恢復要出聲。
+            try:
+                probed, recovered = us.probe_due(data)
+                if probed:
+                    print(f"     🔁 重測 {probed} 案接不到的來源")
+                if recovered:
+                    print(f"     🟢 先前打不開的來源現在有回應了（{len(recovered)} 案）："
+                          f"{'、'.join(recovered[:5])}"
+                          + (' 等' if len(recovered) > 5 else '')
+                          + "——請確認是否已可取得資料")
+            except Exception as e:                            # noqa: BLE001
+                # 重測是加值資訊，失敗不可影響名單本身
+                print(f"  ⚠️ 來源重測失敗（名單仍會更新）: {type(e).__name__}")
             us.save(data, path)
             for fam, n, status, date, _note in us.summarise(data)[:4]:
                 print(f"     · {fam} {n} 案（{status}，{date} 探測）")
