@@ -195,3 +195,45 @@ def test_drainstuck_expected_code_is_the_dedicated_one():
     assert m, '找不到 drainstuck 的正常結束碼'
     assert 'EXIT_PARSER_HELD' in m.group(1) and EXIT_PARSER_HELD == 5
     assert '4' not in m.group(1), 'exit 4 不可列為正常，否則吞掉真正的查詢失敗'
+
+
+# ---------- 三、文件講 drainstuck 的結束碼，必須與 health_check 的正常集合一致 ----------
+
+# 「exit 4 是設計結果」這句話被 review 抓過兩次（#93 的 PR 內一次、#110 文件一次），
+# 而且 #93 的 **commit 標題**至今仍寫著舊說法——我就是照標題抄進 README 的。
+# 程式早就改對了（exit 4 不在正常集合），只有敘述留在舊版，所以用測試釘住。
+def _drainstuck_normal_codes():
+    """從 health_check.py 的 jobs 定義取 drainstuck 的正常結束碼（數字集合）。"""
+    import re as _re
+    from geobingan_sync.parser_health import EXIT_PARSER_HELD
+    src = _read('health_check.py')
+    m = _re.search(r"'drainstuck': \{([^}]*)\}", src)
+    assert m, '找不到 drainstuck 的正常結束碼'
+    names = {'EXIT_PARSER_HELD': EXIT_PARSER_HELD, 'EXIT_PAUSED': 6}
+    out = set()
+    for tok in (t.strip() for t in m.group(1).split(',')):
+        if tok.isdigit():
+            out.add(int(tok))
+        elif tok in names:
+            out.add(names[tok])
+    return out
+
+
+# 這些字樣代表該行是在說「這個碼仍要告警／是失敗」，不是把它列為正常
+ALERTING_MARKERS = ['告警', '失敗', '另有其意', '不可列為正常', '必須仍']
+
+
+def test_docs_never_call_an_alerting_exit_code_normal_for_drainstuck():
+    normal = _drainstuck_normal_codes()
+    assert 5 in normal and 4 not in normal, f'前提變了，先更新這支測試: {normal}'
+    bad = []
+    for rel in DOCS:
+        for lineno, line in enumerate(_read(rel).split('\n'), 1):
+            if 'drainstuck' not in line:
+                continue
+            for code in re.findall(r'exit (\d+)', line):
+                if int(code) in normal or any(m in line for m in ALERTING_MARKERS):
+                    continue
+                bad.append(f'{rel}:{lineno}: exit {code} 不在 drainstuck 正常集合 '
+                           f'{sorted(normal)}，且該行沒說明它仍會告警 → {line.strip()[:64]}')
+    assert not bad, 'drainstuck 結束碼敘述與 health_check 不一致：\n  ' + '\n  '.join(bad)

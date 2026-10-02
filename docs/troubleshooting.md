@@ -388,7 +388,8 @@ print(json.dumps(i, ensure_ascii=False, indent=2) if i else '不在未支援名�
 | `first_seen` / `last_seen` | 第一次／最近一次被判定接不到 |
 
 ### 解決方案
-- `auth_redirect`（目前 30 案）：**不是程式問題**。承造人把雲端庫設成要登入，北市只彙整連結、不驗證可及性。要走對外溝通請對方開放，寫 adapter 沒有用。
+- `auth_redirect`（自動探測確認 18 案：SharePoint 16、Google 非資料夾 2）：**不是程式問題**。承造人把雲端庫設成要登入，北市只彙整連結、不驗證可及性。要走對外溝通請對方開放，寫 adapter 沒有用。
+- `reachable_unknown` 但**已知**需登入（Synology 分享 10 案）：9/29 瀏覽器實測要 DSM 帳號，但 DSM 登入牆在 JS 外殼後面、自動探測只看到 HTTP 200，所以 verdict 停在 `reachable_unknown`。處置同上，但**不要**把它和上面那 18 案加成一個「需登入 28 案」——證據等級不同。
 - `reachable_unknown`：頁面打得開但我們還不會讀它。要先用**真實瀏覽器**確認裡面真的有 PDF、以及列檔方式，再評估加 adapter。自動探測刻意不替 JS 外殼下結論，所以這個狀態代表「待人工確認」而不是「已確認可用」。
 - `unreachable`：對方主機掛了或連結已死。可與 `first_seen` 對照判斷死多久。
 

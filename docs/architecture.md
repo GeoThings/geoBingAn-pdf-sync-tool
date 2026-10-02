@@ -414,8 +414,11 @@ http(s) 之後（PR #99），非 Drive 的部分分三條路：
     │
     ├─① link_resolver 解得出背後的 Drive 資料夾 → 換成 Drive 網址，走原本的同步路徑
     │
-    ├─② 有對應 adapter（redsun／pCloud／Dropbox）→ adapter 直接列檔、下載，
-    │   再以 upload_remote_file() 寫進目標資料夾（PR #107/#108，實測 7 案 417 份）
+    ├─② 有對應 adapter → 兩條子路徑，由 adapter 有沒有 fetch_all() 決定：
+    │   · 逐檔（redsun／pCloud）：list_files() → upload_remote_file() → upload_bytes()
+    │   · 整包（Dropbox zip，提供 fetch_all）：_sync_via_bundle() → upload_bytes()
+    │   兩路共用 check_file_exists 去重與子資料夾邏輯，只有取檔方式不同
+    │   （PR #102/#107/#108，實測 7 案 417 份）
     │
     └─③ 兩者都不行 → 寫入 state/unsupported_sources.json（PR #103），
         並每 7 天重測一次（PR #109）
@@ -482,8 +485,18 @@ http(s) 之後（PR #99），非 Drive 的部分分三條路：
 - Synology 10 案從「需登入」**降級**為「可開啟但未支援」。DSM 登入牆在 JS 外殼後面，自動探測看不到，不該宣稱——這是刻意的誠實降級，不是退步。
 - 自架主機 4 案中 3 案從「需登入」**修正**為實測連不上。手寫結論三天就開始偏離現實，這本身就是重測機制存在的理由。
 
-**30 案需登入是揭露合規問題，不是工程問題**：北市規定承造人自設雲端庫，建管處只
+**需登入的部分是揭露合規問題，不是工程問題**：北市規定承造人自設雲端庫，建管處只
 彙整連結、不驗證可及性。這部分要走對外溝通，不是再寫 adapter。
+
+數字要分證據等級講，不可併成一個：
+
+| 證據 | 案數 | 說明 |
+|------|------|------|
+| 自動探測確認需登入（`auth_redirect`） | 18 | SharePoint 16 + Google（非資料夾）2 |
+| 瀏覽器實測需登入、自動探測測不到 | 10 | Synology 分享（DSM 登入牆在 JS 外殼後，verdict 仍是 `reachable_unknown`） |
+
+把這兩個加成「28 案需登入」會重犯本節要修的那個錯——**把人工結論與實測混成一個
+數字**。要彙總時必須標明哪一部分是實測的。
 
 ### adapter 的安全邊界（PR #107/#108）
 
@@ -492,7 +505,7 @@ adapter 連的是外部文件指定的網址，與 link_resolver 同屬不可信
 - `SourceFile` 帶 `allowed_hosts`（精確比對）與 `allowed_host_suffixes`（網域或子網域）**兩個獨立欄位**。後者要求至少兩段標籤，否則白名單可以被寫成 `.com`。
 - `_open_guarded()` **手動逐跳**跟隨轉址：每次請求**之前**驗 scheme／無 port／主機白名單／跳數。交給 requests 自動跟隨等於把主機邊界還給對方；跳數在事後才數只是統計，不是防線。
 - 單檔 64 MB；bundle（Dropbox zip）另有解壓後總量、成員數、zip-slip 路徑檢查與逐成員 magic bytes 檢查。
-- bundle 每 7 天抓一次，`state/bundle_fetches.json` 記錄。`mark_fetched` 只在**真的完成**時寫入（原本放在 `finally`，失敗也會被記成成功）；寫入走 flock + 唯一暫存檔名（只用 PID 命名會在並行時互相覆蓋，24 筆更新曾只存活 4 筆）。
+- bundle 每 7 天抓一次，`state/bundle_fetches.json` 記錄。`mark_fetched` 只在**真的完成**時寫入（原本放在 `finally`，失敗也會被記成成功）。read-modify-write 由模組級 `threading.Lock` 保護、暫存檔名唯一——adapter 跑在 sync 的 ThreadPoolExecutor（5 並行）裡，無鎖時 24 筆更新曾只存活 4 筆，且只用 PID 命名暫存檔會讓並行寫入互相覆蓋並拋 FileNotFoundError。**這是 process 內的保護，不是 flock**；跨 process 併發（兩輪 sync 重疊）不在此防護範圍，目前靠排程每日一次與看門狗時間上限避免。
 
 ## State 管理
 
@@ -513,7 +526,7 @@ adapter 連的是外部文件指定的網址，與 link_resolver 同屬不可信
 | `list_fingerprint.json` | 政府清單指紋（source／label／permit_count／sha256／last_changed） | 每次 sync 解析清單後 | 否 |
 | `folder_deaths.json` | 來源資料夾由活轉死的紀錄（append-only，附 detected 日期與 pdf_count）。**fail-closed**：先原子寫入此檔成功才提交 registry——順序相反時，中斷會讓 registry 已存 404、下輪 prior 非 alive，該次死亡永遠偵測不到；讀到損毀 JSON 一律 raise，不靜默重置以免丟失歷史。事件以 `(permit, source_url)` 去重（**不含日期**）——death 已寫、registry 提交失敗時，下一輪（排程每日跑，通常是隔天）prior 仍是 alive、會再次偵測到同一次死亡；鍵若含偵測日，去重只在同一天有效。同一建案換新 folder URL 後再失效會自然形成新事件 | 偵測到新失效時 | 否 |
 | `unsupported_sources.json` | 接不到的來源名單（permit → url／host／family／note／first_seen／last_seen，加上定期重測的 `probe_verdict`／`probed_at`／`probe_recovered_at`）。頂層帶 `baseline_since`（判定「近期新增」的基準，不可用每筆的 first_seen）與 `first_run`。**probe 欄位只在 URL 未變時保留** | 每次 sync 重建 | 否 |
-| `bundle_fetches.json` | bundle 來源（Dropbox zip）的抓取時間戳，7 天間隔。只在真的抓完才寫；flock + 唯一暫存檔名寫入 | adapter 抓取成功時 | 否 |
+| `bundle_fetches.json` | bundle 來源（Dropbox zip）的抓取時間戳，7 天間隔。只在真的抓完才寫；read-modify-write 由模組級 `threading.Lock` 保護 + 唯一暫存檔名（**process 內保護，非 flock**） | adapter 抓取成功時 | 否 |
 | `step_result_sync.json` / `step_result_upload.json` | 步驟計數由**產生端**落檔（synced／uploaded／failed／skipped 等），shell 不再從 log 文字 grep 回推。讀不到時回 `None` 而**不是 0**——「未取得」與「量到 0」必須分得開（119 輪 total_synced 都靜默顯示 0 就是這樣來的）。帶 run 起始時間做跨輪邊界 | 每個步驟結束 | 否 |
 
 ### Weekly snapshots：local-only state（PR #45）
