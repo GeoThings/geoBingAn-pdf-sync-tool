@@ -195,3 +195,75 @@ def test_drainstuck_expected_code_is_the_dedicated_one():
     assert m, '找不到 drainstuck 的正常結束碼'
     assert 'EXIT_PARSER_HELD' in m.group(1) and EXIT_PARSER_HELD == 5
     assert '4' not in m.group(1), 'exit 4 不可列為正常，否則吞掉真正的查詢失敗'
+
+
+# ---------- 三、文件講 drainstuck 的結束碼，必須與 health_check 的正常集合一致 ----------
+
+# 「exit 4 是設計結果」這句話被 review 抓過兩次（#93 的 PR 內一次、#110 文件一次），
+# 而且 #93 的 **commit 標題**至今仍寫著舊說法——我就是照標題抄進 README 的。
+# 程式早就改對了（exit 4 不在正常集合），只有敘述留在舊版，所以用測試釘住。
+def _drainstuck_normal_codes():
+    """從 health_check.py 的 jobs 定義取 drainstuck 的正常結束碼（數字集合）。"""
+    import re as _re
+    from geobingan_sync.parser_health import EXIT_PARSER_HELD
+    src = _read('health_check.py')
+    m = _re.search(r"'drainstuck': \{([^}]*)\}", src)
+    assert m, '找不到 drainstuck 的正常結束碼'
+    names = {'EXIT_PARSER_HELD': EXIT_PARSER_HELD, 'EXIT_PAUSED': 6}
+    out = set()
+    for tok in (t.strip() for t in m.group(1).split(',')):
+        if tok.isdigit():
+            out.add(int(tok))
+        elif tok in names:
+            out.add(names[tok])
+    return out
+
+
+# 這些字樣代表**該子句**是在說「這個碼仍要告警／是失敗」，不是把它列為正常。
+# ⚠️ 必須在子句層判斷，不可用整行：review 指出第一版把豁免條件寫在整行層級、
+# 卻套用到該行每一個 exit code——同一行既講正常碼又講告警碼時（README 那句就是），
+# 只要「exit 4 必須仍告警」還在，把正常碼誤寫成 exit 3 也會通過。
+# 我自己的注回沒抓到，因為我同時改了兩件事（改碼 + 刪掉告警那句），紅是因為後者。
+ALERTING_MARKERS = ['告警', '失敗', '另有其意', '不可列為正常', '必須仍']
+
+# 中文句讀 + 破折號；exit code 與其說明必須落在同一子句才算有關聯
+_CLAUSE_SPLIT = re.compile(r'[，。；：！？、\n]|——|—')
+
+#: 文件裡的正規敘述，與 health_check.py 的 jobs 定義直接比對
+_CANON_NORMAL = re.compile(r'drainstuck\s*正常結束碼＝\{([^}]*)\}')
+
+
+def test_docs_state_drainstuck_normal_codes_exactly():
+    """文件必須有一處用可精確比對的形式寫出正常集合，且與程式一致。
+
+    靠散文關鍵字推論每個碼的語意本質上不可靠（見下一支測試的註解）。這一支不猜語意：
+    直接比對集合，正常碼寫錯就紅，不管那一行的句子怎麼寫。
+    """
+    normal = _drainstuck_normal_codes()
+    found = []
+    for rel in DOCS:
+        for m in _CANON_NORMAL.finditer(_read(rel)):
+            found.append((rel, {int(t.strip()) for t in m.group(1).split(',') if t.strip().isdigit()}))
+    assert found, ('文件缺少正規敘述「drainstuck 正常結束碼＝{...}」——'
+                   '少了它，正常碼寫錯就只能靠散文關鍵字去猜')
+    bad = [f'{rel}: 文件寫 {sorted(st)}，health_check 是 {sorted(normal)}'
+           for rel, st in found if st != normal]
+    assert not bad, '正規敘述與程式不一致：\n  ' + '\n  '.join(bad)
+
+
+def test_docs_never_call_an_alerting_exit_code_normal_for_drainstuck():
+    normal = _drainstuck_normal_codes()
+    assert 5 in normal and 4 not in normal, f'前提變了，先更新這支測試: {normal}'
+    bad = []
+    for rel in DOCS:
+        for lineno, line in enumerate(_read(rel).split('\n'), 1):
+            if 'drainstuck' not in line:
+                continue
+            for clause in _CLAUSE_SPLIT.split(line):
+                for code in re.findall(r'exit (\d+)', clause):
+                    if int(code) in normal or any(m in clause for m in ALERTING_MARKERS):
+                        continue
+                    bad.append(f'{rel}:{lineno}: exit {code} 不在 drainstuck 正常集合 '
+                               f'{sorted(normal)}，且同一子句沒說明它仍會告警 '
+                               f'→ {clause.strip()[:56]}')
+    assert not bad, 'drainstuck 結束碼敘述與 health_check 不一致：\n  ' + '\n  '.join(bad)

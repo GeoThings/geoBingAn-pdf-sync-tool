@@ -171,10 +171,19 @@ iCloud Drive `Desktop & Documents` 同步是 macOS 預設開啟的、會把 `~/D
 │   ├── drive_utils.py（paginate_files_list 共用翻頁+retry）
 │   ├── jwt_auth.py / notify.py / permit_utils.py
 │   ├── filename_date_parser.py / sync_status.py / report_template.py
+│   ├── alert_state.py / budget.py / parser_health.py（告警去重／預算帳本／引擎探測）
+│   ├── link_resolver.py（間接連結解析 + SSRF 守門，PR #95）
+│   ├── list_fingerprint.py（政府清單指紋 + basis 遷移，PR #82/#105）
+│   ├── unsupported_sources.py（接不到的來源名單 + 定期重測，PR #103/#109）
+│   ├── step_results.py（步驟計數由產生端落檔，PR #104）
 │   ├── analyze_decline.py（被 weekly_snapshot import，故在 package 內）
+│   ├── source_adapters/             ← 非 Drive 來源讀取器（PR #107/#108）
+│   │   ├── base.py（SourceFile／逐跳 SSRF 守門／zip 解包限額）
+│   │   └── redsun.py / pcloud.py / dropbox.py
 │   └── steps/                       ← pipeline 步驟（shell 以 python3 -m 呼叫）
 │       ├── sync_permits.py / upload_pdfs.py / match_permits.py
 │       ├── generate_permit_tracking_report.py / generate_weekly_report.py
+│       ├── drain_stuck.py / retry_parse.py（卡住報告排清／重推解析）
 │       └── record_sync_result.py / network_ready.py / weekly_snapshot.py
 ├── tools/cleanup_stale_folders.py   ← 一次性維運工具
 ├── setup/                           ← setup_launchd / setup_cron / uninstall_launchd
@@ -196,14 +205,20 @@ iCloud Drive `Desktop & Documents` 同步是 macOS 預設開啟的、會把 `~/D
 | `report_template.py` | HTML/CSV 報告生成 | 11 cases |
 | `config.py` | 配置 + escape_drive_query | 7 cases |
 | `city_config.py` | 多城市配置載入/解析 | — |
+| `link_resolver.py` | 間接連結解析 + 逐跳 SSRF 守門（連線層驗對端 IP） | 42 cases |
+| `list_fingerprint.py` | 政府清單指紋、basis 遷移、空集合保護 | 39 cases |
+| `unsupported_sources.py` | 接不到的來源分類／彙總／定期重測／恢復偵測 | 120 cases |
+| `step_results.py` | 步驟計數落檔（unknown ≠ 0、跨輪邊界） | 47 cases |
+| `source_adapters/base.py` | SourceFile 白名單、逐跳守門、zip 解包限額 | 62 cases |
 
 設計原則：這些模組不依賴 `credentials.json` 或任何外部服務（lazy init），可在 CI 或乾淨環境直接 import 和測試。
 
 ### CI Pipeline
 
 ```
-GitHub Actions → pytest tests/ → Python 3.11 + 3.12 → 63 tests
+GitHub Actions → pytest tests/ → Python 3.11 + 3.12（全套，條數見 CI）
 觸發條件：push to main / PR to main
+刻意不在此釘精確 case 數：每新增一支測試就過期，且條數不是架構契約
 ```
 
 ## 資料流
@@ -296,7 +311,11 @@ Shared Drive
     │  74 個非 Drive 網址都先建好 Shared Drive 目標資料夾，之後才在 sync_permit
     │  因 Invalid URL ID 失敗 —— 留下空資料夾與同步錯誤紀錄。
     │  → `run()` 在 `create_target_folder` **之前**呼叫 `_resolve_or_skip_indirect()`：
-    │    解得出來的換成 Drive 網址納入同步（實測 27 案），解不開的**剔除**（47 案）。
+    │    解得出來的換成 Drive 網址納入同步（實測 27 案）；有 adapter 的保留走
+    │    adapter 路徑（PR #107/#108）；兩者都不行的**剔除**並落檔到
+    │    `unsupported_sources.json`（PR #103，不是靜默丟掉）。
+    │    現況：清單 440 筆建照 → 403 案進同步、37 案接不到。
+    │    詳見「非 Drive 來源」一節。
     │
     ▼ 間接連結解析（link_resolver，PR #95）：來源 URL 取不出 Drive folder id 時
     │  跟隨轉址／抓頁面找內嵌的 Drive 資料夾；**恰好一個才採用**（兩個以上視為有歧義
@@ -386,6 +405,109 @@ API project 匹配：116 筆（滑動視窗 + 去重）
 
 **待開發：** 後端 API `report_category_name` 欄位 — AI 解析出的 `projectMetadata.projectName` 存在後端 DB（ConstructionSite.name），但 construction-reports API 未回傳此欄位。已建立 ClickUp task（[#86ex8c82c](https://app.clickup.com/t/86ex8c82c)），待後端在 `ConstructionReportListSerializer` 加入 `report_category_name`，即可實現 100% 自動化名稱覆蓋。
 
+## 非 Drive 來源：adapter、未支援名單與定期重測
+
+政府清單上的連結只有一部分是 Google Drive 資料夾。`parse_pdf_list` 改抓**任何**
+http(s) 之後（PR #99），非 Drive 的部分分三條路：
+
+```
+非 Drive 來源 URL
+    │
+    ├─① link_resolver 解得出背後的 Drive 資料夾 → 換成 Drive 網址，走原本的同步路徑
+    │
+    ├─② 有對應 adapter → 兩條子路徑，由 adapter 有沒有 fetch_all() 決定：
+    │   · 逐檔（redsun／pCloud）：list_files() → upload_remote_file() → upload_bytes()
+    │   · 整包（Dropbox zip，提供 fetch_all）：_sync_via_bundle() → upload_bytes()
+    │   兩路共用 check_file_exists 去重與子資料夾邏輯，只有取檔方式不同
+    │   （PR #102/#107/#108，實測 7 案 417 份）
+    │
+    └─③ 兩者都不行 → 寫入 state/unsupported_sources.json（PR #103），
+        並每 7 天重測一次（PR #109）
+```
+
+### 為什麼「接不到」也必須落檔（PR #103）
+
+被剔除的 47 案若只出現在當輪 log，隔天就沒人知道有多少案接不到，也看不出名單在
+變大還是變小。落檔之後才做得到三件事：依主機家族彙總、偵測「近期新增」（新失聯
+要有人去追）、被 health_check 讀取並告警。
+
+兩個實測才抓到的缺陷：
+
+- `_resolve_or_skip_indirect()` 的 early-return 路徑原本不寫檔，名單因此**只會長不會縮**——修法是該路徑也要寫入（空清單也算結果）。
+- 「近 14 天新增」原本比每筆的 `first_seen`。追蹤剛開始時每筆都很新，第二輪就誤報 41 件。改比 `baseline_since`：**基準建立之後**才出現的才算新增。
+
+可見性機制本身也要被監督：`health_check` 會檢查 `generated_at` 是否過期
+（`UNSUPPORTED_STALE_HOURS`），否則「名單沒長」與「寫入早就壞了」長得一模一樣。
+而「同步是不是太久沒跑」直接**呼叫** `check_last_sync()` 取得結論，不複製它的門檻
+——兩邊各寫一份閾值就會出現誰都不報的真空區間。
+
+### 為什麼要定期重測（PR #109）
+
+家族結論原本是 2026-09-29 人工探測後**手寫進程式碼的常數**（`FAMILY_FINDINGS`）。
+兩個缺陷：會過期（承造人改好權限我們不會知道），粒度是家族（同家族內個別恢復看
+不出來）。這與「失敗快取必須有到期日」是同一個錯——把**一次觀測**當成**永久事實**。
+
+```
+每 7 天 probe_once(url)：手動逐跳跟隨轉址（最多 5 跳）
+    │
+    ├── 轉址到已知登入端點（SharePoint _forms/default.aspx、accounts.google.com、
+    │   login.microsoftonline.com、login.live.com…）→ auth_redirect      「需登入」
+    ├── 連線失敗／非 200                              → unreachable       「連不上」
+    └── HTTP 200                                      → reachable_unknown 「可開啟但未支援」
+```
+
+**刻意只認 URL 層級證據。** HTTP 200 一律不下結論。2026-09-29 我用 body 關鍵字判斷，
+把 Dropbox 與 Synology gofile 都判錯——那些頁面本來就含 `signin` 字串，是 JS 外殼
+不是登入牆，最後要用真實瀏覽器才分得出來。寧可留「可開啟但未支援」，也不要讓程式
+替它看不懂的東西下結論。
+
+不變量：
+
+- **恢復要出聲**：先前 `auth_redirect`／`unreachable`、這次 200 → 記 `probe_recovered_at` 並在同步日誌印出。**第一次測到 200 不算恢復**（沒有先前結論就談不上恢復，否則第一輪會把整份名單報成好消息）。
+- **探測結果跟著同一個連結走**：`build()` 只在 URL 未變時保留 probe 欄位。舊結論套到新連結＝憑空宣稱沒測過的事（同「快取鍵必須綁實體 ID」）。
+- **時間戳不可信就重測**：解析失敗、或**時間戳落在未來**，一律 fail-open 倒向重測。未來時間戳會讓 `now - last` 變成負數、永遠不到期（實測塞 `2099-01-01` 可以卡到 2099 年）。反向風險也要擋：`probed_at == now` **不**算未來，同一輪剛測完的不會被測第二次。
+- **重測失敗不影響名單本身**：probe 是加值資訊，整段包在 try/except 裡。**因此部分涵蓋是正常路徑，不是例外**——下一條才是重點。
+- **彙總的分子分母必須同源**：家族案數是全體、verdict 只收測過的，混用會把 16 案裡測到的 1 案印成「16 案需登入（實測）」。狀態一律帶涵蓋率（`需登入，實測 1/16`）；組內不一致時逐項列案數（`混合：連不上 3、可開啟但未支援 1`）——家族只是分類，不是證據單位。涵蓋率是彙總時才算得出來的，所以**不可以寫死在 verdict 標籤裡**（這正是上一條缺陷的根源）。
+
+`FAMILY_FINDINGS` 降為備援，只在某家族完全沒測過時使用。
+
+### 實測基線（2026-10-02，37 案全測，66 秒）
+
+| 家族 | 案數 | 實測 verdict |
+|------|------|--------------|
+| SharePoint | 16 | 需登入 16 |
+| Synology 分享 | 10 | 可開啟但未支援 10 |
+| Google（非資料夾） | 4 | 需登入 2、可開啟但未支援 2 |
+| 自架主機（裸 IP） | 4 | 連不上 3、可開啟但未支援 1 |
+| MEGA / OneDrive / redsun.linkmygoods.com | 各 1 | 可開啟但未支援 |
+
+與 9/29 人工結論大致一致，兩處差異值得記：
+
+- Synology 10 案從「需登入」**降級**為「可開啟但未支援」。DSM 登入牆在 JS 外殼後面，自動探測看不到，不該宣稱——這是刻意的誠實降級，不是退步。
+- 自架主機 4 案中 3 案從「需登入」**修正**為實測連不上。手寫結論三天就開始偏離現實，這本身就是重測機制存在的理由。
+
+**需登入的部分是揭露合規問題，不是工程問題**：北市規定承造人自設雲端庫，建管處只
+彙整連結、不驗證可及性。這部分要走對外溝通，不是再寫 adapter。
+
+數字要分證據等級講，不可併成一個：
+
+| 證據 | 案數 | 說明 |
+|------|------|------|
+| 自動探測確認需登入（`auth_redirect`） | 18 | SharePoint 16 + Google（非資料夾）2 |
+| 瀏覽器實測需登入、自動探測測不到 | 10 | Synology 分享（DSM 登入牆在 JS 外殼後，verdict 仍是 `reachable_unknown`） |
+
+把這兩個加成「28 案需登入」會重犯本節要修的那個錯——**把人工結論與實測混成一個
+數字**。要彙總時必須標明哪一部分是實測的。
+
+### adapter 的安全邊界（PR #107/#108）
+
+adapter 連的是外部文件指定的網址，與 link_resolver 同屬不可信輸入：
+
+- `SourceFile` 帶 `allowed_hosts`（精確比對）與 `allowed_host_suffixes`（網域或子網域）**兩個獨立欄位**。後者要求至少兩段標籤，否則白名單可以被寫成 `.com`。
+- `_open_guarded()` **手動逐跳**跟隨轉址：每次請求**之前**驗 scheme／無 port／主機白名單／跳數。交給 requests 自動跟隨等於把主機邊界還給對方；跳數在事後才數只是統計，不是防線。
+- 單檔 64 MB；bundle（Dropbox zip）另有解壓後總量、成員數、zip-slip 路徑檢查與逐成員 magic bytes 檢查。
+- bundle 每 7 天抓一次，`state/bundle_fetches.json` 記錄。`mark_fetched` 只在**真的完成**時寫入（原本放在 `finally`，失敗也會被記成成功）。read-modify-write 由模組級 `threading.Lock` 保護、暫存檔名唯一——adapter 跑在 sync 的 ThreadPoolExecutor（5 並行）裡，無鎖時 24 筆更新曾只存活 4 筆，且只用 PID 命名暫存檔會讓並行寫入互相覆蓋並拋 FileNotFoundError。**這是 process 內的保護，不是 flock**；跨 process 併發（兩輪 sync 重疊）不在此防護範圍，目前靠排程每日一次與看門狗時間上限避免。
+
 ## State 管理
 
 ### 狀態檔案
@@ -404,6 +526,9 @@ API project 匹配：116 筆（滑動視窗 + 去重）
 | `upload_budget.json` + `.lock` | **今日**解析預算帳本（day/uploaded/**retried**/units/est_usd；flock；**跨日歸零**，**台北午夜**換日；舊月格式檔自動視為非今日而歸零） | 上傳或重推預留／退還時 | 否（重推走 `steps.retry_parse`，它自己預留） |
 | `list_fingerprint.json` | 政府清單指紋（source／label／permit_count／sha256／last_changed） | 每次 sync 解析清單後 | 否 |
 | `folder_deaths.json` | 來源資料夾由活轉死的紀錄（append-only，附 detected 日期與 pdf_count）。**fail-closed**：先原子寫入此檔成功才提交 registry——順序相反時，中斷會讓 registry 已存 404、下輪 prior 非 alive，該次死亡永遠偵測不到；讀到損毀 JSON 一律 raise，不靜默重置以免丟失歷史。事件以 `(permit, source_url)` 去重（**不含日期**）——death 已寫、registry 提交失敗時，下一輪（排程每日跑，通常是隔天）prior 仍是 alive、會再次偵測到同一次死亡；鍵若含偵測日，去重只在同一天有效。同一建案換新 folder URL 後再失效會自然形成新事件 | 偵測到新失效時 | 否 |
+| `unsupported_sources.json` | 接不到的來源名單（permit → url／host／family／note／first_seen／last_seen，加上定期重測的 `probe_verdict`／`probed_at`／`probe_recovered_at`）。頂層帶 `baseline_since`（判定「近期新增」的基準，不可用每筆的 first_seen）與 `first_run`。**probe 欄位只在 URL 未變時保留** | 每次 sync 重建 | 否 |
+| `bundle_fetches.json` | bundle 來源（Dropbox zip）的抓取時間戳，7 天間隔。只在真的抓完才寫；read-modify-write 由模組級 `threading.Lock` 保護 + 唯一暫存檔名（**process 內保護，非 flock**） | adapter 抓取成功時 | 否 |
+| `step_result_sync.json` / `step_result_upload.json` | 步驟計數由**產生端**落檔（synced／uploaded／failed／skipped 等），shell 不再從 log 文字 grep 回推。讀不到時回 `None` 而**不是 0**——「未取得」與「量到 0」必須分得開（119 輪 total_synced 都靜默顯示 0 就是這樣來的）。帶 run 起始時間做跨輪邊界 | 每個步驟結束 | 否 |
 
 ### Weekly snapshots：local-only state（PR #45）
 
@@ -625,6 +750,18 @@ run_weekly_sync.sh
 | 全部已上傳 / 使用者取消 | 0 | 正常結束 |
 | 上傳完成（有成功有失敗） | 0 | 正常結束 |
 | 未預期例外 | 1 | `if !` 觸發 handle_error |
+| 預算擋下（單次門檻未確認／日額度耗盡） | 3 | 記失敗並告警 |
+| 重推查詢失敗（fail-closed，查不到不當成沒有） | 4 | 記失敗並**告警** |
+| 解析引擎異常，今日不放行 | 5 | `EXIT_PARSER_HELD`，設計上的正常結果 |
+| 上傳暫停（`.pause_upload`） | 6 | `EXIT_PAUSED`，設計上的正常結果 |
+
+`health_check` 的 launchd 巡檢判斷「這個 job 是否正常結束」時：
+
+    drainstuck 正常結束碼＝{0, 5, 6}
+
+其餘一律告警。**exit 4 不在正常集合**——它代表重推查詢失敗，列為正常就會吞掉真正的
+查詢失敗（這句話被 review 抓過兩次：#93 的 PR 內一次、#110 文件一次，所以上面那行
+正規敘述由 `test_docs_consistency` 與 `health_check.py` 的 jobs 定義自動比對）。
 
 ## 檔名日期解析
 
