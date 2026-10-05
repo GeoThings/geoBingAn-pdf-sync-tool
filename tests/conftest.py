@@ -85,3 +85,30 @@ def _no_real_sync_status(monkeypatch, tmp_path_factory):
     import health_check
     fake = tmp_path_factory.mktemp('nosync') / 'sync_status.json'   # 刻意不建立
     monkeypatch.setattr(health_check, 'SYNC_STATUS_FILE', str(fake))
+
+
+@pytest.fixture(autouse=True)
+def _no_real_sync_progress(monkeypatch, tmp_path_factory):
+    """測試一律不得讀到正式的 `state/sync_permits_progress.json`。
+
+    `check_sync_errors` 讀它判斷最近一輪有多少案出錯。正式檔在本機是活的
+    （10/05 實測 2,067 筆錯誤、479 個 processed），讀到它測試結果就取決於今天
+    同步跑成什麼樣。要驗這段行為的測試自己傳 path。
+    """
+    import health_check
+    fake = tmp_path_factory.mktemp('noprog') / 'sync_permits_progress.json'
+    monkeypatch.setattr(health_check, 'SYNC_PROGRESS_FILE', str(fake))
+
+
+@pytest.fixture(autouse=True)
+def _no_real_sync_permits_state(monkeypatch, tmp_path_factory):
+    """測試一律不得讀寫正式的 `state/sync_permits_progress.json`。
+
+    `PermitSync.__init__` 會 load_state()、錯誤路徑會 save_state()，而 STATE_FILE
+    是相對 CWD 的 './state/...'。多支既有測試都會建 PermitSync 實例，從 repo 根
+    執行時那就是**正式檔**——讀到活資料會讓結果取決於今天同步跑成什麼樣，寫下去
+    更是直接污染正式狀態（同 feedback_tests_must_not_reach_outside：擋在邊界）。
+    """
+    from geobingan_sync.steps import sync_permits
+    fake = tmp_path_factory.mktemp('nostate') / 'sync_permits_progress.json'
+    monkeypatch.setattr(sync_permits, 'STATE_FILE', str(fake))
