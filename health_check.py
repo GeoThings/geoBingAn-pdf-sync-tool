@@ -375,6 +375,84 @@ def check_unsupported_sources(path=None, now=None, new_window_days=14,
         return 'warning', f'未支援來源檢查失敗: {e}'
 
 
+#: 同步進度與錯誤紀錄。刻意不 import sync_permits 取它的 STATE_FILE——那會把
+#: google-api 整套拉進健康檢查。兩邊各寫一份有漂走的風險，所以用測試釘住相等。
+SYNC_PROGRESS_FILE = './state/sync_permits_progress.json'
+
+#: 每日排程，容忍漏跑一次；再久就代表結算本身沒在跑了
+SYNC_ERROR_STALE_HOURS = 48
+
+
+def check_sync_errors(path=None, now=None, sync_status_path=None,
+                      stale_hours=SYNC_ERROR_STALE_HOURS):
+    """同步時逐案失敗的可見度。
+
+    為什麼需要：2026-10-05 一輪出現 10 筆 Connection reset／讀取逾時，exit code
+    照樣 0、沒有任何人告警，是手動 grep 日誌才看到的。而且當時 errors 項目**沒有
+    時間戳**（實測 2,067 筆），連「今天有沒有出錯」都答不出來。
+
+    兩個獨立訊號，不混成一個門檻：
+      · 系統性故障——單輪錯誤佔走訪案數比例過高（憑證失效、網路斷）
+      · 個案卡死——同一案連續 N 輪失敗才算有定論；單次抖動會同時打中執行緒池
+        的 5–10 案，那不是個案壞了（10/05 的 10/452 = 2.2% 刻意不該亮）
+
+    ⚠️ 未結算 ≠ 零錯誤。沒有 last_run 或它過期，一律回報「無從判斷」而不是綠燈
+    ——10/05 我自己就把「同步還在跑所以還沒寫」讀成了「量到 0」。
+    """
+    from datetime import datetime as _dt, timedelta
+    from geobingan_sync import sync_errors
+    try:
+        now = now or _dt.now()
+        try:
+            with open(path or SYNC_PROGRESS_FILE, encoding='utf-8') as f:
+                state = json.load(f) or {}
+        except FileNotFoundError:
+            return 'ok', '尚無同步進度紀錄（同步尚未跑過）'
+        except json.JSONDecodeError as e:
+            return 'warning', f'同步進度紀錄損毀、無法判讀（{e}）；請檢查 state/sync_permits_progress.json'
+
+        res = sync_errors.summarise_last_run(state)
+        stuck = res['stuck']
+
+        if not res['known']:
+            # 「還沒結算」不可當綠燈。但若同步本身已經在告警，就讓給它報，
+            # 不要兩支都亮同一件事（門檻不複製，直接問它）。
+            sync_level, sync_msg = check_last_sync(path=sync_status_path, now=now)
+            if sync_level != 'ok':
+                return 'ok', f'同步錯誤尚未結算（同步狀態已另行告警：{sync_msg}）'
+            return 'warning', ('同步錯誤尚未結算——結算步驟可能一直失敗，'
+                               '本輪有多少案出錯目前無從判斷')
+
+        try:
+            at = _dt.fromisoformat(str(res['at']))
+        except (TypeError, ValueError):
+            return 'warning', f"同步錯誤結算缺少可判讀的時間（{res['at']!r}）——無法確認是否仍在更新"
+        age = now - at
+        if age > timedelta(hours=stale_hours):
+            hrs = int(age.total_seconds() // 3600)
+            sync_level, sync_msg = check_last_sync(path=sync_status_path, now=now)
+            if sync_level != 'ok':
+                return 'ok', f'同步錯誤結算已 {hrs} 小時未更新（同步狀態已另行告警：{sync_msg}）'
+            return 'warning', (f'同步錯誤結算已 {hrs} 小時未更新（最後 {at:%Y-%m-%d %H:%M}）'
+                               f'——結算可能持續失敗，錯誤數已不可信')
+
+        base = f"最近一輪 {res['errored']} / {res['visited']} 案出錯（{res['rate']:.1%}）"
+        if res['systemic']:
+            return 'error', (f"{base}，超過 {sync_errors.RUN_ERROR_RATE_ALERT:.0%} 門檻"
+                             f"——像是系統性故障（憑證／網路），不是個案抖動")
+        if stuck:
+            names = '、'.join(f'{p}({n} 輪)' for p, n in stuck[:3])
+            return 'error', (f"{len(stuck)} 案連續 {sync_errors.ERROR_STREAK_ALERT} 輪以上失敗："
+                             f"{names}{'…' if len(stuck) > 3 else ''}"
+                             f"——已非暫時性，要逐案查。{base}")
+        if res['errored']:
+            return 'ok', (f"{base}；無連續失敗達 {sync_errors.ERROR_STREAK_ALERT} 輪的案"
+                           f"——研判為暫時性，下輪會自然重試")
+        return 'ok', f"最近一輪 {res['visited']} 案全部無錯誤"
+    except Exception as e:
+        return 'warning', f'同步錯誤檢查失敗: {e}'
+
+
 def check_launchd_jobs():
     """檢查所有 launchd 排程 job 的最後執行狀態（清單見 jobs；新增 plist 時必須同步加入，否則鎖死不會被巡到）。
 
@@ -437,6 +515,7 @@ DEFAULT_CHECKS = [
     ('清單新鮮度', check_list_freshness),
     ('來源資料夾', check_folder_deaths),
     ('未支援來源', check_unsupported_sources),
+    ('同步錯誤', check_sync_errors),
 ]
 
 

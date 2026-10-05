@@ -11,6 +11,7 @@
 """
 import json
 from geobingan_sync import REPO_ROOT
+from geobingan_sync import sync_errors
 import os
 import csv
 import re
@@ -184,6 +185,11 @@ class PermitSync:
         self.permits_with_new = 0
         self.state = self.load_state()
         self.restricted_files = []
+        # 本輪**實際走訪**與**出過錯**的案。連續失敗計數在輪次結束時依這兩個集合
+        # 結算，不在事件層加減——adapter 路徑會對同一案同時記錯誤又標 processed，
+        # 事件層加減一旦順序顛倒就永遠是 0，而那是靜默的。
+        self._visited_permits = set()
+        self._errored_permits = set()
         self._state_lock = threading.Lock()
         self._print_lock = threading.Lock()
         self._target_file_cache = {}
@@ -204,6 +210,23 @@ class PermitSync:
         with self._state_lock:
             with open(STATE_FILE, 'w', encoding='utf-8') as f:
                 json.dump(self.state, indent=2, ensure_ascii=False, fp=f)
+
+    def _mark_visited(self, permit_no: str):
+        """這一案這輪真的走訪過了。只有走訪過的才參與連續失敗結算。"""
+        with self._state_lock:
+            self._visited_permits.add(permit_no)
+
+    def _record_error(self, permit_no: str, error):
+        """唯一的錯誤落檔入口——時間戳規則只有一份。
+
+        四個呼叫點（bundle 寫入失敗／adapter 取檔失敗／sync_permit 例外／
+        executor 未預期錯誤）都走這裡。留在呼叫點自律一定會漏：executor 那個
+        分支原本只 print 不落檔，等於那類錯誤從來沒進過資料。
+        """
+        with self._state_lock:
+            sync_errors.record_error(self.state, permit_no, error,
+                                     run=os.environ.get('SYNC_RUN_STARTED') or None)
+            self._errored_permits.add(permit_no)
 
     def _print(self, msg: str):
         """Thread-safe print"""
@@ -699,9 +722,8 @@ class PermitSync:
             if copied:
                 self.permits_with_new += 1
             self.state['processed'][permit_no] = True
-            if failed:
-                self.state['errors'].append(
-                    {'permit': permit_no, 'error': f'{adapter.name}:{failed} 個檔案寫入失敗'})
+        if failed:
+            self._record_error(permit_no, f'{adapter.name}:{failed} 個檔案寫入失敗')
         self.save_state()
 
     def _sync_via_adapter(self, permit_no: str, source_url: str, target_folder_id: str, adapter):
@@ -761,13 +783,13 @@ class PermitSync:
             if copied:
                 self.permits_with_new += 1
             self.state['processed'][permit_no] = True
-            if failed:
-                self.state['errors'].append(
-                    {'permit': permit_no, 'error': f'{adapter.name}:{failed} 個檔案取得失敗'})
+        if failed:
+            self._record_error(permit_no, f'{adapter.name}:{failed} 個檔案取得失敗')
         self.save_state()
 
     def sync_permit(self, permit_no: str, source_url: str, target_folder_id: str):
         self._print(f"\n🔄 監測建案: {permit_no}")
+        self._mark_visited(permit_no)
         source_folder_id = self.extract_folder_id_from_url(source_url)
         if not source_folder_id:
             from geobingan_sync.source_adapters import find_adapter
@@ -824,8 +846,7 @@ class PermitSync:
 
         except Exception as e:
             self._print(f"  ❌ 處理中斷: {e}")
-            with self._state_lock:
-                self.state['errors'].append({'permit': permit_no, 'error': str(e)})
+            self._record_error(permit_no, e)
             self.save_state()
     
     def _resolve_or_skip_indirect(self, mapping: Dict[str, str], resolver=None,
@@ -985,8 +1006,50 @@ class PermitSync:
                 except Exception as e:
                     permit_no = futures[future]
                     self._print(f"  ❌ {permit_no} 未預期錯誤: {e}")
+                    # 原本只 print 不落檔 → 這類錯誤從來沒進過資料，也就永遠
+                    # 不會被連續失敗計數或告警看到
+                    self._record_error(permit_no, f'未預期錯誤: {e}')
 
+        self._finalize_errors()
         self._write_step_result()
+
+    def _finalize_errors(self):
+        """結算本輪的連續失敗計數、搬遷舊資料、修剪保留窗。
+
+        順序是刻意的：**先搬遷再修剪**。那 2,067 筆沒有時間戳的舊項目裡仍埋著
+        「某案從以前就一直失敗」，先修剪會在新計數器累積到結論（3 輪）之前就
+        失去那段歷史，等於自己製造一段偵測空窗。
+
+        失敗不可中斷同步（它是觀測，不是同步本身），但也不可無聲。
+        """
+        try:
+            moved = sync_errors.migrate_legacy(self.state)
+            if moved:
+                print(f"  📦 舊錯誤紀錄 {moved} 筆（無時間戳）已搬入 errors_legacy")
+            res = sync_errors.finalize_run(
+                self.state, self._visited_permits, self._errored_permits,
+                run=os.environ.get('SYNC_RUN_STARTED') or None)
+            dropped = sync_errors.trim_errors(self.state)
+            self.save_state()
+
+            if res['errored']:
+                print(f"  ⚠️ 本輪 {res['errored']} / {res['visited']} 案出錯"
+                      f"（{res['errored'] / res['visited']:.1%}）")
+            if res['newly_stuck']:
+                print(f"  🔴 連續 {sync_errors.ERROR_STREAK_ALERT} 輪失敗"
+                      f"（{len(res['newly_stuck'])} 案）: "
+                      + '、'.join(res['newly_stuck'][:5])
+                      + (' 等' if len(res['newly_stuck']) > 5 else ''))
+            if res['recovered']:
+                print(f"  🟢 先前失敗的案這輪成功了（{len(res['recovered'])} 案）: "
+                      + '、'.join(res['recovered'][:5])
+                      + (' 等' if len(res['recovered']) > 5 else ''))
+            if dropped:
+                print(f"  🧹 錯誤紀錄修剪 {dropped} 筆"
+                      f"（保留 {sync_errors.KEEP_ERROR_DAYS} 天／"
+                      f"上限 {sync_errors.MAX_ERRORS} 筆；計數器不受影響）")
+        except Exception as e:                                  # noqa: BLE001
+            print(f"  ⚠️ 錯誤紀錄結算失敗（同步本身不受影響）: {type(e).__name__}")
 
     def _write_step_result(self):
         """把本輪的數量寫成資料，給 record_sync_result 讀。
@@ -1004,6 +1067,7 @@ class PermitSync:
             step_results.accumulate(step_results.SYNC, {
                 'synced': self.copied_total,
                 'permits_with_new': self.permits_with_new,
+                'errors': len(self._errored_permits),
                 'adapter_uploaded': self.adapter_uploaded,
                 'adapter_failed': self.adapter_failed,
             })
