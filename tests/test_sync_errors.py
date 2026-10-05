@@ -420,9 +420,129 @@ def test_health_check_progress_path_matches_sync_permits():
     """
     import os
     import re
-    from geobingan_sync.steps.sync_permits import STATE_FILE
-    src = pathlib_read(os.path.join(ROOT, 'health_check.py'))
-    m = re.search(r"^SYNC_PROGRESS_FILE = '([^']+)'", src, re.M)
-    assert m, 'health_check 找不到 SYNC_PROGRESS_FILE 的字面定義'
-    assert m.group(1) == STATE_FILE, (
-        f'兩邊路徑漂開了: health_check={m.group(1)!r} sync_permits={STATE_FILE!r}')
+    hc = pathlib_read(os.path.join(ROOT, 'health_check.py'))
+    sp = pathlib_read(os.path.join(ROOT, 'geobingan_sync', 'steps', 'sync_permits.py'))
+    a = re.search(r"^SYNC_PROGRESS_FILE = '([^']+)'", hc, re.M)
+    b = re.search(r"^STATE_FILE = '([^']+)'", sp, re.M)
+    assert a, 'health_check 找不到 SYNC_PROGRESS_FILE 的字面定義'
+    assert b, 'sync_permits 找不到 STATE_FILE 的字面定義'
+    assert a.group(1) == b.group(1), (
+        f'兩邊路徑漂開了: health_check={a.group(1)!r} sync_permits={b.group(1)!r}')
+
+
+# ---------- review P1：呼叫點漏接 ----------
+#
+# 第一版只把三個呼叫點改走 _record_error()，漏了另外三個（fetch_all 整包失敗、
+# list_files 列檔失敗、Invalid URL ID）。後果比「少帶時間戳」嚴重：那些案**已經
+# 走訪**但不在 _errored_permits，於是 finalize_run 把它們當成功，**反而清掉既有
+# 的 error_streak**——連續失敗永遠累積不起來。
+# 而 Invalid URL ID 在正式環境歷史上有 538 次，是最多的錯誤類別之一。
+#
+# 抽出共用函式只單一化了規則，擋不住呼叫點漏接（同
+# feedback_shared_instance_defaults_outlive_session）。所以除了逐一修，還要有
+# 一條掃原始碼的守門，讓第七個呼叫點不會重犯。
+
+import re as _re
+
+
+def _sync_permits_source():
+    import os
+    return pathlib_read(os.path.join(ROOT, 'geobingan_sync', 'steps', 'sync_permits.py'))
+
+
+def test_no_call_site_appends_to_errors_directly():
+    """錯誤落檔只能走 _record_error()。直接 append 會繞過時間戳與 _errored_permits。
+
+    掃原始碼時**先去掉註解行**——否則這支測試會被自己的說明文字騙過去
+    （同類假綠在 #101/#104/#105 各踩過一次）。
+    """
+    lines = [l for l in _sync_permits_source().split('\n')
+             if not l.lstrip().startswith('#')]
+    bad = [f'line {i}: {l.strip()[:70]}' for i, l in enumerate(lines, 1)
+           if _re.search(r"state\['errors'\]\s*\.\s*append", l)]
+    assert not bad, ('這些呼叫點繞過 _record_error()，錯誤不會帶時間戳、'
+                     '也不會進 _errored_permits：\n  ' + '\n  '.join(bad))
+
+
+def test_record_error_is_the_only_writer_and_is_used_everywhere():
+    """防假綠的反面：確認掃描器真的看得到 _record_error 的呼叫，不是掃了空氣。"""
+    src = _sync_permits_source()
+    assert src.count('self._record_error(') >= 6, (
+        f'只找到 {src.count("self._record_error(")} 個呼叫點，'
+        '預期至少 6（bundle 寫入／bundle 整包／adapter 列檔／adapter 取檔／'
+        'sync_permit 例外／executor 未預期／Invalid URL ID）')
+
+
+class _BoomBundle:
+    """有 fetch_all → 走 bundle 路徑，而且整包取得就炸。"""
+    name = 'boom-bundle'
+
+    def fetch_all(self, url):
+        from geobingan_sync.source_adapters.base import AdapterError
+        raise AdapterError('ReadTimeout:整包下載逾時')
+
+
+class _BoomList:
+    """沒有 fetch_all → 走逐檔路徑，列檔就炸。"""
+    name = 'boom-list'
+
+    def list_files(self, url):
+        from geobingan_sync.source_adapters.base import AdapterError
+        raise AdapterError('HTTPError:403')
+
+
+def _permit_sync(tmp_path):
+    from geobingan_sync.steps.sync_permits import PermitSync
+    csv = tmp_path / 'c.csv'
+    csv.write_text('permit_no,source_url,name\n', encoding='utf-8')
+    ps = PermitSync(city={'csv_path': str(csv), 'source_type': 'csv'})
+    # bundle 路徑在 try 之前會 preload_target_files()，那一步要 Drive 憑證。
+    # 它不是這裡要驗的行為（我們驗的是錯誤怎麼被記），所以 stub 掉。
+    ps.preload_target_files = lambda *a, **k: None
+    return ps
+
+
+@pytest.mark.parametrize('adapter_cls,expect', [
+    (_BoomBundle, 'ReadTimeout'),
+    (_BoomList, 'HTTPError'),
+])
+def test_adapter_failures_are_recorded_with_timestamp_and_marked_errored(
+        tmp_path, adapter_cls, expect):
+    ps = _permit_sync(tmp_path)
+    ps.state = {'processed': {}, 'errors': []}
+    ps._sync_via_adapter('112建字第0125號', 'https://x.test/a', 'TARGET', adapter_cls())
+
+    assert len(ps.state['errors']) == 1, '錯誤必須落檔'
+    e = ps.state['errors'][0]
+    assert e['permit'] == '112建字第0125號'
+    assert expect in e['error']
+    assert e.get('at'), '必須帶時間戳，否則答不出「何時」'
+    assert '112建字第0125號' in ps._errored_permits, (
+        '沒進 _errored_permits → finalize_run 會把它當成功並清掉 streak')
+
+
+def test_invalid_url_id_is_recorded(tmp_path):
+    """正式環境歷史上 538 次，是最多的錯誤類別之一，原本完全不會進資料。"""
+    ps = _permit_sync(tmp_path)
+    ps.state = {'processed': {}, 'errors': []}
+    ps.sync_permit('109建字第0019號', 'https://unknown-host.test/x', 'TARGET')
+
+    assert [e['permit'] for e in ps.state['errors']] == ['109建字第0019號']
+    assert ps.state['errors'][0]['error'] == 'Invalid URL ID'
+    assert ps.state['errors'][0].get('at')
+    assert '109建字第0019號' in ps._errored_permits
+    assert '109建字第0019號' in ps._visited_permits, '走訪也要標，否則不參與結算'
+
+
+@pytest.mark.parametrize('adapter_cls', [_BoomBundle, _BoomList])
+def test_adapter_failure_increments_streak_instead_of_resetting_it(tmp_path, adapter_cls):
+    """這條是 P1 真正的傷害：原本會把已失敗的案判成成功、把 streak 歸零。"""
+    ps = _permit_sync(tmp_path)
+    ps.state = {'processed': {}, 'errors': [], 'error_streak': {'112建字第0125號': 2}}
+    ps._sync_via_adapter('112建字第0125號', 'https://x.test/a', 'TARGET', adapter_cls())
+    ps._visited_permits.add('112建字第0125號')
+
+    res = se.finalize_run(ps.state, ps._visited_permits, ps._errored_permits, now=NOW)
+    assert ps.state['error_streak']['112建字第0125號'] == 3, '應累積到 3 而不是歸零'
+    assert res['newly_stuck'] == ['112建字第0125號']
+    assert res['recovered'] == [], '失敗的案不可被報成恢復'

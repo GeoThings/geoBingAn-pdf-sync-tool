@@ -706,9 +706,7 @@ class PermitSync:
                     self._target_file_cache[permit_no].add(key)
         except AdapterError as e:
             self._print(f"  ⚠️ 整包取得失敗: {e}")
-            with self._state_lock:
-                self.state['errors'].append({'permit': permit_no,
-                                             'error': f'{adapter.name}:{e}'})
+            self._record_error(permit_no, f'{adapter.name}:{e}')
             self.save_state()
             return
 
@@ -744,9 +742,7 @@ class PermitSync:
             files = adapter.list_files(source_url)
         except AdapterError as e:
             self._print(f"  ⚠️ 來源列檔失敗: {e}")
-            with self._state_lock:
-                self.state['errors'].append(
-                    {'permit': permit_no, 'error': f'{adapter.name}:{e}'})
+            self._record_error(permit_no, f'{adapter.name}:{e}')
             self.save_state()
             return
 
@@ -796,8 +792,7 @@ class PermitSync:
             adapter = find_adapter(source_url)
             if adapter:
                 return self._sync_via_adapter(permit_no, source_url, target_folder_id, adapter)
-            with self._state_lock:
-                self.state['errors'].append({'permit': permit_no, 'error': 'Invalid URL ID'})
+            self._record_error(permit_no, 'Invalid URL ID')
             return
 
         try:
