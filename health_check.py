@@ -437,6 +437,20 @@ def check_sync_errors(path=None, now=None, sync_status_path=None,
                                f'——結算可能持續失敗，錯誤數已不可信')
 
         base = f"最近一輪 {res['errored']} / {res['visited']} 案出錯（{res['rate']:.1%}）"
+
+        # 未跑完 / 不知道有沒有跑完 / 走訪 0 案：都不是乾淨的一輪，不可回綠燈。
+        # 2026-10-06 掃描共享雲端逾時那輪走訪 0 案；少了這段就會回報
+        # 「0 案全部無錯誤」，正好是這支功能要消滅的那種假綠。
+        if res['completed'] is False:
+            why = res['run_error'] or '原因未記錄'
+            return 'error', (f'最近一輪同步**未跑完**：{why}'
+                             f"——已走訪 {res['visited']} 案，這輪不計為乾淨觀測")
+        if res['completed'] is None:
+            return 'warning', (f'最近一輪沒有記錄是否跑完（舊格式紀錄）'
+                               f'——無法判斷 {base} 是結論還是截斷的樣本')
+        if res['visited'] == 0:
+            return 'warning', ('最近一輪走訪 0 個建案——逐案迴圈之前就結束了，'
+                               '什麼都沒量到，不是「沒有錯誤」')
         if res['systemic']:
             return 'error', (f"{base}，超過 {sync_errors.RUN_ERROR_RATE_ALERT:.0%} 門檻"
                              f"——像是系統性故障（憑證／網路），不是個案抖動")

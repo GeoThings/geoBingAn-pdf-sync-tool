@@ -112,3 +112,22 @@ def _no_real_sync_permits_state(monkeypatch, tmp_path_factory):
     from geobingan_sync.steps import sync_permits
     fake = tmp_path_factory.mktemp('nostate') / 'sync_permits_progress.json'
     monkeypatch.setattr(sync_permits, 'STATE_FILE', str(fake))
+
+
+@pytest.fixture(autouse=True)
+def _no_real_step_results(monkeypatch, tmp_path_factory):
+    """測試一律不得寫到正式的 `state/step_result_*.json`。
+
+    🔴 2026-10-06 查出這條真的在流血：`test_parse_pdf_list_urls` 會呼叫
+    `PermitSync.run()`，它內部的 `_write_step_result()` 呼叫
+    `step_results.accumulate()` **沒帶 base**，於是落到相對 CWD 的 './state'
+    ——從 repo 根跑 pytest 就是**正式檔**。10/05 的真實數字 synced=194 就是這樣
+    被測試覆蓋成 0 的。
+
+    我前一天還明確排除過這個可能：只 grep 了測試裡對 `step_results.*` 的直接
+    呼叫、看到都帶 `base=` 就下結論。漏掉的是「測試呼叫 production 程式碼、
+    由它去寫」這條路徑——所以防線要擋在**模組的預設路徑**上，不是靠逐一檢查
+    呼叫點（同 feedback_enforce_invariant_at_boundary）。
+    """
+    from geobingan_sync import step_results
+    monkeypatch.setattr(step_results, '_BASE', str(tmp_path_factory.mktemp('nosteps')))

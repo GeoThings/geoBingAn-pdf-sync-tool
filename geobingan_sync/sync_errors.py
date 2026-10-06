@@ -115,7 +115,8 @@ def trim_errors(state: dict, now: datetime = None,
 
 
 def finalize_run(state: dict, visited, errored, now: datetime = None,
-                 run: str = None, streak_alert: int = ERROR_STREAK_ALERT) -> dict:
+                 run: str = None, streak_alert: int = ERROR_STREAK_ALERT,
+                 completed: bool = True, run_error: str = None) -> dict:
     """本輪結束時結算連續失敗計數，回傳 {newly_stuck, recovered, visited, errored, ...}。
 
     **刻意在輪次層結算，不在事件層加減。** 理由：adapter 路徑會對同一案同時記下
@@ -143,9 +144,15 @@ def finalize_run(state: dict, visited, errored, now: datetime = None,
         'at': now.isoformat(),
         'visited': len(visited),
         'errored': len(errored),
+        # 「這輪有沒有跑完」必須跟著數字一起存。沒跑完的輪次，visited/errored 是
+        # 截斷的樣本而不是結論——2026-10-06 掃描逾時那輪走訪 0 案，少了這個欄位
+        # 就會被讀成「0 案全部無錯誤」的綠燈。
+        'completed': bool(completed),
     }
     if run:
         state['last_run']['run'] = run
+    if run_error:
+        state['last_run']['error'] = str(run_error)[:300]
     return {'newly_stuck': newly_stuck, 'recovered': recovered,
             'visited': len(visited), 'errored': len(errored),
             'stuck': stuck_permits(state, streak_alert)}
@@ -162,6 +169,9 @@ def summarise_last_run(state: dict, streak_alert: int = ERROR_STREAK_ALERT,
                        rate_alert: float = RUN_ERROR_RATE_ALERT) -> dict:
     """給 health_check 的結論。沒有 last_run 就回 None 欄位，**不回 0**。
 
+    另外三個狀態不可被讀成綠燈：未跑完（completed False）、舊紀錄沒有 completed
+    欄位（不知道）、以及走訪 0 案（逐案迴圈之前就死了，什麼都沒量到）。
+
     「同步還沒結算」與「結算出零錯誤」必須分得開——2026-10-05 我自己把前者讀成
     後者（step_result 時間戳是三天前、synced=0，真相是同步還在跑），
     同 feedback_counts_from_producer_not_log_prose。
@@ -172,9 +182,18 @@ def summarise_last_run(state: dict, streak_alert: int = ERROR_STREAK_ALERT,
     if not isinstance(visited, int) or not isinstance(errored, int):
         return {'known': False, 'visited': None, 'errored': None, 'rate': None,
                 'systemic': False, 'stuck': stuck_permits(state, streak_alert),
-                'at': last.get('at')}
+                'at': last.get('at'), 'completed': None, 'run_error': None,
+                'clean': False}
     rate = (errored / visited) if visited else 0.0
+    # 舊紀錄沒有 completed 欄位：當成「不知道有沒有跑完」→ 不算乾淨，而不是
+    # 預設成功。向後相容不可偏向綠燈那側。
+    completed = last.get('completed')
+    # 走訪 0 案也不是乾淨：那代表這輪在逐案迴圈之前就死了，什麼都沒量到。
+    clean = bool(completed) and visited > 0 and errored == 0
     return {'known': True, 'visited': visited, 'errored': errored, 'rate': rate,
             'systemic': visited > 0 and rate >= rate_alert,
             'stuck': stuck_permits(state, streak_alert),
-            'at': last.get('at')}
+            'at': last.get('at'),
+            'completed': completed,
+            'run_error': last.get('error'),
+            'clean': clean}

@@ -5,6 +5,7 @@ exit code 0、無人告警，手動 grep 日誌才看到；而且 errors 項目�
 （正式環境 2,067 筆），連「今天有沒有出錯」都答不出來。
 """
 import json
+import sys
 from datetime import datetime, timedelta
 
 import pytest
@@ -122,7 +123,8 @@ def test_errored_must_be_a_subset_of_visited():
 def test_last_run_records_the_conclusive_counts():
     st = {}
     se.finalize_run(st, {'A', 'B', 'C'}, {'A'}, now=NOW, run='R1')
-    assert st['last_run'] == {'at': NOW.isoformat(), 'visited': 3, 'errored': 1, 'run': 'R1'}
+    assert st['last_run'] == {'at': NOW.isoformat(), 'visited': 3, 'errored': 1,
+                              'completed': True, 'run': 'R1'}
 
 
 # ---------- 舊資料搬遷：先搬再修剪 ----------
@@ -376,20 +378,20 @@ def test_check_stale_finalization_warns(tmp_path):
 
 
 def test_check_reports_transient_as_ok(tmp_path):
-    state = {'last_run': {'at': NOW.isoformat(), 'visited': 452, 'errored': 10}}
+    state = {'last_run': {'at': NOW.isoformat(), 'visited': 452, 'errored': 10, 'completed': True}}
     level, msg = health_check.check_sync_errors(path=_write(tmp_path, state), now=NOW)
     assert level == 'ok'
     assert '10 / 452' in msg and '暫時性' in msg
 
 
 def test_check_reports_systemic_as_error(tmp_path):
-    state = {'last_run': {'at': NOW.isoformat(), 'visited': 452, 'errored': 60}}
+    state = {'last_run': {'at': NOW.isoformat(), 'visited': 452, 'errored': 60, 'completed': True}}
     level, msg = health_check.check_sync_errors(path=_write(tmp_path, state), now=NOW)
     assert level == 'error' and '系統性' in msg
 
 
 def test_check_reports_stuck_permits_as_error(tmp_path):
-    state = {'last_run': {'at': NOW.isoformat(), 'visited': 452, 'errored': 2},
+    state = {'last_run': {'at': NOW.isoformat(), 'visited': 452, 'errored': 2, 'completed': True},
              'error_streak': {'A': 4, 'B': 3}}
     level, msg = health_check.check_sync_errors(path=_write(tmp_path, state), now=NOW)
     assert level == 'error'
@@ -397,7 +399,7 @@ def test_check_reports_stuck_permits_as_error(tmp_path):
 
 
 def test_check_clean_run_is_ok(tmp_path):
-    state = {'last_run': {'at': NOW.isoformat(), 'visited': 452, 'errored': 0}}
+    state = {'last_run': {'at': NOW.isoformat(), 'visited': 452, 'errored': 0, 'completed': True}}
     level, msg = health_check.check_sync_errors(path=_write(tmp_path, state), now=NOW)
     assert level == 'ok' and '全部無錯誤' in msg
 
@@ -546,3 +548,246 @@ def test_adapter_failure_increments_streak_instead_of_resetting_it(tmp_path, ada
     assert ps.state['error_streak']['112建字第0125號'] == 3, '應累積到 3 而不是歸零'
     assert res['newly_stuck'] == ['112建字第0125號']
     assert res['recovered'] == [], '失敗的案不可被報成恢復'
+
+
+# ---------- 2026-10-06 實跑踩到：run() 拋錯時結算整段跳過 ----------
+#
+# 當天掃描共享雲端逾時 → run() 拋錯 → 城市層（main 的迴圈）只 print 不重拋 →
+# _finalize_errors() 是 run() 最後一行，整段跳過。搬遷沒跑、last_run 沒寫。
+#
+# 但光搬進 finally 會製造假綠：那輪走訪 0 案，last_run 會是
+# {visited: 0, errored: 0}，讀起來就是「0 案全部無錯誤」。所以「有沒有跑完」
+# 要跟數字一起存（同 #108：放進 finally 不可把失敗記成成功）。
+
+def test_finalize_records_completed_flag():
+    st = {}
+    se.finalize_run(st, {'A'}, set(), now=NOW, completed=True)
+    assert st['last_run']['completed'] is True
+    se.finalize_run(st, {'A'}, set(), now=NOW, completed=False)
+    assert st['last_run']['completed'] is False
+
+
+def test_finalize_records_run_level_error():
+    """掃描逾時這類錯誤不屬於任何單一建案，但必須在資料裡留下痕跡。"""
+    st = {}
+    se.finalize_run(st, set(), set(), now=NOW, completed=False,
+                    run_error='TimeoutError: The read operation timed out')
+    assert 'read operation timed out' in st['last_run']['error']
+
+
+def test_incomplete_run_is_never_clean():
+    st = {}
+    se.finalize_run(st, {'A', 'B'}, set(), now=NOW, completed=False)
+    res = se.summarise_last_run(st)
+    assert res['known'] is True
+    assert res['completed'] is False
+    assert res['clean'] is False, '未跑完不可被當成乾淨的一輪'
+
+
+def test_zero_visited_is_never_clean():
+    """2026-10-06 那輪：逐案迴圈之前就死了，什麼都沒量到。"""
+    st = {}
+    se.finalize_run(st, set(), set(), now=NOW, completed=False)
+    res = se.summarise_last_run(st)
+    assert res['visited'] == 0 and res['errored'] == 0
+    assert res['clean'] is False, '0 案全部無錯誤 ≠ 這輪乾淨'
+
+
+def test_zero_visited_is_not_clean_even_when_marked_completed():
+    """就算旗標說跑完了，走訪 0 案仍然什麼都沒量到。"""
+    st = {}
+    se.finalize_run(st, set(), set(), now=NOW, completed=True)
+    assert se.summarise_last_run(st)['clean'] is False
+
+
+def test_legacy_last_run_without_completed_is_not_assumed_successful():
+    """舊格式紀錄沒有 completed 欄位 → 當成「不知道」，不可偏向綠燈那側。"""
+    st = {'last_run': {'at': NOW.isoformat(), 'visited': 400, 'errored': 0}}
+    res = se.summarise_last_run(st)
+    assert res['completed'] is None
+    assert res['clean'] is False
+
+
+def test_completed_run_with_no_errors_is_clean():
+    """反面：真的跑完、真的走訪過、真的零錯誤，才算乾淨。"""
+    st = {}
+    se.finalize_run(st, {'A', 'B'}, set(), now=NOW, completed=True)
+    assert se.summarise_last_run(st)['clean'] is True
+
+
+def test_check_reports_incomplete_run_as_error(tmp_path):
+    state = {'last_run': {'at': NOW.isoformat(), 'visited': 0, 'errored': 0,
+                          'completed': False,
+                          'error': 'TimeoutError: The read operation timed out'}}
+    level, msg = health_check.check_sync_errors(path=_write(tmp_path, state), now=NOW)
+    assert level == 'error'
+    assert '未跑完' in msg and 'read operation timed out' in msg
+
+
+def test_check_reports_zero_visited_as_warning(tmp_path):
+    state = {'last_run': {'at': NOW.isoformat(), 'visited': 0, 'errored': 0,
+                          'completed': True}}
+    level, msg = health_check.check_sync_errors(path=_write(tmp_path, state), now=NOW)
+    assert level == 'warning'
+    assert '走訪 0 個建案' in msg
+    assert '沒有錯誤' in msg, '要明講這不等於沒有錯誤'
+
+
+def test_check_reports_legacy_record_as_warning(tmp_path):
+    state = {'last_run': {'at': NOW.isoformat(), 'visited': 400, 'errored': 0}}
+    level, msg = health_check.check_sync_errors(path=_write(tmp_path, state), now=NOW)
+    assert level == 'warning' and '是否跑完' in msg
+
+
+def test_finalize_runs_even_when_run_raises(tmp_path, monkeypatch):
+    """結算必須在 run() 拋錯時也跑到——這是 10/06 真正的缺口。"""
+    ps = _permit_sync(tmp_path)
+    ps.state = {'processed': {}, 'errors': []}
+
+    def _boom():
+        ps._visited_permits.add('112建字第0125號')      # 死掉前已走訪一案
+        raise TimeoutError('The read operation timed out')
+
+    monkeypatch.setattr(ps, '_run_steps', _boom)
+    with pytest.raises(TimeoutError):
+        ps.run()
+
+    assert 'last_run' in ps.state, 'run() 拋錯時結算仍須寫入'
+    assert ps.state['last_run']['completed'] is False
+    assert 'read operation timed out' in ps.state['last_run']['error']
+    assert ps.state['last_run']['visited'] == 1
+    assert se.summarise_last_run(ps.state)['clean'] is False
+
+
+def test_successful_run_marks_completed(tmp_path, monkeypatch):
+    ps = _permit_sync(tmp_path)
+    ps.state = {'processed': {}, 'errors': []}
+    monkeypatch.setattr(ps, '_run_steps', lambda: ps._visited_permits.add('A'))
+    ps.run()
+    assert ps.state['last_run']['completed'] is True
+    assert se.summarise_last_run(ps.state)['clean'] is True
+
+
+def test_step_results_default_base_is_isolated_in_tests():
+    """🔴 conftest 必須把 step_results 的預設路徑指開。
+
+    10/06 查出 test_parse_pdf_list_urls 的 ps.run() 會經由
+    _write_step_result() → accumulate()（沒帶 base）寫到 './state'，把 10/05
+    真實的 synced=194 覆蓋成 0。防線要擋在模組預設路徑，不是逐一檢查呼叫點。
+    """
+    from geobingan_sync import step_results
+    assert step_results._BASE != './state', (
+        'step_results._BASE 沒被隔離，測試會寫到正式 state/')
+
+
+# ---------- review #112 P2：SystemExit 繞過 run 層級錯誤記錄 ----------
+#
+# download_pdf_list() 原本在所有候選都失敗時呼叫 sys.exit(1)。SystemExit 繼承
+# BaseException，run() 的 `except Exception` 接不到 → _run_error 留 None →
+# 健康檢查只能說「原因未記錄」；城市迴圈的 except Exception 也接不到。
+#
+# 修法刻意**不**擴大成捕捉 BaseException（那會一起吞掉 KeyboardInterrupt 的語意），
+# 而是讓下載失敗拋具體例外。但這樣改會把「正確 exit 1」退化成「靜默 exit 0」，
+# 因為城市迴圈接到例外後只 print、main() 正常返回——所以結束碼也要一起修。
+
+def test_download_failure_raises_instead_of_exiting(tmp_path, monkeypatch):
+    """下載全失敗要拋 RuntimeError，不可用 sys.exit 離場。"""
+    ps = _permit_sync(tmp_path)
+    monkeypatch.setattr(ps, '_list_url_candidates',
+                        lambda: [('https://x.test/a.pdf', 'static', '靜態')],
+                        raising=False)
+
+    import requests
+    def _boom(*a, **k):
+        raise requests.exceptions.ConnectionError('DNS 失敗')
+    monkeypatch.setattr(requests, 'get', _boom)
+    monkeypatch.setattr('time.sleep', lambda *_: None)
+
+    with pytest.raises(RuntimeError) as ei:
+        ps.download_pdf_list(max_attempts=1, dest=str(tmp_path / 'l.pdf'))
+    assert '下載建案列表失敗' in str(ei.value)
+    assert not isinstance(ei.value, SystemExit)
+
+
+def test_run_records_download_failure_reason(tmp_path, monkeypatch):
+    """P2 的核心：原因必須進 last_run.error，不是「原因未記錄」。"""
+    ps = _permit_sync(tmp_path)
+    ps.state = {'processed': {}, 'errors': []}
+
+    def _boom():
+        raise RuntimeError('下載建案列表失敗（所有候選皆失敗）: ConnectionError')
+    monkeypatch.setattr(ps, '_run_steps', _boom)
+
+    with pytest.raises(RuntimeError):
+        ps.run()
+    assert ps.state['last_run']['completed'] is False
+    assert '下載建案列表失敗' in ps.state['last_run']['error'], \
+        'run 層級原因沒落檔 → 健康檢查只能說「原因未記錄」'
+    assert se.summarise_last_run(ps.state)['clean'] is False
+
+
+def test_city_failure_makes_the_process_exit_nonzero(monkeypatch):
+    """城市層失敗必須讓 process 回非零，否則 shell 完全看不到。
+
+    🔴 2026-10-06 實測：掃描共享雲端逾時 → 城市迴圈 except Exception 只 print →
+    main() 正常返回 → exit 0 → shell 的 `if ! python3 -m ...` 不觸發、
+    STEP1_FAILED 保持 0、步驟 2-3 照跑、handle_error 不會記。當天 sync_status
+    裡沒有任何失敗紀錄就是這個原因。
+    """
+    from geobingan_sync.steps import sync_permits as sp
+    monkeypatch.setattr(sp, 'get_cities_for_cli', lambda _: [{'name': '台北市'}],
+                        raising=False)
+    monkeypatch.setattr(sp.PermitSync, '__init__', lambda self, city=None: None)
+    monkeypatch.setattr(sp.PermitSync, 'run',
+                        lambda self: (_ for _ in ()).throw(TimeoutError('read timed out')))
+    monkeypatch.setattr(sys, 'argv', ['sync_permits'])
+
+    with pytest.raises(SystemExit) as ei:
+        sp.main()
+    assert ei.value.code == 1, '城市失敗時結束碼必須非零'
+
+
+def test_all_cities_succeed_exits_zero(monkeypatch):
+    """反面：全部成功時不可誤報失敗。"""
+    from geobingan_sync.steps import sync_permits as sp
+    monkeypatch.setattr(sp, 'get_cities_for_cli', lambda _: [{'name': '台北市'}],
+                        raising=False)
+    monkeypatch.setattr(sp.PermitSync, '__init__', lambda self, city=None: None)
+    monkeypatch.setattr(sp.PermitSync, 'run', lambda self: None)
+    monkeypatch.setattr(sys, 'argv', ['sync_permits'])
+    sp.main()          # 不該拋 SystemExit
+
+
+def test_one_city_failing_does_not_stop_the_others(monkeypatch):
+    """一個城市失敗不可中斷其他城市——只影響整體結束碼。"""
+    from geobingan_sync.steps import sync_permits as sp
+    ran = []
+    monkeypatch.setattr(sp, 'get_cities_for_cli',
+                        lambda _: [{'name': 'A'}, {'name': 'B'}], raising=False)
+    monkeypatch.setattr(sp.PermitSync, '__init__',
+                        lambda self, city=None: setattr(self, '_n', city['name']))
+
+    def _run(self):
+        ran.append(self._n)
+        if self._n == 'A':
+            raise TimeoutError('boom')
+    monkeypatch.setattr(sp.PermitSync, 'run', _run)
+    monkeypatch.setattr(sys, 'argv', ['sync_permits'])
+
+    with pytest.raises(SystemExit):
+        sp.main()
+    assert ran == ['A', 'B'], 'B 仍要跑到'
+
+
+def test_no_sys_exit_inside_download_path():
+    """守門：下載路徑不得再用 sys.exit 離場（SystemExit 會繞過兩層 except）。
+
+    掃描時去掉註解行，否則被上面那段說明文字騙過去。
+    """
+    src = _sync_permits_source()
+    lines = [l for l in src.split('\n') if not l.lstrip().startswith('#')]
+    body = '\n'.join(lines)
+    start = body.index('def download_pdf_list')
+    end = body.index('def parse_pdf_list')
+    assert 'sys.exit' not in body[start:end], \
+        'download_pdf_list 內不得用 sys.exit——改拋具體例外'

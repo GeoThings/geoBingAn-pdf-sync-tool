@@ -12,6 +12,7 @@
 import json
 from geobingan_sync import REPO_ROOT
 from geobingan_sync import sync_errors
+from geobingan_sync.city_config import get_cities_for_cli
 import os
 import csv
 import re
@@ -190,6 +191,8 @@ class PermitSync:
         # 事件層加減一旦順序顛倒就永遠是 0，而那是靜默的。
         self._visited_permits = set()
         self._errored_permits = set()
+        #: run() 層級的失敗訊息（掃描逾時這類不屬於任何單一建案的錯誤）
+        self._run_error = None
         self._state_lock = threading.Lock()
         self._print_lock = threading.Lock()
         self._target_file_cache = {}
@@ -299,8 +302,11 @@ class PermitSync:
                         print(f"⚠️  下載失敗（{label} 第 {attempt}/{max_attempts} 次）: {e}；{wait}s 後重試")
                         time.sleep(wait)
             print(f"⚠️  {label} URL 重試耗盡，改試下一個候選…")
-        print(f"❌ 下載失敗（所有候選皆失敗）: {last_err}")
-        sys.exit(1)
+        # 原本是 sys.exit(1)。SystemExit 繼承 BaseException，run() 的
+        # `except Exception` 接不到 → _run_error 留 None，健康檢查只能說
+        # 「原因未記錄」；城市迴圈的 except Exception 也接不到，後續城市直接中止。
+        # 改拋具體例外，讓兩層都接得到（review #112 P2）。
+        raise RuntimeError(f'下載建案列表失敗（所有候選皆失敗）: {last_err}')
     
     def parse_pdf_list(self, pdf_path: str) -> Dict[str, str]:
         print("\n📖 解析 PDF 列表 (智慧分塊演算法)...")
@@ -940,6 +946,29 @@ class PermitSync:
             print(f"  ⚠️ 未支援來源名單寫入失敗: {type(e).__name__}")
 
     def run(self):
+        """包一層 try/finally：**結算必須在 run() 拋錯時也跑到**。
+
+        2026-10-06 實跑踩到：掃描共享雲端逾時 → run() 拋錯 → 城市層（main 的
+        迴圈）只 print 不重拋 → 結算整段跳過，搬遷沒跑、last_run 沒寫。
+
+        但光搬進 finally 會製造假綠：那輪走訪 0 案，last_run 會是
+        {visited: 0, errored: 0}，讀起來就是「0 案全部無錯誤」的綠燈。所以同時
+        把「這輪有沒有跑完」與 run 層級的錯誤訊息一起記下去——沒跑完的輪次不可
+        被當成乾淨的觀測（同 #108 的教訓：放進 finally 不可把失敗記成成功）。
+        """
+        completed = False
+        try:
+            self._run_steps()
+            completed = True
+        except Exception as e:
+            # 城市層只 print 不重拋，所以訊息要在這裡留下來，否則資料裡
+            # 完全看不出「為什麼沒結算」
+            self._run_error = f'{type(e).__name__}: {e}'
+            raise
+        finally:
+            self._finalize_errors(completed=completed)
+
+    def _run_steps(self):
         print("="*70)
         print(f"🚀 建築執照監測資料同步工具 v5.1 ({self.city_name})")
         print("   特性: 增量同步、跳過已處理建案、快速模式")
@@ -1005,10 +1034,9 @@ class PermitSync:
                     # 不會被連續失敗計數或告警看到
                     self._record_error(permit_no, f'未預期錯誤: {e}')
 
-        self._finalize_errors()
         self._write_step_result()
 
-    def _finalize_errors(self):
+    def _finalize_errors(self, completed: bool = True):
         """結算本輪的連續失敗計數、搬遷舊資料、修剪保留窗。
 
         順序是刻意的：**先搬遷再修剪**。那 2,067 筆沒有時間戳的舊項目裡仍埋著
@@ -1023,11 +1051,15 @@ class PermitSync:
                 print(f"  📦 舊錯誤紀錄 {moved} 筆（無時間戳）已搬入 errors_legacy")
             res = sync_errors.finalize_run(
                 self.state, self._visited_permits, self._errored_permits,
-                run=os.environ.get('SYNC_RUN_STARTED') or None)
+                run=os.environ.get('SYNC_RUN_STARTED') or None,
+                completed=completed, run_error=self._run_error)
             dropped = sync_errors.trim_errors(self.state)
             self.save_state()
 
-            if res['errored']:
+            if not completed:
+                print(f"  🛑 本輪未跑完（{self._run_error or '原因未記錄'}）"
+                      f"——已走訪 {res['visited']} 案，這輪不計為乾淨觀測")
+            if res['errored'] and res['visited']:
                 print(f"  ⚠️ 本輪 {res['errored']} / {res['visited']} 案出錯"
                       f"（{res['errored'] / res['visited']:.1%}）")
             if res['newly_stuck']:
@@ -1072,15 +1104,19 @@ class PermitSync:
             print(f"⚠️ 同步結果數量寫入失敗: {type(e).__name__}——本輪計數將顯示為未取得")
 
 
-if __name__ == '__main__':
+def main(argv=None):
+    """CLI 進入點。抽成函式才測得到「城市失敗 → 結束碼非零」這段行為。
+
+    （原本整段寫在 `if __name__ == '__main__':` 裡，無法從測試觸發。）
+    """
     import argparse
-    from geobingan_sync.city_config import get_cities_for_cli
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--city', default=None, help='City ID or "all"')
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     cities = get_cities_for_cli(args.city)
+    failed = []
     for city in cities:
         print(f"\n{'='*70}")
         print(f"🏙️  處理城市: {city['name']}")
@@ -1091,5 +1127,18 @@ if __name__ == '__main__':
         except KeyboardInterrupt:
             print("\n🛑 使用者手動停止")
             break
-        except Exception as e:
+        except Exception as e:                              # noqa: BLE001
             print(f"\n❌ {city['name']} 發生錯誤: {e}")
+            failed.append(city['name'])
+    if failed:
+        # 原本這裡只 print，main 正常返回 → process **exit 0** → shell 的
+        # `if ! python3 -m ...` 不觸發、STEP1_FAILED 保持 0，步驟 2-3 照跑、
+        # handle_error 也不會記。2026-10-06 掃描共享雲端逾時就是這樣被當成
+        # 成功的（當天 sync_status 沒有任何失敗紀錄）。
+        # 一個城市失敗不中斷其他城市，但整體結束碼必須反映失敗。
+        print(f"\n🛑 {len(failed)} 個城市同步失敗: {'、'.join(failed)}")
+        sys.exit(1)
+
+
+if __name__ == '__main__':
+    main()
