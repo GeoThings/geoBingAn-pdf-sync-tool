@@ -61,13 +61,18 @@ class TestDownloadRetry:
         with open(path, 'rb') as f:
             assert f.read() == b'%PDF ok'
 
-    def test_all_fail_exits_after_max_attempts(self, monkeypatch, tmp_path):
+    def test_all_fail_raises_after_max_attempts(self, monkeypatch, tmp_path):
+        """重試耗盡後拋 RuntimeError（原為 sys.exit(1)，見 review #112 P2）。
+
+        retry 行為本身不變：嘗試滿次數才放棄、最後一次失敗不再 sleep。
+        """
         slept = []
         fake = _FakeRequests([OSError('x'), OSError('x'), OSError('x')])
         _patch(monkeypatch, fake, slept)
-        with pytest.raises(SystemExit) as exc:
+        with pytest.raises(RuntimeError) as exc:
             _make_sync().download_pdf_list(max_attempts=3, dest=str(tmp_path / 'list.pdf'))
-        assert exc.value.code == 1
+        assert '下載建案列表失敗' in str(exc.value)
+        assert not isinstance(exc.value, SystemExit)
         assert fake.calls == 3        # 嘗試滿 max_attempts 才放棄
         assert slept == [5, 10]       # 最後一次失敗不再 sleep
 

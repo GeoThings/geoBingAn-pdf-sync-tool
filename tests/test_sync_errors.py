@@ -5,6 +5,7 @@ exit code 0、無人告警，手動 grep 日誌才看到；而且 errors 項目�
 （正式環境 2,067 筆），連「今天有沒有出錯」都答不出來。
 """
 import json
+import sys
 from datetime import datetime, timedelta
 
 import pytest
@@ -677,3 +678,116 @@ def test_step_results_default_base_is_isolated_in_tests():
     from geobingan_sync import step_results
     assert step_results._BASE != './state', (
         'step_results._BASE 沒被隔離，測試會寫到正式 state/')
+
+
+# ---------- review #112 P2：SystemExit 繞過 run 層級錯誤記錄 ----------
+#
+# download_pdf_list() 原本在所有候選都失敗時呼叫 sys.exit(1)。SystemExit 繼承
+# BaseException，run() 的 `except Exception` 接不到 → _run_error 留 None →
+# 健康檢查只能說「原因未記錄」；城市迴圈的 except Exception 也接不到。
+#
+# 修法刻意**不**擴大成捕捉 BaseException（那會一起吞掉 KeyboardInterrupt 的語意），
+# 而是讓下載失敗拋具體例外。但這樣改會把「正確 exit 1」退化成「靜默 exit 0」，
+# 因為城市迴圈接到例外後只 print、main() 正常返回——所以結束碼也要一起修。
+
+def test_download_failure_raises_instead_of_exiting(tmp_path, monkeypatch):
+    """下載全失敗要拋 RuntimeError，不可用 sys.exit 離場。"""
+    ps = _permit_sync(tmp_path)
+    monkeypatch.setattr(ps, '_list_url_candidates',
+                        lambda: [('https://x.test/a.pdf', 'static', '靜態')],
+                        raising=False)
+
+    import requests
+    def _boom(*a, **k):
+        raise requests.exceptions.ConnectionError('DNS 失敗')
+    monkeypatch.setattr(requests, 'get', _boom)
+    monkeypatch.setattr('time.sleep', lambda *_: None)
+
+    with pytest.raises(RuntimeError) as ei:
+        ps.download_pdf_list(max_attempts=1, dest=str(tmp_path / 'l.pdf'))
+    assert '下載建案列表失敗' in str(ei.value)
+    assert not isinstance(ei.value, SystemExit)
+
+
+def test_run_records_download_failure_reason(tmp_path, monkeypatch):
+    """P2 的核心：原因必須進 last_run.error，不是「原因未記錄」。"""
+    ps = _permit_sync(tmp_path)
+    ps.state = {'processed': {}, 'errors': []}
+
+    def _boom():
+        raise RuntimeError('下載建案列表失敗（所有候選皆失敗）: ConnectionError')
+    monkeypatch.setattr(ps, '_run_steps', _boom)
+
+    with pytest.raises(RuntimeError):
+        ps.run()
+    assert ps.state['last_run']['completed'] is False
+    assert '下載建案列表失敗' in ps.state['last_run']['error'], \
+        'run 層級原因沒落檔 → 健康檢查只能說「原因未記錄」'
+    assert se.summarise_last_run(ps.state)['clean'] is False
+
+
+def test_city_failure_makes_the_process_exit_nonzero(monkeypatch):
+    """城市層失敗必須讓 process 回非零，否則 shell 完全看不到。
+
+    🔴 2026-10-06 實測：掃描共享雲端逾時 → 城市迴圈 except Exception 只 print →
+    main() 正常返回 → exit 0 → shell 的 `if ! python3 -m ...` 不觸發、
+    STEP1_FAILED 保持 0、步驟 2-3 照跑、handle_error 不會記。當天 sync_status
+    裡沒有任何失敗紀錄就是這個原因。
+    """
+    from geobingan_sync.steps import sync_permits as sp
+    monkeypatch.setattr(sp, 'get_cities_for_cli', lambda _: [{'name': '台北市'}],
+                        raising=False)
+    monkeypatch.setattr(sp.PermitSync, '__init__', lambda self, city=None: None)
+    monkeypatch.setattr(sp.PermitSync, 'run',
+                        lambda self: (_ for _ in ()).throw(TimeoutError('read timed out')))
+    monkeypatch.setattr(sys, 'argv', ['sync_permits'])
+
+    with pytest.raises(SystemExit) as ei:
+        sp.main()
+    assert ei.value.code == 1, '城市失敗時結束碼必須非零'
+
+
+def test_all_cities_succeed_exits_zero(monkeypatch):
+    """反面：全部成功時不可誤報失敗。"""
+    from geobingan_sync.steps import sync_permits as sp
+    monkeypatch.setattr(sp, 'get_cities_for_cli', lambda _: [{'name': '台北市'}],
+                        raising=False)
+    monkeypatch.setattr(sp.PermitSync, '__init__', lambda self, city=None: None)
+    monkeypatch.setattr(sp.PermitSync, 'run', lambda self: None)
+    monkeypatch.setattr(sys, 'argv', ['sync_permits'])
+    sp.main()          # 不該拋 SystemExit
+
+
+def test_one_city_failing_does_not_stop_the_others(monkeypatch):
+    """一個城市失敗不可中斷其他城市——只影響整體結束碼。"""
+    from geobingan_sync.steps import sync_permits as sp
+    ran = []
+    monkeypatch.setattr(sp, 'get_cities_for_cli',
+                        lambda _: [{'name': 'A'}, {'name': 'B'}], raising=False)
+    monkeypatch.setattr(sp.PermitSync, '__init__',
+                        lambda self, city=None: setattr(self, '_n', city['name']))
+
+    def _run(self):
+        ran.append(self._n)
+        if self._n == 'A':
+            raise TimeoutError('boom')
+    monkeypatch.setattr(sp.PermitSync, 'run', _run)
+    monkeypatch.setattr(sys, 'argv', ['sync_permits'])
+
+    with pytest.raises(SystemExit):
+        sp.main()
+    assert ran == ['A', 'B'], 'B 仍要跑到'
+
+
+def test_no_sys_exit_inside_download_path():
+    """守門：下載路徑不得再用 sys.exit 離場（SystemExit 會繞過兩層 except）。
+
+    掃描時去掉註解行，否則被上面那段說明文字騙過去。
+    """
+    src = _sync_permits_source()
+    lines = [l for l in src.split('\n') if not l.lstrip().startswith('#')]
+    body = '\n'.join(lines)
+    start = body.index('def download_pdf_list')
+    end = body.index('def parse_pdf_list')
+    assert 'sys.exit' not in body[start:end], \
+        'download_pdf_list 內不得用 sys.exit——改拋具體例外'

@@ -61,13 +61,21 @@ def test_rejects_html_error_page_http200(monkeypatch, tmp_path):
     assert open(path, 'rb').read() == GOOD_PDF
 
 
-def test_exits_when_all_candidates_fail(monkeypatch, tmp_path):
+def test_raises_when_all_candidates_fail(monkeypatch, tmp_path):
+    """所有候選都失敗要拋 RuntimeError，不是 sys.exit。
+
+    改法理由（review #112 P2）：SystemExit 繼承 BaseException，run() 的
+    `except Exception` 與城市迴圈的 `except Exception` 都接不到，於是
+    run 層級失敗原因不會落檔，健康檢查只能說「原因未記錄」。
+    """
     def router(url):
         return _FakeResp(status=500)
     _setup(monkeypatch, router)
 
-    with pytest.raises(SystemExit):
+    with pytest.raises(RuntimeError) as exc:
         _ps().download_pdf_list(max_attempts=1, dest=str(tmp_path / 'list.pdf'))
+    assert '下載建案列表失敗' in str(exc.value)
+    assert not isinstance(exc.value, SystemExit)
 
 
 def test_never_writes_to_production_path_by_default(monkeypatch, tmp_path):

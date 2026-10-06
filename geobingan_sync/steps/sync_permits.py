@@ -12,6 +12,7 @@
 import json
 from geobingan_sync import REPO_ROOT
 from geobingan_sync import sync_errors
+from geobingan_sync.city_config import get_cities_for_cli
 import os
 import csv
 import re
@@ -301,8 +302,11 @@ class PermitSync:
                         print(f"⚠️  下載失敗（{label} 第 {attempt}/{max_attempts} 次）: {e}；{wait}s 後重試")
                         time.sleep(wait)
             print(f"⚠️  {label} URL 重試耗盡，改試下一個候選…")
-        print(f"❌ 下載失敗（所有候選皆失敗）: {last_err}")
-        sys.exit(1)
+        # 原本是 sys.exit(1)。SystemExit 繼承 BaseException，run() 的
+        # `except Exception` 接不到 → _run_error 留 None，健康檢查只能說
+        # 「原因未記錄」；城市迴圈的 except Exception 也接不到，後續城市直接中止。
+        # 改拋具體例外，讓兩層都接得到（review #112 P2）。
+        raise RuntimeError(f'下載建案列表失敗（所有候選皆失敗）: {last_err}')
     
     def parse_pdf_list(self, pdf_path: str) -> Dict[str, str]:
         print("\n📖 解析 PDF 列表 (智慧分塊演算法)...")
@@ -1100,15 +1104,19 @@ class PermitSync:
             print(f"⚠️ 同步結果數量寫入失敗: {type(e).__name__}——本輪計數將顯示為未取得")
 
 
-if __name__ == '__main__':
+def main(argv=None):
+    """CLI 進入點。抽成函式才測得到「城市失敗 → 結束碼非零」這段行為。
+
+    （原本整段寫在 `if __name__ == '__main__':` 裡，無法從測試觸發。）
+    """
     import argparse
-    from geobingan_sync.city_config import get_cities_for_cli
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--city', default=None, help='City ID or "all"')
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     cities = get_cities_for_cli(args.city)
+    failed = []
     for city in cities:
         print(f"\n{'='*70}")
         print(f"🏙️  處理城市: {city['name']}")
@@ -1119,5 +1127,18 @@ if __name__ == '__main__':
         except KeyboardInterrupt:
             print("\n🛑 使用者手動停止")
             break
-        except Exception as e:
+        except Exception as e:                              # noqa: BLE001
             print(f"\n❌ {city['name']} 發生錯誤: {e}")
+            failed.append(city['name'])
+    if failed:
+        # 原本這裡只 print，main 正常返回 → process **exit 0** → shell 的
+        # `if ! python3 -m ...` 不觸發、STEP1_FAILED 保持 0，步驟 2-3 照跑、
+        # handle_error 也不會記。2026-10-06 掃描共享雲端逾時就是這樣被當成
+        # 成功的（當天 sync_status 沒有任何失敗紀錄）。
+        # 一個城市失敗不中斷其他城市，但整體結束碼必須反映失敗。
+        print(f"\n🛑 {len(failed)} 個城市同步失敗: {'、'.join(failed)}")
+        sys.exit(1)
+
+
+if __name__ == '__main__':
+    main()
