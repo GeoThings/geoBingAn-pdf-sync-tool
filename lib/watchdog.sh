@@ -44,13 +44,41 @@ wd_kill_tree() {
     done
 }
 
+#: 輪詢間隔（秒）。用輪詢而不是一次 sleep 到期，理由見 wd_wait_until。
+WD_POLL_SECONDS="${WD_POLL_SECONDS:-15}"
+
+# 等到**牆上時鐘**到達 deadline（epoch 秒）。target 非空時，目標先結束就回 1。
+#
+# ⚠️ 不可寫成 `sleep $((deadline - now))`：`sleep` 在**系統睡眠期間不前進**。
+# 2026-10-06 實測：牆上 63.5 分鐘的執行裡，機器睡了 49.2 分鐘（6 段，最長 17 分），
+# 實際清醒只有 14.3 分鐘——於是 `sleep 3600` 離到期還差得遠，看門狗完全沒觸發，
+# 而 START_TIME 用的是 `date +%s`（牆上時鐘）。**兩個時鐘不同，宣稱的上限是假的。**
+# 每輪順便檢查目標還活著，正常結束就提早離場。
+# 單次 nap 取 min(poll, 剩餘)：既不超衝太多，也不會讓一次長 sleep 又把睡眠問題
+# 帶回來。
+wd_wait_until() {
+    local deadline=$1 target=${2:-} now remain nap
+    while :; do
+        now=$(date +%s)
+        remain=$(( deadline - now ))
+        [ "$remain" -le 0 ] && return 0
+        if [ -n "$target" ] && ! kill -0 "$target" 2>/dev/null; then
+            return 1                                    # 目標已結束
+        fi
+        nap="$WD_POLL_SECONDS"
+        [ "$remain" -lt "$nap" ] && nap="$remain"
+        sleep "$nap"
+    done
+}
+
 wd_start() {
     [ "${MAX_RUNTIME_SECONDS}" -le 0 ] && return 0      # 0 = 關閉（人工長跑用）
     local target=$$
+    local deadline=$(( $(date +%s) + MAX_RUNTIME_SECONDS ))
     (
         WD_SELF=$BASHPID          # 排除自己與自己的後代，否則會殺掉負責 SIGKILL 的自己
-        sleep "${MAX_RUNTIME_SECONDS}"
-        kill -0 "$target" 2>/dev/null || exit 0         # 已正常結束
+        wd_wait_until "$deadline" "$target" || exit 0    # 已正常結束
+        kill -0 "$target" 2>/dev/null || exit 0
         echo "TIMEOUT" > "$TIMEOUT_MARKER"
         {
             echo ""
@@ -59,7 +87,8 @@ wd_start() {
         wd_kill_tree "$target" TERM
         # 寬限要夠 cleanup 跑完 record_sync_result（要連網發告警信／ClickUp）。
         # 太短會在通知送出前就 SIGKILL，變成「超時了但沒人知道」。
-        sleep "${TIMEOUT_GRACE_SECONDS}"
+        # 這裡同樣走牆上時鐘：睡眠中的 sleep 會把 SIGKILL 無限延後。
+        wd_wait_until "$(( $(date +%s) + TIMEOUT_GRACE_SECONDS ))"
         wd_kill_tree "$target" KILL
     ) &
     WATCHDOG_PID=$!
