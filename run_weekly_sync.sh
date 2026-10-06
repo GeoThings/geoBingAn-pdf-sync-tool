@@ -23,6 +23,25 @@ set -o pipefail
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "$SCRIPT_DIR"
 
+# ── macOS：執行期間不准系統睡回去 ──────────────────────────────────────────
+# pmset 的排程喚醒給的是 **DarkWake**（日誌明寫 window cap time=180 secs），
+# 維護窗結束系統就睡回去；沒有 power assertion 的話整個 process 被凍結在原地。
+#
+# 2026-10-06 實測：牆上 63.5 分鐘的執行裡機器睡了 **49.2 分鐘**（6 段，最長
+# 17 分），實際清醒只有 14.3 分鐘。掃描共享雲端的 HTTP 請求被凍 17 分鐘後
+# socket 早就斷了，回報 "The read operation timed out"——那不是 Drive 慢，
+# 是機器睡著。同一天看門狗也沒觸發，因為 `sleep` 不在睡眠期間前進。
+#
+# `-i` 擋 idle sleep，電池供電也有效（`-s` 只在插電時有效，這台是電池供電）。
+# 找不到 caffeinate 不中止同步，但一定要出聲——這個缺口原本就是無聲的。
+if [ "$(uname)" = "Darwin" ] && [ -z "${WEEKLYSYNC_CAFFEINATED:-}" ]; then
+    if command -v caffeinate >/dev/null 2>&1; then
+        export WEEKLYSYNC_CAFFEINATED=1
+        exec caffeinate -i "$SCRIPT_DIR/$(basename "${BASH_SOURCE[0]}")" "$@"
+    fi
+    echo "⚠️  找不到 caffeinate：執行期間機器可能睡回去，同步會被凍結" >&2
+fi
+
 # 日誌目錄
 LOG_DIR="$SCRIPT_DIR/logs"
 mkdir -p "$LOG_DIR"
