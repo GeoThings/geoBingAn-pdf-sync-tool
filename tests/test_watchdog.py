@@ -356,3 +356,45 @@ def test_grace_has_a_wall_clock_backstop(tmp_path):
     assert 'CLEANUP_START' in events
     assert 'CLEANUP_DONE' not in events, 'cleanup 卡住卻沒被保險終止＝殭屍會留著'
     assert p.returncode != 0
+
+
+# ---------- 正式腳本的兩個期限（harness 有自己的預設，守不到這裡） ----------
+#
+# 故障注入時這條漏了：把 run_weekly_sync.sh 的 MAX_WALL_SECONDS 整行拿掉，20 條
+# 全綠。因為測試驅動的是 harness，而 harness 自己有 `MAX_WALL_SECONDS:-0`，
+# 正式腳本的預設值等於沒人在守。同一個檔案已有同類前例
+# （test_sync_script_sources_the_shared_watchdog、…_reexecs_under_caffeinate）。
+
+def _sync_script_body():
+    """去掉註解行的 run_weekly_sync.sh。
+
+    不去掉的話，上面這段說明文字裡的 MAX_WALL_SECONDS 就會讓斷言自己過關
+    （同類假綠在 #101/#104/#105 各踩過一次）。
+    """
+    return '\n'.join(l for l in _sync_script().split('\n')
+                     if not l.lstrip().startswith('#'))
+
+
+def test_sync_script_sets_a_sane_wall_deadline():
+    import re as _re
+    body = _sync_script_body()
+    m = _re.search(r'MAX_WALL_SECONDS="\$\{MAX_WALL_SECONDS:-(\d+)\}"', body)
+    assert m, 'run_weekly_sync.sh 沒設 MAX_WALL_SECONDS 預設值，壓到下一次排程的防線就只在測試裡存在'
+    wall = int(m.group(1))
+    runtime = _re.search(r'MAX_RUNTIME_SECONDS="\$\{MAX_RUNTIME_SECONDS:-(\d+)\}"', body)
+    assert runtime, '清醒預算的預設值也不見了'
+    assert wall > int(runtime.group(1)), (
+        f'牆上上限 {wall}s 不大於清醒預算 {runtime.group(1)}s，'
+        '那清醒預算永遠用不完就先被牆上那側砍掉——等於這個 PR 沒改到東西')
+    assert wall < 86400, (
+        f'牆上上限 {wall}s 超過一天，就壓到下一次排程了（launchd 每天 10:00）')
+
+
+def test_sync_script_distinguishes_the_two_timeout_reasons():
+    """兩種成因的告警文字要分開：一種去查 Drive 連線，一種去查電源與喚醒排程。"""
+    body = _sync_script_body()
+    assert 'TIMEOUT_BY=' in body, '沒讀 marker 內容，成因在這一步就丟掉了'
+    assert '*wall*' in body, '沒有針對牆上超時的分支'
+    assert body.count('ERROR_MESSAGE=') >= 3, (
+        '超時應該有兩種訊息（awake／wall）加上原本的未預期錯誤，'
+        f'只找到 {body.count("ERROR_MESSAGE=")} 個')
