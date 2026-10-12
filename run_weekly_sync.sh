@@ -62,8 +62,17 @@ LOG_FILE="$LOG_DIR/weekly_sync_$(date +%Y%m%d_%H%M%S).log"
 #   2. 失敗通知隔天才到，等於失去告警意義
 # 本機沒有 GNU timeout（coreutils 未安裝），所以自己看門。邏輯在 lib/watchdog.sh
 # （抽出來才測得到；兩個 review P1 的理由也寫在那裡）。
-MAX_RUNTIME_SECONDS="${MAX_RUNTIME_SECONDS:-3600}"     # 預設 60 分（正常 15–17 分）
-TIMEOUT_GRACE_SECONDS="${TIMEOUT_GRACE_SECONDS:-60}"   # SIGTERM 到 SIGKILL 的寬限
+# 兩個期限管的是兩件不同的事（2026-10-12）。一個期限同時管兩件，就會把
+# 「機器睡過頭」誤判成「這一輪卡住」——10/09 實際發生：機器睡了 81.6 分鐘，
+# 醒來時牆上時鐘早就過了「開始後 60 分」，看門狗在第一次醒來就把執行砍掉，
+# 而那一輪實際只跑了 0.4 分鐘。這台是電池供電、不會一直插電（Zhe 10/12 確認），
+# 實測開機 240.94 小時裡只醒著 54.13 小時，所以這不是邊角情境。
+MAX_RUNTIME_SECONDS="${MAX_RUNTIME_SECONDS:-3600}"     # 清醒 60 分（正常 15–17 分）
+# 牆上時間上限：守的是「不要壓到下一次排程」。launchd 每天 10:00 起一份，
+# 22 小時後是隔天 08:00，留 2 小時餘裕。被睡眠凍結的那一輪因此可以跨多次
+# DarkWake 慢慢跑完（每次喚醒窗約 180 秒），而不是第一次醒來就被砍。
+MAX_WALL_SECONDS="${MAX_WALL_SECONDS:-79200}"          # 22 小時；0 = 不設
+TIMEOUT_GRACE_SECONDS="${TIMEOUT_GRACE_SECONDS:-60}"   # SIGTERM 到 SIGKILL 的寬限（清醒計時）
 TIMEOUT_MARKER="$LOG_DIR/.weeklysync_timeout.$$"
 WAS_TIMEOUT=0
 # shellcheck source=lib/watchdog.sh
@@ -101,10 +110,21 @@ cleanup() {
     # 如果有未捕獲的錯誤
     # 超時要講清楚是超時，不可混進「未預期的錯誤」——操作者會去查錯的方向
     if [ -f "$TIMEOUT_MARKER" ]; then
+        # marker 內容是 TIMEOUT:awake／TIMEOUT:wall。兩種成因的處理方向完全不同，
+        # 告警文字要分開——操作者看到「卡住」會去查 Drive 連線，看到「睡掉執行窗」
+        # 要查的是電源與喚醒排程。
+        TIMEOUT_BY="$(cat "$TIMEOUT_MARKER" 2>/dev/null)"
         rm -f "$TIMEOUT_MARKER"
         WAS_TIMEOUT=1
         HAS_ERROR=1
-        ERROR_MESSAGE="執行超過 ${MAX_RUNTIME_SECONDS}s 上限被終止（正常 15–17 分；多為 Drive 連線重置後無上限重試）"
+        case "$TIMEOUT_BY" in
+            *wall*)
+                ERROR_MESSAGE="牆上時間超過 ${MAX_WALL_SECONDS}s 被終止（多為機器睡掉整個執行窗；清醒時間可能還沒用完）"
+                ;;
+            *)
+                ERROR_MESSAGE="清醒執行時間超過 ${MAX_RUNTIME_SECONDS}s 上限被終止（正常 15–17 分；多為 Drive 連線重置後無上限重試）"
+                ;;
+        esac
     elif [ $exit_code -ne 0 ] && [ $HAS_ERROR -eq 0 ]; then
         HAS_ERROR=1
         ERROR_MESSAGE="未預期的錯誤 (exit code: $exit_code)"
@@ -171,7 +191,8 @@ handle_error() {
 
 echo "========================================" | tee -a "$LOG_FILE"
 echo "🚀 開始執行週期同步 - $(date)" | tee -a "$LOG_FILE"
-echo "   ⏱️  執行時間上限 ${MAX_RUNTIME_SECONDS}s" | tee -a "$LOG_FILE"
+echo "   ⏱️  執行時間上限 ${MAX_RUNTIME_SECONDS}s（清醒計時）／牆上 ${MAX_WALL_SECONDS}s" \
+    | tee -a "$LOG_FILE"
 echo "========================================" | tee -a "$LOG_FILE"
 # SIGTERM 時走正常的 cleanup 並回確定的結束碼。
 # 不設的話 bash 會以 128+15=143 結束，巡檢看到 143 會誤導成「backoff 鎖死」。

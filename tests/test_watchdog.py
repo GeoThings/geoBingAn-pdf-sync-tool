@@ -125,36 +125,142 @@ def _fake_date_dir(tmp_path, speedup):
     return str(d)
 
 
-def test_watchdog_fires_when_wall_clock_jumps_past_the_deadline(tmp_path):
-    """牆上時鐘跳過期限就要觸發，即使實際只過了幾秒（＝機器睡過一段時間）。
+def _fake_awake_dir(tmp_path, speedup):
+    """造一個讓「醒著的時鐘」加速流動的 shim（給 WD_AWAKE_CMD 用）。
 
-    MAX=600 秒，時鐘以 1000 倍速前進（期限算完之後才開始跳）。用 sleep 計時的
-    版本要等 10 分鐘才會動；用牆上時鐘的版本必須在幾秒內判定超時。
+    真的讓機器睡覺沒辦法在測試裡做，但兩個時鐘**走不同速度**這件事可以精準模擬：
+    牆上時鐘用 date shim 控制、清醒時鐘用這個控制，兩者分開才驗得出「誰觸發的」。
     """
-    shim = _fake_date_dir(tmp_path, 1000)   # 1 真實秒 = 1000 牆上秒
-    e = dict(os.environ, LOG_DIR=str(tmp_path), PATH=shim + os.pathsep + os.environ['PATH'])
-    e.update({'MAX_RUNTIME_SECONDS': '600', 'TIMEOUT_GRACE_SECONDS': '1',
-              'WD_POLL_SECONDS': '1', 'WORK_SECONDS': '20'})
+    d = tmp_path / 'awake'
+    d.mkdir()
+    sh = d / 'awake_clock'
+    sh.write_text(
+        '#!/bin/bash\n'
+        'now=$(/bin/date +%s)\n'
+        f'f="{d}/.t0"\n'
+        '[ -f "$f" ] || echo "$now" > "$f"\n'
+        't0=$(cat "$f")\n'
+        f'echo $(( (now - t0) * {speedup} ))\n', encoding='utf-8')
+    sh.chmod(0o755)
+    return str(sh)
+
+
+def _run_env(tmp_path, *, wall_speedup=1, awake_speedup=1, **env):
+    shim = _fake_date_dir(tmp_path, wall_speedup)
+    e = dict(os.environ, LOG_DIR=str(tmp_path),
+             PATH=shim + os.pathsep + os.environ['PATH'],
+             WD_AWAKE_CMD=_fake_awake_dir(tmp_path, awake_speedup))
+    e.update({k: str(v) for k, v in env.items()})
+    return e
+
+
+# ---------- 2026-10-12：兩個期限分開。睡過頭 ≠ 卡住 ----------
+#
+# 10/09 的誤殺：機器睡了 81.6 分鐘，醒來時牆上時鐘早就過了「開始後 60 分」，於是
+# 看門狗在第一次醒來就把執行砍掉——而那一輪實際只跑了 0.4 分鐘。砍它符合當時的
+# 政策，但那個政策把「睡過頭」當成「卡住」。
+#
+# 實測這台（10/12）：開機 240.94 小時、CLOCK_UPTIME_RAW 只有 54.13 小時。
+# 電池供電不會插電，所以這不是邊角情境，是常態。
+
+def test_wall_clock_jump_alone_does_not_kill_a_run_that_is_not_stuck(tmp_path):
+    """牆上時鐘狂跳、清醒時鐘幾乎沒動 → **不可**殺。這就是 10/09 那一輪。"""
+    e = _run_env(tmp_path, wall_speedup=1000, awake_speedup=1,
+                 MAX_RUNTIME_SECONDS=600, MAX_WALL_SECONDS=0,
+                 TIMEOUT_GRACE_SECONDS=1, WD_POLL_SECONDS=1, WORK_SECONDS=2)
+    p = subprocess.run(['bash', HARNESS], env=e, capture_output=True, text=True, timeout=120)
+    events = (tmp_path / 'events').read_text(encoding='utf-8')
+    assert 'msg=TIMEOUT' not in events, (
+        f'機器睡掉的時間被當成執行時間，又把沒卡住的一輪砍了: {events}')
+    assert p.returncode == 0
+
+
+def test_awake_budget_fires_when_the_run_is_really_stuck(tmp_path):
+    """清醒時鐘超過預算 → 要殺，而且成因是 awake。
+
+    牆上時鐘故意**不**加速：單獨驗清醒那一側，不讓兩個期限互相掩護。
+    """
+    e = _run_env(tmp_path, wall_speedup=1, awake_speedup=1000,
+                 MAX_RUNTIME_SECONDS=600, MAX_WALL_SECONDS=0,
+                 TIMEOUT_GRACE_SECONDS=1, WD_POLL_SECONDS=1, WORK_SECONDS=20)
     t0 = time.monotonic()
     p = subprocess.run(['bash', HARNESS], env=e, capture_output=True, text=True, timeout=120)
     elapsed = time.monotonic() - t0
     events = (tmp_path / 'events').read_text(encoding='utf-8')
+    log = (tmp_path / 'harness.log').read_text(encoding='utf-8')
 
-    assert 'msg=TIMEOUT' in events, f'牆上時鐘已跳過期限卻沒超時: {events}'
+    assert 'msg=TIMEOUT:awake' in events, f'清醒預算用完卻沒觸發: {events}'
     assert p.returncode == 1
-    assert elapsed < 60, f'用 sleep 計時就會等滿 600 秒；實際 {elapsed:.0f} 秒'
+    assert '已達執行時間上限' in log and '清醒計時' in log
+    assert elapsed < 60, f'用一次長 sleep 計時就會等滿 600 秒；實際 {elapsed:.0f} 秒'
 
 
-def test_watchdog_does_not_fire_before_the_wall_clock_deadline(tmp_path):
-    """反面：時鐘沒跳過期限就不可誤殺（否則上面那條用「永遠超時」也會過）。"""
-    shim = _fake_date_dir(tmp_path, 1)      # 不加速
-    e = dict(os.environ, LOG_DIR=str(tmp_path), PATH=shim + os.pathsep + os.environ['PATH'])
-    e.update({'MAX_RUNTIME_SECONDS': '600', 'TIMEOUT_GRACE_SECONDS': '1',
-              'WD_POLL_SECONDS': '1', 'WORK_SECONDS': '2'})
+def test_wall_deadline_fires_when_set_and_says_so(tmp_path):
+    """牆上上限仍然存在（它守的是「不要壓到下一次排程」），成因是 wall。"""
+    e = _run_env(tmp_path, wall_speedup=1000, awake_speedup=1,
+                 MAX_RUNTIME_SECONDS=600, MAX_WALL_SECONDS=1200,
+                 TIMEOUT_GRACE_SECONDS=1, WD_POLL_SECONDS=1, WORK_SECONDS=20)
+    p = subprocess.run(['bash', HARNESS], env=e, capture_output=True, text=True, timeout=120)
+    events = (tmp_path / 'events').read_text(encoding='utf-8')
+    log = (tmp_path / 'harness.log').read_text(encoding='utf-8')
+
+    assert 'msg=TIMEOUT:wall' in events, f'牆上上限沒觸發: {events}'
+    assert p.returncode == 1
+    assert '已達牆上時間上限' in log, '訊息要指明是哪一個期限，否則操作者查錯方向'
+
+
+def test_neither_deadline_fires_on_a_normal_run(tmp_path):
+    """反面對照：兩個時鐘都正常走時不可誤殺（否則上面兩條用「永遠超時」也會過）。"""
+    e = _run_env(tmp_path, wall_speedup=1, awake_speedup=1,
+                 MAX_RUNTIME_SECONDS=600, MAX_WALL_SECONDS=1200,
+                 TIMEOUT_GRACE_SECONDS=1, WD_POLL_SECONDS=1, WORK_SECONDS=2)
     p = subprocess.run(['bash', HARNESS], env=e, capture_output=True, text=True, timeout=120)
     events = (tmp_path / 'events').read_text(encoding='utf-8')
     assert 'msg=TIMEOUT' not in events
     assert p.returncode == 0
+
+
+def test_missing_awake_clock_degrades_loudly(tmp_path):
+    """取不到清醒時鐘就退回牆上時鐘——行為等於改版前，但**不可無聲**。
+
+    無聲降級的話，清醒預算會悄悄變成牆上預算，也就是 10/09 那個誤殺又回來了，
+    而且沒有人會知道。
+    """
+    broken = tmp_path / 'broken_clock'
+    broken.write_text('#!/bin/bash\nexit 1\n', encoding='utf-8')
+    broken.chmod(0o755)
+    e = dict(os.environ, LOG_DIR=str(tmp_path), WD_AWAKE_CMD=str(broken),
+             WD_PYTHON='/nonexistent/python')
+    e.update({'MAX_RUNTIME_SECONDS': '2', 'MAX_WALL_SECONDS': '0',
+              'TIMEOUT_GRACE_SECONDS': '1', 'WD_POLL_SECONDS': '1',
+              'WORK_SECONDS': '60'})
+    p = subprocess.run(['bash', HARNESS], env=e, capture_output=True, text=True, timeout=120)
+    log = (tmp_path / 'harness.log').read_text(encoding='utf-8')
+
+    assert '取不到「醒著的時間」時鐘' in log + p.stderr, (
+        '降級沒有出聲：清醒預算悄悄變回牆上預算')
+    assert p.returncode == 1, '降級之後上限仍然要有效，不可變成完全沒有看門狗'
+
+
+def test_grace_uses_the_awake_clock(tmp_path):
+    """寬限也要用清醒時鐘算。
+
+    牆上計時的話，機器在 cleanup 期間睡著，SIGKILL 會在醒來那一刻立刻落下，
+    通知根本沒機會寄出——和 10/09 同一個錯誤，只是換到寬限期。
+    這裡：牆上時鐘加速 1000 倍、清醒時鐘正常，cleanup 睡 4 秒而寬限 8 秒
+    （清醒），所以 cleanup 必須跑完。
+    """
+    # 寬限的牆上側只是最後保險（預設 60 倍）。這裡把它放大，否則 1000 倍速的
+    # 牆上時鐘會在 0.5 秒內吃掉 60×8＝480 牆上秒，驗到的就不是清醒那一側了。
+    e = _run_env(tmp_path, wall_speedup=1000, awake_speedup=1,
+                 MAX_RUNTIME_SECONDS=1, MAX_WALL_SECONDS=0,
+                 TIMEOUT_GRACE_SECONDS=8, WD_POLL_SECONDS=1,
+                 WD_GRACE_WALL_FACTOR=1000,
+                 WORK_SECONDS=60, CLEANUP_HANG_SECONDS=4)
+    subprocess.run(['bash', HARNESS], env=e, capture_output=True, text=True, timeout=120)
+    events = (tmp_path / 'events').read_text(encoding='utf-8')
+    assert 'CLEANUP_DONE' in events, (
+        f'寬限被牆上時鐘吃掉，cleanup 沒跑完就被 SIGKILL: {events}')
 
 
 def test_watchdog_never_sleeps_the_whole_budget_in_one_go():
@@ -232,3 +338,21 @@ def test_caffeinate_actually_holds_the_assertion():
         capture_output=True, text=True, timeout=60).stdout
     assert 'PreventUserIdleSystemSleep' in out, out
     assert 'caffeinate' in out
+
+
+def test_grace_has_a_wall_clock_backstop(tmp_path):
+    """寬限的牆上側是最後保險：睡著的機器不可把殭屍無限期留著。
+
+    與上一條成對——上一條證明清醒時鐘在管，這一條證明牆上保險仍然會落下。
+    cleanup 睡 30 秒，而牆上保險只有 2×1＝2 牆上秒（1000 倍速 ⇒ 立刻到期）。
+    """
+    e = _run_env(tmp_path, wall_speedup=1000, awake_speedup=1,
+                 MAX_RUNTIME_SECONDS=1, MAX_WALL_SECONDS=0,
+                 TIMEOUT_GRACE_SECONDS=1, WD_POLL_SECONDS=1,
+                 WD_GRACE_WALL_FACTOR=2,
+                 WORK_SECONDS=60, CLEANUP_HANG_SECONDS=30)
+    p = subprocess.run(['bash', HARNESS], env=e, capture_output=True, text=True, timeout=120)
+    events = (tmp_path / 'events').read_text(encoding='utf-8')
+    assert 'CLEANUP_START' in events
+    assert 'CLEANUP_DONE' not in events, 'cleanup 卡住卻沒被保險終止＝殭屍會留著'
+    assert p.returncode != 0

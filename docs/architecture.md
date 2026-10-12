@@ -746,8 +746,34 @@ upload_pdfs.main()
 2. 失敗通知隔天才到，等於失去告警意義。
 
 本機沒有 GNU `timeout`（coreutils 未安裝），所以 `run_weekly_sync.sh` 自帶看門狗：
-背景子程序睡到 `MAX_RUNTIME_SECONDS`（預設 **3600**，正常跑 15–17 分）後寫下 marker、
-`SIGTERM` 主程序，寬限 `TIMEOUT_GRACE_SECONDS`（預設 **60**）後 `SIGKILL`。
+背景子程序輪詢到期限後寫下 marker、`SIGTERM` 主程序，寬限
+`TIMEOUT_GRACE_SECONDS`（預設 **60**）後 `SIGKILL`。
+
+**兩個期限管的是兩件不同的事（2026-10-12）。** 一個期限同時管兩件，就會把
+「機器睡過頭」誤判成「這一輪卡住」：
+
+| 期限 | 用什麼時鐘 | 守什麼 | 預設 |
+|---|---|---|---|
+| `MAX_RUNTIME_SECONDS` | **清醒時間** | 這一輪真的卡住了 | 3600（正常跑 15–17 分） |
+| `MAX_WALL_SECONDS` | 牆上時鐘 | 不要壓到下一次排程 | 79200（22 小時；0 = 不設） |
+
+10/09 實際發生：機器睡了 81.6 分鐘，醒來時牆上時鐘早就過了「開始後 60 分」，
+看門狗在第一次醒來就把執行砍掉——而那一輪實際只跑了 0.4 分鐘。砍它符合當時的
+政策，但那個政策把「睡過頭」當成「卡住」。這台是電池供電、不會一直插電
+（Zhe 10/12 確認），實測開機 **240.94 小時裡只醒著 54.13 小時**，所以這不是邊角
+情境而是常態。
+
+清醒時鐘怎麼來：macOS 的 `CLOCK_UPTIME_RAW` 在系統睡眠期間**不前進**，而
+`time.monotonic()` 在 macOS 就是它（`CLOCK_MONOTONIC` 不行，它和牆上時鐘一樣會
+繼續走）。`wd_awake_now()` 取這個值；取不到時退回牆上時鐘，但**一定出聲**——
+無聲降級就是把 10/09 的誤殺偷偷帶回來。測試用 `WD_AWAKE_CMD` 注入假時鐘。
+
+`MAX_WALL_SECONDS` 的 22 小時是這樣算的：launchd 每天 10:00 起一份，22 小時後是
+隔天 08:00，留 2 小時餘裕。被睡眠凍結的那一輪因此可以跨多次 DarkWake（每次喚醒窗
+約 180 秒）慢慢跑完，而不是第一次醒來就被砍。
+
+marker 內容帶成因（`TIMEOUT:awake`／`TIMEOUT:wall`），告警文字跟著分開：操作者看到
+「卡住」會去查 Drive 連線，看到「睡掉執行窗」要查的是電源與喚醒排程。
 
 邏輯放在 `lib/watchdog.sh`（`wd_start`／`wd_stop`／`wd_kill_tree`），**抽出來才測得到**：
 `tests/test_watchdog.py` 透過 `tests/fixtures/watchdog_harness.sh` source 正式那一份跑真流程，
@@ -765,11 +791,19 @@ upload_pdfs.main()
 
 - **寬限要夠 `cleanup` 跑完 `record_sync_result`**（要連網發告警信／ClickUp）。太短會在
   通知送出前就 SIGKILL，變成「超時了但沒人知道」，正是要避免的事。
+- **寬限也用清醒時鐘**（2026-10-12）。牆上計時的話，機器在 cleanup 期間睡著，
+  SIGKILL 會在醒來的那一刻立刻落下，通知根本沒機會寄出——和 10/09 同一個錯誤，
+  只是換到寬限期。牆上那一側只當最後保險（`WD_GRACE_WALL_FACTOR`，預設 60 倍），
+  免得睡著的機器把殭屍程序無限期留著。
 - **`trap 'exit 1' TERM`**：不設的話 bash 以 128+15=143 結束，巡檢看到 143 會誤導成
   「backoff 鎖死」。
 - **超時用獨立的錯誤訊息**，不可混進「未預期的錯誤」——操作者會去查錯的方向。
 
-`MAX_RUNTIME_SECONDS=0` 可關閉（人工長跑補掃時用）。
+- **超時成因要能分辨**：`TIMEOUT:awake` 與 `TIMEOUT:wall` 的處理方向完全不同，
+  混成一條訊息會讓操作者查錯方向。
+
+`MAX_RUNTIME_SECONDS=0` 可關閉整個看門狗（人工長跑補掃時用）；`MAX_WALL_SECONDS=0`
+只關牆上那一側。
 
 > `run_friday_report.sh` 目前未加：它只有 44 行、單一 Python 呼叫，尚未出現同類問題。若日後也卡住再比照處理。
 
