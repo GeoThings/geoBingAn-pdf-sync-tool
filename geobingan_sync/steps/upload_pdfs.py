@@ -351,7 +351,12 @@ def list_all_pdfs_with_folder_info(service, folders: List[Dict]) -> List[Dict]:
 
     while True:
         try:
-            query = "mimeType = 'application/pdf' and trashed = false"
+            # 型別或副檔名任一符合就撈回來，本機再用 _is_pdf 定案。
+            # 只靠 mimeType 會漏掉被標成 application/octet-stream 的真 PDF
+            # （#116 review P1）；2026-10-12 實測 `name contains '.pdf'` 在共享
+            # 硬碟上可用，而且幾乎不會多撈（json／text 不以 .pdf 結尾）。
+            query = ("(mimeType = 'application/pdf' or name contains '.pdf') "
+                     "and trashed = false")
             results = service.files().list(
                 q=query,
                 corpora='drive',
@@ -360,7 +365,11 @@ def list_all_pdfs_with_folder_info(service, folders: List[Dict]) -> List[Dict]:
                 supportsAllDrives=True,
                 pageSize=1000,
                 pageToken=page_token,
-                fields='nextPageToken, files(id, name, size, modifiedTime, parents)'
+                # mimeType 一定要取：本機判定靠 (檔名, mimeType) 重新推導
+                # 「副檔名與型別矛盾」。不取的話矛盾訊號在掃描這一步就消失，
+                # 一個 .pdf 名字的圖片會被當成正常 PDF 送去解析（#116 review 第二輪）。
+                fields=('nextPageToken, files(id, name, mimeType, size, '
+                        'modifiedTime, parents)')
             ).execute()
 
             pdfs = results.get('files', [])
@@ -413,14 +422,15 @@ def list_all_pdfs_with_folder_info(service, folders: List[Dict]) -> List[Dict]:
                     from geobingan_sync.drive_utils import paginate_files_list
                     fallback_query = (
                         f"'{folder['id']}' in parents and "
-                        f"mimeType = 'application/pdf' and trashed = false"
+                        f"(mimeType = 'application/pdf' or name contains '.pdf') "
+                        f"and trashed = false"
                     )
                     for pdf in paginate_files_list(
                         service,
                         q=fallback_query,
                         includeItemsFromAllDrives=True,
                         supportsAllDrives=True,
-                        fields='files(id, name, size, modifiedTime)'
+                        fields='files(id, name, mimeType, size, modifiedTime)'
                     ):
                         pdf['folder_id'] = folder['id']
                         pdf['folder_name'] = folder['name']
@@ -707,13 +717,31 @@ def flush_state(state: dict):
             _pending_error_saves = 0
 
 
+def _is_pdf(item: Dict) -> bool:
+    """這一筆會被送去解析嗎。判定共用 `mirror_types`，不在這裡自己寫一套。
+
+    自己寫一套的後果（#116 review P1）：`報告.pdf` 被標成
+    `application/octet-stream` 時，鏡像端收了、分類端算成 other、這裡又拒絕，
+    於是一份真的報告永遠不會上傳，而且三處帳目互相矛盾、看不出差在哪。
+    """
+    from geobingan_sync.mirror_types import is_uploadable_pdf
+    return is_uploadable_pdf(item.get('name') or '', item.get('mimeType') or '')
+
+
 def select_pdfs_to_upload(all_pdfs: List[Dict], uploaded_files, *, cutoff: datetime,
                           exclude=(), max_uploads: int = 0):
     """候選過濾純函式（#64）：從全量 PDF 清單選出本次要上傳的檔案。
 
-    規則（依序）：排除清單 → history 去重（folder/檔名）→ run 內同名去重
-    → 檔名日期解析（解析不到跳過）→ cutoff 日期窗 → max_uploads 上限
-    （0 = 不限）。
+    規則（依序）：**非 PDF 一律剔除** → 排除清單 → history 去重（folder/檔名）
+    → run 內同名去重 → 檔名日期解析（解析不到跳過）→ cutoff 日期窗
+    → max_uploads 上限（0 = 不限）。
+
+    為什麼這裡還要擋非 PDF（2026-10-12，Zhe 定「收圖片和 .xls 但不上傳
+    riskmap」）：共享雲端硬碟從此會有圖片與 Excel。掃描查詢本身帶
+    `mimeType='application/pdf'`，但那是**唯一**一道、而且在伺服器端——查詢字串
+    改一個字、或哪天改走別的列檔方式，非 PDF 就會直接流進解析佇列，一張 jpg
+    就是 US$0.3 的無效支出，而且會把額度排擠掉真正的報告。所以在這個純函式裡
+    再擋一次：兩道防線互相獨立，而且這一道是可以單元測試的。
 
     排序＝**報告日期（檔名解析）降序，同日再依 Drive modifiedTime 降序**，讓
     上限吃到「最新的報告」而不是「最近被丟進 Drive 的檔案」。兩者常常不同：
@@ -746,6 +774,7 @@ def select_pdfs_to_upload(all_pdfs: List[Dict], uploaded_files, *, cutoff: datet
     exclude = set(exclude)
     counts = {
         'excluded': 0,
+        'not_pdf': 0,
         'already_uploaded': 0,
         'dup_in_run': 0,
         'no_date': 0,
@@ -763,6 +792,9 @@ def select_pdfs_to_upload(all_pdfs: List[Dict], uploaded_files, *, cutoff: datet
     dated.sort(key=lambda t: (t[1] or datetime.min, t[0].get('modifiedTime', '')), reverse=True)
 
     for pdf, fd in dated:
+        if not _is_pdf(pdf):
+            counts['not_pdf'] += 1
+            continue
         if pdf['name'] in exclude:
             counts['excluded'] += 1
             continue
