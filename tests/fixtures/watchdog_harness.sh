@@ -7,6 +7,8 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/../.." && pwd )"
 LOG_DIR="${LOG_DIR:?need LOG_DIR}"
 LOG_FILE="$LOG_DIR/harness.log"
 MAX_RUNTIME_SECONDS="${MAX_RUNTIME_SECONDS:-3}"
+# 牆上時間上限預設不設：絕大多數測試驗的是清醒預算，要驗牆上那一側的自己開。
+MAX_WALL_SECONDS="${MAX_WALL_SECONDS:-0}"
 TIMEOUT_GRACE_SECONDS="${TIMEOUT_GRACE_SECONDS:-3}"
 TIMEOUT_MARKER="$LOG_DIR/.timeout.$$"
 WAS_TIMEOUT=0
@@ -20,8 +22,10 @@ source "$SCRIPT_DIR/lib/watchdog.sh"
 cleanup() {
     local code=$?
     if [ -f "$TIMEOUT_MARKER" ]; then
+        # marker 的內容帶著成因（TIMEOUT:awake／TIMEOUT:wall），正式腳本也是這樣
+        # 讀它來決定告警文字——測試要看得到同一個值，否則兩種成因在測試裡無從分辨。
+        ERROR_MESSAGE="$(cat "$TIMEOUT_MARKER" 2>/dev/null)"
         rm -f "$TIMEOUT_MARKER"; WAS_TIMEOUT=1; HAS_ERROR=1
-        ERROR_MESSAGE="TIMEOUT"
     elif [ $code -ne 0 ] && [ $HAS_ERROR -eq 0 ]; then
         HAS_ERROR=1; ERROR_MESSAGE="UNEXPECTED:$code"
     fi
