@@ -877,3 +877,34 @@ config.py (from .env)  →  環境變數  →  硬編碼預設值
 - 可在 CI（無 credentials.json）或乾淨環境執行
 - Smoke tests 覆蓋報告生成端到端路徑（含 XSS escaping、file round-trip）
 - `normalize_permit` 和 `extract_name_from_filename` 統一在 `permit_utils.py`，消除 test import side effects
+
+### 正式 state 檔的兩層防線（2026-10-12）
+
+全專案有 **29 處**指向 `./state/…` 或 `REPO_ROOT/state/…` 的路徑，分佈在 **14 個
+模組**（含 `health_check.py` 與 `tools/`），其中有些還是從別的常數算出來的
+（`upload_pdfs.STATE_LOCK_FILE`）。測試只要呼叫到 production 函式、由它去寫，
+就會寫到**營運中的狀態檔**——相對 CWD 的路徑在正式目錄跑 pytest 時指的就是真資料。
+
+實際事故：`tests/test_report_date_upload.py` 呼叫 `upload_pdfs.process_single_pdf()`，
+成功路徑立刻 `save_state(state)`，於是把測試那筆假的「資料夾/檔名」併進 7 天上傳
+帳本（`uploaded_files` 取聯集）。那份 PDF 之後永遠不會被上傳，沒有任何錯誤訊息。
+當天沒出事純屬運氣：測試用的檔名剛好已經在帳本裡。整套 1,025 條全綠、帳本已被
+改寫——**沒有人在對帳**才是真正的缺口。
+
+所以不逐一列舉模組常數（列舉法漏掉下一個新常數時同樣靜默），改為擋在路徑這個
+邊界上，兩層：
+
+1. **寫入當場被擋**（`conftest._no_real_state_writes`，autouse）。收口是開檔
+   （`builtins.open` 與 `io.open`，`Path.write_text`／`Path.open` 走後者）與
+   `os.replace`／`os.rename`／`os.remove`／`os.unlink`。atomic 寫入是「寫
+   `.tmp.<pid>` 再 replace」，只擋開檔會整條漏掉。讀取不擋（那是另一類問題，
+   由各自的 per-file fixture 導向暫存路徑）。保護範圍在 conftest 匯入時算好一次，
+   不跟著 `chdir` 漂。
+2. **整套跑完事後對帳**（`_production_state_unchanged`，session scope）。比對
+   `(mtime_ns, 大小)`，連 subprocess、`os.utime` 這類繞過 Python 檔案 API 的
+   路徑也抓得到。偽陽性只有一種：測試期間排程同步真的在寫 state。
+
+另外 `upload_pdfs` 的四個路徑常數（`STATE_FILE`、`STATE_LOCK_FILE`、
+`HISTORY_FILE`、`PDF_INVENTORY_FILE`）一律導向暫存目錄。`STATE_LOCK_FILE` 是
+重點：它在 import 時就由 `STATE_FILE` 算好，只換來源常數的話 flock 仍舊開在正式
+目錄——衍生常數不會跟著來源變（同「cache key 要涵蓋所有 baked-in state」）。
