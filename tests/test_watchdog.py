@@ -242,6 +242,41 @@ def test_missing_awake_clock_degrades_loudly(tmp_path):
     assert p.returncode == 1, '降級之後上限仍然要有效，不可變成完全沒有看門狗'
 
 
+def test_missing_awake_clock_warns_exactly_once(tmp_path):
+    """降級警告只能印一次，不是每個輪詢間隔印一次。
+
+    `$(wd_awake_now)` 的 command substitution 會起子 shell，warn-once 旗標設在
+    裡面就跟著消失——22 小時的牆上期限配 15 秒輪詢約 5,280 行，把日誌洗掉
+    （#117 review P2）。所以這裡**精確數次數**，不是只檢查存在。
+
+    要真的碰到：輪詢間隔 1 秒、工作 5 秒 ⇒ 至少 4 次取時鐘。壞掉的版本會寫
+    4 行以上。
+
+    ⚠️ 這條只對「**兩個**呼叫點都在 command substitution 裡」敏感。`wd_start`
+    在 fork 之前那次直接呼叫，是旗標能被看門狗子 shell 繼承的關鍵——只還原迴圈
+    裡那一個呼叫點的話，重複警告會被父 shell 的旗標壓住，注入就抓不到（實際用
+    不完整的注入試過一次，誤以為測試無效）。
+    """
+    broken = tmp_path / 'broken_clock'
+    broken.write_text('#!/bin/bash\nexit 1\n', encoding='utf-8')
+    broken.chmod(0o755)
+    e = dict(os.environ, LOG_DIR=str(tmp_path), WD_AWAKE_CMD=str(broken),
+             WD_PYTHON='/nonexistent/python')
+    e.update({'MAX_RUNTIME_SECONDS': '60', 'MAX_WALL_SECONDS': '0',
+              'TIMEOUT_GRACE_SECONDS': '1', 'WD_POLL_SECONDS': '1',
+              'WORK_SECONDS': '5'})
+    p = subprocess.run(['bash', HARNESS], env=e, capture_output=True, text=True,
+                       timeout=120)
+    log = (tmp_path / 'harness.log').read_text(encoding='utf-8')
+    warnings = log.count('取不到「醒著的時間」時鐘')
+
+    assert warnings == 1, (
+        f'降級警告印了 {warnings} 次（應該 1 次）。'
+        'warn-once 的旗標若設在 command substitution 的子 shell 裡就留不住，'
+        '長時間執行會把日誌洗掉')
+    assert p.returncode == 0, f'這一輪不該超時（只是降級），實際 {p.returncode}'
+
+
 def test_grace_uses_the_awake_clock(tmp_path):
     """寬限也要用清醒時鐘算。
 

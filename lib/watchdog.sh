@@ -53,25 +53,40 @@ WD_POLL_SECONDS="${WD_POLL_SECONDS:-15}"
 #: 時鐘一樣是 240.94 小時。
 #:
 #: 測試用 WD_AWAKE_CMD 注入假時鐘（真的讓機器睡覺沒辦法在測試裡做）。
+#:
+#: ⚠️ 結果放進 WD_AWAKE_NOW，**不走 stdout**。呼叫端一律寫
+#: `wd_awake_now; x=$WD_AWAKE_NOW`，不可寫 `x=$(wd_awake_now)`：command
+#: substitution 會起子 shell，函式裡設的 warn-once 旗標在子 shell 結束時就消失，
+#: 於是降級警告每個輪詢間隔印一次——22 小時的牆上期限配 15 秒輪詢約 5,280 行，
+#: 把日誌洗掉（#117 review P2）。
+WD_AWAKE_NOW=0
+
 wd_awake_now() {
+    local out='' py
     if [ -n "${WD_AWAKE_CMD:-}" ]; then
-        $WD_AWAKE_CMD && return 0
+        out="$($WD_AWAKE_CMD 2>/dev/null)" || out=''
     else
-        local py
         for py in ${WD_PYTHON:-} "${SCRIPT_DIR:-.}/venv/bin/python" python3; do
             [ -n "$py" ] || continue
             [ -x "$py" ] || command -v "$py" >/dev/null 2>&1 || continue
-            "$py" -c 'import time; print(int(time.monotonic()))' 2>/dev/null && return 0
+            out="$("$py" -c 'import time; print(int(time.monotonic()))' 2>/dev/null)" \
+                && [ -n "$out" ] && break
+            out=''
         done
     fi
+    case "$out" in
+        ''|*[!0-9]*) ;;                 # 空的或非數字＝取不到（指令不存在、壞掉）
+        *) WD_AWAKE_NOW="$out"; return 0 ;;
+    esac
     # 取不到清醒時鐘就退回牆上時鐘——行為等於改版前，但**一定要出聲**。
     # 無聲降級的話，清醒預算會悄悄變成牆上預算，而那正是 10/09 誤殺的成因。
+    # 只出聲一次：旗標設在當前 shell（不是子 shell）才留得住。
     if [ -z "${WD_AWAKE_WARNED:-}" ]; then
         WD_AWAKE_WARNED=1
         echo "⚠️  取不到「醒著的時間」時鐘，清醒預算退回牆上時鐘（睡眠期間也會計時）" \
             | tee -a "${LOG_FILE:-/dev/null}" >&2
     fi
-    date +%s
+    WD_AWAKE_NOW="$(date +%s)"
 }
 
 # 等到兩個期限之一到期：牆上時鐘 `wall_deadline`（epoch 秒）或清醒時鐘
@@ -93,7 +108,7 @@ wd_awake_now() {
 # 問題帶回來。
 wd_wait_until() {
     local wall_deadline=$1 awake_deadline=${2:-} target=${3:-}
-    local now remain nap awake awake_remain
+    local now remain nap awake_remain
     WD_EXPIRED_BY=''
     while :; do
         now=$(date +%s)
@@ -103,8 +118,8 @@ wd_wait_until() {
             return 0
         fi
         if [ -n "$awake_deadline" ]; then
-            awake=$(wd_awake_now)
-            awake_remain=$(( awake_deadline - awake ))
+            wd_awake_now                        # 不可用 $(...)，見 wd_awake_now
+            awake_remain=$(( awake_deadline - WD_AWAKE_NOW ))
             if [ "$awake_remain" -le 0 ]; then
                 WD_EXPIRED_BY='awake'
                 return 0
@@ -130,7 +145,8 @@ wd_start() {
     local target=$$
     local wall_limit="${MAX_WALL_SECONDS:-0}"
     local awake_deadline wall_deadline
-    awake_deadline=$(( $(wd_awake_now) + MAX_RUNTIME_SECONDS ))
+    wd_awake_now
+    awake_deadline=$(( WD_AWAKE_NOW + MAX_RUNTIME_SECONDS ))
     if [ "$wall_limit" -gt 0 ]; then
         wall_deadline=$(( $(date +%s) + wall_limit ))
     else
@@ -161,9 +177,10 @@ wd_start() {
         # 寬限用**清醒時鐘**：機器睡著時什麼通知都寄不出去，牆上計時會讓 SIGKILL
         # 在醒來的那一刻立刻落下，cleanup 等於沒有寬限（和 10/09 同一個錯誤）。
         # 牆上那一側只當絕對上限，免得睡著的機器把殭屍留太久。
+        wd_awake_now
         wd_wait_until \
             "$(( $(date +%s) + TIMEOUT_GRACE_SECONDS * WD_GRACE_WALL_FACTOR ))" \
-            "$(( $(wd_awake_now) + TIMEOUT_GRACE_SECONDS ))"
+            "$(( WD_AWAKE_NOW + TIMEOUT_GRACE_SECONDS ))"
         wd_kill_tree "$target" KILL
     ) &
     WATCHDOG_PID=$!
