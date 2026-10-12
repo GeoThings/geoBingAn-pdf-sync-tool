@@ -94,33 +94,11 @@ MAX_CONCURRENT_PERMITS = 5  # 同時處理的建案數（Google Drive API quota:
 UNKNOWN_SCAN_REASONS = frozenset({'list_failed', 'invalid_url', 'partial',
                                   'not_measured'})
 
-#: 鏡像到共享雲端硬碟的檔案類型（Zhe 2026-10-12 定：**收圖片和 .xls，但不上傳
-#: 到 riskmap**）。非 PDF 只進雲端硬碟，結構上到不了後端——下游三個掃描
-#: （upload_pdfs 的批次查詢與逐資料夾回退、match_permits 的 registry 掃描）
-#: 都以 `mimeType='application/pdf'` 為條件，再加上 select_pdfs_to_upload 自己
-#: 的防線。沒有這個限制的話，一張 jpg 送進解析佇列就是 US$0.3 的無效支出。
-#:
-#: mimeType 與副檔名兩條都看：實測來源是 `application/vnd.ms-excel`（13 份
-#: `.xls`）與 `image/jpeg`／`image/png`，但同樣的檔案被某些上傳端標成
-#: `application/octet-stream` 是常態，只看 mimeType 會靜默漏掉。
-MIRROR_MIME_TYPES = frozenset({
-    'application/pdf',
-    'application/vnd.ms-excel',                                           # .xls
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',  # .xlsx
-})
-MIRROR_MIME_PREFIXES = ('image/',)
-MIRROR_EXTENSIONS = frozenset({'pdf', 'xls', 'xlsx',
-                               'jpg', 'jpeg', 'png', 'heic', 'tif', 'tiff', 'webp'})
-PDF_MIME = 'application/pdf'
-
-
-def should_mirror(name: str, mime_type: str) -> bool:
-    """這個檔案要不要鏡像進共享雲端硬碟。"""
-    mime = (mime_type or '').lower()
-    if mime in MIRROR_MIME_TYPES or mime.startswith(MIRROR_MIME_PREFIXES):
-        return True
-    ext = (name or '').rsplit('.', 1)[-1].lower() if '.' in (name or '') else ''
-    return ext in MIRROR_EXTENSIONS
+# 鏡像與「算不算可上傳的 PDF」的判定只有一份，在 geobingan_sync.mirror_types。
+# 三個呼叫端（這裡、upload_pdfs、match_permits）共用——各寫一套的後果見該模組
+# 的 docstring（#116 review P1：一份真的報告會永遠不上傳，而且帳上看不出來）。
+from geobingan_sync.mirror_types import (PDF_MIME, canonical_mime,      # noqa: E402
+                                         is_uploadable_pdf, should_mirror)
 
 
 from geobingan_sync.config import escape_drive_query as _escape_drive_query
@@ -606,6 +584,13 @@ class PermitSync:
                     subfolder_files = self.list_files_recursive(item['id'], item_path, scan)
                     files.extend(subfolder_files)
                 elif should_mirror(item['name'], item['mimeType']):
+                    # 第 5 欄放**來源原值**，不是正規化後的型別。
+                    # 寫成正規化值會把「副檔名與 mimeType 互相矛盾」這個訊號
+                    # 抹掉：`監測資料.pdf` + `image/jpeg` 正規化成
+                    # application/pdf 之後，分類端就看不出它其實有矛盾，於是
+                    # 會把它算成可上傳的報告——我自己在這個 PR 裡先踩了一次。
+                    # 要正規化的地方（copy_file 的重建型別）自己呼叫
+                    # canonical_mime，判定需要的原始事實保留在資料裡。
                     files.append((item['id'], item['name'], path,
                                   item.get('webViewLink', ''), item['mimeType']))
                 elif scan is not None:
@@ -965,8 +950,10 @@ class PermitSync:
             # PDF 與非 PDF 分開數。兩者都鏡像，但只有 PDF 會上傳到 riskmap，
             # 所以 source_scan 的 `pdf` 必須只算 PDF——把 13 個 .xls 算進 `pdf`
             # 就等於宣稱這案有 13 份報告在收，正是這個欄位要防的誤讀。
-            pdf_files = [f for f in files if f[4] == PDF_MIME]
-            other_files = [f for f in files if f[4] != PDF_MIME]
+            # 用共用判定分類，不要在這裡自己比 mimeType：`報告.pdf` 標成
+            # octet-stream 要算 PDF、`監測資料.jpg` 標成 application/pdf 不算。
+            pdf_files = [f for f in files if is_uploadable_pdf(f[1], f[4])]
+            other_files = [f for f in files if not is_uploadable_pdf(f[1], f[4])]
             # 量測只在**一個地方**落檔（迴圈之後），不在這裡先記一次：
             # 「沒有 PDF 但有圖片可鏡像」現在會繼續走複製迴圈，兩處各記一次就會
             # 互相覆寫，而且後寫的那次 reason 是 'ok'（它只看 len(files)）。
@@ -995,7 +982,8 @@ class PermitSync:
                     continue
 
                 result_id, final_folder_id = self.copy_file(
-                    file_id, target_folder_id, filename, path, mime_type=mime_type)
+                    file_id, target_folder_id, filename, path,
+                    mime_type=canonical_mime(filename, mime_type) or PDF_MIME)
                 if result_id == 'restricted':
                     self._print(f"    🔒 受限: {display_path} (建立捷徑)")
                     self.create_shortcut_file(final_folder_id, filename, web_link)

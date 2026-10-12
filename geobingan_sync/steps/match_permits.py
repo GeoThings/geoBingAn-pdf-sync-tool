@@ -37,6 +37,8 @@ from geobingan_sync.filename_date_parser import parse_date_from_filename
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
+from geobingan_sync.mirror_types import is_uploadable_pdf
+
 REGISTRY_FILE = './state/permit_registry.json'
 ALERT_CSV = './state/alert_data.csv'
 SERVICE_ACCOUNT_FILE = os.environ.get('GOOGLE_CREDENTIALS', './credentials.json')
@@ -338,14 +340,20 @@ def fetch_drive_pdf_names(drive_service) -> Dict[str, dict]:
     page_token = None
     while True:
         try:
+            # 型別或副檔名任一符合就撈，本機再用共用判定定案：`pdf_count` 是
+            # 「這案有幾份報告在收」的依據，和上傳端必須是同一個定義
+            # （#116 review P1）。
             results = drive_service.files().list(
-                q="mimeType='application/pdf' and trashed=false",
+                q=("(mimeType='application/pdf' or name contains '.pdf') "
+                   "and trashed=false"),
                 corpora='drive', driveId=SHARED_DRIVE_ID,
                 includeItemsFromAllDrives=True, supportsAllDrives=True,
-                fields='nextPageToken, files(name, parents)',
+                fields='nextPageToken, files(name, mimeType, parents)',
                 pageSize=1000, pageToken=page_token
             ).execute()
             for f in results.get('files', []):
+                if not is_uploadable_pdf(f.get('name', ''), f.get('mimeType', '')):
+                    continue
                 parents = f.get('parents', [])
                 if parents:
                     permit = folders.get(parents[0])

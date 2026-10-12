@@ -351,7 +351,12 @@ def list_all_pdfs_with_folder_info(service, folders: List[Dict]) -> List[Dict]:
 
     while True:
         try:
-            query = "mimeType = 'application/pdf' and trashed = false"
+            # 型別或副檔名任一符合就撈回來，本機再用 _is_pdf 定案。
+            # 只靠 mimeType 會漏掉被標成 application/octet-stream 的真 PDF
+            # （#116 review P1）；2026-10-12 實測 `name contains '.pdf'` 在共享
+            # 硬碟上可用，而且幾乎不會多撈（json／text 不以 .pdf 結尾）。
+            query = ("(mimeType = 'application/pdf' or name contains '.pdf') "
+                     "and trashed = false")
             results = service.files().list(
                 q=query,
                 corpora='drive',
@@ -413,7 +418,8 @@ def list_all_pdfs_with_folder_info(service, folders: List[Dict]) -> List[Dict]:
                     from geobingan_sync.drive_utils import paginate_files_list
                     fallback_query = (
                         f"'{folder['id']}' in parents and "
-                        f"mimeType = 'application/pdf' and trashed = false"
+                        f"(mimeType = 'application/pdf' or name contains '.pdf') "
+                        f"and trashed = false"
                     )
                     for pdf in paginate_files_list(
                         service,
@@ -708,17 +714,14 @@ def flush_state(state: dict):
 
 
 def _is_pdf(item: Dict) -> bool:
-    """這一筆是 PDF 嗎？mimeType 與副檔名**兩個都看**。
+    """這一筆會被送去解析嗎。判定共用 `mirror_types`，不在這裡自己寫一套。
 
-    掃描結果不一定帶 mimeType（回退路徑的 fields 就沒有要），所以不能只看它；
-    而副檔名也會騙人（有人把 .xls 改名成 .pdf 的機率低，但 mimeType 標成
-    application/pdf 的圖片是真的存在）。兩者有任一個明確指出不是 PDF 就剔除。
+    自己寫一套的後果（#116 review P1）：`報告.pdf` 被標成
+    `application/octet-stream` 時，鏡像端收了、分類端算成 other、這裡又拒絕，
+    於是一份真的報告永遠不會上傳，而且三處帳目互相矛盾、看不出差在哪。
     """
-    mime = (item.get('mimeType') or '').lower()
-    if mime and mime != 'application/pdf':
-        return False
-    name = (item.get('name') or '').lower()
-    return name.endswith('.pdf')
+    from geobingan_sync.mirror_types import is_uploadable_pdf
+    return is_uploadable_pdf(item.get('name') or '', item.get('mimeType') or '')
 
 
 def select_pdfs_to_upload(all_pdfs: List[Dict], uploaded_files, *, cutoff: datetime,
