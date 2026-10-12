@@ -87,6 +87,13 @@ def get_thread_drive_service():
 # 並行處理設定
 MAX_CONCURRENT_PERMITS = 5  # 同時處理的建案數（Google Drive API quota: 12,000 req/min）
 
+#: `source_scan` 的 reason 分兩類，這一類是「這輪沒量到」，只能寫 `pdf=None`。
+#: 定在模組層並由 `_record_source_scan` 自己擋，不靠 10 個呼叫點各自記得——
+#: 未取得與實測 0 混同就是把告警變成靜默，那條不變式不可只活在測試裡
+#: （同 feedback_enforce_invariant_at_boundary）。
+UNKNOWN_SCAN_REASONS = frozenset({'list_failed', 'invalid_url', 'partial',
+                                  'not_measured'})
+
 
 from geobingan_sync.config import escape_drive_query as _escape_drive_query
 from geobingan_sync.permit_utils import normalize_permit as _normalize_permit
@@ -232,7 +239,7 @@ class PermitSync:
                                      run=os.environ.get('SYNC_RUN_STARTED') or None)
             self._errored_permits.add(permit_no)
 
-    def _record_source_scan(self, permit_no: str, *, pdf, other: int, reason: str,
+    def _record_source_scan(self, permit_no: str, *, pdf, other, reason: str,
                             now: datetime = None):
         """唯一的「來源量測結果」落檔入口。
 
@@ -243,14 +250,24 @@ class PermitSync:
         日誌反推」那條教訓。
 
         `pdf=None` 專指「這輪沒量到」（列出失敗／URL 解析不出來），絕不可寫成 0；
-        未取得與實測 0 混同，就是把告警變成靜默。
+        未取得與實測 0 混同，就是把告警變成靜默。這裡直接把 reason 與 pdf 的
+        一致性擋掉：reason 屬於 `UNKNOWN_SCAN_REASONS` 就只能是 None，其餘
+        reason 就必須是數字。呼叫點有 10 個，其中三個的 reason 是條件運算式
+        （掃原始碼的守門測試看不進常數以外的形狀），靠自律遲早漏。
+
+        `other=None` 是第三種狀態：**非 PDF 檔數沒量到**。adapter 路徑在列檔時
+        就把非 PDF 丟掉了（見各 adapter 的 `.pdf` 過濾），那個數字我們拿不到，
+        寫 0 等於宣稱「看過、沒有」——和這支函式要防的錯誤是同一個。
         """
+        if (reason in UNKNOWN_SCAN_REASONS) != (pdf is None):
+            raise ValueError(
+                f'{permit_no}: reason={reason} 與 pdf={pdf!r} 不一致——'
+                f'{sorted(UNKNOWN_SCAN_REASONS)} 代表這輪沒量到、只能寫 None；'
+                '其餘 reason 代表量到了、必須寫數字')
         entry = {'at': (now or datetime.now()).isoformat(),
-                 'reason': reason, 'other': int(other)}
-        if pdf is None:
-            entry['pdf'] = None
-        else:
-            entry['pdf'] = int(pdf)
+                 'reason': reason,
+                 'other': None if other is None else int(other)}
+        entry['pdf'] = None if pdf is None else int(pdf)
         with self._state_lock:
             self.state.setdefault('source_scan', {})[permit_no] = entry
 
@@ -753,6 +770,11 @@ class PermitSync:
                     self._target_file_cache[permit_no].add(key)
         except AdapterError as e:
             self._print(f"  ⚠️ 整包取得失敗: {e}")
+            # fetch_all 是 generator：炸在第幾個成員決定了證據等級。已經吐出
+            # 幾份才斷掉，`seen` 是下限不是份數（partial）；一開頭就取不到，
+            # 就是什麼都沒量到（list_failed）。兩者都不可寫成數字份數。
+            self._record_source_scan(permit_no, pdf=None, other=None,
+                                     reason='partial' if seen else 'list_failed')
             self._record_error(permit_no, f'{adapter.name}:{e}')
             self.save_state()
             return
@@ -760,6 +782,19 @@ class PermitSync:
         if seen:
             self._print(f"  📊 整包 {seen} 份，新增 {copied} 個"
                         + (f"、失敗 {failed} 個" if failed else ""))
+        # 整包解完才知道來源有幾份，所以量測寫在這裡。逐檔寫入目標失敗是**同步**
+        # 問題不是量測問題（那條已經進 _record_error），份數本身仍然是定論。
+        # other=None：adapter 在解壓時就只收 .pdf，非 PDF 的數量它沒回報給我們。
+        #
+        # seen==0 不可寫成實測 0：整包來源有取用間隔（dropbox 每 7 天一次），
+        # 未到間隔時 fetch_all 什麼都不吐、而且那**不是錯誤**。從這裡看不出
+        # 「刻意跳過」與「整包真的沒有 PDF」的差別，照 fail-open 記成未取得。
+        # 要分得開就得讓整包協定回報跳過，那是另一件事（已記在 architecture.md）。
+        if seen:
+            self._record_source_scan(permit_no, pdf=seen, other=None, reason='ok')
+        else:
+            self._record_source_scan(permit_no, pdf=None, other=None,
+                                     reason='not_measured')
         with self._state_lock:
             self.copied_total += copied
             self.adapter_uploaded += copied
@@ -789,10 +824,18 @@ class PermitSync:
             files = adapter.list_files(source_url)
         except AdapterError as e:
             self._print(f"  ⚠️ 來源列檔失敗: {e}")
+            self._record_source_scan(permit_no, pdf=None, other=None,
+                                     reason='list_failed')
             self._record_error(permit_no, f'{adapter.name}:{e}')
             self.save_state()
             return
 
+        # 清單完整取得的這一刻份數就確定了，所以量測寫在下載迴圈**之前**：
+        # 「來源有什麼」不該被後面逐檔取檔的成敗改寫。
+        # other=None：adapter 列檔時就把非 PDF 過濾掉了（見各 adapter 的 .pdf
+        # 檢查），那個數字沒量到，不可當成 0。
+        self._record_source_scan(permit_no, pdf=len(files), other=None,
+                                 reason='ok' if files else 'empty')
         self.preload_target_files(target_folder_id, permit_no)
         copied = failed = 0
         for src in files:
@@ -846,13 +889,19 @@ class PermitSync:
         try:
             scan = {'other': 0, 'failed': 0}
             files = self.list_files_recursive(source_folder_id, scan=scan)
+            # 列出失敗就是「本輪清單不完整」，和抓到幾份無關，所以在這裡一次記完，
+            # 不留給下面兩條分支各自自律。partial 那條原本就漏了（#114 review P1）：
+            # 資料層寫了 pdf=None，連續失敗層卻把它結算成「這輪成功」並清掉既有
+            # streak，於是同一個子資料夾天天 403 也永遠到不了三輪告警——和 #111
+            # 修掉的是同一個錯誤類型（兩層對同一輪得到相反結論）。
+            if scan['failed']:
+                self._record_error(permit_no, f"來源列出失敗（{scan['failed']} 個資料夾）")
             if not files:
                 # 空清單有三種成因，證據等級完全不同，不可共用一條訊息。
                 if scan['failed']:
                     self._print(f"  ⚠️ 來源列出失敗 {scan['failed']} 個資料夾，本輪未量到（不記為 0 份）")
                     self._record_source_scan(permit_no, pdf=None, other=scan['other'],
                                              reason='list_failed')
-                    self._record_error(permit_no, f"來源列出失敗（{scan['failed']} 個資料夾）")
                 elif scan['other']:
                     self._print(f"  ⚠️ 來源有 {scan['other']} 個非 PDF 檔但沒有 PDF"
                                 f"（承造人可能改用其他格式發布）")
@@ -899,7 +948,10 @@ class PermitSync:
 
             # 成功路徑也要落檔，否則 source_scan 只剩失敗樣本，分不出「這案沒量過」
             # 與「這案量到有檔案」。scan['failed'] 非 0 時份數是不完整的下限，
-            # 照 fail-open 記成未取得。
+            # 照 fail-open 記成未取得（錯誤已在列檔後就記過，不在這裡重複記）。
+            if scan['failed']:
+                self._print(f"  ⚠️ 來源有 {scan['failed']} 個資料夾列不出來，"
+                            f"這 {len(files)} 份只是下限（本輪不記為確定份數）")
             self._record_source_scan(
                 permit_no,
                 pdf=None if scan['failed'] else len(files),

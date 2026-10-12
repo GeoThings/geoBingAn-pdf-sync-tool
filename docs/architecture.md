@@ -268,14 +268,34 @@ state/sync_permits_progress.json 更新（thread-safe _state_lock）
 每案每輪把「來源到底有什麼」寫成資料，而不是只印進日誌。空清單有三種成因，
 證據等級不同，必須分開記——`pdf: null` 一律代表「這輪沒量到」，絕不可寫成 `0`：
 
-| `reason` | `pdf` | 意義 |
-|---|---|---|
-| `ok` | 份數 | 列完、有 PDF |
-| `empty` | `0` | 列完、資料夾真的空（**實測** 0） |
-| `no_pdf_but_other` | `0` | 列完、有檔案但沒有 PDF（承造人改用 `.xls`／圖片發布） |
-| `partial` | `null` | 抓到一些，但有子資料夾列不出來，份數只是下限 |
-| `list_failed` | `null` | API 列出失敗，同時記一筆同步錯誤 |
-| `invalid_url` | `null` | URL 解不出 folder id 且無對應 adapter |
+| `reason` | `pdf` | `other` | 意義 |
+|---|---|---|---|
+| `ok` | 份數 | 非 PDF 檔數／`null` | 列完、有 PDF |
+| `empty` | `0` | `0`／`null` | 列完、來源真的沒有 PDF（**實測** 0） |
+| `no_pdf_but_other` | `0` | 非 PDF 檔數 | 列完、有檔案但沒有 PDF（承造人改用 `.xls`／圖片發布） |
+| `partial` | `null` | 非 PDF 檔數／`null` | 抓到一些，但清單不完整，份數只是下限 |
+| `list_failed` | `null` | 非 PDF 檔數／`null` | 列出失敗（Drive API 或 adapter） |
+| `not_measured` | `null` | `null` | 整包來源本輪沒吐出任何成員 |
+| `invalid_url` | `null` | `0` | URL 解不出 folder id 且無對應 adapter |
+
+`reason` 與 `pdf` 的一致性由 `_record_source_scan()` 自己擋（`UNKNOWN_SCAN_REASONS`
+裡的 reason 只能配 `null`，其餘只能配數字），不靠 10 個呼叫點自律——其中三個的
+`reason` 是條件運算式，掃原始碼的守門測試只認常數就會看漏。
+
+`other: null` 是第三種狀態：**非 PDF 檔數沒量到**。adapter 路徑在列檔／解壓時就把
+非 PDF 丟掉了（見各 adapter 的 `.pdf` 過濾），那個數字取不到，寫 `0` 等於宣稱
+「看過、沒有」。要讓 adapter 也回報得出來，得改 adapter 協定，另案處理。
+
+**三條來源路徑都要落檔**（Drive 遞迴、adapter 逐檔、adapter 整包）。整包路徑有一個
+分不開的狀況：dropbox 每 7 天才取用一次，未到間隔時 `fetch_all` 什麼都不吐，而那
+不是錯誤——從同步端看不出「刻意跳過」與「整包真的沒有 PDF」的差別，所以記成
+`not_measured`。要分得開就得讓整包協定回報跳過（待辦）。
+
+**清單不完整 ⇒ 本輪記一筆同步錯誤。** 不論抓到幾份：`partial` 原本只寫了
+`pdf: null` 就結束，該案已被 `_mark_visited()` 卻不在 `_errored_permits`，於是
+`finalize_run()` 把它判成「這輪成功」並清掉既有 `error_streak`——同一個子資料夾
+天天 403 也永遠到不了三輪告警（#114 review P1，與 #111 同一個錯誤類型：
+資料層知道本輪不完整，連續失敗層得到相反結論）。
 
 為什麼要分這麼細：2026-10-12 盤點「清單 438 案有沒有遺漏」時，99 案的
 `pdf_count` 是 `None`，看起來全是「從沒量過」。實際上程式早就量到了，只是
