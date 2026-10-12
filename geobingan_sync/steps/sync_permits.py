@@ -94,6 +94,34 @@ MAX_CONCURRENT_PERMITS = 5  # 同時處理的建案數（Google Drive API quota:
 UNKNOWN_SCAN_REASONS = frozenset({'list_failed', 'invalid_url', 'partial',
                                   'not_measured'})
 
+#: 鏡像到共享雲端硬碟的檔案類型（Zhe 2026-10-12 定：**收圖片和 .xls，但不上傳
+#: 到 riskmap**）。非 PDF 只進雲端硬碟，結構上到不了後端——下游三個掃描
+#: （upload_pdfs 的批次查詢與逐資料夾回退、match_permits 的 registry 掃描）
+#: 都以 `mimeType='application/pdf'` 為條件，再加上 select_pdfs_to_upload 自己
+#: 的防線。沒有這個限制的話，一張 jpg 送進解析佇列就是 US$0.3 的無效支出。
+#:
+#: mimeType 與副檔名兩條都看：實測來源是 `application/vnd.ms-excel`（13 份
+#: `.xls`）與 `image/jpeg`／`image/png`，但同樣的檔案被某些上傳端標成
+#: `application/octet-stream` 是常態，只看 mimeType 會靜默漏掉。
+MIRROR_MIME_TYPES = frozenset({
+    'application/pdf',
+    'application/vnd.ms-excel',                                           # .xls
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',  # .xlsx
+})
+MIRROR_MIME_PREFIXES = ('image/',)
+MIRROR_EXTENSIONS = frozenset({'pdf', 'xls', 'xlsx',
+                               'jpg', 'jpeg', 'png', 'heic', 'tif', 'tiff', 'webp'})
+PDF_MIME = 'application/pdf'
+
+
+def should_mirror(name: str, mime_type: str) -> bool:
+    """這個檔案要不要鏡像進共享雲端硬碟。"""
+    mime = (mime_type or '').lower()
+    if mime in MIRROR_MIME_TYPES or mime.startswith(MIRROR_MIME_PREFIXES):
+        return True
+    ext = (name or '').rsplit('.', 1)[-1].lower() if '.' in (name or '') else ''
+    return ext in MIRROR_EXTENSIONS
+
 
 from geobingan_sync.config import escape_drive_query as _escape_drive_query
 from geobingan_sync.permit_utils import normalize_permit as _normalize_permit
@@ -240,7 +268,7 @@ class PermitSync:
             self._errored_permits.add(permit_no)
 
     def _record_source_scan(self, permit_no: str, *, pdf, other, reason: str,
-                            now: datetime = None):
+                            skipped=None, now: datetime = None):
         """唯一的「來源量測結果」落檔入口。
 
         2026-10-12 查 12 案「清單內、接得到、卻零紀錄」時發現：程式其實**量到了**
@@ -258,6 +286,11 @@ class PermitSync:
         `other=None` 是第三種狀態：**非 PDF 檔數沒量到**。adapter 路徑在列檔時
         就把非 PDF 丟掉了（見各 adapter 的 `.pdf` 過濾），那個數字我們拿不到，
         寫 0 等於宣稱「看過、沒有」——和這支函式要防的錯誤是同一個。
+
+        `other` 與 `skipped` 的分工：`other` 是**鏡像進雲端硬碟**的非 PDF 檔數
+        （圖片、Excel），`skipped` 是**連鏡像都不收**的型別。只有 `pdf` 那一欄
+        會上傳到 riskmap，三個數字分開記才答得出「我們手上有什麼」與
+        「後端看得到什麼」這兩個不同的問題。
         """
         if (reason in UNKNOWN_SCAN_REASONS) != (pdf is None):
             raise ValueError(
@@ -266,10 +299,35 @@ class PermitSync:
                 '其餘 reason 代表量到了、必須寫數字')
         entry = {'at': (now or datetime.now()).isoformat(),
                  'reason': reason,
-                 'other': None if other is None else int(other)}
+                 'other': None if other is None else int(other),
+                 'skipped': None if skipped is None else int(skipped)}
         entry['pdf'] = None if pdf is None else int(pdf)
         with self._state_lock:
             self.state.setdefault('source_scan', {})[permit_no] = entry
+
+    @staticmethod
+    def _scan_result(scan: dict, pdf_files: list, other_files: list) -> dict:
+        """把一次掃描的結果換成 `_record_source_scan()` 的參數。
+
+        reason 與三個數字由**同一個地方**算出來。原本是兩處各推一遍（空清單那條
+        與成功路徑那條），加進「非 PDF 也要鏡像」之後兩條路會交會，分頭推導就會
+        得到互相矛盾的結論。
+
+        `pdf` 只算 PDF：它代表的是「會上傳到 riskmap 的份數」。把 13 個 .xls
+        算進去，就等於宣稱這案有 13 份報告在收。
+        """
+        failed = scan.get('failed', 0)
+        if failed:
+            reason = 'partial' if (pdf_files or other_files) else 'list_failed'
+            pdf = None
+        elif pdf_files:
+            reason, pdf = 'ok', len(pdf_files)
+        elif other_files or scan.get('skipped', 0):
+            reason, pdf = 'no_pdf_but_other', 0
+        else:
+            reason, pdf = 'empty', 0
+        return {'pdf': pdf, 'other': len(other_files), 'reason': reason,
+                'skipped': scan.get('skipped', 0)}
 
     def _print(self, msg: str):
         """Thread-safe print"""
@@ -513,17 +571,20 @@ class PermitSync:
         return None
     
     def list_files_recursive(self, folder_id: str, path: str = "",
-                             scan: dict = None) -> List[Tuple[str, str, str, str]]:
-        """遞迴列出資料夾裡的 PDF。
+                             scan: dict = None) -> List[Tuple[str, str, str, str, str]]:
+        """遞迴列出資料夾裡**要鏡像**的檔案（PDF、圖片、Excel）。
+
+        回傳 `(id, name, path, web_link, mime_type)`。mimeType 要帶回去：
+        `copy_file` 的下載回退路徑得用真實型別重建檔案，寫死 PDF 會把一張 jpg
+        標成 application/pdf 落進目標資料夾。
 
         `scan` 是可選的量測累加器。空的回傳值有兩種完全不同的成因——來源真的
-        沒有 PDF、或是 API 列出失敗——呼叫端不能把兩者混成同一個結論（前者是
+        沒有東西、或是 API 列出失敗——呼叫端不能把兩者混成同一個結論（前者是
         實測 0，後者是未取得）。這裡用 `scan` 把過程中的事實帶回去：
 
-        - `scan['other']`：遇到的非 PDF 檔數。來源有東西但沒有 PDF 時，
-          「0 份」要連同這個數字一起記，否則承造人改用 .xls／.jpg 發布監測
-          資料，在我們的帳上和空資料夾一模一樣（2026-10-12 查出 4 案如此，
-          其中 110建字第0038號 有 13 個月的 .xls 觀測資料從未被收進來）。
+        - `scan['skipped']`：**不鏡像**的檔案數（.doc、.zip 這類）。
+          注意 `other`（非 PDF 但有鏡像）由呼叫端從回傳值自己算，不在這裡累加
+          ——同一個數字只有一個來源，不會兩邊各算一份而漂開。
         - `scan['failed']`：列出失敗的資料夾數。非 0 就表示這次的清單不完整，
           呼叫端必須 fail-open 當成「未取得」，不可寫成實測 0。
         """
@@ -544,10 +605,11 @@ class PermitSync:
                 if item['mimeType'] == 'application/vnd.google-apps.folder':
                     subfolder_files = self.list_files_recursive(item['id'], item_path, scan)
                     files.extend(subfolder_files)
-                elif item['mimeType'] == 'application/pdf':
-                    files.append((item['id'], item['name'], path, item.get('webViewLink', '')))
+                elif should_mirror(item['name'], item['mimeType']):
+                    files.append((item['id'], item['name'], path,
+                                  item.get('webViewLink', ''), item['mimeType']))
                 elif scan is not None:
-                    scan['other'] = scan.get('other', 0) + 1
+                    scan['skipped'] = scan.get('skipped', 0) + 1
         except HttpError as e:
             self._print(f"  ⚠️ 列出檔案失敗: {e}")
             if scan is not None:
@@ -668,7 +730,8 @@ class PermitSync:
             self._print(f"  ⚠️ 建立捷徑失敗 {filename}: {e}")
             return False
 
-    def copy_file(self, source_file_id: str, target_folder_id: str, filename: str, path: str = ""):
+    def copy_file(self, source_file_id: str, target_folder_id: str, filename: str,
+                  path: str = "", mime_type: str = PDF_MIME):
         final_folder_id = target_folder_id
         if path:
             final_folder_id = self.get_or_create_subfolder(target_folder_id, path)
@@ -687,9 +750,12 @@ class PermitSync:
                 done = False
                 while not done: status, done = downloader.next_chunk()
                 file_buffer.seek(0)
-                media = MediaIoBaseUpload(file_buffer, mimetype='application/pdf', resumable=True)
+                # 型別跟著來源走。寫死 application/pdf 會把一張 jpg 標成 PDF 落進
+                # 目標資料夾，而下游是以 mimeType 篩選的——那等於讓它混進上傳佇列。
+                media = MediaIoBaseUpload(file_buffer, mimetype=mime_type, resumable=True)
                 uploaded_file = svc.files().create(
-                    body={'name': filename, 'parents': [final_folder_id], 'mimeType': 'application/pdf'},
+                    body={'name': filename, 'parents': [final_folder_id],
+                          'mimeType': mime_type},
                     media_body=media, fields='id', supportsAllDrives=True).execute()
                 return uploaded_file['id'], final_folder_id
             except HttpError as download_error:
@@ -887,7 +953,7 @@ class PermitSync:
             return
 
         try:
-            scan = {'other': 0, 'failed': 0}
+            scan = {'skipped': 0, 'failed': 0}
             files = self.list_files_recursive(source_folder_id, scan=scan)
             # 列出失敗就是「本輪清單不完整」，和抓到幾份無關，所以在這裡一次記完，
             # 不留給下面兩條分支各自自律。partial 那條原本就漏了（#114 review P1）：
@@ -896,34 +962,40 @@ class PermitSync:
             # 修掉的是同一個錯誤類型（兩層對同一輪得到相反結論）。
             if scan['failed']:
                 self._record_error(permit_no, f"來源列出失敗（{scan['failed']} 個資料夾）")
-            if not files:
-                # 空清單有三種成因，證據等級完全不同，不可共用一條訊息。
+            # PDF 與非 PDF 分開數。兩者都鏡像，但只有 PDF 會上傳到 riskmap，
+            # 所以 source_scan 的 `pdf` 必須只算 PDF——把 13 個 .xls 算進 `pdf`
+            # 就等於宣稱這案有 13 份報告在收，正是這個欄位要防的誤讀。
+            pdf_files = [f for f in files if f[4] == PDF_MIME]
+            other_files = [f for f in files if f[4] != PDF_MIME]
+            # 量測只在**一個地方**落檔（迴圈之後），不在這裡先記一次：
+            # 「沒有 PDF 但有圖片可鏡像」現在會繼續走複製迴圈，兩處各記一次就會
+            # 互相覆寫，而且後寫的那次 reason 是 'ok'（它只看 len(files)）。
+            if not pdf_files and not other_files:
                 if scan['failed']:
                     self._print(f"  ⚠️ 來源列出失敗 {scan['failed']} 個資料夾，本輪未量到（不記為 0 份）")
-                    self._record_source_scan(permit_no, pdf=None, other=scan['other'],
-                                             reason='list_failed')
-                elif scan['other']:
-                    self._print(f"  ⚠️ 來源有 {scan['other']} 個非 PDF 檔但沒有 PDF"
-                                f"（承造人可能改用其他格式發布）")
-                    self._record_source_scan(permit_no, pdf=0, other=scan['other'],
-                                             reason='no_pdf_but_other')
+                elif scan['skipped']:
+                    self._print(f"  ⚠️ 來源有 {scan['skipped']} 個不收的檔案型別，沒有可鏡像的檔案")
                 else:
                     self._print(f"  ⚠️ 來源無檔案")
-                    self._record_source_scan(permit_no, pdf=0, other=0, reason='empty')
+                self._record_source_scan(permit_no, **self._scan_result(scan, [], []))
                 return
+            if not pdf_files:
+                self._print(f"  ⚠️ 來源有 {len(other_files)} 個非 PDF 檔但沒有 PDF"
+                            f"（會鏡像進雲端硬碟，但不會上傳到 riskmap）")
 
             # 預載入目標資料夾的完整檔案樹（1 次遞迴 vs 逐檔 API 查詢）
             self.preload_target_files(target_folder_id, permit_no)
 
             copied = 0
 
-            for file_id, filename, path, web_link in files:
+            for file_id, filename, path, web_link, mime_type in files:
                 display_path = f"{path}/{filename}" if path else filename
 
                 if self.check_file_exists(target_folder_id, filename, path, permit_no):
                     continue
 
-                result_id, final_folder_id = self.copy_file(file_id, target_folder_id, filename, path)
+                result_id, final_folder_id = self.copy_file(
+                    file_id, target_folder_id, filename, path, mime_type=mime_type)
                 if result_id == 'restricted':
                     self._print(f"    🔒 受限: {display_path} (建立捷徑)")
                     self.create_shortcut_file(final_folder_id, filename, web_link)
@@ -951,12 +1023,9 @@ class PermitSync:
             # 照 fail-open 記成未取得（錯誤已在列檔後就記過，不在這裡重複記）。
             if scan['failed']:
                 self._print(f"  ⚠️ 來源有 {scan['failed']} 個資料夾列不出來，"
-                            f"這 {len(files)} 份只是下限（本輪不記為確定份數）")
-            self._record_source_scan(
-                permit_no,
-                pdf=None if scan['failed'] else len(files),
-                other=scan['other'],
-                reason='partial' if scan['failed'] else 'ok')
+                            f"這 {len(pdf_files)} 份 PDF 只是下限（本輪不記為確定份數）")
+            self._record_source_scan(permit_no,
+                                     **self._scan_result(scan, pdf_files, other_files))
             with self._state_lock:
                 self.state['processed'][permit_no] = True
             self.save_state()
@@ -1198,7 +1267,8 @@ class PermitSync:
                 print(f"  📁 來源有檔案但沒有 PDF（{len(other_only)} 案）: "
                       + '、'.join(other_only[:5])
                       + (' 等' if len(other_only) > 5 else '')
-                      + "——承造人可能改用 .xls／圖片發布，需確認是否要支援")
+                      + "——承造人改用 .xls／圖片發布，已鏡像進雲端硬碟，"
+                        "但不會上傳到 riskmap")
             if dropped:
                 print(f"  🧹 錯誤紀錄修剪 {dropped} 筆"
                       f"（保留 {sync_errors.KEEP_ERROR_DAYS} 天／"

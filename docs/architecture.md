@@ -268,15 +268,24 @@ state/sync_permits_progress.json 更新（thread-safe _state_lock）
 每案每輪把「來源到底有什麼」寫成資料，而不是只印進日誌。空清單有三種成因，
 證據等級不同，必須分開記——`pdf: null` 一律代表「這輪沒量到」，絕不可寫成 `0`：
 
-| `reason` | `pdf` | `other` | 意義 |
-|---|---|---|---|
-| `ok` | 份數 | 非 PDF 檔數／`null` | 列完、有 PDF |
-| `empty` | `0` | `0`／`null` | 列完、來源真的沒有 PDF（**實測** 0） |
-| `no_pdf_but_other` | `0` | 非 PDF 檔數 | 列完、有檔案但沒有 PDF（承造人改用 `.xls`／圖片發布） |
-| `partial` | `null` | 非 PDF 檔數／`null` | 抓到一些，但清單不完整，份數只是下限 |
-| `list_failed` | `null` | 非 PDF 檔數／`null` | 列出失敗（Drive API 或 adapter） |
-| `not_measured` | `null` | `null` | 整包來源本輪沒吐出任何成員 |
-| `invalid_url` | `null` | `0` | URL 解不出 folder id 且無對應 adapter |
+| `reason` | `pdf` | `other` | `skipped` | 意義 |
+|---|---|---|---|---|
+| `ok` | PDF 份數 | 鏡像的非 PDF 數／`null` | 不收的型別數／`null` | 列完、有 PDF |
+| `empty` | `0` | `0`／`null` | `0`／`null` | 列完、來源真的什麼都沒有（**實測** 0） |
+| `no_pdf_but_other` | `0` | 鏡像的非 PDF 數 | 不收的型別數 | 列完、有檔案但沒有 PDF |
+| `partial` | `null` | 鏡像的非 PDF 數／`null` | 同左 | 抓到一些，但清單不完整，份數只是下限 |
+| `list_failed` | `null` | 鏡像的非 PDF 數／`null` | 同左 | 列出失敗（Drive API 或 adapter） |
+| `not_measured` | `null` | `null` | `null` | 整包來源本輪沒吐出任何成員 |
+| `invalid_url` | `null` | `0` | `null` | URL 解不出 folder id 且無對應 adapter |
+
+三個數字回答三個不同的問題：`pdf`＝**riskmap 收得到幾份**、`other`＝我們鏡像了
+幾個非 PDF、`skipped`＝連鏡像都不收的型別數。`pdf` 只算 PDF 是刻意的——
+`110建字第0038號` 有 13 個月的 `.xls`，算進 `pdf` 就等於宣稱這案有 13 份報告在收。
+
+`sync_permit` 的這三個數字與 reason 由 `_scan_result()` 這一個純函式算出來，
+不在「沒東西可鏡像」和「複製完」兩條路各推一遍：加上鏡像之後兩條路會交會，
+分頭推導必然出現互相矛盾的結論（而且後寫的那次會覆寫前一次）。該函式的輸入
+組合在測試裡窮舉過，再送進 `_record_source_scan()` 驗一致性。
 
 `reason` 與 `pdf` 的一致性由 `_record_source_scan()` 自己擋（`UNKNOWN_SCAN_REASONS`
 裡的 reason 只能配 `null`，其餘只能配數字），不靠 10 個呼叫點自律——其中三個的
@@ -285,6 +294,27 @@ state/sync_permits_progress.json 更新（thread-safe _state_lock）
 `other: null` 是第三種狀態：**非 PDF 檔數沒量到**。adapter 路徑在列檔／解壓時就把
 非 PDF 丟掉了（見各 adapter 的 `.pdf` 過濾），那個數字取不到，寫 `0` 等於宣稱
 「看過、沒有」。要讓 adapter 也回報得出來，得改 adapter 協定，另案處理。
+
+**鏡像什麼、上傳什麼（2026-10-12，Zhe 的範圍決定）：收圖片和 `.xls`，但不上傳到
+riskmap。** 共享雲端硬碟從此是來源的完整鏡像（PDF、圖片、Excel），而送進後端
+解析的只有 PDF。代價不對稱：漏收一份報告是看得見的缺口，誤送一張 jpg 進解析
+佇列則是 US$0.3 的無效支出，還會排擠當日 66 份的額度（PROD-233／348）。
+
+允收清單 `MIRROR_MIME_TYPES`／`MIRROR_EXTENSIONS` **mimeType 與副檔名兩條都看**：
+實測來源是 `application/vnd.ms-excel`（13 份 `.xls`）與 `image/jpeg`／`image/png`，
+但同一個檔案被某些上傳端標成 `application/octet-stream` 是常態，只看 mimeType
+會靜默漏掉。`copy_file` 的下載回退路徑也要用**來源的** mimeType 重建檔案——
+寫死 `application/pdf` 會把一張 jpg 標成 PDF 落進目標資料夾，而下游是以 mimeType
+篩選的，那等於讓它混進上傳佇列。
+
+不上傳這件事由**兩道互相獨立的防線**保證：伺服器端的掃描查詢帶
+`mimeType='application/pdf'`（`upload_pdfs` 的批次與逐資料夾回退、`match_permits`
+的 registry 掃描），以及 `select_pdfs_to_upload` 自己再剔除一次（計入
+`counts['not_pdf']`）。第二道的理由是第一道是單點：查詢字串改一個字、或哪天換
+別的列檔方式，非 PDF 就直接流進佇列。
+
+adapter 三條路（dropbox／pcloud／redsun）仍然只收 `.pdf`——那要改 adapter 協定，
+另案。
 
 **三條來源路徑都要落檔**（Drive 遞迴、adapter 逐檔、adapter 整包）。整包路徑有一個
 分不開的狀況：dropbox 每 7 天才取用一次，未到間隔時 `fetch_all` 什麼都不吐，而那

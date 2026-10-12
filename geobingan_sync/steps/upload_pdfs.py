@@ -707,13 +707,34 @@ def flush_state(state: dict):
             _pending_error_saves = 0
 
 
+def _is_pdf(item: Dict) -> bool:
+    """這一筆是 PDF 嗎？mimeType 與副檔名**兩個都看**。
+
+    掃描結果不一定帶 mimeType（回退路徑的 fields 就沒有要），所以不能只看它；
+    而副檔名也會騙人（有人把 .xls 改名成 .pdf 的機率低，但 mimeType 標成
+    application/pdf 的圖片是真的存在）。兩者有任一個明確指出不是 PDF 就剔除。
+    """
+    mime = (item.get('mimeType') or '').lower()
+    if mime and mime != 'application/pdf':
+        return False
+    name = (item.get('name') or '').lower()
+    return name.endswith('.pdf')
+
+
 def select_pdfs_to_upload(all_pdfs: List[Dict], uploaded_files, *, cutoff: datetime,
                           exclude=(), max_uploads: int = 0):
     """候選過濾純函式（#64）：從全量 PDF 清單選出本次要上傳的檔案。
 
-    規則（依序）：排除清單 → history 去重（folder/檔名）→ run 內同名去重
-    → 檔名日期解析（解析不到跳過）→ cutoff 日期窗 → max_uploads 上限
-    （0 = 不限）。
+    規則（依序）：**非 PDF 一律剔除** → 排除清單 → history 去重（folder/檔名）
+    → run 內同名去重 → 檔名日期解析（解析不到跳過）→ cutoff 日期窗
+    → max_uploads 上限（0 = 不限）。
+
+    為什麼這裡還要擋非 PDF（2026-10-12，Zhe 定「收圖片和 .xls 但不上傳
+    riskmap」）：共享雲端硬碟從此會有圖片與 Excel。掃描查詢本身帶
+    `mimeType='application/pdf'`，但那是**唯一**一道、而且在伺服器端——查詢字串
+    改一個字、或哪天改走別的列檔方式，非 PDF 就會直接流進解析佇列，一張 jpg
+    就是 US$0.3 的無效支出，而且會把額度排擠掉真正的報告。所以在這個純函式裡
+    再擋一次：兩道防線互相獨立，而且這一道是可以單元測試的。
 
     排序＝**報告日期（檔名解析）降序，同日再依 Drive modifiedTime 降序**，讓
     上限吃到「最新的報告」而不是「最近被丟進 Drive 的檔案」。兩者常常不同：
@@ -746,6 +767,7 @@ def select_pdfs_to_upload(all_pdfs: List[Dict], uploaded_files, *, cutoff: datet
     exclude = set(exclude)
     counts = {
         'excluded': 0,
+        'not_pdf': 0,
         'already_uploaded': 0,
         'dup_in_run': 0,
         'no_date': 0,
@@ -763,6 +785,9 @@ def select_pdfs_to_upload(all_pdfs: List[Dict], uploaded_files, *, cutoff: datet
     dated.sort(key=lambda t: (t[1] or datetime.min, t[0].get('modifiedTime', '')), reverse=True)
 
     for pdf, fd in dated:
+        if not _is_pdf(pdf):
+            counts['not_pdf'] += 1
+            continue
         if pdf['name'] in exclude:
             counts['excluded'] += 1
             continue

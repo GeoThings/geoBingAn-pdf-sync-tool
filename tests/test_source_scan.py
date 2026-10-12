@@ -13,6 +13,11 @@
 
 本檔盯住的不變式：空清單的三種成因（真的空／有非 PDF／列出失敗）必須寫成三種
 不同的資料，且「列出失敗」永遠不得寫成數字份數。
+
+2026-10-12 後續（Zhe 的範圍決定）：**圖片與 .xls 也要鏡像進共享雲端硬碟，但不會
+上傳到 riskmap。** 於是一次掃描有三個數字而不是兩個——`pdf`（會上傳的份數）、
+`other`（鏡像了的非 PDF）、`skipped`（連鏡像都不收的型別）。`pdf` 的意義不變，
+而且**正是**它不可以被 13 個 .xls 撐大：那會讓「這案有報告在收」變成假的。
 """
 import ast
 import os
@@ -89,14 +94,46 @@ def _xls(i, name=None):
 
 # ───────────────────────── list_files_recursive 的量測累加器 ─────────────────────────
 
-def test_scan_counts_non_pdf_items(monkeypatch):
-    """承造人改用 .xls 發布時，份數是 0 但 other 要是真實數字。"""
+def test_non_pdf_files_are_now_mirrored(monkeypatch):
+    """承造人改用 .xls 發布時，檔案要收進來（但 PDF 份數仍然是 0）。"""
     s = _sync(monkeypatch, [{'files': [_xls('a'), _xls('b'), _xls('c')]}])
-    scan = {'other': 0, 'failed': 0}
+    scan = {'skipped': 0, 'failed': 0}
     files = s.list_files_recursive('root', scan=scan)
-    assert files == []
-    assert scan['other'] == 3
+    assert [f[1] for f in files] == ['a.xls', 'b.xls', 'c.xls']
+    assert {f[4] for f in files} == {'application/vnd.ms-excel'}, (
+        'mimeType 要帶回去，copy_file 的下載回退路徑得用它重建檔案')
+    assert scan['skipped'] == 0, '收的型別不算進 skipped'
     assert scan['failed'] == 0
+
+
+@pytest.mark.parametrize('name,mime,mirrored', [
+    # 實測來源（2026-10-12 逐案探測四個建案的真實 mimeType）
+    ('北投觀測資料114年11月.xls', 'application/vnd.ms-excel', True),
+    ('富邦人壽承德大樓北基地_監測資料1131223.jpg', 'image/jpeg', True),
+    ('3E6E9YEBEO.png', 'image/png', True),
+    ('報告.pdf', 'application/pdf', True),
+    # 上傳端把型別標成通用值是常態，只看 mimeType 會靜默漏掉
+    ('觀測資料115年1月.xlsx', 'application/octet-stream', True),
+    ('監測照片.JPG', 'application/octet-stream', True),
+    # 不收的型別：留在來源，只記 skipped
+    ('施工計畫書.doc', 'application/msword', False),
+    ('全部資料.zip', 'application/zip', False),
+    ('說明.txt', 'text/plain', False),
+])
+def test_mirror_allowlist_matches_the_real_sources(name, mime, mirrored):
+    from geobingan_sync.steps.sync_permits import should_mirror
+    assert should_mirror(name, mime) is mirrored
+
+
+def test_unsupported_types_are_counted_as_skipped(monkeypatch):
+    s = _sync(monkeypatch, [{'files': [
+        {'id': 'd', 'name': '施工計畫書.doc', 'mimeType': 'application/msword'},
+        _xls('x'),
+    ]}])
+    scan = {'skipped': 0, 'failed': 0}
+    files = s.list_files_recursive('root', scan=scan)
+    assert [f[1] for f in files] == ['x.xls']
+    assert scan['skipped'] == 1, '不收的型別要記下來，不可無聲丟掉'
 
 
 def test_scan_counts_failures_separately_from_emptiness(monkeypatch):
@@ -114,25 +151,27 @@ def test_scan_counts_failures_separately_from_emptiness(monkeypatch):
 
 
 def test_scan_propagates_through_recursion(monkeypatch):
-    """子資料夾裡的非 PDF 與失敗都要累加到同一個 scan，否則深層隱形。"""
+    """子資料夾裡的檔案與失敗都要帶回同一個 scan，否則深層隱形。"""
     s = _sync(monkeypatch, [
         {'files': [_folder('sub1'), _folder('sub2')]},
-        {'files': [_xls('x'), _xls('y')]},                 # sub1
+        {'files': [_xls('x'), {'id': 'z', 'name': 'a.zip',
+                               'mimeType': 'application/zip'}]},   # sub1
         # 403 而非 5xx：paginate_files_list 只對 429/5xx 退避重試，用 500 會
         # 在下一次腳本回空陣列時「重試成功」，failed 永遠是 0（踩過一次）。
         HttpError(_FakeResp(403), b'denied'),               # sub2 無權限
     ])
-    scan = {'other': 0, 'failed': 0}
-    s.list_files_recursive('root', scan=scan)
-    assert scan['other'] == 2
+    scan = {'skipped': 0, 'failed': 0}
+    files = s.list_files_recursive('root', scan=scan)
+    assert [f[1] for f in files] == ['x.xls'], '深層的 .xls 也要收'
+    assert scan['skipped'] == 1
     assert scan['failed'] == 1
 
 
 def test_scan_is_optional_backward_compatible(monkeypatch):
-    """既有呼叫點不傳 scan 時行為不變（#67 的翻頁測試仍靠這個簽章）。"""
+    """不傳 scan 時不可炸（#67 的翻頁測試仍靠這個簽章）。"""
     s = _sync(monkeypatch, [{'files': [_pdf('p1'), _xls('x')]}])
     files = s.list_files_recursive('root')
-    assert [f[1] for f in files] == ['p1.pdf']
+    assert [f[1] for f in files] == ['p1.pdf', 'x.xls']
 
 
 # ───────────────────────── sync_permit 把量測寫成資料 ─────────────────────────
@@ -152,14 +191,28 @@ def test_empty_folder_records_measured_zero(monkeypatch):
 
 
 def test_non_pdf_content_is_distinguishable_from_empty(monkeypatch):
-    """這一條就是 110建字第0038號 當初該被看見的樣子。"""
+    """這一條就是 110建字第0038號 的樣子：13 個月的 .xls，一份 PDF 都沒有。
+
+    現在這些檔案會被鏡像，但 `pdf` 仍然是 0——riskmap 那邊確實一份都收不到，
+    帳要照實記。把鏡像份數算進 `pdf` 就等於宣稱這案有報告在收。
+    """
     s = _sync(monkeypatch, [{'files': [
         _xls('m1', '北投觀測資料114年11月.xls'), _xls('m2', '北投觀測資料114年7月.xls')]}])
+    monkeypatch.setattr(s, 'preload_target_files', lambda *a, **k: None)
+    copied = []
+    monkeypatch.setattr(s, 'check_file_exists', lambda *a, **k: False)
+    monkeypatch.setattr(s, 'copy_file',
+                        lambda fid, tgt, name, path='', mime_type=None:
+                        (copied.append((name, mime_type)) or 'new', tgt))
     s.sync_permit('A建字第0001號', 'https://drive.google.com/drive/folders/FID', 'tgt')
     e = _scan_entry(s)
     assert e['reason'] == 'no_pdf_but_other'
-    assert e['pdf'] == 0
-    assert e['other'] == 2, '有 2 個非 PDF 檔，這個數字就是「別當成空資料夾」的證據'
+    assert e['pdf'] == 0, 'riskmap 收不到任何一份，這個 0 是實測'
+    assert e['other'] == 2, '鏡像了 2 個非 PDF 檔，這個數字是「別當成空資料夾」的證據'
+    assert e['skipped'] == 0
+    assert copied == [('北投觀測資料114年11月.xls', 'application/vnd.ms-excel'),
+                      ('北投觀測資料114年7月.xls', 'application/vnd.ms-excel')], (
+        '檔案要真的被複製，而且型別跟著來源走')
 
 
 def test_list_failure_records_unknown_not_zero(monkeypatch):
@@ -321,24 +374,52 @@ def _branch(node, which):
     return getattr(node, which) if isinstance(node, ast.IfExp) else node
 
 
+def _delegated_calls():
+    """用 `**self._scan_result(...)` 展開參數的呼叫點。
+
+    這種呼叫點靜態上看不到 reason／pdf，但它們的值全部由 `_scan_result()`
+    這一個純函式算出來——所以不是放過，而是**換一種更強的驗法**：下面
+    `test_scan_result_is_consistent_for_every_combination` 把那個函式的輸入
+    組合窮舉過一遍。另外執行期還有 `_record_source_scan()` 自己的一致性檢查。
+    """
+    tree = ast.parse(_SRC.read_text(encoding='utf-8'))
+    out = []
+    for node in ast.walk(tree):
+        if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                and node.func.attr == '_record_source_scan'):
+            for kw in node.keywords:
+                if kw.arg is None and isinstance(kw.value, ast.Call) and (
+                        getattr(kw.value.func, 'attr', None) == '_scan_result'):
+                    out.append(node.lineno)
+    return out
+
+
 def test_every_call_site_passes_reason_and_pdf():
-    calls = _record_calls()
-    assert len(calls) >= 10, (
-        f'呼叫點只找到 {len(calls)} 個，AST 比對可能壞了（預期 10：Drive 路徑的'
-        ' invalid_url／list_failed／no_pdf_but_other／empty／成功路徑，'
-        '整包路徑的取得失敗／ok／not_measured，adapter 逐檔的列檔失敗／成功）')
+    delegated = _delegated_calls()
+    assert delegated, (
+        'sync_permit 應該有委派給 _scan_result 的呼叫點；一個都找不到的話，'
+        '是 AST 比對壞了，不是程式碼變乾淨了')
+    calls = [(ln, kw) for ln, kw in _record_calls() if ln not in delegated]
+    assert len(delegated) == 2, (
+        f'委派給 _scan_result 的呼叫點應該有 2 個（沒東西可鏡像那條、複製完那條），'
+        f'找到 {len(delegated)} 個')
+    assert len(calls) >= 6, (
+        f'直接寫 reason／pdf 的呼叫點只找到 {len(calls)} 個，AST 比對可能壞了'
+        '（預期 6：Drive 路徑的 invalid_url，整包路徑的取得失敗／ok／not_measured，'
+        'adapter 逐檔的列檔失敗／成功）')
     for lineno, kw in calls:
         assert 'reason' in kw and 'pdf' in kw, f'line {lineno} 缺 reason/pdf'
 
 
-def test_every_call_site_is_analysable():
+def test_every_call_site_is_analysable_or_delegated():
     """看不懂的呼叫點要讓守門測試紅，不是讓它安靜跳過。
 
     這一條是上一版的真正漏洞：它當時只認常數 reason，兩個用條件運算式的呼叫點
     因此完全沒被檢查，而測試名字宣稱檢查了全部。
     """
+    delegated = _delegated_calls()
     bad = [lineno for lineno, kw in _record_calls()
-           if _reason_pdf_pairs(kw) is None]
+           if lineno not in delegated and _reason_pdf_pairs(kw) is None]
     assert not bad, (
         f'這些呼叫點的 reason/pdf 形狀攤不開，守門測試看不進去：{bad}。'
         '請寫成常數或 `X if cond else Y`，不要讓規則躲在運算式裡')
@@ -354,7 +435,10 @@ def test_unknown_reasons_never_pass_a_numeric_count():
     這裡是靜態那一道，連沒有測試覆蓋到的路徑也能在跑到之前就擋下來。
     """
     offenders = []
+    delegated = _delegated_calls()
     for lineno, kw in _record_calls():
+        if lineno in delegated:
+            continue
         for reason, pdf in _reason_pdf_pairs(kw) or []:
             unknown = reason in _UNKNOWN_REASONS
             is_none = isinstance(pdf, ast.Constant) and pdf.value is None
@@ -368,10 +452,44 @@ def test_unknown_reasons_never_pass_a_numeric_count():
 
 def test_measured_and_unknown_are_actually_different_values():
     """最終防線用行為斷言，不只看原始碼：兩種結果必須真的不同。"""
-    import inspect
-    src = inspect.getsource(PermitSync.sync_permit)
-    assert "reason='empty'" in src and "reason='list_failed'" in src, (
-        '三種成因收斂成一條訊息的話，這整組測試就失去意義')
+    empty = PermitSync._scan_result({'skipped': 0, 'failed': 0}, [], [])
+    failed = PermitSync._scan_result({'skipped': 0, 'failed': 1}, [], [])
+    assert empty['reason'] == 'empty' and empty['pdf'] == 0
+    assert failed['reason'] == 'list_failed' and failed['pdf'] is None
+    assert empty != failed, '兩種成因收斂成同一筆資料的話，這整組測試就失去意義'
+
+
+@pytest.mark.parametrize('failed', [0, 1])
+@pytest.mark.parametrize('n_pdf', [0, 2])
+@pytest.mark.parametrize('n_other', [0, 3])
+@pytest.mark.parametrize('skipped', [0, 1])
+def test_scan_result_is_consistent_for_every_combination(failed, n_pdf, n_other,
+                                                         skipped, monkeypatch):
+    """窮舉 `_scan_result()` 的輸入組合：每一種都要滿足落檔入口的不變式。
+
+    `sync_permit` 的兩個呼叫點是 `**_scan_result(...)` 展開的，靜態掃描看不進去。
+    與其放過，不如把那個純函式的所有組合跑一遍，再真的送進 `_record_source_scan()`
+    ——它自己會對 reason／pdf 不一致拋 ValueError。16 種組合全部不得拋。
+    """
+    scan = {'skipped': skipped, 'failed': failed}
+    pdfs = [('i', 'a.pdf', '', '', 'application/pdf')] * n_pdf
+    others = [('i', 'a.xls', '', '', 'application/vnd.ms-excel')] * n_other
+    kwargs = PermitSync._scan_result(scan, pdfs, others)
+
+    if failed:
+        assert kwargs['pdf'] is None, '清單不完整時份數只是下限，不可寫成定論'
+        assert kwargs['reason'] in ('partial', 'list_failed')
+    else:
+        assert kwargs['pdf'] == n_pdf, 'pdf 只能算 PDF，不含鏡像的非 PDF'
+        expected = 'ok' if n_pdf else ('no_pdf_but_other'
+                                       if (n_other or skipped) else 'empty')
+        assert kwargs['reason'] == expected
+    assert kwargs['other'] == n_other
+    assert kwargs['skipped'] == skipped
+
+    s = _sync(monkeypatch, [{'files': []}])
+    s._record_source_scan('A建字第0001號', **kwargs)      # 不得拋 ValueError
+    assert _scan_entry(s)['reason'] == kwargs['reason']
 
 
 # ───────────── 不變式擋在落檔入口，不靠呼叫點自律（#114 review 後補） ─────────────
