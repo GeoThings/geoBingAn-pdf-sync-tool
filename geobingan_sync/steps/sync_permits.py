@@ -717,6 +717,17 @@ class PermitSync:
 
     def copy_file(self, source_file_id: str, target_folder_id: str, filename: str,
                   path: str = "", mime_type: str = PDF_MIME):
+        """把來源檔複製進目標資料夾。`mime_type` 是**來源原值**。
+
+        鏡像一律保留來源型別，不在這裡正規化（#116 review 第二輪）：
+        正規化會把「副檔名與 mimeType 互相矛盾」這個訊號從資料裡抹掉，而下一輪
+        重新掃描時我們只看得到鏡像裡的值。`監測資料.pdf` + `image/jpeg` 被寫成
+        application/pdf 之後，下一輪就會被當成正常 PDF 送去解析。
+
+        另外 `files().copy` 的主路徑本來就不帶 mimeType（Drive 保留來源值），
+        下載回退路徑若自己正規化，同一個檔案會因為走哪條路而被標成不同型別——
+        兩條路的結果必須一致。
+        """
         final_folder_id = target_folder_id
         if path:
             final_folder_id = self.get_or_create_subfolder(target_folder_id, path)
@@ -983,7 +994,7 @@ class PermitSync:
 
                 result_id, final_folder_id = self.copy_file(
                     file_id, target_folder_id, filename, path,
-                    mime_type=canonical_mime(filename, mime_type) or PDF_MIME)
+                    mime_type=mime_type or PDF_MIME)
                 if result_id == 'restricted':
                     self._print(f"    🔒 受限: {display_path} (建立捷徑)")
                     self.create_shortcut_file(final_folder_id, filename, web_link)

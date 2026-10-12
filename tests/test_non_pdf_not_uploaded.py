@@ -390,29 +390,33 @@ def test_all_three_sites_agree(name, mime, uploadable, monkeypatch):
     assert bool(picked) is uploadable, '上傳端與共用判定不一致'
 
 
-# ───────── 矛盾時「存成什麼型別」要釘住（副檔名優先） ─────────
+# ───────── 鏡像落檔一律保留**來源型別** ─────────
 #
-# 故障注入時這條漏了：把優先序換成 mimeType 優先，1088 條全綠。原因是有了
-# 「矛盾一律不上傳」之後，優先序**不影響任何上傳判定**——兩種優先序對兩種矛盾
-# 組合都是不上傳。它唯一的後果是**鏡像裡存成什麼型別**，而那不是無關緊要的：
-# 一張 jpg 以 application/pdf 躺在我們的鏡像裡，之後每個消費端都得自己重新推
-# 一次矛盾，而 match_permits 放寬後的查詢會用 mimeType 撈到它。
+# 這一節前一版寫的是「存成副檔名推出來的型別」，而那是錯的（#116 review 第二輪
+# 指出）。正規化會把「副檔名與 mimeType 矛盾」從資料裡抹掉，而下一輪重新掃描時
+# 我們只看得到鏡像裡的值：`監測資料.pdf` + `image/jpeg` 一旦被寫成
+# application/pdf，下一輪就會被當成正常 PDF 送去解析——來源分類時擋住了，繞過
+# 鏡像又回來了。
 #
-# 也就是說「副檔名優先」原本只是註解裡的宣告，沒有任何測試在保證它。
+# 保留來源值則兩個方向都成立，因為判定每次都從 (檔名, mimeType) 重新推導：
+#   .pdf + image/jpeg        → 矛盾 → 不上傳
+#   .jpg + application/pdf   → 矛盾 → 不上傳
+#   .pdf + octet-stream      → 通用型別不算認得 → 可上傳
+# 前提是掃描的 fields 真的有取 mimeType（見 test_scan_fetches_mimetype）。
 
-@pytest.mark.parametrize('name,source_mime,expected_stored', [
-    # 型別標錯的圖片：存成圖片，不是 PDF
-    ('監測資料20260930.jpg', 'application/pdf', 'image/jpeg'),
-    # 反向：名字是 .pdf、Drive 認為是圖片 → 存成 PDF（副檔名是人為命名的意圖）
-    ('監測資料20260930.pdf', 'image/jpeg', 'application/pdf'),
-    # 通用型別不該蓋掉副檔名
-    ('112建0079-初值報告20260930.pdf', 'application/octet-stream', 'application/pdf'),
-    ('北投觀測資料114年11月.xls', 'application/octet-stream',
-     'application/vnd.ms-excel'),
+@pytest.mark.parametrize('name,source_mime', [
+    ('監測資料20260930.jpg', 'application/pdf'),
+    ('監測資料20260930.pdf', 'image/jpeg'),
+    ('112建0079-初值報告20260930.pdf', 'application/octet-stream'),
+    ('北投觀測資料114年11月.xls', 'application/octet-stream'),
 ])
-def test_mirror_stores_the_extension_derived_type(name, source_mime,
-                                                  expected_stored, monkeypatch):
-    """鏡像落檔的型別由副檔名決定，mimeType 只在副檔名不認得時才作主。"""
+def test_mirror_preserves_the_source_type(name, source_mime, monkeypatch):
+    """鏡像落檔的型別＝來源原值，不正規化。
+
+    `files().copy` 的主路徑本來就保留來源值（Drive 的行為），所以下載回退路徑
+    也必須一致——同一個檔案不可因為走哪條路而被標成不同型別。
+    """
+    expected_stored = source_mime
     from geobingan_sync.steps import sync_permits as sp
 
     class _Files:
@@ -450,3 +454,108 @@ def test_mirror_stores_the_extension_derived_type(name, source_mime,
     assert seen == [expected_stored], (
         f'{name}（來源標 {source_mime}）在鏡像裡被存成 {seen}，'
         f'應該是 {expected_stored}')
+
+
+def test_scan_fetches_mimetype_so_conflicts_survive(monkeypatch):
+    """兩個掃描的 fields 都要取 mimeType。
+
+    不取的話，鏡像裡那個 `監測資料.pdf`（實際是 image/jpeg）在掃描結果裡只有
+    檔名，本機判定看不到矛盾 → 當成正常 PDF 送去解析。這就是 #116 review
+    第二輪指出的「衝突訊號沒有跨鏡像保存」的後半段。
+    """
+    from geobingan_sync.steps.upload_pdfs import list_all_pdfs_with_folder_info
+    from googleapiclient.errors import HttpError
+
+    for force_fallback in (False, True):
+        page = {'files': [{'id': 'p1', 'name': 'a.pdf', 'parents': ['f1'],
+                           'mimeType': 'application/pdf', 'modifiedTime': 'x'}]}
+        script = ([HttpError(_FakeResp(), b'boom'), page] if force_fallback else [page])
+        svc = _FakeService(script)
+        svc._files.fields = []
+        orig_list = svc._files.list
+
+        def _list(**kw):
+            svc._files.fields.append(kw.get('fields', ''))
+            return orig_list(**kw)
+
+        svc._files.list = _list
+        list_all_pdfs_with_folder_info(svc, [{'id': 'f1', 'name': '110建字第0038號'}])
+        for f in svc._files.fields:
+            assert 'mimeType' in f, (
+                f'掃描沒取 mimeType（fallback={force_fallback}），'
+                f'矛盾訊號在這一步就消失：{f}')
+
+
+# ───────── 整條正式路徑：來源 → 鏡像落檔 → 重新掃描 → 上傳選擇 ─────────
+#
+# #116 review 第二輪的核心：前面每一段都各自有測試，但沒有一條把四段串起來，
+# 所以「來源擋住了、繞過鏡像又回來」這種漏法 1092 條測試都看不到。
+
+def test_source_to_mirror_to_scan_to_upload(monkeypatch):
+    """四種型別組合走完整條路，只有真 PDF 可以到上傳候選。"""
+    from geobingan_sync.steps import sync_permits as sp
+
+    source_files = [
+        # (檔名, 來源 mimeType, 期望「最後會上傳」)
+        ('112建0079-初值報告20260930.pdf', 'application/pdf', True),
+        ('112建0080-初值報告20260930.pdf', 'application/octet-stream', True),
+        ('監測資料20260930.pdf', 'image/jpeg', False),        # 矛盾
+        ('監測資料20260930.jpg', 'application/pdf', False),    # 反向矛盾
+        ('北投觀測資料114年11月.xls', 'application/vnd.ms-excel', False),
+    ]
+
+    class _Files:
+        def __init__(self, script):
+            self.script = list(script)
+
+        def list(self, **kw):
+            item = self.script.pop(0) if self.script else {'files': []}
+
+            class _R:
+                def execute(_s):
+                    return item
+            return _R()
+
+    class _Svc:
+        def __init__(self, script):
+            self._f = _Files(script)
+
+        def files(self):
+            return self._f
+
+    # ① 來源 → 鏡像：記下「真的被寫進鏡像的 (檔名, 型別)」
+    mirror = []
+    s = sp.PermitSync(city={'name': 'T', 'pdf_list_url': 'https://example.test/x.pdf'})
+    monkeypatch.setattr(s, '_get_svc', lambda: _Svc([{'files': [
+        {'id': f'id{i}', 'name': n, 'mimeType': m}
+        for i, (n, m, _) in enumerate(source_files)]}]))
+    monkeypatch.setattr(s, 'preload_target_files', lambda *a, **k: None)
+    monkeypatch.setattr(s, 'check_file_exists', lambda *a, **k: False)
+    monkeypatch.setattr(s, 'copy_file',
+                        lambda fid, tgt, fname, path='', mime_type=None:
+                        (mirror.append((fname, mime_type)) or 'new', tgt))
+    s.sync_permit('110建字第0038號', 'https://drive.google.com/drive/folders/FID', 'tgt')
+
+    assert len(mirror) == len(source_files), '五個檔案都應該被鏡像'
+    assert dict(mirror)['監測資料20260930.pdf'] == 'image/jpeg', (
+        '鏡像把矛盾正規化掉了，下一輪就會把它當成正常 PDF')
+
+    # ② 鏡像 → 重新掃描：用鏡像裡真正的 (檔名, 型別) 當掃描結果
+    scanned = [{'id': f'm{i}', 'name': n, 'mimeType': m, 'parents': ['f1'],
+                'modifiedTime': '2026-10-01T02:00:37.030Z'}
+               for i, (n, m) in enumerate(mirror)]
+
+    # ③ 掃描 → 上傳選擇
+    picked, counts = select_pdfs_to_upload(
+        [dict(x, folder_name='110建字第0038號') for x in scanned],
+        uploaded_files=[], cutoff=CUTOFF)
+
+    expected = sorted(n for n, _, up in source_files if up)
+    assert sorted(p['name'] for p in picked) == expected, (
+        f'整條路徑的結果不對。counts={counts}')
+    assert counts['not_pdf'] == 3
+
+    # ④ 來源分類與最終上傳結果必須是同一個數字
+    entry = (s.state.get('source_scan') or {}).get('110建字第0038號')
+    assert entry['pdf'] == len(expected), (
+        f"source_scan 說 {entry['pdf']} 份會上傳，實際 {len(expected)} 份：{entry}")

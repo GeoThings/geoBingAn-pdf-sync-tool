@@ -365,7 +365,11 @@ def list_all_pdfs_with_folder_info(service, folders: List[Dict]) -> List[Dict]:
                 supportsAllDrives=True,
                 pageSize=1000,
                 pageToken=page_token,
-                fields='nextPageToken, files(id, name, size, modifiedTime, parents)'
+                # mimeType 一定要取：本機判定靠 (檔名, mimeType) 重新推導
+                # 「副檔名與型別矛盾」。不取的話矛盾訊號在掃描這一步就消失，
+                # 一個 .pdf 名字的圖片會被當成正常 PDF 送去解析（#116 review 第二輪）。
+                fields=('nextPageToken, files(id, name, mimeType, size, '
+                        'modifiedTime, parents)')
             ).execute()
 
             pdfs = results.get('files', [])
@@ -426,7 +430,7 @@ def list_all_pdfs_with_folder_info(service, folders: List[Dict]) -> List[Dict]:
                         q=fallback_query,
                         includeItemsFromAllDrives=True,
                         supportsAllDrives=True,
-                        fields='files(id, name, size, modifiedTime)'
+                        fields='files(id, name, mimeType, size, modifiedTime)'
                     ):
                         pdf['folder_id'] = folder['id']
                         pdf['folder_name'] = folder['name']
