@@ -894,12 +894,16 @@ config.py (from .env)  →  環境變數  →  硬編碼預設值
 所以不逐一列舉模組常數（列舉法漏掉下一個新常數時同樣靜默），改為擋在路徑這個
 邊界上，兩層：
 
-1. **寫入當場被擋**（`conftest._no_real_state_writes`，autouse）。收口是開檔
-   （`builtins.open` 與 `io.open`，`Path.write_text`／`Path.open` 走後者）與
-   `os.replace`／`os.rename`／`os.remove`／`os.unlink`。atomic 寫入是「寫
-   `.tmp.<pid>` 再 replace」，只擋開檔會整條漏掉。讀取不擋（那是另一類問題，
-   由各自的 per-file fixture 導向暫存路徑）。保護範圍在 conftest 匯入時算好一次，
-   不跟著 `chdir` 漂。
+1. **寫入當場被擋**（`conftest._no_real_state_writes`，autouse）。三個收口：
+   - 開檔：`builtins.open` 與 `io.open`（`Path.write_text`／`Path.open` 走後者）。
+   - `os.replace`／`os.rename`，**來源與目的地都看**。atomic 寫入是「寫
+     `.tmp.<pid>` 再 replace」，只擋開檔會整條漏掉；反方向
+     `os.rename(正式檔, tmp/x.json)` 等於刪除，只看目的地同樣漏掉，而且第二層
+     也不一定補得回來（搬走再搬回、mtime 與大小一致，事後對帳看不出來）。
+   - `os.remove`／`os.unlink`／`os.rmdir`（`shutil.rmtree` 的最後一步）。
+
+   讀取不擋（那是另一類問題，由各自的 per-file fixture 導向暫存路徑）。保護範圍
+   在 conftest 匯入時算好一次，不跟著 `chdir` 漂。
 2. **整套跑完事後對帳**（`_production_state_unchanged`，session scope）。比對
    `(mtime_ns, 大小)`，連 subprocess、`os.utime` 這類繞過 Python 檔案 API 的
    路徑也抓得到。偽陽性只有一種：測試期間排程同步真的在寫 state。

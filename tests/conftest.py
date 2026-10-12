@@ -84,6 +84,7 @@ _REAL_REPLACE = os.replace
 _REAL_RENAME = os.rename
 _REAL_REMOVE = os.remove
 _REAL_UNLINK = os.unlink
+_REAL_RMDIR = os.rmdir
 
 _WRITE_MODE_CHARS = ('w', 'a', 'x', '+')
 
@@ -94,6 +95,17 @@ def unguarded_unlink(path) -> None:
         _REAL_UNLINK(path)
     except (FileNotFoundError, IsADirectoryError, PermissionError, OSError):
         pass
+
+
+def unguarded_write_text(path, text: str) -> None:
+    """繞過防線寫一個檔。只給守門測試建立**自己的**誘餌檔用。
+
+    驗「搬出去會不會被擋」需要正式目錄裡真的有一個檔可搬。拿營運檔來當素材
+    太危險（防線一旦真的壞掉，那一次就把真資料搬走了），所以自己建一個唯一
+    檔名的誘餌，測完刪掉。
+    """
+    with _REAL_OPEN(path, 'w', encoding='utf-8') as f:
+        f.write(text)
 
 
 def is_protected_path(path) -> bool:
@@ -134,9 +146,12 @@ def snapshot_diff(before: dict, after: dict):
 def _no_real_state_writes(monkeypatch):
     """任何測試要寫進正式 state 目錄就當場失敗，並指出是哪個檔。
 
-    擋兩個收口：開檔（含 `io.open`，`Path.write_text`／`Path.open` 走的是它）
-    與 `os.replace`／`os.rename`（atomic 寫入的最後一步繞過開檔檢查——
-    `upload_pdfs.save_state` 正是寫 `.tmp.<pid>` 再 replace）。
+    擋三個收口：
+    - 開檔（含 `io.open`，`Path.write_text`／`Path.open` 走的是它）
+    - `os.replace`／`os.rename`，**來源與目的地都看**（atomic 寫入的最後一步
+      繞過開檔檢查——`upload_pdfs.save_state` 正是寫 `.tmp.<pid>` 再 replace；
+      反方向把營運檔搬出去等於刪除，見 `_guard_move`）
+    - `os.remove`／`os.unlink`／`os.rmdir`
 
     讀取不擋：讀到正式檔是另一類問題（測試結果取決於今天跑成什麼樣），
     已經由下面那幾個 per-file fixture 各自導向暫存路徑。
@@ -163,8 +178,17 @@ def _no_real_state_writes(monkeypatch):
             _blocked(file, '寫入')
         return _REAL_IO_OPEN(file, mode, *args, **kwargs)
 
-    def _guard_dst(fn, what):
+    def _guard_move(fn, what):
+        """rename／replace 的**兩端**都要看。
+
+        只看 dst 的話，把營運檔「搬出去」不會被擋（#115 review P2）：
+        `os.rename(正式檔, tmp/x.json)` 等於刪除，而第一層承諾的是「寫入與刪除
+        當場被擋」。這條路也不是第二層補得回來的——若有測試在 session 結束前把
+        檔案搬回去、而且 mtime 與大小一致，事後對帳就看不出中間被搬走過。
+        """
         def wrapper(src, dst, *args, **kwargs):
+            if is_protected_path(src):
+                _blocked(src, '移出')
             if is_protected_path(dst):
                 _blocked(dst, what)
             return fn(src, dst, *args, **kwargs)
@@ -179,10 +203,12 @@ def _no_real_state_writes(monkeypatch):
 
     monkeypatch.setattr(builtins, 'open', guarded_open)
     monkeypatch.setattr(io, 'open', guarded_io_open)
-    monkeypatch.setattr(os, 'replace', _guard_dst(_REAL_REPLACE, '覆蓋'))
-    monkeypatch.setattr(os, 'rename', _guard_dst(_REAL_RENAME, '覆蓋'))
+    monkeypatch.setattr(os, 'replace', _guard_move(_REAL_REPLACE, '覆蓋'))
+    monkeypatch.setattr(os, 'rename', _guard_move(_REAL_RENAME, '覆蓋'))
     monkeypatch.setattr(os, 'remove', _guard_target(_REAL_REMOVE, '刪除'))
     monkeypatch.setattr(os, 'unlink', _guard_target(_REAL_UNLINK, '刪除'))
+    # 整個 state 目錄被移掉的殺傷力和逐檔刪一樣（shutil.rmtree 的最後一步）
+    monkeypatch.setattr(os, 'rmdir', _guard_target(_REAL_RMDIR, '刪除目錄'))
     yield attempts
     assert not attempts, (
         f'這支測試想寫正式 state 檔（{len(attempts)} 次）：{sorted(set(attempts))}')

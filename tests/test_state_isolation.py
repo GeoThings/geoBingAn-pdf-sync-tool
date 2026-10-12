@@ -25,7 +25,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from tests.conftest import (PROTECTED_STATE_DIRS, RealStateWriteBlocked,
                             is_protected_path, snapshot_diff, state_snapshot,
-                            unguarded_unlink)
+                            unguarded_unlink, unguarded_write_text)
 
 from geobingan_sync.steps import upload_pdfs as up
 
@@ -88,6 +88,50 @@ def test_atomic_replace_into_the_production_dir_is_blocked(tmp_path, doomed_targ
         os.replace(src, doomed_target)
     assert not doomed_target.exists()
     _no_real_state_writes.clear()
+
+
+# 參數給**名字**而不是函式物件：`[os.rename, os.replace]` 會在收集階段就把未被
+# 換掉的內建函式綁進參數，測試於是繞過防線直接呼叫真的 rename——第一次就這樣寫，
+# 結果誘餌檔真的被搬走、而斷言報的是 DID NOT RAISE。production 也是呼叫時才查
+# `os.replace`，所以用名字查才是對的模擬。
+@pytest.mark.parametrize('move_name', ['rename', 'replace'])
+def test_moving_a_file_out_of_the_production_dir_is_blocked(move_name, tmp_path,
+                                                            doomed_target,
+                                                            _no_real_state_writes):
+    """把營運檔**搬出去**等於刪除，也必須當場被擋（#115 review P2）。
+
+    只檢查目的地的話這條路是通的：`os.rename(正式檔, tmp/x.json)` 不碰保護目錄
+    的「目的地」，檔案卻已經不在了。第二層也不一定補得回來——測試若在 session
+    結束前把檔案搬回去、mtime 與大小又一致，事後對帳看不出中間被搬走過。
+
+    誘餌檔是自己建的（不拿營運檔當素材）：防線真的壞掉時，壞的那一次不該由
+    真資料來承受。
+    """
+    unguarded_write_text(doomed_target, '{"decoy": true}')
+    moved = tmp_path / 'moved.json'
+
+    with pytest.raises(RealStateWriteBlocked, match='移出'):
+        getattr(os, move_name)(doomed_target, moved)
+
+    assert doomed_target.exists(), '擋下來就不可以真的把檔案搬走'
+    assert not moved.exists(), '目的地也不該被建出來'
+    _no_real_state_writes.clear()
+
+
+def test_removing_the_production_state_dir_is_blocked(_no_real_state_writes):
+    """`shutil.rmtree` 的最後一步是 `os.rmdir`——整個目錄被移掉和逐檔刪一樣致命。"""
+    with pytest.raises(RealStateWriteBlocked, match='刪除目錄'):
+        os.rmdir(PROTECTED_STATE_DIRS[0])
+    assert PROTECTED_STATE_DIRS[0].is_dir()
+    _no_real_state_writes.clear()
+
+
+def test_moving_between_two_unprotected_paths_still_works(tmp_path):
+    """反面對照：暫存目錄之間的搬移不可被擋，否則上面兩條無論怎麼寫都會過。"""
+    a, b = tmp_path / 'a.json', tmp_path / 'b.json'
+    a.write_text('{}', encoding='utf-8')
+    os.replace(a, b)
+    assert b.exists() and not a.exists()
 
 
 def test_write_outside_the_protected_dirs_still_works(tmp_path):
