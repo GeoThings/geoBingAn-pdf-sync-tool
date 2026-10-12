@@ -1,4 +1,4 @@
-"""測試期間一律禁止真的寄信。
+"""測試期間一律禁止碰到外部通道與正式 state 檔。
 
 2026-09-17 事故：`tests/test_notify_mention.py` 的 `_capture()` 只擋了 ClickUp、
 macOS 與 LINE 三條通道。PR #83 後來把 Email 加進失敗通知（error 級一律寄信），
@@ -11,13 +11,248 @@ macOS 與 LINE 三條通道。PR #83 後來把 Email 加進失敗通知（error 
 的想開 SMTP 連線就立刻失敗並指出該 stub 什麼。要驗寄信邏輯的測試（test_email_alert）
 本來就自己注入假 SMTP，不受影響。
 """
+import builtins
+import io
+import os
 import smtplib
+from pathlib import Path
 
 import pytest
 
 
 class RealEmailBlocked(RuntimeError):
     pass
+
+
+class RealStateWriteBlocked(RuntimeError):
+    pass
+
+
+# ───────────────────────── 正式 state 目錄的寫入防線 ─────────────────────────
+#
+# 🔴 2026-10-12 實際踩到（PR #114 合併後在正式目錄跑整套才發現）：
+# `tests/test_report_date_upload.py` 呼叫 `upload_pdfs.process_single_pdf()`，
+# 它在成功路徑**立刻** `save_state(state)`，而 `STATE_FILE` 是相對 CWD 的
+# `./state/uploaded_to_geobingan_7days.json`——從正式目錄跑 pytest 時那就是
+# **營運中的 7 天上傳帳本**。`save_state` 是 read-merge-write（uploaded_files
+# 取聯集），所以測試那筆假的「資料夾/檔名」會被永久併進帳本，那份 PDF 之後
+# 永遠不會被上傳，而且沒有任何錯誤訊息——靜默、不可逆。
+#
+# 當天沒出事純屬運氣：測試用的檔名剛好是真的上傳過的那一份（帳本裡已有，
+# 聯集後集合不變，只有順序變了）。同一支測試其他參數的檔名
+# （`恆合-錦西街 日報表 115.09.16.pdf`）就不在帳本裡，換成那個就會真的少上傳。
+#
+# 這裡**不逐一列舉模組常數**：全套有 28 個指向 `./state/...` 的路徑分佈在 14 個
+# 模組，列舉法漏掉下一個新增的常數時同樣是靜默的（conftest 開頭那條教訓）。
+# 真正的邊界是**檔案路徑**，所以擋在開檔與 rename 這兩個收口上。
+
+
+def _resolve(path):
+    try:
+        return Path(os.fsdecode(path)).resolve()
+    except (TypeError, ValueError, OSError):
+        return None
+
+
+def _protected_state_dirs():
+    """要保護的正式 state 目錄。**在 conftest 匯入時算好一次**。
+
+    之後任何測試 chdir 都不會改變保護範圍——保護範圍若跟著 CWD 漂移，
+    就會在最需要它的那一刻（有人 chdir 到暫存目錄）失效。
+
+    兩個來源都要算：
+    - `./state`：production 的路徑常數大多相對 CWD，從正式目錄跑整套時就是營運檔。
+    - `REPO_ROOT/state`：`analyze_decline` 等模組用的是套件自己的位置。
+    """
+    from geobingan_sync import REPO_ROOT
+    dirs = []
+    for cand in (Path('state'), Path(REPO_ROOT) / 'state'):
+        r = _resolve(cand)
+        if r is not None and r not in dirs:
+            dirs.append(r)
+    return dirs
+
+
+PROTECTED_STATE_DIRS = _protected_state_dirs()
+
+#: conftest 匯入時就留住的真正檔案 API。防線自己要用（不能呼叫被自己換掉的版本），
+#: 刻意觸發防線的守門測試清理殘留時也要用——它的 cleanup 若走被守住的 os.unlink，
+#: 會在 teardown 再踩一次防線，把那支測試變成錯誤（實際踩過）。
+_REAL_OPEN = builtins.open
+_REAL_IO_OPEN = io.open
+_REAL_REPLACE = os.replace
+_REAL_RENAME = os.rename
+_REAL_REMOVE = os.remove
+_REAL_UNLINK = os.unlink
+_REAL_RMDIR = os.rmdir
+
+_WRITE_MODE_CHARS = ('w', 'a', 'x', '+')
+
+
+def unguarded_unlink(path) -> None:
+    """繞過防線刪一個檔。只給守門測試清理自己製造的殘留用。"""
+    try:
+        _REAL_UNLINK(path)
+    except (FileNotFoundError, IsADirectoryError, PermissionError, OSError):
+        pass
+
+
+def unguarded_write_text(path, text: str) -> None:
+    """繞過防線寫一個檔。只給守門測試建立**自己的**誘餌檔用。
+
+    驗「搬出去會不會被擋」需要正式目錄裡真的有一個檔可搬。拿營運檔來當素材
+    太危險（防線一旦真的壞掉，那一次就把真資料搬走了），所以自己建一個唯一
+    檔名的誘餌，測完刪掉。
+    """
+    with _REAL_OPEN(path, 'w', encoding='utf-8') as f:
+        f.write(text)
+
+
+def is_protected_path(path) -> bool:
+    """這個路徑落在正式 state 目錄裡嗎？（檔案描述子一律回 False）"""
+    if isinstance(path, int):
+        return False
+    target = _resolve(path)
+    if target is None:
+        return False
+    return any(target == d or d in target.parents for d in PROTECTED_STATE_DIRS)
+
+
+def state_snapshot(dirs=None):
+    """正式 state 目錄的（路徑 → mtime_ns、大小）快照。
+
+    值刻意是 tuple 且**不經序列化**：我自己量這件事時先踩過一次，把快照
+    `json.dump` 再讀回來，tuple 變成 list，於是每個檔案都比對成「被改過」，
+    一度誤判成 10 個檔案外洩（真相是 2 個）。比對兩邊必須是同一種型別。
+    """
+    snap = {}
+    for d in (dirs if dirs is not None else PROTECTED_STATE_DIRS):
+        if not d.is_dir():
+            continue
+        for f in sorted(d.rglob('*')):
+            if f.is_file():
+                st = f.stat()
+                snap[str(f)] = (st.st_mtime_ns, st.st_size)
+    return snap
+
+
+def snapshot_diff(before: dict, after: dict):
+    """被新建、改寫或刪掉的檔案路徑（排序後）。"""
+    return sorted(k for k in set(before) | set(after)
+                  if before.get(k) != after.get(k))
+
+
+@pytest.fixture(autouse=True)
+def _no_real_state_writes(monkeypatch):
+    """任何測試要寫進正式 state 目錄就當場失敗，並指出是哪個檔。
+
+    擋三個收口：
+    - 開檔（含 `io.open`，`Path.write_text`／`Path.open` 走的是它）
+    - `os.replace`／`os.rename`，**來源與目的地都看**（atomic 寫入的最後一步
+      繞過開檔檢查——`upload_pdfs.save_state` 正是寫 `.tmp.<pid>` 再 replace；
+      反方向把營運檔搬出去等於刪除，見 `_guard_move`）
+    - `os.remove`／`os.unlink`／`os.rmdir`
+
+    讀取不擋：讀到正式檔是另一類問題（測試結果取決於今天跑成什麼樣），
+    已經由下面那幾個 per-file fixture 各自導向暫存路徑。
+
+    回傳 attempts list：**刻意要觸發防線**的守門測試拿到它之後自己 clear()，
+    否則 teardown 的斷言會把那支測試判成違規（它正是來驗防線有效的）。
+    """
+    attempts = []
+
+    def _blocked(path, what):
+        attempts.append(str(path))
+        raise RealStateWriteBlocked(
+            f'測試想{what}正式 state 檔：{path}\n'
+            '   這會改到營運中的資料（上傳帳本被併進假紀錄＝那份 PDF 永遠不會上傳）。\n'
+            '   請把該模組的路徑常數 monkeypatch 到 tmp_path，或用現成的 fixture。')
+
+    def guarded_open(file, mode='r', *args, **kwargs):
+        if any(c in mode for c in _WRITE_MODE_CHARS) and is_protected_path(file):
+            _blocked(file, '寫入')
+        return _REAL_OPEN(file, mode, *args, **kwargs)
+
+    def guarded_io_open(file, mode='r', *args, **kwargs):
+        if any(c in mode for c in _WRITE_MODE_CHARS) and is_protected_path(file):
+            _blocked(file, '寫入')
+        return _REAL_IO_OPEN(file, mode, *args, **kwargs)
+
+    def _guard_move(fn, what):
+        """rename／replace 的**兩端**都要看。
+
+        只看 dst 的話，把營運檔「搬出去」不會被擋（#115 review P2）：
+        `os.rename(正式檔, tmp/x.json)` 等於刪除，而第一層承諾的是「寫入與刪除
+        當場被擋」。這條路也不是第二層補得回來的——若有測試在 session 結束前把
+        檔案搬回去、而且 mtime 與大小一致，事後對帳就看不出中間被搬走過。
+        """
+        def wrapper(src, dst, *args, **kwargs):
+            if is_protected_path(src):
+                _blocked(src, '移出')
+            if is_protected_path(dst):
+                _blocked(dst, what)
+            return fn(src, dst, *args, **kwargs)
+        return wrapper
+
+    def _guard_target(fn, what):
+        def wrapper(path, *args, **kwargs):
+            if is_protected_path(path):
+                _blocked(path, what)
+            return fn(path, *args, **kwargs)
+        return wrapper
+
+    monkeypatch.setattr(builtins, 'open', guarded_open)
+    monkeypatch.setattr(io, 'open', guarded_io_open)
+    monkeypatch.setattr(os, 'replace', _guard_move(_REAL_REPLACE, '覆蓋'))
+    monkeypatch.setattr(os, 'rename', _guard_move(_REAL_RENAME, '覆蓋'))
+    monkeypatch.setattr(os, 'remove', _guard_target(_REAL_REMOVE, '刪除'))
+    monkeypatch.setattr(os, 'unlink', _guard_target(_REAL_UNLINK, '刪除'))
+    # 整個 state 目錄被移掉的殺傷力和逐檔刪一樣（shutil.rmtree 的最後一步）
+    monkeypatch.setattr(os, 'rmdir', _guard_target(_REAL_RMDIR, '刪除目錄'))
+    yield attempts
+    assert not attempts, (
+        f'這支測試想寫正式 state 檔（{len(attempts)} 次）：{sorted(set(attempts))}')
+
+
+@pytest.fixture(autouse=True, scope='session')
+def _production_state_unchanged():
+    """整套跑完後，正式 state 目錄必須與開跑前一模一樣。
+
+    上面的防線擋的是「經過 Python 檔案 API 的寫入」；這一層是事後對帳，
+    連 subprocess、`os.utime` 這類繞過去的路徑也抓得到。擋下來還不夠——
+    10/12 那次就是因為沒人在對帳，整套全綠而帳本已經被改寫。
+
+    偽陽性只有一種可能：測試期間排程的同步真的在寫 state。訊息裡要講清楚，
+    不然下一個看到紅字的人會以為是測試壞了。
+    """
+    before = state_snapshot()
+    yield
+    changed = snapshot_diff(before, state_snapshot())
+    assert not changed, (
+        '整套測試期間正式 state 檔被改動了：\n   ' + '\n   '.join(changed) +
+        '\n   （若此刻排程同步正在跑，那是偽陽性；否則就是有測試繞過防線寫進去了）')
+
+
+@pytest.fixture(autouse=True)
+def _no_real_upload_state(monkeypatch, tmp_path_factory):
+    """上傳帳本、永久歷史與 PDF inventory 一律導向暫存路徑。
+
+    有了上面的寫入防線，漏接的測試會**失敗**而不是污染資料；但失敗的測試仍要
+    有路可走，所以這裡把 `upload_pdfs` 的四個路徑常數都指到暫存目錄。
+
+    `STATE_LOCK_FILE` 一定要跟著換：它在 import 時就由 `STATE_FILE` 算好，
+    只換 `STATE_FILE` 的話 flock 仍然開在正式目錄（實測正式帳本的 `.lock`
+    mtime 真的被動到了）。這就是「cache key 要涵蓋所有 baked-in state」的同一
+    個形狀：衍生常數不會跟著來源變。
+    """
+    from geobingan_sync.steps import upload_pdfs
+    d = tmp_path_factory.mktemp('noupload')
+    monkeypatch.setattr(upload_pdfs, 'STATE_FILE',
+                        str(d / 'uploaded_to_geobingan_7days.json'))
+    monkeypatch.setattr(upload_pdfs, 'STATE_LOCK_FILE',
+                        str(d / 'uploaded_to_geobingan_7days.json.lock'))
+    monkeypatch.setattr(upload_pdfs, 'HISTORY_FILE', str(d / 'upload_history_all.json'))
+    monkeypatch.setattr(upload_pdfs, 'PDF_INVENTORY_FILE', str(d / 'pdf_inventory.json'))
 
 
 @pytest.fixture(autouse=True)
