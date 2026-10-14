@@ -23,6 +23,10 @@ PR #78 讓 sync 先從建管處發布頁動態解析當前清單連結，失敗�
 所以改成取「PDF 裡實際存在的建照號」（用 `\d{2,3}建字第\d{3,5}號` 在全文找，
 不受連結解析影響）。涵蓋率屬於我方能力，記在 unsupported_sources 名單。
 `basis` 欄位記下計算基準；基準變更時走**遷移**而非「清單已更新」，見 update()。
+
+同一條線的第三種情況：PDF 只抽到**部分頁面**（實測清單 37 頁、每頁 12 案，掉一頁
+就是靜默少 8～12 案）。那樣的集合是下限，拿去比對會報「移除 N 筆」，一樣是把我方
+的抽取能力記成對方改了清單。見 update() 的 `complete` 參數與 IncompletePermitList。
 """
 import hashlib
 import json
@@ -47,6 +51,16 @@ class EmptyPermitSet(ValueError):
 
     政府清單不存在「零筆」這種合法狀態，所以空集合永遠是我方解析失效。拋例外讓
     呼叫端整步失敗（shell 會記 error 並告警），不要留下看起來正常的錯資料。
+    """
+
+
+class IncompletePermitList(ValueError):
+    """PDF 只抽到部分頁面——這份清單是下限，不是「清單上只有這些」。
+
+    **沒有基線時一律 fail-closed。** 部分抽頁會留下一個少了 8～12 案的基線
+    （實測清單每頁 12 案），下一輪抽得完整就會誤報「新增 N 筆」，而且那個基線
+    從此被當成對方的清單內容。有基線時不拋例外：保留舊內容、只記下這輪抽頁
+    不完整（見 update() 的 complete 參數），因為舊基線仍然是最後一次完整觀測。
     """
 
 
@@ -107,13 +121,21 @@ class ListFingerprint:
 
     def update(self, label: str, source: str, permits: Iterable[str],
                now: Optional[datetime] = None, basis: str = BASIS_PERMITS_IN_PDF,
-               permits_with_links: Optional[int] = None) -> Tuple[bool, Optional[str], dict]:
+               permits_with_links: Optional[int] = None,
+               complete: bool = True,
+               incomplete_detail: str = '') -> Tuple[bool, Optional[str], dict]:
         """記錄本次清單身分。
 
         Returns:
             (changed, summary, state)
             changed：內容指紋是否與上次不同（首次建立基線、或基準遷移時為 False）
             summary：changed 為 True 時的人類可讀摘要，否則 None
+
+        **complete=False（PDF 只抽到部分頁面）**：這份建照集合是下限，拿它比對會
+        報「移除 N 筆」——看起來像政府下架了建案，還會把 last_changed 推到當天、
+        重設停更時鐘，正是 2026-09-30 那次誤報的傷害。所以**不寫入內容欄位**
+        （sha256／permits／permit_count／last_changed 全部保留舊值），只記下
+        `parse_incomplete` 與這輪的狀況；沒有基線時則拋 IncompletePermitList。
 
         **基準遷移**：指紋的計算基準若與檔案裡記的不同（例如從舊的「解析出連結的
         建照」換成「PDF 裡的建照」），指紋必然改變，但那不是對方改了清單。此時
@@ -135,6 +157,29 @@ class ListFingerprint:
                 f'清單解析未取得任何建照號（{where}）——研判為 PDF 文字抽取或建照'
                 f'正則失效。指紋不予更新，避免留下 0 筆基線導致下一輪誤報新增；'
                 f'請檢查 {prev.get("label") or label or "清單 PDF"} 是否改版')
+
+        # 只抽到部分頁面 → 這是下限，不是清單內容。在**寫入之前**擋下。
+        if not complete:
+            if first_time:
+                raise IncompletePermitList(
+                    f'清單 PDF 只抽到部分頁面（{incomplete_detail or "未記錄"}），'
+                    f'且目前尚無基線——不建立基線，否則會留下少掉幾頁的「清單內容」，'
+                    f'下一輪抽完整就誤報新增；請檢查 {label or "清單 PDF"} 或 pypdf')
+            state = dict(prev)
+            state.update({
+                'source': source,
+                'label': label,
+                'last_checked': now.isoformat(),
+                # 每輪都寫，不靠「時間戳相等」去推論——clear_pending 會推進
+                # last_checked，那種推論會在通知送出的那輪靜默失效。
+                'parse_incomplete': True,
+                'incomplete_parse_at': now.isoformat(),
+                'incomplete_parse_detail': incomplete_detail,
+                'incomplete_parse_lower_bound': len(permits),
+            })
+            if permits_with_links is not None:
+                state['permits_with_links'] = int(permits_with_links)
+            return False, None, self.save(state)
 
         digest = compute_digest(permits)
         prev_basis = prev.get('basis') or BASIS_LEGACY_WITH_LINKS
@@ -168,7 +213,14 @@ class ListFingerprint:
             'last_changed': now.isoformat() if (changed or first_time) else prev.get('last_changed', now.isoformat()),
             'last_change_summary': summary or prev.get('last_change_summary'),
             'pending_notices': pending,
+            # 這輪抽得完整就關掉旗標。留著不關＝一次不完整之後永久告警，
+            # 跟沒有告警一樣沒用；歷史留在 incomplete_parse_at。
+            'parse_incomplete': False,
         }
+        for k in ('incomplete_parse_at', 'incomplete_parse_detail',
+                  'incomplete_parse_lower_bound'):
+            if k in prev:
+                state[k] = prev[k]          # forensic：最後一次發生的時間與頁次
         if permits_with_links is not None:
             # 純資訊：我方解析出連結的數量。**不參與指紋**，否則又把涵蓋率混進來。
             state['permits_with_links'] = int(permits_with_links)
@@ -203,6 +255,14 @@ def assess(state: dict, now: Optional[datetime] = None,
     label = state.get('label') or '(無檔名)'
     count = state.get('permit_count', 0)
     source = state.get('source', '?')
+
+    if state.get('parse_incomplete'):
+        detail = state.get('incomplete_parse_detail') or '未記錄'
+        lower = state.get('incomplete_parse_lower_bound')
+        return 'error', (f'本輪清單 PDF 只抽到部分頁面（{detail}）——這輪的建照集合'
+                         f'只是下限{f"（{lower} 筆）" if lower else ""}，指紋沿用上一次'
+                         f'完整觀測（{label}，{count} 筆）。掉在抽不到的那幾頁上的建案'
+                         f'本輪不會被走訪，請檢查清單 PDF 或 pypdf')
 
     if source != '動態':
         return 'error', (f'正在使用靜態備援清單（{label}，{count} 筆）—— 發布頁動態解析失效，'

@@ -129,6 +129,9 @@ def test_sync_clears_pending_only_when_delivered(tmp_path, monkeypatch):
     # 指紋基準改為「PDF 裡的建照號」，測試物件要提供該欄位（production 由
     # parse_pdf_list 設定）。不提供就 AttributeError，那是刻意的：缺欄位要大聲壞掉。
     ps.permits_in_list = ['a', 'b']
+    # 同理，抽頁完整性也由 parse_pdf_list 設定：缺欄位要大聲壞掉，
+    # 不給預設值（部分抽頁被當成完整，就會誤報「移除 N 筆」）。
+    ps.list_parse_complete, ps.list_parse_detail = True, ''
     monkeypatch.setattr(sp, 'ListFingerprint', lambda *a, **k: fp, raising=False)
     import geobingan_sync.list_fingerprint as lf
     monkeypatch.setattr(lf, 'ListFingerprint', lambda *a, **k: fp)
@@ -160,6 +163,9 @@ def test_fingerprint_write_failure_aborts_sync(tmp_path, monkeypatch):
     # 指紋基準改為「PDF 裡的建照號」，測試物件要提供該欄位（production 由
     # parse_pdf_list 設定）。不提供就 AttributeError，那是刻意的：缺欄位要大聲壞掉。
     ps.permits_in_list = ['a', 'b']
+    # 同理，抽頁完整性也由 parse_pdf_list 設定：缺欄位要大聲壞掉，
+    # 不給預設值（部分抽頁被當成完整，就會誤報「移除 N 筆」）。
+    ps.list_parse_complete, ps.list_parse_detail = True, ''
     try:
         ps._record_list_fingerprint()
         assert False, '應該要 raise，讓同步步驟失敗'
@@ -186,6 +192,9 @@ def test_notice_failure_does_not_abort_sync(tmp_path, monkeypatch):
     # 指紋基準改為「PDF 裡的建照號」，測試物件要提供該欄位（production 由
     # parse_pdf_list 設定）。不提供就 AttributeError，那是刻意的：缺欄位要大聲壞掉。
     ps.permits_in_list = ['a', 'b']
+    # 同理，抽頁完整性也由 parse_pdf_list 設定：缺欄位要大聲壞掉，
+    # 不給預設值（部分抽頁被當成完整，就會誤報「移除 N 筆」）。
+    ps.list_parse_complete, ps.list_parse_detail = True, ''
     ps._record_list_fingerprint()                       # 不應拋出
     assert fp.load()['pending_notices'], '通知未送達應保留待重試'
     assert fp.load()['label'] == 'v2.pdf'               # 指紋本身照常更新
@@ -422,6 +431,9 @@ def test_sync_step_propagates_empty_parse_failure(tmp_path, monkeypatch):
     ps.list_label, ps.list_source = 'v1.pdf', '動態'
     ps.permit_mapping = {}
     ps.permits_in_list = []
+    # 同理，抽頁完整性也由 parse_pdf_list 設定：缺欄位要大聲壞掉，
+    # 不給預設值（部分抽頁被當成完整，就會誤報「移除 N 筆」）。
+    ps.list_parse_complete, ps.list_parse_detail = True, ''
     with pytest.raises(EmptyPermitSet):
         ps._record_list_fingerprint()
     assert fp.load()['permit_count'] == 440, '基線必須完好'
@@ -481,6 +493,9 @@ def test_sync_step_announces_discarded_notices(tmp_path, monkeypatch, capsys):
     ps.list_label, ps.list_source = 'v2.pdf', '動態'
     ps.permit_mapping = {'A': '', 'B': '', 'C': ''}
     ps.permits_in_list = ['A', 'B', 'C']
+    # 同理，抽頁完整性也由 parse_pdf_list 設定：缺欄位要大聲壞掉，
+    # 不給預設值（部分抽頁被當成完整，就會誤報「移除 N 筆」）。
+    ps.list_parse_complete, ps.list_parse_detail = True, ''
     ps._record_list_fingerprint()
     out = capsys.readouterr().out
     assert '指紋基準已從' in out and '丟棄舊基準留下的 1 則' in out
@@ -498,6 +513,9 @@ def test_sync_step_fails_on_empty_parse_with_no_baseline(tmp_path, monkeypatch):
     ps.list_label, ps.list_source = 'v1.pdf', '動態'
     ps.permit_mapping = {}
     ps.permits_in_list = []
+    # 同理，抽頁完整性也由 parse_pdf_list 設定：缺欄位要大聲壞掉，
+    # 不給預設值（部分抽頁被當成完整，就會誤報「移除 N 筆」）。
+    ps.list_parse_complete, ps.list_parse_detail = True, ''
     with pytest.raises(EmptyPermitSet):
         ps._record_list_fingerprint()
     assert fp.load() == {}, '不可留下任何狀態'

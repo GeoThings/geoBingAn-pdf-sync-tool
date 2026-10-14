@@ -188,6 +188,11 @@ class PermitSync:
         # 用「有連結的」當指紋，等於把「對方的清單」和「我方的解析能力」混成同一
         # 個數字，我們改解析器就會被記成對方改清單（2026-09-30 實際誤報一次）。
         self.permits_in_list = []
+        # 清單 PDF 是不是**整份**都抽到文字。只抽到部分頁面時 permits_in_list 是
+        # 下限（實測 37 頁、每頁 12 案，掉一頁就靜默少 8～12 案），任何「不在清單
+        # 上」的判定都不可以用它下結論。
+        self.list_parse_complete = True
+        self.list_parse_detail = ''
         self.csv_path = self.city.get('csv_path', '')
         self.shared_drive_id = self.city.get('shared_drive_id') or SHARED_DRIVE_ID
         self.target_folders = {}
@@ -394,9 +399,35 @@ class PermitSync:
             pdf_reader = pypdf.PdfReader(f)
             pages = pdf_reader.pages
             total = len(pages)
-            all_text = ''.join(
-                strip_page_footer(p.extract_text() or '', i, total)
-                for i, p in enumerate(pages, 1))
+            # 逐頁抽，而且記下哪幾頁沒抽到東西。原本是一行 genexp，`or ''` 把
+            # 「這頁抽不到文字」吞成空字串：整份清單少 12 案，帳上長得像政府下架了
+            # 12 案（2026-10-14 實測這份 PDF 37 頁、每頁 12 案，沒有任何一頁是空白，
+            # 最少的一頁也有 1091 字——所以「某頁 0 字」是抽取失效，不是正常版面）。
+            # 單頁拋例外也不再讓整步死掉：其餘 36 頁的資料照用，只是這輪的清單
+            # 標成不完整，不拿來下「某案已離開清單」這種結論。
+            parts, missing = [], []
+            for i, page in enumerate(pages, 1):
+                try:
+                    text = page.extract_text() or ''
+                except Exception as e:                          # noqa: BLE001
+                    print(f"  ⚠️ 第 {i}/{total} 頁文字抽取失敗（{type(e).__name__}: {e}）")
+                    text, _ = '', missing.append(i)
+                else:
+                    if not text.strip():
+                        print(f"  ⚠️ 第 {i}/{total} 頁抽不到任何文字")
+                        missing.append(i)
+                parts.append(strip_page_footer(text, i, total))
+            all_text = ''.join(parts)
+            self.list_parse_complete = not missing
+            if missing:
+                shown = '、'.join(str(i) for i in missing[:5])
+                more = '…' if len(missing) > 5 else ''
+                self.list_parse_detail = (f'{total} 頁中有 {len(missing)} 頁抽不到文字'
+                                          f'（第 {shown}{more} 頁）')
+                print(f"  ⚠️ {self.list_parse_detail}——本輪清單只是下限，"
+                      f"不會用來判定任何建案「已離開清單」")
+            else:
+                self.list_parse_detail = ''
 
         # 移除空白，接合斷行（網址常被 PDF 斷行，所以連空白一起清掉）
         clean_text = re.sub(r'\s+', '', all_text)
@@ -486,8 +517,18 @@ class PermitSync:
             # 刻意不寫 `or permit_mapping.keys()` 當回退：那會在 permits_in_list
             # 為空時靜默用回錯的基準，正是這支要修的問題。缺欄位就大聲壞掉。
             self.permits_in_list,
-            permits_with_links=len(self.permit_mapping))
+            permits_with_links=len(self.permit_mapping),
+            # 部分抽頁的集合是下限：寫進指紋會報「移除 N 筆」，看起來像政府
+            # 下架了建案，還會把 last_changed 推到當天、重設停更時鐘。
+            complete=self.list_parse_complete,
+            incomplete_detail=self.list_parse_detail)
         print(f"🧾 清單指紋: {state['label']}（{state['source']}，{state['permit_count']} 筆建照）")
+        if state.get('parse_incomplete'):
+            # 指紋沿用上一次完整觀測，所以上面那行數字**不是本輪量到的**。
+            # 不說清楚的話，日誌看起來完全正常。
+            print(f"   ⚠️ 本輪抽頁不完整（{state.get('incomplete_parse_detail') or '未記錄'}），"
+                  f"指紋沿用上一次完整觀測；本輪只看到 "
+                  f"{state.get('incomplete_parse_lower_bound')} 筆（下限）")
         if state.get('basis_migrated_at') == state.get('last_checked'):
             print(f"🔀 指紋基準已從 {state.get('basis_migrated_from')} 遷移為 {state.get('basis')}"
                   f"（不視為清單變更，未推進 last_changed）")
