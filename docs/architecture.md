@@ -277,6 +277,7 @@ state/sync_permits_progress.json 更新（thread-safe _state_lock）
 | `list_failed` | `null` | 鏡像的非 PDF 數／`null` | 同左 | 列出失敗（Drive API 或 adapter） |
 | `not_measured` | `null` | `null` | `null` | 整包來源本輪沒吐出任何成員 |
 | `invalid_url` | `null` | `0` | `null` | URL 解不出 folder id 且無對應 adapter |
+| `source_gone` | `null` | `null` | `null` | 列出零筆，而且資料夾本身已 404／在垃圾桶 |
 
 三個數字回答三個不同的問題：`pdf`＝**riskmap 收得到幾份**、`other`＝我們鏡像了
 幾個非 PDF、`skipped`＝連鏡像都不收的型別數。`pdf` 只算 PDF 是刻意的——
@@ -326,6 +327,17 @@ adapter 三條路（dropbox／pcloud／redsun）仍然只收 `.pdf`——那要�
 `finalize_run()` 把它判成「這輪成功」並清掉既有 `error_streak`——同一個子資料夾
 天天 403 也永遠到不了三輪告警（#114 review P1，與 #111 同一個錯誤類型：
 資料層知道本輪不完整，連續失敗層得到相反結論）。
+
+**零筆要先問資料夾還在不在（2026-10-14）：** 列檔用的查詢是 `'<id>' in parents`，
+資料夾被刪掉之後它**不會報錯**，只是回零筆。於是「資料夾不存在了」與「資料夾是
+空的」在列檔結果上一模一樣——那一天 14 個建照（來源 URL 正是 `gov_pdf_url_404.csv`
+列管的失效連結）被記成 `empty`、`pdf: 0`，再被讀成「承造人的資料夾開著但裡面
+沒東西」送出去。現在真的零筆時會多問一次 `files().get`（只在零筆時問，每輪十幾
+次）：404 或 `trashed` 記 `source_gone`；403／5xx 一律當成未取得（`list_failed`
+並進錯誤帳），因為權限被收回或對方掛掉都不足以斷定「不存在」，斷言失效會讓這案
+被拿去找承造人。`source_gone` 會在本輪摘要以 🔗 列出——它是狀態不是失敗，所以不進 error
+streak。**我們不主動聯絡承造人**（Zhe 2026-10-14 定），所以摘要的作用是讓這些案
+一直看得見、而不是提示去發信；要不要補件由市府與承造人那邊自己走。
 
 為什麼要分這麼細：2026-10-12 盤點「清單 438 案有沒有遺漏」時，99 案的
 `pdf_count` 是 `None`，看起來全是「從沒量過」。實際上程式早就量到了，只是
@@ -438,6 +450,21 @@ Shared Drive
 手動確認：31 筆建案名稱已由使用者逐一確認
 API project 匹配：116 筆（滑動視窗 + 去重）
 ```
+
+**`pdf_count` 不跟著名稱消失（2026-10-14）：** 來源 3 掃完 Shared Drive 的 PDF
+之後，份數與名稱是**兩件獨立的事實**。原本兩者一起放在「名字抽得出來」那個條件
+底下，於是 41 個建照（來源明明有 PDF，抽查目標資料夾實際 147／86／42 份）在
+registry 連 `pdf_count` 欄位都沒有，而下游把「沒有欄位」讀成 0 份——最後變成
+對外說「資料夾開著但裡面沒東西」。現在：
+
+- `fetch_drive_pdf_names()` 對每個有 PDF 的建照都回一筆，名字抽不出來就是空字串；
+  回傳 `(names, scan_complete)`。
+- 名稱相關的邏輯只看 `named_only()` 篩過的那一份，份數看完整的那一份。分流只做
+  一次，不靠兩個呼叫點各自加條件（否則 `name: ''` 會把既有名稱覆寫成空字串）。
+- 份數寫入走純函式 `apply_pdf_count()`，規則同 `apply_url_probe`：**翻頁中斷時
+  份數只是下限，不得覆寫有定論的數字**，改記 `pdf_count_scan_error_at` 讓「這輪
+  沒數完」看得見，下一輪數完就寫數字並清掉標記。沒有這一條，Fix 本身會把
+  146 份寫成 40 份——錯的數字長得像對的，比沒有數字更糟。
 
 ### 步驟 3：generate_permit_tracking_report.py
 

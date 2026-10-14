@@ -21,7 +21,7 @@ import requests
 
 _session = requests.Session()
 from datetime import datetime, timedelta
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 from collections import Counter
 
 # 載入設定
@@ -311,9 +311,64 @@ def fetch_source_folder_names(gov_data: dict, drive_service, prior_registry: dic
     return names, statuses, checked_at
 
 
+
+
+def named_only(drive_names: dict) -> dict:
+    """只留下真的抽到名字的那些案，給**名稱相關**的邏輯用。
+
+    `fetch_drive_pdf_names` 現在對「有 PDF 但名字抽不出來」的案也會有一筆
+    （份數不可以跟著名稱消失），所以名稱那邊不能再用 `permit in drive_names`
+    當「有名字」的同義詞——直接讀 `['name']` 會把既有名稱覆寫成空字串。
+    分流只做一次、擺在這裡，不靠兩個呼叫點各自記得加條件。
+    """
+    return {p: v for p, v in drive_names.items() if (v or {}).get('name')}
+
+
+def apply_pdf_count(entry: dict, info: dict, scan_complete: bool,
+                    now: str = None) -> bool:
+    """把一次 Drive PDF 掃描的份數寫進 registry entry（純函式，便於測試）。
+
+    規則同 ``apply_url_probe``：**無定論不得覆寫有定論的觀測**。翻頁中斷時這一輪
+    的份數只是下限，寧可留著上一輪的數字、另記 ``pdf_count_scan_error_at`` 讓
+    「這輪沒數完」看得見；下一輪數完就寫數字並清掉標記。
+
+    呼叫條件是「這案在本輪掃描範圍內」（見 `fetch_drive_pdf_names` 的鍵）。
+    不在範圍內就整個不呼叫——那是沒量過，既有數字與標記都不可以動。
+
+    份數本身與「名稱抽不出來」無關：2026-10-14 有 41 案來源明明有 PDF、registry
+    卻連 ``pdf_count`` 欄位都沒有，因為份數被放在名稱那個條件底下一起消失，
+    下游再把「沒有欄位」讀成 0 份。
+
+    回傳有沒有改動 entry。
+    """
+    if scan_complete:
+        count = int(info.get('pdf_count', 0))
+        changed = entry.get('pdf_count') != count
+        entry['pdf_count'] = count
+        if entry.pop('pdf_count_scan_error_at', None) is not None:
+            changed = True
+        return changed
+    if entry.get('pdf_count_scan_error_at'):
+        return False
+    entry['pdf_count_scan_error_at'] = now or datetime.now().isoformat()
+    return True
+
+
 # ==================== 來源 3: Drive PDF 檔名 ====================
-def fetch_drive_pdf_names(drive_service) -> Dict[str, dict]:
-    """批次掃描 Shared Drive 所有 PDF，提取建案名稱"""
+def fetch_drive_pdf_names(drive_service) -> Tuple[Dict[str, dict], bool]:
+    """批次掃描 Shared Drive 所有 PDF，回傳 `(每案的名稱與份數, 掃描是否完整)`。
+
+    鍵是**本輪掃描範圍**：在共用雲端硬碟有資料夾的建照，含 0 份的那些。合併層
+    靠這個範圍分辨「掃完了、這案 0 份」（要歸零）與「這案沒有資料夾」（沒量過、
+    不可以動）。回傳的每一筆都有 `pdf_count`；`name` 抽不出來時是空字串。
+    **份數不可以跟著名稱一起消失**：2026-10-14 發現 41 案來源明明有 PDF、registry 卻連
+    `pdf_count` 欄位都沒有，因為整筆都被放在「名字抽得出來」那個條件底下，
+    而下游把「沒有欄位」讀成 0 份，最後變成對外說「資料夾開著但裡面沒東西」。
+
+    第二個回傳值是「這次翻頁有沒有翻完」。翻頁中斷時 `pdf_count` 只是下限，
+    呼叫端必須當成未取得、不可覆寫既有數字（同 `apply_url_probe` 的規則：
+    無定論不得覆寫有定論的觀測）。
+    """
     print("📁 來源 3: Drive PDF 檔名...")
 
     from geobingan_sync.drive_utils import list_top_level_folders, list_all_subfolders, build_folder_resolver
@@ -337,6 +392,7 @@ def fetch_drive_pdf_names(drive_service) -> Dict[str, dict]:
 
     # 批次掃描所有 PDF
     permit_files = {}  # permit → [filenames]
+    complete = True
     page_token = None
     while True:
         try:
@@ -365,26 +421,37 @@ def fetch_drive_pdf_names(drive_service) -> Dict[str, dict]:
             if not page_token:
                 break
         except Exception as e:
-            print(f"  ⚠️ PDF 掃描中斷: {e}")
+            print(f"  ⚠️ PDF 掃描中斷: {e}（本輪份數只是下限，不寫進 registry）")
+            complete = False
             break
 
     # 從檔名提取名稱（投票制：最常出現的名稱）
     from geobingan_sync.permit_utils import extract_name_from_filename
+    # 逐案的鍵是**本輪掃描範圍**（在共用雲端硬碟有資料夾的建照），不是「找到
+    # PDF 的建照」。差別就是合併層能不能分辨兩件事：
+    #   掃完了、這案 0 份      → 要把 registry 既有的數字歸零
+    #   這案根本沒有資料夾      → 我們沒量過，不可以動它
+    # 只回傳有 PDF 的那些時，前者永遠進不到合併層（`if permit in drive_names`
+    # 為假），registry 會永遠留著舊數字；純函式測試涵蓋了規則卻測不到接線，
+    # 那正是 #118 review 的 P1。
     names = {}
-    for permit, files in permit_files.items():
+    for permit in sorted(set(folders.values())):
+        files = permit_files.get(permit, [])
         counts = Counter()
         for fn in files:
             name = extract_name_from_filename(fn)
             if name:
                 counts[name] += 1
-        if counts:
-            names[permit] = {
-                'name': counts.most_common(1)[0][0],
-                'pdf_count': len(files),
-            }
+        # 名稱抽不出來只影響名稱。份數是獨立量到的事實，一定要帶回去。
+        names[permit] = {
+            'name': counts.most_common(1)[0][0] if counts else '',
+            'pdf_count': len(files),
+        }
 
-    print(f"  {len(names)} 個有名稱（共 {len(permit_files)} 個建照）")
-    return names
+    named = sum(1 for v in names.values() if v['name'])
+    print(f"  {named} 個有名稱、{len(names)} 個在本輪掃描範圍"
+          f"（其中 {len(permit_files)} 個有 PDF）")
+    return names, complete
 
 
 # ==================== 來源 4: API construction-projects ====================
@@ -536,7 +603,9 @@ def build_registry(city: dict = None):
     gov_data = fetch_gov_pdf_data(city=city)
     source_names, gov_url_statuses, gov_url_checked_at = fetch_source_folder_names(
         gov_data, drive_service, prior_registry=registry)
-    drive_names = fetch_drive_pdf_names(drive_service)
+    drive_names, drive_scan_complete = fetch_drive_pdf_names(drive_service)
+    # 份數看 drive_names（每案都有），名稱只看 drive_named（有抽到名字的）
+    drive_named = named_only(drive_names)
     api_projects = fetch_api_projects()
     report_permits = fetch_api_report_categories()
     live_alerts = fetch_live_alerts()
@@ -605,8 +674,8 @@ def build_registry(city: dict = None):
 
         if not is_protected:
             # 來源 3: Drive PDF 檔名（優先於 source_folder）
-            if permit in drive_names:
-                drive_name = drive_names[permit]['name']
+            if permit in drive_named:
+                drive_name = drive_named[permit]['name']
                 if is_poor_name or (current_source == 'source_folder' and len(drive_name) > len(current_name)):
                     entry['name'] = drive_name
                     entry['name_source'] = 'drive_pdf'
@@ -620,11 +689,12 @@ def build_registry(city: dict = None):
 
         # 合併 Drive 資料
         if permit in drive_names:
-            entry['pdf_count'] = drive_names[permit].get('pdf_count', 0)
+            if apply_pdf_count(entry, drive_names[permit], drive_scan_complete):
+                changed = True
 
         # 合併 API 資料（用檔名關鍵字匹配）
-        if not entry.get('address') and permit in drive_names:
-            drive_name = drive_names[permit]['name']
+        if not entry.get('address') and permit in drive_named:
+            drive_name = drive_named[permit]['name']
             matched_api = None
 
             for api_name, api_info in api_project_index.items():

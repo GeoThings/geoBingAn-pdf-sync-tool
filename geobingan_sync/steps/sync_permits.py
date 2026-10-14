@@ -92,7 +92,7 @@ MAX_CONCURRENT_PERMITS = 5  # 同時處理的建案數（Google Drive API quota:
 #: 未取得與實測 0 混同就是把告警變成靜默，那條不變式不可只活在測試裡
 #: （同 feedback_enforce_invariant_at_boundary）。
 UNKNOWN_SCAN_REASONS = frozenset({'list_failed', 'invalid_url', 'partial',
-                                  'not_measured'})
+                                  'not_measured', 'source_gone'})
 
 # 鏡像與「算不算可上傳的 PDF」的判定只有一份，在 geobingan_sync.mirror_types。
 # 三個呼叫端（這裡、upload_pdfs、match_permits）共用——各寫一套的後果見該模組
@@ -295,7 +295,11 @@ class PermitSync:
         算進去，就等於宣稱這案有 13 份報告在收。
         """
         failed = scan.get('failed', 0)
-        if failed:
+        if scan.get('missing'):
+            # 資料夾已經不存在了：這不是實測 0，是量不到。擺在 `failed` 之前，
+            # 因為「來源不見了」比「有幾個子資料夾列不出來」更確定。
+            reason, pdf = 'source_gone', None
+        elif failed:
             reason = 'partial' if (pdf_files or other_files) else 'list_failed'
             pdf = None
         elif pdf_files:
@@ -548,6 +552,33 @@ class PermitSync:
 
         return None
     
+    def _source_folder_state(self, folder_id: str) -> str:
+        """回答「這個來源資料夾還在嗎」：`alive` / `gone` / `unknown`。
+
+        為什麼需要單獨問一次：列檔用的查詢是 `'<id>' in parents`，資料夾被刪掉
+        之後這個查詢**不會報錯**，只是回零筆。於是「資料夾已經不存在」和「資料夾
+        是空的」在列檔結果上長得一模一樣——2026-10-14 有 14 案因此被記成實測
+        0 份，而它們的來源 URL 正是 registry 列管的失效連結；那個錯誤最後變成
+        對外講「承造人的資料夾開著但裡面沒東西」。
+
+        只在「真的零筆」時才呼叫（有檔案或有跳過的型別就證明資料夾還在），所以
+        每輪多出來的 API 呼叫只有十幾次。
+
+        分不出來一律回 `unknown`，由呼叫端當成未取得：403 是權限被收回、5xx
+        是對方的問題，兩者都不足以斷定「不存在」。只有 404 與 trashed 才算
+        `gone`——斷言失效會讓這案進失效名單，寧可下一輪再確認。
+        """
+        try:
+            meta = self._get_svc().files().get(
+                fileId=folder_id, fields='id, trashed',
+                supportsAllDrives=True).execute()
+        except HttpError as e:
+            status = getattr(getattr(e, 'resp', None), 'status', None)
+            return 'gone' if status == 404 else 'unknown'
+        except Exception:                                       # noqa: BLE001
+            return 'unknown'
+        return 'gone' if meta.get('trashed') else 'alive'
+
     def list_files_recursive(self, folder_id: str, path: str = "",
                              scan: dict = None) -> List[Tuple[str, str, str, str, str]]:
         """遞迴列出資料夾裡**要鏡像**的檔案（PDF、圖片、Excel）。
@@ -974,7 +1005,23 @@ class PermitSync:
                 elif scan['skipped']:
                     self._print(f"  ⚠️ 來源有 {scan['skipped']} 個不收的檔案型別，沒有可鏡像的檔案")
                 else:
-                    self._print(f"  ⚠️ 來源無檔案")
+                    # 零筆有兩種完全不同的成因，在這裡問清楚（見
+                    # `_source_folder_state`），不要讓「資料夾不見了」被寫成
+                    # 實測 0 份。
+                    state = self._source_folder_state(source_folder_id)
+                    if state == 'gone':
+                        scan['missing'] = True
+                        self._print("  ⚠️ 來源資料夾已不存在或被丟進垃圾桶，"
+                                    "本輪未量到（不記為 0 份）")
+                    elif state == 'unknown':
+                        # 查不到就是未取得。這條會進錯誤帳：連續查不到要讓
+                        # streak 告警看得見，而「不存在」是狀態不是失敗，不進。
+                        scan['failed'] = scan.get('failed', 0) + 1
+                        self._record_error(permit_no, '來源資料夾狀態查不到')
+                        self._print("  ⚠️ 來源資料夾狀態查不到，"
+                                    "本輪未量到（不記為 0 份）")
+                    else:
+                        self._print(f"  ⚠️ 來源無檔案")
                 self._record_source_scan(permit_no, **self._scan_result(scan, [], []))
                 return
             if not pdf_files:
@@ -1268,6 +1315,15 @@ class PermitSync:
                       + (' 等' if len(other_only) > 5 else '')
                       + "——承造人改用 .xls／圖片發布，已鏡像進雲端硬碟，"
                         "但不會上傳到 riskmap")
+            gone = sorted(p for p, v in scanned.items()
+                           if p in self._visited_permits
+                           and (v or {}).get('reason') == 'source_gone')
+            if gone:
+                print(f"  🔗 來源資料夾已不存在（{len(gone)} 案）: "
+                      + '、'.join(gone[:5])
+                      + (' 等' if len(gone) > 5 else '')
+                      + "——帳上記未取得而不是 0 份。我們不主動聯絡承造人"
+                        "（Zhe 2026-10-14 定），這裡只負責讓它一直看得見")
             if dropped:
                 print(f"  🧹 錯誤紀錄修剪 {dropped} 筆"
                       f"（保留 {sync_errors.KEEP_ERROR_DAYS} 天／"
