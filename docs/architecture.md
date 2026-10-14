@@ -206,7 +206,7 @@ iCloud Drive `Desktop & Documents` 同步是 macOS 預設開啟的、會把 `~/D
 | `config.py` | 配置 + escape_drive_query | 7 cases |
 | `city_config.py` | 多城市配置載入/解析 | — |
 | `link_resolver.py` | 間接連結解析 + 逐跳 SSRF 守門（連線層驗對端 IP） | 42 cases |
-| `list_fingerprint.py` | 政府清單指紋、basis 遷移、空集合保護 | 39 cases |
+| `list_fingerprint.py` | 政府清單指紋、basis 遷移、空集合保護、部分抽頁保護 | 39 + 12 cases |
 | `unsupported_sources.py` | 接不到的來源分類／彙總／定期重測／恢復偵測 | 120 cases |
 | `step_results.py` | 步驟計數落檔（unknown ≠ 0、跨輪邊界） | 47 cases |
 | `source_adapters/base.py` | SourceFile 白名單、逐跳守門、zip 解包限額 | 62 cases |
@@ -240,6 +240,13 @@ cities.json（多城市配置）
     │       不變量 1：指紋寫入 **fail-closed**——寫不進去就讓同步步驟失敗，不可
     │       吞例外繼續；否則本輪明明退回靜態、health_check 卻仍讀到上輪的
     │       source=動態，silent fallback 原封不動回來
+    │       不變量 1.5：清單 PDF **逐頁**抽文字，哪一頁抽不到／拋例外都記下來
+    │       （`list_parse_complete` / `list_parse_detail`）。只抽到部分頁面時那份
+    │       建照集合是**下限**：指紋不寫內容欄位（保留上一次完整觀測、不推進
+    │       last_changed），只記 `parse_incomplete`＋頁次，health_check 報 error；
+    │       沒有基線時拋 IncompletePermitList（別留下少幾頁的基線，下一輪抽完整
+    │       會誤報新增）。實測掉第 12 頁＝少 12 案，舊版會發「移除 12 筆（多為完工
+    │       下架）」並把那 12 案在列管表標成已離開清單（2026-10-14 以真實清單驗證）
     │       不變量 2：指紋照常更新（health_check 才不會讀到過期的來源資訊），但變更
     │       通知存成 pending_notices，**ClickUp 送達才清除**、否則下輪重試——
     │       若先把指紋存成新 hash 再送，下一輪 changed=False，通知永久遺失
@@ -614,7 +621,7 @@ adapter 連的是外部文件指定的網址，與 link_resolver 同屬不可信
 |------|------|----------|----------|
 | `upload_history_all.json` | 永久上傳歷史（防重複上傳） | 每次成功上傳 | ✅ 是 |
 | `permit_registry.json` | 建案名稱交叉比對結果（6 來源） | match_permits.py 執行時 | ✅ 是 |
-| `gov_pdf_url_404.csv` | 失效來源 URL 列管表（給建管處）。**分兩種**：`本輪仍在市府清單`＝是（對方真的有東西要更新）／否（我們的 404 是舊判決，同步也不會再走訪它，因為走訪範圍同樣來自那份清單）／**未取得**（這輪根本沒取到清單——上游 PDF 改版或解析器回歸都會讓它靜默變成零筆，那是量不到，不可以寫成「全部離開」；`gov_permits` 沒有預設值，漏傳會當場 TypeError）。`最後重驗日` 是逐案的 `gov_pdf_url_checked_at`，不是輸出當天——舊版把每列都寫成當天，整張表的批次資訊會被抹平（2026-10-14 實測 47 筆全同一天，我因此把兩種狀況讀成一件事、對外講錯案數）。輸出日另成一列。判定基準取**清單成員**（`fetch_gov_pdf_data` 的第二個回傳值 `permits_in_list`），不是「解析出連結的案」：後者少掉的那些會被標成「已離開清單」，而歷史日誌裡這個落差一度是 439 案中的 71 案（regex 只收 drive.google.com 的時期） | match_permits.py 執行時 | ✅ 是 |
+| `gov_pdf_url_404.csv` | 失效來源 URL 列管表（給建管處）。**分兩種**：`本輪仍在市府清單`＝是（對方真的有東西要更新）／否（我們的 404 是舊判決，同步也不會再走訪它，因為走訪範圍同樣來自那份清單）／**未取得**（這輪根本沒取到清單——上游 PDF 改版或解析器回歸都會讓它靜默變成零筆，那是量不到，不可以寫成「全部離開」；`gov_permits` 沒有預設值，漏傳會當場 TypeError）。`最後重驗日` 是逐案的 `gov_pdf_url_checked_at`，不是輸出當天——舊版把每列都寫成當天，整張表的批次資訊會被抹平（2026-10-14 實測 47 筆全同一天，我因此把兩種狀況讀成一件事、對外講錯案數）。輸出日另成一列。**只抽到部分頁面時**（`ListMembership.complete` 為 false）集合是下限：在集合裡的照樣判「是」，不在的一律 `未取得`——不可以因為沒抽到就說人家離開清單。判定基準取**清單成員**（`fetch_gov_pdf_data` 的第二個回傳值 `permits_in_list`），不是「解析出連結的案」：後者少掉的那些會被標成「已離開清單」，而歷史日誌裡這個落差一度是 439 案中的 71 案（regex 只收 drive.google.com 的時期） | match_permits.py 執行時 | ✅ 是 |
 | `sync_permits_progress.json` | 已處理建案清單、錯誤結算、來源量測（`source_scan`） | 每個建案 | 否 |
 | `uploaded_to_geobingan_7days.json` | 已上傳 PDF 記錄（legacy 掃描快取於 pdf_inventory 建立後自動移除） | 每次成功上傳 | 否 |
 | `pdf_inventory.json` | 建案 PDF inventory（已成功對應建案資料夾的 PDF；不含根目錄/unmatched。月度趨勢/decline 分析資料源；未落地前 consumer fallback 讀 legacy cache） | 每次掃描完成 | 否 |
@@ -623,7 +630,7 @@ adapter 連的是外部文件指定的網址，與 link_resolver 同屬不可信
 | `alert_state_healthcheck.json` / `alert_state_sync.json` | 告警去重狀態（各 producer 一個 namespace；key → level/first_seen/last_sent） | 通知真的送達時 | 否 |
 | `link_resolution.json` | 間接連結解析快取（permit → folder_id／method／resolved_at；14 天保鮮，來源 URL 變更即失效；**失敗也快取**，否則每次同步都會對 43 個解不開的連結重打一輪） | 每日同步 | 否 |
 | `upload_budget.json` + `.lock` | **今日**解析預算帳本（day/uploaded/**retried**/units/est_usd；flock；**跨日歸零**，**台北午夜**換日；舊月格式檔自動視為非今日而歸零） | 上傳或重推預留／退還時 | 否（重推走 `steps.retry_parse`，它自己預留） |
-| `list_fingerprint.json` | 政府清單指紋（source／label／permit_count／sha256／last_changed） | 每次 sync 解析清單後 | 否 |
+| `list_fingerprint.json` | 政府清單指紋（source／label／permit_count／sha256／last_changed）。`parse_incomplete` 每輪實寫：只抽到部分頁面那輪為 true，內容欄位保留上一次完整觀測，`incomplete_parse_at`／`_detail`／`_lower_bound` 留下是哪幾頁與本輪看到幾筆（不靠「時間戳相等」推論，clear_pending 會推進 last_checked） | 每次 sync 解析清單後 | 否 |
 | `folder_deaths.json` | 來源資料夾由活轉死的紀錄（append-only，附 detected 日期與 pdf_count）。**fail-closed**：先原子寫入此檔成功才提交 registry——順序相反時，中斷會讓 registry 已存 404、下輪 prior 非 alive，該次死亡永遠偵測不到；讀到損毀 JSON 一律 raise，不靜默重置以免丟失歷史。事件以 `(permit, source_url)` 去重（**不含日期**）——death 已寫、registry 提交失敗時，下一輪（排程每日跑，通常是隔天）prior 仍是 alive、會再次偵測到同一次死亡；鍵若含偵測日，去重只在同一天有效。同一建案換新 folder URL 後再失效會自然形成新事件 | 偵測到新失效時 | 否 |
 | `unsupported_sources.json` | 接不到的來源名單（permit → url／host／family／note／first_seen／last_seen，加上定期重測的 `probe_verdict`／`probed_at`／`probe_recovered_at`）。頂層帶 `baseline_since`（判定「近期新增」的基準，不可用每筆的 first_seen）與 `first_run`。**probe 欄位只在 URL 未變時保留** | 每次 sync 重建 | 否 |
 | `bundle_fetches.json` | bundle 來源（Dropbox zip）的抓取時間戳，7 天間隔。只在真的抓完才寫；read-modify-write 由模組級 `threading.Lock` 保護 + 唯一暫存檔名（**process 內保護，非 flock**） | adapter 抓取成功時 | 否 |
@@ -959,6 +966,7 @@ config.py (from .env)  →  環境變數  →  硬編碼預設值
 | `test_resolve_list_pdf_url.py`／`test_download_pdf_list_fallback.py` | 清單動態解析與候選 fallback（PR #78） | 7 | monkeypatch |
 | `test_alert_state.py`／`test_notify_mention.py`／`test_health_check_dedup.py` | 告警去重/升級、送達才落狀態、namespace 分離、mention payload（PR #79） | 23 | tmp_path |
 | `test_budget.py`／`test_check_parse_backlog.py`／`test_process_single_pdf_classification.py`／`test_upload_response_classification.py` | 預算守門（預留/退還/跨日/POST 前守門/8 子程序併發/重推與上傳共用日額度）、解析積壓與預算檢查、回應分類（PR #80） | 40+ | tmp_path, subprocess |
+| `test_list_parse_completeness.py` | 清單 PDF 部分抽頁：空白頁／拋例外都標成不完整（其餘頁照用）、指紋不覆寫基線也不報移除、沒有基線時 fail-closed、恢復不算變更、health_check 報 error、送通知不會讓告警靜默、production 接線把完整性傳到指紋 | 12 | tmp_path |
 | `test_list_fingerprint.py`／`test_folder_deaths.py` | 清單指紋（變更／靜態退回／停更／寫入 fail-closed／通知 pending 重試）、來源資料夾由活轉死（fail-closed 排序／事件去重不含日期／損毀不重置）（PR #82） | 28 | tmp_path |
 | `test_email_alert.py` | Email 通道（組信 MIME／未設定／SMTP 成功失敗／error 以 Email 判送達／warning 不寄信／未設定退回 ClickUp／**error 恢復走 Email 且失敗重試**） | 9 | monkeypatch |
 | **合計** | | **306** | |

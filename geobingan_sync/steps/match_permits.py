@@ -21,7 +21,7 @@ import requests
 
 _session = requests.Session()
 from datetime import datetime, timedelta
-from typing import Dict, Optional, Set, Tuple
+from typing import Dict, NamedTuple, Optional, Tuple
 from collections import Counter
 
 # 載入設定
@@ -84,25 +84,49 @@ def extract_name_from_text(text: str) -> str:
 
 
 # ==================== 來源 1: 政府 PDF ====================
-def fetch_gov_pdf_data(city: dict = None) -> Tuple[Dict[str, dict], Set[str]]:
+class ListMembership(NamedTuple):
+    """本輪市府清單上有誰，以及這份名單能不能用來判定「不在清單上」。
+
+    成員集合與「完不完整」必須綁在一起傳，不可以拆成一個裸 set：
+    - PDF 只抽到部分頁面時，集合是**下限**（實測 37 頁、每頁 12 案）。
+    - 「在集合裡」永遠可以斷定（找到的那些案真的在清單上）。
+    - 「不在集合裡」只有在完整抽到時才等於「已離開清單」。
+
+    裸 set 傳進下游就會被當成完整清單，於是掉在抽不到那幾頁的建案會被判成
+    「已離開清單」——跟 #119 那個 `set(gov_data)` 是同一個形狀的錯誤，只是
+    這次少掉的不是「沒解析出連結的案」而是「沒抽到的那幾頁」。
+    """
+    permits: frozenset
+    complete: bool
+    detail: str = ''            # 不完整時的說明（哪幾頁），純文字
+
+    @property
+    def conclusive(self) -> bool:
+        """能不能用來斷定「某案已離開清單」。"""
+        return self.complete and bool(self.permits)
+
+
+def fetch_gov_pdf_data(city: dict = None) -> Tuple[Dict[str, dict], 'ListMembership']:
     """從政府 PDF 取得建照號碼 + 承造人/監造人，以及**清單上的全部建照**。
 
     回傳兩個值而不是一個，因為這兩個集合不一樣大：第一個只有「解析出連結」的
     案（下游要靠 URL 去走訪，所以合併層用它），第二個才是清單成員。
     誰在清單上是對方的事實，解不解析得出連結是我方的能力——混用就是把我方的
     解析能力記成對方的清單內容（同 #118 的 `pdf_count`、同清單指紋的基準）。
+
+    第二個回傳值是 `ListMembership`，連「這份名單完不完整」一起帶出來：PDF 只
+    抽到部分頁面時它是下限，不可以用來判定誰已離開清單。
     """
     print("📄 來源 1: 政府 PDF...")
     from geobingan_sync.steps.sync_permits import PermitSync
     ps = PermitSync(city=city)
     pdf_path = ps.download_pdf_list()
     mapping = ps.parse_pdf_list(pdf_path)
-
-    # 從 PDF 原文解析承造人
-    import pypdf
-    with open(pdf_path, 'rb') as f:
-        reader = pypdf.PdfReader(f)
-        all_text = ''.join(p.extract_text() or '' for p in reader.pages)
+    # 這裡原本還有一段「從 PDF 原文解析承造人」，把整份 PDF 再抽一次文字存進
+    # all_text——而 all_text 從頭到尾沒有人用（承造人早就改從別處拿）。留著不只
+    # 是多跑一次：那一行是舊寫法 `p.extract_text() or ''`，**沒有逐頁容錯**，
+    # 於是同一個壞頁照樣會讓 build_registry 整步中止，上面剛算好的「部分抽頁」
+    # 根本傳不到列管表（#120 review P1）。整段刪掉。
 
     results = {}
     unresolved = []
@@ -135,7 +159,11 @@ def fetch_gov_pdf_data(city: dict = None) -> Tuple[Dict[str, dict], Set[str]]:
 
     print(f"  {len(results)} 個建照有連結；清單上共 {len(in_list)} 個"
           f"（{len(in_list) - len(results)} 個沒解析出連結）")
-    return results, in_list
+    if not ps.list_parse_complete:
+        print(f"  ⚠️ 本輪清單抽頁不完整（{ps.list_parse_detail}）：以上是下限，"
+              f"不會用來判定任何建案「已離開清單」")
+    return results, ListMembership(frozenset(in_list), ps.list_parse_complete,
+                                   ps.list_parse_detail)
 
 
 def _resolve_indirect_links(results: dict, unresolved: list, cache_path: str = None,
@@ -621,7 +649,7 @@ def build_registry(city: dict = None):
     prior_url_statuses = {p: e.get('gov_pdf_url_status') for p, e in registry.items()}
 
     # 取得所有來源
-    gov_data, gov_permits_in_list = fetch_gov_pdf_data(city=city)
+    gov_data, gov_membership = fetch_gov_pdf_data(city=city)
     source_names, gov_url_statuses, gov_url_checked_at = fetch_source_folder_names(
         gov_data, drive_service, prior_registry=registry)
     drive_names, drive_scan_complete = fetch_drive_pdf_names(drive_service)
@@ -905,7 +933,8 @@ def build_registry(city: dict = None):
     # 本輪清單成員是記憶體裡現成的事實，不用再落一份檔
     # 清單成員交 `permits_in_list`，不是 `gov_data` 的鍵：後者少了「在清單上但這輪
     # 沒解析出連結」的案，那些案會被判成「已離開清單」（#119 review 第二輪）。
-    _write_url_404_csv(registry, gov_permits_in_list)
+    # 連「完不完整」一起交（ListMembership），部分抽頁時不下「已離開」的結論。
+    _write_url_404_csv(registry, gov_membership)
 
 
 FOLDER_DEATHS_FILE = './state/folder_deaths.json'
@@ -1041,10 +1070,12 @@ def commit_registry_with_deaths(registry: dict, prior_statuses: dict,
 #: （上游 PDF 改版、解析器回歸、網路失敗都會長成零筆），不是「清單上一個都沒有」。
 #: 量不到就不可以寫成「全部離開清單」——那是把量測失敗偽裝成結論，而這張表正是
 #: 為了不再把兩種狀況混在一起才分欄的（#119 review P1）。
+#: 第二種「量不到」：PDF 只抽到部分頁面（`ListMembership.complete` 為 False）。
+#: 那時候集合是下限，**在裡面的仍判「是」、不在裡面的只能記未取得**。
 LIST_UNKNOWN = '未取得'
 
 
-def url_404_rows(registry: dict, gov_permits) -> list:
+def url_404_rows(registry: dict, membership: 'ListMembership') -> list:
     """把列管表的內容算出來（純函式，便於測試）。
 
     **兩種 404 必須分開**（2026-10-14）：
@@ -1062,13 +1093,19 @@ def url_404_rows(registry: dict, gov_permits) -> list:
 
     仍在清單上的排前面——那才是這張表要處理的部分。
 
-    `gov_permits` 要給**清單成員**（`fetch_gov_pdf_data` 的第二個回傳值），不是
-    「解析出連結的案」——後者少掉的那些會被誤判成「已離開清單」。
+    `membership` 要給 `ListMembership`（`fetch_gov_pdf_data` 的第二個回傳值），
+    不是「解析出連結的案」、也不是裸 set——後者少掉的那些會被誤判成「已離開清單」。
+    型別擋在這裡，不靠呼叫點自律：裸 set 一進來就會被當成「完整清單」。
 
-    `gov_permits` 是空的就整欄記 `未取得`（見 `LIST_UNKNOWN`），而且**沒有預設值**：
-    漏傳會是 TypeError，不會靜默變成「全部離開」。
+    沒取到清單（空集合）或只抽到部分頁面，都整欄記 `未取得`（見 `LIST_UNKNOWN`）；
+    但**在集合裡的照樣判「是」**——部分抽頁時找到的那些案，確實在清單上。
     """
-    unknown = not gov_permits
+    if not isinstance(membership, ListMembership):
+        raise TypeError(
+            '清單成員要用 ListMembership（成員＋這份名單完不完整）傳進來，收到 '
+            f'{type(membership).__name__}。裸集合會被當成完整清單，而部分抽頁的'
+            '集合只是下限，拿它判「已離開清單」就是誤判')
+    conclusive = membership.conclusive
     rows = []
     for permit, info in sorted(registry.items()):
         if info.get('gov_pdf_url_status') != '404':
@@ -1079,13 +1116,16 @@ def url_404_rows(registry: dict, gov_permits) -> list:
             fid = url.split('folders/')[1].split('?')[0].split('/')[0]
         name = info.get('name') or info.get('api_match', '')
         checked = (info.get('gov_pdf_url_checked_at') or '')[:10] or '無紀錄'
-        listed = LIST_UNKNOWN if unknown else ('是' if permit in gov_permits else '否')
+        if permit in membership.permits:
+            listed = '是'              # 找到就是找到，不受完整性影響
+        else:
+            listed = '否' if conclusive else LIST_UNKNOWN
         rows.append([permit, name, fid, url, listed, checked])
     rows.sort(key=lambda r: (r[4] != '是', r[0]))
     return rows
 
 
-def _write_url_404_csv(registry: dict, gov_permits,
+def _write_url_404_csv(registry: dict, membership: 'ListMembership',
                        out_path: str = './state/gov_pdf_url_404.csv'):
     """輸出失效 URL 列管表。
 
@@ -1094,14 +1134,21 @@ def _write_url_404_csv(registry: dict, gov_permits,
     """
     import csv
     from datetime import datetime
-    rows = url_404_rows(registry, gov_permits)
+    rows = url_404_rows(registry, membership)
     today = datetime.now().strftime('%Y-%m-%d')
     still = sum(1 for r in rows if r[4] == '是')
-    if not gov_permits:
+    unknown = len(rows) - still - sum(1 for r in rows if r[4] == '否')
+    if not membership.permits:
         # 無聲降級＝把誤判偷偷帶回來。這一行要在日誌裡看得見。
         print('  ⚠️ 本輪沒有取到市府清單，列管表的「本輪仍在市府清單」'
               f'一欄全部記 {LIST_UNKNOWN}（不是「已離開」）')
         summary = f'共 {len(rows)} 筆：本輪未取到市府清單，無法判斷是否仍在清單'
+    elif not membership.complete:
+        # 部分抽頁：找到的那些照樣算「仍在清單」，其餘只能說不知道。
+        print(f'  ⚠️ 本輪清單只抽到部分頁面（{membership.detail or "未記錄"}），'
+              f'列管表只標出仍在清單的 {still} 筆，其餘 {unknown} 筆記 {LIST_UNKNOWN}')
+        summary = (f'共 {len(rows)} 筆：仍在清單 {still} 筆；其餘 {unknown} 筆因本輪'
+                   f'清單抽頁不完整（{membership.detail or "未記錄"}）無法判斷')
     else:
         summary = (f'共 {len(rows)} 筆：仍在清單 {still} 筆、'
                    f'已離開清單 {len(rows) - still} 筆')
