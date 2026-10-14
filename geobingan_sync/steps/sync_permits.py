@@ -1322,8 +1322,8 @@ class PermitSync:
                 print(f"  🔗 來源資料夾已不存在（{len(gone)} 案）: "
                       + '、'.join(gone[:5])
                       + (' 等' if len(gone) > 5 else '')
-                      + "——帳上記未取得而不是 0 份；要不要請承造人重新提供"
-                        "由人決定")
+                      + "——帳上記未取得而不是 0 份。我們不主動聯絡承造人"
+                        "（Zhe 2026-10-14 定），這裡只負責讓它一直看得見")
             if dropped:
                 print(f"  🧹 錯誤紀錄修剪 {dropped} 筆"
                       f"（保留 {sync_errors.KEEP_ERROR_DAYS} 天／"
