@@ -138,7 +138,8 @@ def test_the_writer_passes_the_current_list_through(monkeypatch, tmp_path):
     monkeypatch.setattr(mp, 'build', lambda *a, **k: object())
     monkeypatch.setattr(mp, 'load_existing_registry', lambda: dict(_DEAD))
     monkeypatch.setattr(mp, 'fetch_gov_pdf_data',
-                        lambda city=None: {'A建字第0001號': {'source_url': 'u'}})
+                        lambda city=None: ({'A建字第0001號': {'source_url': 'u'}},
+                                           {'A建字第0001號', 'B建字第0002號'}))
     monkeypatch.setattr(mp, 'fetch_source_folder_names',
                         lambda gov, svc, prior_registry=None: ({}, {}, '2026-10-14T10:00:00'))
     monkeypatch.setattr(mp, 'fetch_drive_pdf_names', lambda svc: ({}, True))
@@ -147,14 +148,19 @@ def test_the_writer_passes_the_current_list_through(monkeypatch, tmp_path):
     monkeypatch.setattr(mp, 'fetch_live_alerts', lambda: {})
     monkeypatch.setattr(mp, 'commit_registry_with_deaths', lambda reg, prior, **k: None)
     mp.build_registry()
-    assert seen['gov'] == {'A建字第0001號'}, (
-        f"列管表拿到的清單成員是 {seen.get('gov')}，不是本輪 gov_data 的鍵")
+    assert seen['gov'] == {'A建字第0001號', 'B建字第0002號'}, (
+        f"列管表拿到的是 {seen.get('gov')}；要的是本輪**清單成員**，"
+        '不是 gov_data 的鍵（後者少了沒解析出連結的案）')
 
 
 # ───────── production 路徑：空解析不可以變成「全部離開清單」（#119 review P1） ─────────
 
-def _run_build(monkeypatch, registry, gov):
-    """跑真正的 build_registry()，回傳列管表實際收到的 (registry, gov_permits)。"""
+def _run_build(monkeypatch, registry, gov, in_list):
+    """跑真正的 build_registry()，回傳列管表算出來的列。
+
+    `gov` 是「解析出連結的案」、`in_list` 是「清單成員」，兩個都要明寫：
+    第二輪 review 的 P1 就是這兩者被當成同一件事。
+    """
     seen = {}
     monkeypatch.setattr(mp, '_write_url_404_csv',
                         lambda reg, gov_permits, **k:
@@ -171,7 +177,7 @@ def _run_build(monkeypatch, registry, gov):
     monkeypatch.setattr(mp, 'service_account', _SvcAccount)
     monkeypatch.setattr(mp, 'build', lambda *a, **k: object())
     monkeypatch.setattr(mp, 'load_existing_registry', lambda: dict(registry))
-    monkeypatch.setattr(mp, 'fetch_gov_pdf_data', lambda city=None: gov)
+    monkeypatch.setattr(mp, 'fetch_gov_pdf_data', lambda city=None: (gov, set(in_list)))
     monkeypatch.setattr(mp, 'fetch_source_folder_names',
                         lambda g, svc, prior_registry=None: ({}, {}, '2026-10-14T10:00:00'))
     monkeypatch.setattr(mp, 'fetch_drive_pdf_names', lambda svc: ({}, True))
@@ -188,7 +194,7 @@ def test_an_empty_parse_does_not_mark_the_whole_table_gone(monkeypatch):
 
     走的是真正的 build_registry()，所以這條同時釘住「空集合有沒有一路傳到判定」。
     """
-    rows = _run_build(monkeypatch, _DEAD, {})
+    rows = _run_build(monkeypatch, _DEAD, {}, set())
     assert {r[4] for r in rows} == {mp.LIST_UNKNOWN}, (
         '清單解析成零筆時，整張表只能是未取得——寫「否」就是對外宣稱全部離開')
 
@@ -199,6 +205,76 @@ def test_a_non_empty_list_still_marks_who_left(monkeypatch):
     少了這條，把判定改成「永遠未取得」也會全綠——那是另一個方向的靜默。
     """
     rows = _run_build(monkeypatch, _DEAD,
-                      {'A建字第0001號': {'source_url': 'u'}})
+                      {'A建字第0001號': {'source_url': 'u'}}, {'A建字第0001號'})
     got = {r[0]: r[4] for r in rows}
     assert got == {'A建字第0001號': '是', 'B建字第0002號': '否'}
+
+
+def test_a_permit_in_the_list_without_a_link_is_not_marked_gone(monkeypatch):
+    """清單上有 A、B，但只有 A 解析出連結——B 仍然在清單上。
+
+    #119 review 第二輪的 P1：列管表原本拿 `gov_data` 的鍵當清單成員，而那只有
+    「解析出連結」的案。上游把某案的網址換成圖片、或 regex 漏掉一種空間，該案
+    就會被標成「已離開清單」，然後我們去查一個根本沒離開的案。歷史日誌裡這個
+    落差一度是 439 案中的 71 案。
+    """
+    rows = _run_build(monkeypatch, _DEAD,
+                      {'A建字第0001號': {'source_url': 'u'}},        # 只有 A 有連結
+                      {'A建字第0001號', 'B建字第0002號'})            # 清單上兩案都有
+    got = {r[0]: r[4] for r in rows}
+    assert got == {'A建字第0001號': '是', 'B建字第0002號': '是'}, (
+        f'實際 {got}：沒解析出連結 ≠ 已離開清單')
+
+
+# ───────── 生產端：清單成員由 permits_in_list 來，不是解析結果 ─────────
+
+def _fake_gov_pdf(monkeypatch, tmp_path, mapping, permits_in_list):
+    """讓 fetch_gov_pdf_data 跑真正的程式碼，只換掉 PDF 下載與解析。"""
+    pdf = tmp_path / 'list.pdf'
+    pdf.write_bytes(b'%PDF-1.4 fake')
+
+    class _PS:
+        def __init__(self, city=None):
+            self.permits_in_list = list(permits_in_list)
+
+        def download_pdf_list(self):
+            return str(pdf)
+
+        def parse_pdf_list(self, path):
+            return dict(mapping)
+
+        def extract_folder_id_from_url(self, url):
+            # 回得出 folder id，_resolve_indirect_links 才不會被叫去連外
+            return url.split('folders/')[1] if 'folders/' in url else ''
+
+    from geobingan_sync.steps import sync_permits as sp
+    monkeypatch.setattr(sp, 'PermitSync', _PS)
+
+    class _Reader:
+        def __init__(self, f):
+            self.pages = []
+
+    import pypdf
+    monkeypatch.setattr(pypdf, 'PdfReader', _Reader)
+
+
+_URL = 'https://drive.google.com/drive/folders/FID_A'
+
+
+def test_the_gov_fetch_reports_list_members_not_just_parsed_links(monkeypatch, tmp_path):
+    _fake_gov_pdf(monkeypatch, tmp_path, {'110建字第0001號': _URL},
+                  ['110建字第0001號', '110建字第0002號'])
+    results, in_list = mp.fetch_gov_pdf_data()
+    assert set(results) == {'110建字第0001號'}, '合併層只能走訪有連結的案'
+    assert in_list == {'110建字第0001號', '110建字第0002號'}, (
+        '清單成員要取 permits_in_list；取解析結果就是把我方解析能力當成對方清單')
+
+
+def test_a_parsed_permit_missing_from_the_list_is_kept_and_announced(
+        monkeypatch, tmp_path, capsys):
+    """不變式反了（有連結卻不在清單成員裡）＝兩邊正規化分叉，要出聲且偏寬。"""
+    _fake_gov_pdf(monkeypatch, tmp_path, {'110建字第0001號': _URL},
+                  ['110建字第0002號'])
+    _, in_list = mp.fetch_gov_pdf_data()
+    assert in_list == {'110建字第0001號', '110建字第0002號'}, '偏寬：寧可少判一筆已離開'
+    assert '不在清單成員集合裡' in capsys.readouterr().out, '靜默就等於把 bug 放回來'

@@ -191,7 +191,8 @@ def _build(monkeypatch, registry, scan, complete=True, gov=None):
     monkeypatch.setattr(mp, 'service_account', _SvcAccount)
     monkeypatch.setattr(mp, 'build', lambda *a, **k: object())
     monkeypatch.setattr(mp, 'load_existing_registry', lambda: registry)
-    monkeypatch.setattr(mp, 'fetch_gov_pdf_data', lambda city=None: gov or {})
+    monkeypatch.setattr(mp, 'fetch_gov_pdf_data',
+                        lambda city=None: (gov or {}, set(gov or {})))
     monkeypatch.setattr(mp, 'fetch_source_folder_names',
                         lambda gov, svc, prior_registry=None: ({}, {}, '2026-10-14T10:00:00'))
     monkeypatch.setattr(mp, 'fetch_drive_pdf_names', lambda svc: (scan, complete))
