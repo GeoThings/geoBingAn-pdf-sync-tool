@@ -198,7 +198,8 @@ def _build(monkeypatch, registry, scan, complete=True, gov=None):
     monkeypatch.setattr(mp, 'fetch_api_projects', lambda: [])
     monkeypatch.setattr(mp, 'fetch_api_report_categories', lambda: {})
     monkeypatch.setattr(mp, 'fetch_live_alerts', lambda: {})
-    monkeypatch.setattr(mp, '_write_url_404_csv', lambda reg: None)
+    monkeypatch.setattr(mp, '_write_url_404_csv',
+                        lambda reg, gov_permits=frozenset(), **k: None)
     monkeypatch.setattr(mp, 'commit_registry_with_deaths',
                         lambda reg, prior, **k: committed.update(reg))
     mp.build_registry()

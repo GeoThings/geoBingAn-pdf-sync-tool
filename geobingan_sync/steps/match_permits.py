@@ -881,7 +881,8 @@ def build_registry(city: dict = None):
     print(f"\n✅ 已儲存到 {REGISTRY_FILE}")
 
     # 列管 PDF URL 失效清單 — 給建管處請求更新政府 PDF 用
-    _write_url_404_csv(registry)
+    # 本輪清單成員是記憶體裡現成的事實，不用再落一份檔
+    _write_url_404_csv(registry, set(gov_data))
 
 
 FOLDER_DEATHS_FILE = './state/folder_deaths.json'
@@ -1013,15 +1014,24 @@ def commit_registry_with_deaths(registry: dict, prior_statuses: dict,
     return appended
 
 
-def _write_url_404_csv(registry: dict):
-    """從 registry 抽出所有 gov_pdf_url_status='404' 的 entry，輸出獨立 CSV。
+def url_404_rows(registry: dict, gov_permits: set) -> list:
+    """把列管表的內容算出來（純函式，便於測試）。
 
-    人工流程：每週 sync 後可直接拿這個檔案附件給建管處請求更新 PDF。
+    **兩種 404 必須分開**（2026-10-14）：
+    - 本輪市府清單上還掛著這個死連結 → 建管處那邊真的有東西要更新。
+    - 本輪清單上已經沒有這案 → 我們的 404 是舊判決，同步也不會再走訪它
+      （走訪範圍同樣來自那份清單），拿去請對方更新沒有意義；要查的是它為什麼
+      離開清單。
+
+    混成同一張表的後果我自己踩過：47 筆被當成同一件事，對外講出了錯的案數。
+    實際上 14 筆仍在清單上、33 筆已經離開。
+
+    `最後重驗日` 用逐案的 `gov_pdf_url_checked_at`，不是輸出當天。舊版把每一列
+    都寫成當天日期，於是「哪一批是什麼時候確認失效的」被整張表抹平（檔案裡
+    47 筆全是同一天），而那正是回頭對帳時唯一能分辨批次的線索。
+
+    仍在清單上的排前面——那才是這張表要處理的部分。
     """
-    import csv
-    from datetime import datetime
-    out_path = './state/gov_pdf_url_404.csv'
-    today = datetime.now().strftime('%Y-%m-%d')
     rows = []
     for permit, info in sorted(registry.items()):
         if info.get('gov_pdf_url_status') != '404':
@@ -1031,13 +1041,36 @@ def _write_url_404_csv(registry: dict):
         if 'folders/' in url:
             fid = url.split('folders/')[1].split('?')[0].split('/')[0]
         name = info.get('name') or info.get('api_match', '')
-        rows.append([permit, name, fid, url, today])
+        checked = (info.get('gov_pdf_url_checked_at') or '')[:10] or '無紀錄'
+        rows.append([permit, name, fid, url,
+                     '是' if permit in gov_permits else '否', checked])
+    rows.sort(key=lambda r: (r[4] != '是', r[0]))
+    return rows
 
+
+def _write_url_404_csv(registry: dict, gov_permits: set = frozenset(),
+                       out_path: str = './state/gov_pdf_url_404.csv'):
+    """輸出失效 URL 列管表。
+
+    人工流程：每週 sync 後可直接拿這個檔案附件給建管處請求更新 PDF——但只有
+    「本輪仍在市府清單」那幾列才是對方要更新的，分欄的理由見 `url_404_rows`。
+    """
+    import csv
+    from datetime import datetime
+    rows = url_404_rows(registry, gov_permits)
+    today = datetime.now().strftime('%Y-%m-%d')
+    still = sum(1 for r in rows if r[4] == '是')
     with open(out_path, 'w', encoding='utf-8-sig', newline='') as f:
         w = csv.writer(f)
-        w.writerow(['建照字號', '建案名稱', '失效 folder_id', '失效完整 URL', '檢查日'])
+        w.writerow(['建照字號', '建案名稱', '失效 folder_id', '失效完整 URL',
+                    '本輪仍在市府清單', '最後重驗日'])
         w.writerows(rows)
-    print(f"📋 失效 URL 列管表已輸出 {out_path}（{len(rows)} 筆）")
+        w.writerow([])
+        w.writerow([f'輸出日 {today}',
+                    f'共 {len(rows)} 筆：仍在清單 {still} 筆、已離開清單 '
+                    f'{len(rows) - still} 筆'])
+    print(f"📋 失效 URL 列管表已輸出 {out_path}（{len(rows)} 筆，"
+          f"其中 {still} 筆本輪仍在市府清單上、{len(rows) - still} 筆已離開清單）")
 
 
 if __name__ == '__main__':
