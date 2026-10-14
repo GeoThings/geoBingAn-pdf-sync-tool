@@ -214,8 +214,9 @@ def test_registry_pdf_count_uses_the_shared_verdict(monkeypatch):
     monkeypatch.setattr(drive_utils, 'build_folder_resolver',
                         lambda folders, subs: (lambda fid: None))
 
-    names = mp.fetch_drive_pdf_names(_Svc())
+    names, complete = mp.fetch_drive_pdf_names(_Svc())
 
+    assert complete, '翻頁沒有中斷，應該回報掃描完整'
     assert names['110建字第0038號']['pdf_count'] == 1, (
         f"pdf_count 要只算真 PDF（1 份），實際 {names.get('110建字第0038號')}")
     assert any("name contains '.pdf'" in q for q in queries), (

@@ -43,9 +43,25 @@ class _FakeResp:
 
 
 class _FakeFilesApi:
-    def __init__(self, script):
+    def __init__(self, script, folder_state='alive'):
         self.script = list(script)
         self.calls = []
+        #: `alive` / `trashed` / 直接給一個 HttpError 當成探測失敗。
+        #: 預設 alive：既有測試講的都是「資料夾在、裡面有什麼」。
+        self.folder_state = folder_state
+        self.get_calls = []
+
+    def get(self, **kwargs):
+        self.get_calls.append(kwargs)
+        state = self.folder_state
+
+        class _Req:
+            def execute(self):
+                if isinstance(state, Exception):
+                    raise state
+                return {'id': kwargs.get('fileId'), 'trashed': state == 'trashed'}
+
+        return _Req()
 
     def list(self, **kwargs):
         self.calls.append(kwargs)
@@ -64,18 +80,18 @@ class _FakeFilesApi:
 
 
 class _FakeService:
-    def __init__(self, script):
-        self._files = _FakeFilesApi(script)
+    def __init__(self, script, folder_state='alive'):
+        self._files = _FakeFilesApi(script, folder_state)
 
     def files(self):
         return self._files
 
 
-def _sync(monkeypatch, script):
+def _sync(monkeypatch, script, folder_state='alive'):
     s = PermitSync(city={'name': 'T', 'pdf_list_url': 'https://example.test/x.pdf'})
     # service 只建一次。每次 _get_svc() 都新建的話，遞迴進子資料夾時 script 會
     # 從頭開始播，root 永遠再回傳一個子資料夾 → RecursionError（寫錯過一次）。
-    svc = _FakeService(script)
+    svc = _FakeService(script, folder_state)
     monkeypatch.setattr(s, '_get_svc', lambda: svc)
     return s
 
@@ -752,3 +768,89 @@ def test_sync_permit_routes_to_adapter_and_still_records(monkeypatch):
     assert e is not None, 'adapter 路徑不可完全不落檔'
     assert e['reason'] == 'ok' and e['pdf'] == 1
     assert 'A建字第0001號' in s._visited_permits
+
+
+# ───────── 資料夾不見了 ≠ 資料夾是空的（2026-10-14） ─────────
+#
+# 列檔用的查詢是 `'<id>' in parents`，資料夾被刪掉之後它**不會報錯**，只是回零
+# 筆。於是 14 個建照（來源 URL 正是 registry 列管的失效連結）被記成 `empty`、
+# `pdf: 0`，我再把那個 0 讀成「承造人的資料夾開著但裡面沒東西」發了出去。
+# 這幾條釘住：零筆的時候要先問資料夾還在不在，而且只有 404／trashed 才算不在。
+
+def test_a_deleted_source_folder_is_not_measured_zero(monkeypatch):
+    gone = HttpError(_FakeResp(404, 'notFound'), b'{}')
+    s = _sync(monkeypatch, [{'files': []}], folder_state=gone)
+    s.sync_permit('A建字第0001號', 'https://drive.google.com/drive/folders/FID', 'tgt')
+    e = _scan_entry(s)
+    assert e['reason'] == 'source_gone', '資料夾 404 要記成「來源不見了」'
+    assert e['pdf'] is None, '量不到就只能是 None；寫 0 就是把失效講成「有在收但是 0 份」'
+
+
+def test_a_trashed_source_folder_is_not_measured_zero(monkeypatch):
+    s = _sync(monkeypatch, [{'files': []}], folder_state='trashed')
+    s.sync_permit('A建字第0001號', 'https://drive.google.com/drive/folders/FID', 'tgt')
+    e = _scan_entry(s)
+    assert e['reason'] == 'source_gone', '丟進垃圾桶也是不見了'
+    assert e['pdf'] is None
+
+
+@pytest.mark.parametrize('status', [403, 500, 503])
+def test_unprovable_states_are_unknown_not_gone(monkeypatch, status):
+    """403 是權限被收回、5xx 是對方的問題——都不足以斷定「不存在」。
+
+    斷言失效會讓這案進失效名單、被拿去找承造人；寧可記未取得，下一輪再確認。
+    """
+    err = HttpError(_FakeResp(status, 'nope'), b'{}')
+    s = _sync(monkeypatch, [{'files': []}], folder_state=err)
+    s.sync_permit('A建字第0001號', 'https://drive.google.com/drive/folders/FID', 'tgt')
+    e = _scan_entry(s)
+    assert e['reason'] == 'list_failed', f'{status} 不可以被講成 source_gone'
+    assert e['pdf'] is None
+    assert 'A建字第0001號' in s._errored_permits, (
+        '查不到狀態是真的失敗，要進錯誤帳才會有連續失敗告警')
+
+
+def test_an_empty_but_living_folder_is_still_measured_zero(monkeypatch):
+    """反面：資料夾還在、真的沒東西，仍然要是實測 0（不可一併改成未取得）。"""
+    s = _sync(monkeypatch, [{'files': []}], folder_state='alive')
+    s.sync_permit('A建字第0001號', 'https://drive.google.com/drive/folders/FID', 'tgt')
+    e = _scan_entry(s)
+    assert (e['reason'], e['pdf']) == ('empty', 0)
+
+
+def test_the_folder_probe_only_runs_when_nothing_was_listed(monkeypatch):
+    """有檔案就證明資料夾在，不必多打一次 API（400 案逐案多打一次不划算）。"""
+    s = _sync(monkeypatch, [{'files': [_pdf('a')]}])
+    monkeypatch.setattr(s, 'preload_target_files', lambda *a, **k: None)
+    monkeypatch.setattr(s, 'check_file_exists', lambda *a, **k: True)
+    s.sync_permit('A建字第0001號', 'https://drive.google.com/drive/folders/FID', 'tgt')
+    assert _scan_entry(s)['reason'] == 'ok'
+    assert s._get_svc().files().get_calls == [], '列到檔案時不應該再探測資料夾'
+
+
+def test_skipped_types_also_prove_the_folder_is_there(monkeypatch):
+    """只有不收的型別（.doc／.zip）也算證明資料夾在，同樣不必探測。"""
+    s = _sync(monkeypatch, [{'files': [
+        {'id': 'd', 'name': '施工計畫書.doc', 'mimeType': 'application/msword'}]}])
+    s.sync_permit('A建字第0001號', 'https://drive.google.com/drive/folders/FID', 'tgt')
+    assert _scan_entry(s)['reason'] == 'no_pdf_but_other'
+    assert s._get_svc().files().get_calls == []
+
+
+def test_source_gone_shows_up_in_the_run_summary(monkeypatch, capsys):
+    """寫成資料但沒人看，和只印在日誌一樣是空窗（同 no_pdf_but_other 那條）。"""
+    s = _sync(monkeypatch, [{'files': []}])
+    s._visited_permits = {'A建字第0001號'}
+    s.state['source_scan'] = {
+        'A建字第0001號': {'at': 'x', 'reason': 'source_gone', 'pdf': None, 'other': None},
+    }
+    s._finalize_errors(completed=True)
+    out = capsys.readouterr().out
+    assert '來源資料夾已不存在' in out
+    assert 'A建字第0001號' in out
+
+
+def test_source_gone_is_registered_as_an_unknown_reason():
+    """守門：`source_gone` 必須在未取得那一類，否則 `_record_source_scan` 會
+    允許它帶著數字落檔，實測 0 與量不到又混回去。"""
+    assert 'source_gone' in sp_mod.UNKNOWN_SCAN_REASONS
