@@ -39,8 +39,10 @@ def _page(*permits):
 class _Page:
     def __init__(self, text, boom=None):
         self._text, self._boom = text, boom
+        self.extracted = 0          # 這一頁被抽了幾次（見「只抽一次」那條）
 
     def extract_text(self):
+        self.extracted += 1
         if self._boom:
             raise self._boom
         return self._text
@@ -254,3 +256,65 @@ def test_the_sync_step_passes_completeness_to_the_fingerprint(tmp_path, monkeypa
     assert seen['kw'].get('complete') is False, (
         f"指紋沒收到本輪的完整性：{seen.get('kw')}")
     assert '第 12 頁' in (seen['kw'].get('incomplete_detail') or '')
+
+
+# ───────── production：壞頁要能一路走到 partial membership（#120 review P1） ─────────
+
+def _gov_fetch_with_pages(monkeypatch, tmp_path, pages):
+    """跑真正的 fetch_gov_pdf_data + parse_pdf_list，只換掉下載與 pypdf。
+
+    `_fake_gov_pdf` 那組測試把整個 PermitSync 換掉，所以**看不到**
+    fetch_gov_pdf_data 自己在解析之後又把整份 PDF 抽一次文字那段——那一行是
+    舊寫法、沒有逐頁容錯，同一個壞頁照樣會讓整步中止，剛算好的「部分抽頁」
+    根本傳不到列管表。這個 harness 專門走那條路。
+    """
+    import geobingan_sync.steps.match_permits as mp
+
+    pdf = tmp_path / 'list.pdf'
+    pdf.write_bytes(b'%PDF-1.4 fake')
+
+    class _Reader:
+        def __init__(self, f):
+            self.pages = list(pages)
+
+    monkeypatch.setattr(sp.pypdf, 'PdfReader', _Reader)
+    monkeypatch.setattr(sp.PermitSync, 'download_pdf_list',
+                        lambda self, *a, **k: str(pdf))
+    return mp.fetch_gov_pdf_data()
+
+
+def test_the_pdf_is_only_extracted_once(monkeypatch, tmp_path):
+    """整份 PDF 只能抽一次文字。
+
+    第二條抽取路徑就是這個 bug 的來源：它自己一份 `p.extract_text() or ''`，
+    沒有逐頁容錯，壞頁從那裡拋出去讓整步中止。把它包一層 try/except 並不算修好
+    ——重複的抽取路徑只會再漂走一次（這一發注入當時沒有任何測試抓到）。所以
+    直接把「每頁只抽一次」釘住，不管第二份是怎麼寫的。
+    """
+    pages = [_Page(_page('110建字第0001號')), _Page(_page('110建字第0003號'))]
+    _gov_fetch_with_pages(monkeypatch, tmp_path, pages)
+    assert [pg.extracted for pg in pages] == [1, 1], (
+        f'每頁被抽了 {[pg.extracted for pg in pages]} 次；'
+        '第二條抽取路徑要整段刪掉，不是包一層 try/except')
+
+
+def test_a_bad_page_reaches_the_table_as_partial_not_as_a_crash(monkeypatch, tmp_path):
+    results, membership = _gov_fetch_with_pages(monkeypatch, tmp_path, [
+        _Page(_page('110建字第0001號')),
+        _Page('', boom=ValueError('cannot decode page')),
+        _Page(_page('110建字第0003號')),
+    ])
+    assert membership.complete is False, '壞頁要一路傳成 partial'
+    assert membership.conclusive is False
+    assert membership.permits == frozenset({'110建字第0001號', '110建字第0003號'})
+    assert set(results) == {'110建字第0001號', '110建字第0003號'}, (
+        '其餘頁的連結照用，合併層還是要能走訪它們')
+
+
+def test_a_clean_pdf_still_reports_a_complete_list(monkeypatch, tmp_path):
+    """對照組：沒有壞頁時照樣是完整清單（否則把 complete 寫死成 False 也會綠）。"""
+    _, membership = _gov_fetch_with_pages(monkeypatch, tmp_path, [
+        _Page(_page('110建字第0001號')), _Page(_page('110建字第0003號')),
+    ])
+    assert membership.complete is True and membership.conclusive is True
+    assert membership.detail == ''

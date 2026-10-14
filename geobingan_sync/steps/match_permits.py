@@ -122,12 +122,11 @@ def fetch_gov_pdf_data(city: dict = None) -> Tuple[Dict[str, dict], 'ListMembers
     ps = PermitSync(city=city)
     pdf_path = ps.download_pdf_list()
     mapping = ps.parse_pdf_list(pdf_path)
-
-    # 從 PDF 原文解析承造人
-    import pypdf
-    with open(pdf_path, 'rb') as f:
-        reader = pypdf.PdfReader(f)
-        all_text = ''.join(p.extract_text() or '' for p in reader.pages)
+    # 這裡原本還有一段「從 PDF 原文解析承造人」，把整份 PDF 再抽一次文字存進
+    # all_text——而 all_text 從頭到尾沒有人用（承造人早就改從別處拿）。留著不只
+    # 是多跑一次：那一行是舊寫法 `p.extract_text() or ''`，**沒有逐頁容錯**，
+    # 於是同一個壞頁照樣會讓 build_registry 整步中止，上面剛算好的「部分抽頁」
+    # 根本傳不到列管表（#120 review P1）。整段刪掉。
 
     results = {}
     unresolved = []
