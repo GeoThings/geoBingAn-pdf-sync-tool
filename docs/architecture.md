@@ -614,7 +614,7 @@ adapter 連的是外部文件指定的網址，與 link_resolver 同屬不可信
 |------|------|----------|----------|
 | `upload_history_all.json` | 永久上傳歷史（防重複上傳） | 每次成功上傳 | ✅ 是 |
 | `permit_registry.json` | 建案名稱交叉比對結果（6 來源） | match_permits.py 執行時 | ✅ 是 |
-| `gov_pdf_url_404.csv` | 失效來源 URL 列管表（給建管處）。**分兩種**：`本輪仍在市府清單`＝是（對方真的有東西要更新）／否（我們的 404 是舊判決，同步也不會再走訪它，因為走訪範圍同樣來自那份清單）。`最後重驗日` 是逐案的 `gov_pdf_url_checked_at`，不是輸出當天——舊版把每列都寫成當天，整張表的批次資訊會被抹平（2026-10-14 實測 47 筆全同一天，我因此把兩種狀況讀成一件事、對外講錯案數）。輸出日另成一列 | match_permits.py 執行時 | ✅ 是 |
+| `gov_pdf_url_404.csv` | 失效來源 URL 列管表（給建管處）。**分兩種**：`本輪仍在市府清單`＝是（對方真的有東西要更新）／否（我們的 404 是舊判決，同步也不會再走訪它，因為走訪範圍同樣來自那份清單）／**未取得**（這輪根本沒取到清單——上游 PDF 改版或解析器回歸都會讓它靜默變成零筆，那是量不到，不可以寫成「全部離開」；`gov_permits` 沒有預設值，漏傳會當場 TypeError）。`最後重驗日` 是逐案的 `gov_pdf_url_checked_at`，不是輸出當天——舊版把每列都寫成當天，整張表的批次資訊會被抹平（2026-10-14 實測 47 筆全同一天，我因此把兩種狀況讀成一件事、對外講錯案數）。輸出日另成一列 | match_permits.py 執行時 | ✅ 是 |
 | `sync_permits_progress.json` | 已處理建案清單、錯誤結算、來源量測（`source_scan`） | 每個建案 | 否 |
 | `uploaded_to_geobingan_7days.json` | 已上傳 PDF 記錄（legacy 掃描快取於 pdf_inventory 建立後自動移除） | 每次成功上傳 | 否 |
 | `pdf_inventory.json` | 建案 PDF inventory（已成功對應建案資料夾的 PDF；不含根目錄/unmatched。月度趨勢/decline 分析資料源；未落地前 consumer fallback 讀 legacy cache） | 每次掃描完成 | 否 |

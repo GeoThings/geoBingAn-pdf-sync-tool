@@ -1014,7 +1014,14 @@ def commit_registry_with_deaths(registry: dict, prior_statuses: dict,
     return appended
 
 
-def url_404_rows(registry: dict, gov_permits: set) -> list:
+#: 「本輪仍在市府清單」的第三態。空的 gov_permits 代表**這輪沒有取到清單**
+#: （上游 PDF 改版、解析器回歸、網路失敗都會長成零筆），不是「清單上一個都沒有」。
+#: 量不到就不可以寫成「全部離開清單」——那是把量測失敗偽裝成結論，而這張表正是
+#: 為了不再把兩種狀況混在一起才分欄的（#119 review P1）。
+LIST_UNKNOWN = '未取得'
+
+
+def url_404_rows(registry: dict, gov_permits) -> list:
     """把列管表的內容算出來（純函式，便於測試）。
 
     **兩種 404 必須分開**（2026-10-14）：
@@ -1031,7 +1038,11 @@ def url_404_rows(registry: dict, gov_permits: set) -> list:
     47 筆全是同一天），而那正是回頭對帳時唯一能分辨批次的線索。
 
     仍在清單上的排前面——那才是這張表要處理的部分。
+
+    `gov_permits` 是空的就整欄記 `未取得`（見 `LIST_UNKNOWN`），而且**沒有預設值**：
+    漏傳會是 TypeError，不會靜默變成「全部離開」。
     """
+    unknown = not gov_permits
     rows = []
     for permit, info in sorted(registry.items()):
         if info.get('gov_pdf_url_status') != '404':
@@ -1042,13 +1053,13 @@ def url_404_rows(registry: dict, gov_permits: set) -> list:
             fid = url.split('folders/')[1].split('?')[0].split('/')[0]
         name = info.get('name') or info.get('api_match', '')
         checked = (info.get('gov_pdf_url_checked_at') or '')[:10] or '無紀錄'
-        rows.append([permit, name, fid, url,
-                     '是' if permit in gov_permits else '否', checked])
+        listed = LIST_UNKNOWN if unknown else ('是' if permit in gov_permits else '否')
+        rows.append([permit, name, fid, url, listed, checked])
     rows.sort(key=lambda r: (r[4] != '是', r[0]))
     return rows
 
 
-def _write_url_404_csv(registry: dict, gov_permits: set = frozenset(),
+def _write_url_404_csv(registry: dict, gov_permits,
                        out_path: str = './state/gov_pdf_url_404.csv'):
     """輸出失效 URL 列管表。
 
@@ -1060,17 +1071,22 @@ def _write_url_404_csv(registry: dict, gov_permits: set = frozenset(),
     rows = url_404_rows(registry, gov_permits)
     today = datetime.now().strftime('%Y-%m-%d')
     still = sum(1 for r in rows if r[4] == '是')
+    if not gov_permits:
+        # 無聲降級＝把誤判偷偷帶回來。這一行要在日誌裡看得見。
+        print('  ⚠️ 本輪沒有取到市府清單，列管表的「本輪仍在市府清單」'
+              f'一欄全部記 {LIST_UNKNOWN}（不是「已離開」）')
+        summary = f'共 {len(rows)} 筆：本輪未取到市府清單，無法判斷是否仍在清單'
+    else:
+        summary = (f'共 {len(rows)} 筆：仍在清單 {still} 筆、'
+                   f'已離開清單 {len(rows) - still} 筆')
     with open(out_path, 'w', encoding='utf-8-sig', newline='') as f:
         w = csv.writer(f)
         w.writerow(['建照字號', '建案名稱', '失效 folder_id', '失效完整 URL',
                     '本輪仍在市府清單', '最後重驗日'])
         w.writerows(rows)
         w.writerow([])
-        w.writerow([f'輸出日 {today}',
-                    f'共 {len(rows)} 筆：仍在清單 {still} 筆、已離開清單 '
-                    f'{len(rows) - still} 筆'])
-    print(f"📋 失效 URL 列管表已輸出 {out_path}（{len(rows)} 筆，"
-          f"其中 {still} 筆本輪仍在市府清單上、{len(rows) - still} 筆已離開清單）")
+        w.writerow([f'輸出日 {today}', summary])
+    print(f"📋 失效 URL 列管表已輸出 {out_path}（{summary}）")
 
 
 if __name__ == '__main__':
