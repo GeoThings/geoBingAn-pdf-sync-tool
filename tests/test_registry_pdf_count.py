@@ -160,3 +160,103 @@ def test_named_only_hides_the_nameless_entries():
     named = mp.named_only(src)
     assert set(named) == {'A'}
     assert set(src) == {'A', 'B', 'C'}, '不可以改到來源（份數那邊還要用）'
+
+
+# ───────── production 接線：合併層要知道「本輪掃到哪些案」（#118 review P1） ─────────
+#
+# 上面那些純函式測試涵蓋了規則，卻**測不到呼叫條件**。合併層寫的是
+# `if permit in drive_names:`，所以只要那個字典的鍵是「找到 PDF 的建照」，
+# 既有 `pdf_count: 5` 的案在 0 份時根本進不到合併層，舊數字會永遠留著——
+# 規則全綠、production 不會歸零。這一組測試走真正的 `build_registry()`。
+
+def _build(monkeypatch, registry, scan, complete=True, gov=None):
+    """跑真正的 build_registry()，只把外部服務換掉，回傳提交出去的 registry。
+
+    `gov` 很重要：合併迴圈走的是 `set(gov_data) | set(drive_names)`，不是
+    registry 的鍵。要測「不在掃描範圍的案不可以被動到」，那案就必須從政府清單
+    進到迴圈裡——否則測試根本沒走到被防的判斷，無論怎麼寫都會過（這個洞是
+    注入 #3 打出來的：把 `if permit in drive_names` 改成 `if True` 時，
+    1126 條全綠）。
+    """
+    committed = {}
+
+    class _Creds:
+        @staticmethod
+        def from_service_account_file(*a, **k):
+            return object()
+
+    class _SvcAccount:
+        Credentials = _Creds
+
+    monkeypatch.setattr(mp, 'service_account', _SvcAccount)
+    monkeypatch.setattr(mp, 'build', lambda *a, **k: object())
+    monkeypatch.setattr(mp, 'load_existing_registry', lambda: registry)
+    monkeypatch.setattr(mp, 'fetch_gov_pdf_data', lambda city=None: gov or {})
+    monkeypatch.setattr(mp, 'fetch_source_folder_names',
+                        lambda gov, svc, prior_registry=None: ({}, {}, '2026-10-14T10:00:00'))
+    monkeypatch.setattr(mp, 'fetch_drive_pdf_names', lambda svc: (scan, complete))
+    monkeypatch.setattr(mp, 'fetch_api_projects', lambda: [])
+    monkeypatch.setattr(mp, 'fetch_api_report_categories', lambda: {})
+    monkeypatch.setattr(mp, 'fetch_live_alerts', lambda: {})
+    monkeypatch.setattr(mp, '_write_url_404_csv', lambda reg: None)
+    monkeypatch.setattr(mp, 'commit_registry_with_deaths',
+                        lambda reg, prior, **k: committed.update(reg))
+    mp.build_registry()
+    return committed
+
+
+def test_a_permit_that_lost_all_its_pdfs_is_zeroed(monkeypatch):
+    """掃完了、這案 0 份 → registry 要歸零。
+
+    這是 review 的 P1：舊寫法只回傳「找到 PDF 的建照」，所以這案進不到合併層，
+    registry 會一直說它有 5 份。帳上多出 5 份報告，而且看起來完全正常。
+    """
+    reg = {'A建字第0001號': {'name': '維昌臨沂', 'pdf_count': 5}}
+    out = _build(monkeypatch, reg,
+                 {'A建字第0001號': {'name': '維昌臨沂', 'pdf_count': 0}})
+    assert out['A建字第0001號']['pdf_count'] == 0, (
+        '在掃描範圍內、掃完了是 0 份，就要寫 0——舊數字留著就是謊報')
+
+
+def test_a_permit_outside_the_scan_scope_is_left_alone(monkeypatch):
+    """反面：這案在共用雲端硬碟沒有資料夾 → 我們沒量過，不可以動它。
+
+    沒有這一條，「歸零」會變成「把沒量過的全部清成 0」——另一個方向的同一種錯。
+    這就是失效連結那 33 案的樣子：在政府清單上（所以會被迴圈走到），但我們這邊
+    沒有對應資料夾（所以不在掃描範圍）。測資一定要讓它**真的進到迴圈**，否則這
+    條測試量的是「迴圈沒走到它」，不是「守門有效」。
+    """
+    reg = {'B建字第0002號': {'name': '別人家', 'pdf_count': 5}}
+    out = _build(monkeypatch, reg, {},
+                 gov={'B建字第0002號': {'source_url': 'https://drive.google.com/drive/folders/X'}})
+    assert out['B建字第0002號']['pdf_count'] == 5, '沒量過不可以歸零'
+    assert 'pdf_count_scan_error_at' not in out['B建字第0002號'], (
+        '沒量過也不該掛「這輪沒數完」的標記')
+
+
+def test_an_interrupted_scan_marks_the_in_scope_permits(monkeypatch):
+    """翻頁中斷：範圍內的案保留舊數字並留下標記，由 production 路徑驗。"""
+    reg = {'A建字第0001號': {'name': '維昌臨沂', 'pdf_count': 146}}
+    out = _build(monkeypatch, reg,
+                 {'A建字第0001號': {'name': '維昌臨沂', 'pdf_count': 40}},
+                 complete=False)
+    e = out['A建字第0001號']
+    assert e['pdf_count'] == 146, '下限不可以蓋掉有定論的數字'
+    assert e.get('pdf_count_scan_error_at'), '「這輪沒數完」要留在資料裡'
+
+
+def test_the_scan_scope_includes_folders_with_no_pdfs(drive, monkeypatch):
+    """`fetch_drive_pdf_names` 的鍵是掃描範圍：有資料夾、0 份也要有一筆。
+
+    這條和上面的接線測試是一對——合併層靠這個範圍才分得出 0 份與沒量過。
+    """
+    from geobingan_sync import drive_utils
+    monkeypatch.setattr(drive_utils, 'list_top_level_folders',
+                        lambda svc, drv: [{'id': 'F1', 'name': '110建字第0038號'},
+                                          {'id': 'F2', 'name': '111建字第0091號'}])
+    svc = _Svc([{'files': [_pdf('1131223.pdf')]}])
+    names, complete = mp.fetch_drive_pdf_names(svc)
+    assert complete
+    assert names['111建字第0091號']['pdf_count'] == 0, (
+        '資料夾在、一份 PDF 都沒有，就是實測 0——要進範圍才歸得了零')
+    assert names['110建字第0038號']['pdf_count'] == 1

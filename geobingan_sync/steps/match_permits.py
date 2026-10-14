@@ -332,6 +332,9 @@ def apply_pdf_count(entry: dict, info: dict, scan_complete: bool,
     的份數只是下限，寧可留著上一輪的數字、另記 ``pdf_count_scan_error_at`` 讓
     「這輪沒數完」看得見；下一輪數完就寫數字並清掉標記。
 
+    呼叫條件是「這案在本輪掃描範圍內」（見 `fetch_drive_pdf_names` 的鍵）。
+    不在範圍內就整個不呼叫——那是沒量過，既有數字與標記都不可以動。
+
     份數本身與「名稱抽不出來」無關：2026-10-14 有 41 案來源明明有 PDF、registry
     卻連 ``pdf_count`` 欄位都沒有，因為份數被放在名稱那個條件底下一起消失，
     下游再把「沒有欄位」讀成 0 份。
@@ -355,8 +358,10 @@ def apply_pdf_count(entry: dict, info: dict, scan_complete: bool,
 def fetch_drive_pdf_names(drive_service) -> Tuple[Dict[str, dict], bool]:
     """批次掃描 Shared Drive 所有 PDF，回傳 `(每案的名稱與份數, 掃描是否完整)`。
 
-    回傳的每一筆都有 `pdf_count`；`name` 抽不出來時是空字串。**份數不可以跟著
-    名稱一起消失**：2026-10-14 發現 41 案來源明明有 PDF、registry 卻連
+    鍵是**本輪掃描範圍**：在共用雲端硬碟有資料夾的建照，含 0 份的那些。合併層
+    靠這個範圍分辨「掃完了、這案 0 份」（要歸零）與「這案沒有資料夾」（沒量過、
+    不可以動）。回傳的每一筆都有 `pdf_count`；`name` 抽不出來時是空字串。
+    **份數不可以跟著名稱一起消失**：2026-10-14 發現 41 案來源明明有 PDF、registry 卻連
     `pdf_count` 欄位都沒有，因為整筆都被放在「名字抽得出來」那個條件底下，
     而下游把「沒有欄位」讀成 0 份，最後變成對外說「資料夾開著但裡面沒東西」。
 
@@ -422,8 +427,16 @@ def fetch_drive_pdf_names(drive_service) -> Tuple[Dict[str, dict], bool]:
 
     # 從檔名提取名稱（投票制：最常出現的名稱）
     from geobingan_sync.permit_utils import extract_name_from_filename
+    # 逐案的鍵是**本輪掃描範圍**（在共用雲端硬碟有資料夾的建照），不是「找到
+    # PDF 的建照」。差別就是合併層能不能分辨兩件事：
+    #   掃完了、這案 0 份      → 要把 registry 既有的數字歸零
+    #   這案根本沒有資料夾      → 我們沒量過，不可以動它
+    # 只回傳有 PDF 的那些時，前者永遠進不到合併層（`if permit in drive_names`
+    # 為假），registry 會永遠留著舊數字；純函式測試涵蓋了規則卻測不到接線，
+    # 那正是 #118 review 的 P1。
     names = {}
-    for permit, files in permit_files.items():
+    for permit in sorted(set(folders.values())):
+        files = permit_files.get(permit, [])
         counts = Counter()
         for fn in files:
             name = extract_name_from_filename(fn)
@@ -436,8 +449,8 @@ def fetch_drive_pdf_names(drive_service) -> Tuple[Dict[str, dict], bool]:
         }
 
     named = sum(1 for v in names.values() if v['name'])
-    print(f"  {named} 個有名稱、{len(names)} 個有份數"
-          f"（共 {len(permit_files)} 個建照）")
+    print(f"  {named} 個有名稱、{len(names)} 個在本輪掃描範圍"
+          f"（其中 {len(permit_files)} 個有 PDF）")
     return names, complete
 
 
