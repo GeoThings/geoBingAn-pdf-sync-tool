@@ -21,7 +21,7 @@ import requests
 
 _session = requests.Session()
 from datetime import datetime, timedelta
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Set, Tuple
 from collections import Counter
 
 # 載入設定
@@ -84,8 +84,14 @@ def extract_name_from_text(text: str) -> str:
 
 
 # ==================== 來源 1: 政府 PDF ====================
-def fetch_gov_pdf_data(city: dict = None) -> Dict[str, dict]:
-    """從政府 PDF 取得建照號碼 + 承造人/監造人"""
+def fetch_gov_pdf_data(city: dict = None) -> Tuple[Dict[str, dict], Set[str]]:
+    """從政府 PDF 取得建照號碼 + 承造人/監造人，以及**清單上的全部建照**。
+
+    回傳兩個值而不是一個，因為這兩個集合不一樣大：第一個只有「解析出連結」的
+    案（下游要靠 URL 去走訪，所以合併層用它），第二個才是清單成員。
+    誰在清單上是對方的事實，解不解析得出連結是我方的能力——混用就是把我方的
+    解析能力記成對方的清單內容（同 #118 的 `pdf_count`、同清單指紋的基準）。
+    """
     print("📄 來源 1: 政府 PDF...")
     from geobingan_sync.steps.sync_permits import PermitSync
     ps = PermitSync(city=city)
@@ -113,8 +119,23 @@ def fetch_gov_pdf_data(city: dict = None) -> Dict[str, dict]:
     if unresolved:
         results = _resolve_indirect_links(results, unresolved)
 
-    print(f"  {len(results)} 個建照")
-    return results
+    # 清單成員取 `permits_in_list`（PDF 裡實際出現的建照），不是 results 的鍵。
+    # 列管表的「本輪仍在市府清單」若拿 results 當基準，某案的連結一旦解析不出來
+    # （上游把網址改成圖片、換欄位、regex 漏掉一種空間）就會被標成「已離開清單」，
+    # 然後我們會去查一個根本沒離開的案。歷史日誌裡這個落差一度是 439 案中的
+    # 71 案（regex 只收 drive.google.com 的那段時期）；2026-10-14 本輪是 438/438。
+    in_list = {normalize_permit(p) or p for p in ps.permits_in_list}
+    # 不變式：有連結的一定在清單上。反過來就表示兩邊的正規化分叉了。取聯集讓它
+    # 偏寬（寧可少判一筆「已離開」），但要出聲——靜默就等於把上面那個 bug 放回來。
+    stray = set(results) - in_list
+    if stray:
+        print(f"  ⚠️ {len(stray)} 個有連結的建照不在清單成員集合裡（正規化可能分叉）："
+              f"{'、'.join(sorted(stray)[:5])}")
+        in_list |= stray
+
+    print(f"  {len(results)} 個建照有連結；清單上共 {len(in_list)} 個"
+          f"（{len(in_list) - len(results)} 個沒解析出連結）")
+    return results, in_list
 
 
 def _resolve_indirect_links(results: dict, unresolved: list, cache_path: str = None,
@@ -600,7 +621,7 @@ def build_registry(city: dict = None):
     prior_url_statuses = {p: e.get('gov_pdf_url_status') for p, e in registry.items()}
 
     # 取得所有來源
-    gov_data = fetch_gov_pdf_data(city=city)
+    gov_data, gov_permits_in_list = fetch_gov_pdf_data(city=city)
     source_names, gov_url_statuses, gov_url_checked_at = fetch_source_folder_names(
         gov_data, drive_service, prior_registry=registry)
     drive_names, drive_scan_complete = fetch_drive_pdf_names(drive_service)
@@ -881,7 +902,10 @@ def build_registry(city: dict = None):
     print(f"\n✅ 已儲存到 {REGISTRY_FILE}")
 
     # 列管 PDF URL 失效清單 — 給建管處請求更新政府 PDF 用
-    _write_url_404_csv(registry)
+    # 本輪清單成員是記憶體裡現成的事實，不用再落一份檔
+    # 清單成員交 `permits_in_list`，不是 `gov_data` 的鍵：後者少了「在清單上但這輪
+    # 沒解析出連結」的案，那些案會被判成「已離開清單」（#119 review 第二輪）。
+    _write_url_404_csv(registry, gov_permits_in_list)
 
 
 FOLDER_DEATHS_FILE = './state/folder_deaths.json'
@@ -1013,15 +1037,38 @@ def commit_registry_with_deaths(registry: dict, prior_statuses: dict,
     return appended
 
 
-def _write_url_404_csv(registry: dict):
-    """從 registry 抽出所有 gov_pdf_url_status='404' 的 entry，輸出獨立 CSV。
+#: 「本輪仍在市府清單」的第三態。空的 gov_permits 代表**這輪沒有取到清單**
+#: （上游 PDF 改版、解析器回歸、網路失敗都會長成零筆），不是「清單上一個都沒有」。
+#: 量不到就不可以寫成「全部離開清單」——那是把量測失敗偽裝成結論，而這張表正是
+#: 為了不再把兩種狀況混在一起才分欄的（#119 review P1）。
+LIST_UNKNOWN = '未取得'
 
-    人工流程：每週 sync 後可直接拿這個檔案附件給建管處請求更新 PDF。
+
+def url_404_rows(registry: dict, gov_permits) -> list:
+    """把列管表的內容算出來（純函式，便於測試）。
+
+    **兩種 404 必須分開**（2026-10-14）：
+    - 本輪市府清單上還掛著這個死連結 → 建管處那邊真的有東西要更新。
+    - 本輪清單上已經沒有這案 → 我們的 404 是舊判決，同步也不會再走訪它
+      （走訪範圍同樣來自那份清單），拿去請對方更新沒有意義；要查的是它為什麼
+      離開清單。
+
+    混成同一張表的後果我自己踩過：47 筆被當成同一件事，對外講出了錯的案數。
+    實際上 14 筆仍在清單上、33 筆已經離開。
+
+    `最後重驗日` 用逐案的 `gov_pdf_url_checked_at`，不是輸出當天。舊版把每一列
+    都寫成當天日期，於是「哪一批是什麼時候確認失效的」被整張表抹平（檔案裡
+    47 筆全是同一天），而那正是回頭對帳時唯一能分辨批次的線索。
+
+    仍在清單上的排前面——那才是這張表要處理的部分。
+
+    `gov_permits` 要給**清單成員**（`fetch_gov_pdf_data` 的第二個回傳值），不是
+    「解析出連結的案」——後者少掉的那些會被誤判成「已離開清單」。
+
+    `gov_permits` 是空的就整欄記 `未取得`（見 `LIST_UNKNOWN`），而且**沒有預設值**：
+    漏傳會是 TypeError，不會靜默變成「全部離開」。
     """
-    import csv
-    from datetime import datetime
-    out_path = './state/gov_pdf_url_404.csv'
-    today = datetime.now().strftime('%Y-%m-%d')
+    unknown = not gov_permits
     rows = []
     for permit, info in sorted(registry.items()):
         if info.get('gov_pdf_url_status') != '404':
@@ -1031,13 +1078,41 @@ def _write_url_404_csv(registry: dict):
         if 'folders/' in url:
             fid = url.split('folders/')[1].split('?')[0].split('/')[0]
         name = info.get('name') or info.get('api_match', '')
-        rows.append([permit, name, fid, url, today])
+        checked = (info.get('gov_pdf_url_checked_at') or '')[:10] or '無紀錄'
+        listed = LIST_UNKNOWN if unknown else ('是' if permit in gov_permits else '否')
+        rows.append([permit, name, fid, url, listed, checked])
+    rows.sort(key=lambda r: (r[4] != '是', r[0]))
+    return rows
 
+
+def _write_url_404_csv(registry: dict, gov_permits,
+                       out_path: str = './state/gov_pdf_url_404.csv'):
+    """輸出失效 URL 列管表。
+
+    人工流程：每週 sync 後可直接拿這個檔案附件給建管處請求更新 PDF——但只有
+    「本輪仍在市府清單」那幾列才是對方要更新的，分欄的理由見 `url_404_rows`。
+    """
+    import csv
+    from datetime import datetime
+    rows = url_404_rows(registry, gov_permits)
+    today = datetime.now().strftime('%Y-%m-%d')
+    still = sum(1 for r in rows if r[4] == '是')
+    if not gov_permits:
+        # 無聲降級＝把誤判偷偷帶回來。這一行要在日誌裡看得見。
+        print('  ⚠️ 本輪沒有取到市府清單，列管表的「本輪仍在市府清單」'
+              f'一欄全部記 {LIST_UNKNOWN}（不是「已離開」）')
+        summary = f'共 {len(rows)} 筆：本輪未取到市府清單，無法判斷是否仍在清單'
+    else:
+        summary = (f'共 {len(rows)} 筆：仍在清單 {still} 筆、'
+                   f'已離開清單 {len(rows) - still} 筆')
     with open(out_path, 'w', encoding='utf-8-sig', newline='') as f:
         w = csv.writer(f)
-        w.writerow(['建照字號', '建案名稱', '失效 folder_id', '失效完整 URL', '檢查日'])
+        w.writerow(['建照字號', '建案名稱', '失效 folder_id', '失效完整 URL',
+                    '本輪仍在市府清單', '最後重驗日'])
         w.writerows(rows)
-    print(f"📋 失效 URL 列管表已輸出 {out_path}（{len(rows)} 筆）")
+        w.writerow([])
+        w.writerow([f'輸出日 {today}', summary])
+    print(f"📋 失效 URL 列管表已輸出 {out_path}（{summary}）")
 
 
 if __name__ == '__main__':
