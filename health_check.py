@@ -536,6 +536,76 @@ def check_launchd_jobs():
     return 'ok', f'{len(jobs)} 個排程 job 正常'
 
 
+def alert_hosts():
+    """告警與 API 會用到的 host。從設定推導、不寫死——寫死會跟 .env 漂走。"""
+    from urllib.parse import urlparse
+    from geobingan_sync import config
+    hosts = []
+    for url in (config.GEOBINGAN_BASE_URL, config.GEOBINGAN_API_URL):
+        host = urlparse(url or '').hostname
+        if host and host not in hosts:
+            hosts.append(host)
+    if config.CLICKUP_TOKEN and 'api.clickup.com' not in hosts:
+        hosts.append('api.clickup.com')
+    if config.ALERT_EMAIL_TO and config.ALERT_SMTP_HOST and config.ALERT_SMTP_HOST not in hosts:
+        hosts.append(config.ALERT_SMTP_HOST)
+    return hosts
+
+
+def wait_for_alert_network(timeout=90.0, hosts=None, wait=None):
+    """健檢開跑前先等 DNS 就緒，有上限。
+
+    2026-10-19 08:00:35 那輪（post-sleep）`riskmap.today` 與 `api.clickup.com` 全
+    解不到，於是**檢查本身**（API 連線、解析積壓）與**告警通道**（Email、ClickUp）
+    一起失敗——9 個問題一個都沒送出。同步那支早就有 network_ready 這道阻塞閘門，
+    健檢沒有，所以這裡重用同一個等待函式，不另外寫一套門檻。
+
+    逾時只回報、不中止：後面的檢查各自有錯誤處理，而送不出去的告警會進待送佇列。
+    """
+    from geobingan_sync.steps.network_ready import wait_for_dns
+    hosts = alert_hosts() if hosts is None else hosts
+    if not hosts:
+        return True, []
+    wait = wait or wait_for_dns
+    ready, unresolved = wait(hosts, timeout=timeout)
+    if ready:
+        print(f"  🌐 網路就緒（{len(hosts)} 個 host）")
+    else:
+        print(f"  ⚠️ 網路就緒等待逾時（{timeout:.0f}s），仍無法解析: {', '.join(unresolved)}"
+              f"——檢查與告警可能失敗，送不出去的會進待送佇列")
+    return ready, unresolved
+
+
+def check_pending_alerts(pending=None, now=None):
+    """先前送不出去的告警還躺在佇列裡嗎？
+
+    這一項本身就是「告警通道壞掉」的可見度：通道不通時，連這句話也送不出去，
+    但它會留在印出來的報告與日誌裡，而且通道一恢復就會跟著補送出去。
+    """
+    from datetime import datetime as _dt
+    if pending is None:
+        from geobingan_sync.pending_alerts import PendingAlerts
+        pending = PendingAlerts(namespace='healthcheck')
+    try:
+        info = pending.summary(now=now or _dt.now())
+    except Exception as e:                                          # noqa: BLE001
+        return 'warning', f'待送告警佇列讀取失敗: {e}'
+    count = info.get('count') or 0
+    if not count:
+        return 'ok', '沒有未送達的告警'
+    age = info.get('oldest_age_hours')
+    age_txt = f'，最舊 {age:.0f} 小時前' if isinstance(age, (int, float)) else ''
+    stalled, coalesced = info.get('stalled') or 0, info.get('coalesced') or 0
+    extra = []
+    if stalled:
+        extra.append(f'{stalled} 則已達重試上限、停止自動重打（仍保留）')
+    if coalesced:
+        extra.append(f'另含 {coalesced} 則被合併的更早告警')
+    tail = ('；' + '、'.join(extra)) if extra else ''
+    level = 'error' if stalled else 'warning'
+    return level, f'{count} 則告警還沒送出去{age_txt}{tail}'
+
+
 DEFAULT_CHECKS = [
     ('JWT Token', check_token),
     ('磁碟空間', check_disk),
@@ -549,10 +619,12 @@ DEFAULT_CHECKS = [
     ('來源資料夾', check_folder_deaths),
     ('未支援來源', check_unsupported_sources),
     ('同步錯誤', check_sync_errors),
+    ('待送告警', check_pending_alerts),
 ]
 
 
-def run_health_check(checks=None, notify=False, alert_state=None, now=None, send=None):
+def run_health_check(checks=None, notify=False, alert_state=None, now=None, send=None,
+                     network_wait=None):
     """跑所有檢查；異常經 AlertState 去重後才通知。
 
     以前每天把同一句話再發一次（上傳暫停連發 25 天），人麻痺後真正的新告警
@@ -565,6 +637,7 @@ def run_health_check(checks=None, notify=False, alert_state=None, now=None, send
         alert_state: AlertState 實例（測試可注入 tmp 路徑）
         now: 現在時間（測試可注入）
         send: 發送函式 send(title, body, mention)（測試可注入）
+        network_wait: DNS 等待函式（測試可注入）；False＝完全不等
     Returns:
         (issues, events)
     """
@@ -581,6 +654,9 @@ def run_health_check(checks=None, notify=False, alert_state=None, now=None, send
 
     print(f"🏥 系統健康檢查 — {now.strftime('%Y-%m-%d %H:%M')}")
     print("=" * 50)
+    if notify and network_wait is not False:
+        # 排程執行（post-sleep）才等；手動乾跑不要被卡住
+        wait_for_alert_network(wait=network_wait or None)
     for name, check_fn in checks:
         try:
             status, message = check_fn()
