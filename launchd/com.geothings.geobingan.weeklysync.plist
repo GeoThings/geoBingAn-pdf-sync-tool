@@ -8,13 +8,53 @@
     <array>
         <string>/Users/geothingsmacbookair/Developer/geoBingAn-pdf-sync-tool/run_weekly_sync.sh</string>
     </array>
+    <!-- 2026-10-19：週末不排程（見 docs/architecture.md 不變量 1.6）。
+         Weekday 1=一 … 5=五；0 與 7 都是週日，刻意都不列。
+         改這裡就要同步改 geobingan_sync/schedule.py 的 SYNC_WEEKDAYS，
+         tests/test_schedule.py 會釘住兩邊相等。 -->
     <key>StartCalendarInterval</key>
-    <dict>
-        <key>Hour</key>
-        <integer>10</integer>
-        <key>Minute</key>
-        <integer>0</integer>
-    </dict>
+    <array>
+        <dict>
+            <key>Weekday</key>
+            <integer>1</integer>
+            <key>Hour</key>
+            <integer>10</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+        <dict>
+            <key>Weekday</key>
+            <integer>2</integer>
+            <key>Hour</key>
+            <integer>10</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+        <dict>
+            <key>Weekday</key>
+            <integer>3</integer>
+            <key>Hour</key>
+            <integer>10</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+        <dict>
+            <key>Weekday</key>
+            <integer>4</integer>
+            <key>Hour</key>
+            <integer>10</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+        <dict>
+            <key>Weekday</key>
+            <integer>5</integer>
+            <key>Hour</key>
+            <integer>10</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+    </array>
     <key>StandardErrorPath</key>
     <string>/Users/geothingsmacbookair/Developer/geoBingAn-pdf-sync-tool/logs/launchd_weeklysync_err.log</string>
 </dict>
