@@ -12,7 +12,7 @@
 
 | 時間 | LaunchAgent | 內容 |
 |------|-------------|------|
-| 每日 08:00 | `com.geothings.geobingan.healthcheck` | 10 項檢查：Token／磁碟／同步狀態／API／launchd／上傳暫停／解析積壓／解析預算／清單新鮮度／來源資料夾；異常去重後貼 ClickUp，error 級 @ |
+| 每日 08:00 | `com.geothings.geobingan.healthcheck` | 健檢（**項目清單以 `health_check.DEFAULT_CHECKS` 為準**，不在這裡抄數量：Token／磁碟／同步狀態／API／launchd／上傳暫停／解析積壓／解析預算／清單新鮮度／來源資料夾／未支援來源／同步錯誤／待送告警）。開跑前先等 DNS 就緒（有上限），異常去重後貼 ClickUp、error 級 @；送不出去的告警進待送佇列、下一輪補送 |
 | **週一至週五** 10:00 | `com.geothings.geobingan.weeklysync` | 完整同步流程；週一加產 sync 週報 PDF → ClickUp |
 | 週五 17:00 | `com.geothings.geobingan.fridayreport` | 總結週報 PDF → ClickUp |
 

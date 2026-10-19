@@ -125,11 +125,19 @@ class AlertState:
     一份狀態，任一方都會把對方的 key 當成「已恢復」刪掉並誤發 ✅（review P1）。
     """
 
-    def __init__(self, path: Optional[Path] = None, namespace: str = 'default'):
+    def __init__(self, path: Optional[Path] = None, namespace: str = 'default',
+                 pending=None):
         if path is None:
             path = Path(__file__).resolve().parent.parent / 'state' / f'alert_state_{namespace}.json'
         self.path = Path(path)
         self.namespace = namespace
+        if pending is None:
+            # 待送佇列**跟著狀態檔放在同一個目錄**：測試注入 tmp 路徑時佇列也在 tmp，
+            # 不會寫到正式的 state/（conftest 的防線本來就會攔，但別讓它有機會攔）。
+            from geobingan_sync.pending_alerts import PendingAlerts
+            pending = PendingAlerts(path=self.path.parent / f'pending_alerts_{namespace}.json',
+                                    namespace=namespace)
+        self.pending = pending
 
     def load(self) -> Dict[str, dict]:
         try:
@@ -168,15 +176,29 @@ class AlertState:
         events, new_state = plan_alerts(self.load(), current, now, remind_days)
         if not events:
             self.save(new_state)
+            # 安靜的一天也要把積壓送出去，否則佇列只有「又出事」那天才會被清
+            # ——而那正好是最不該讓舊訊息繼續躺著的時候。
+            self.pending.flush(send, now=now)
             return events, True
         title, body, needs_attention = format_events(events, now)
+        error = ''
         try:
             delivered = bool(send(title, body, needs_attention))
         except Exception as e:
             print(f"  告警發送例外（狀態不落地，下輪重試）: {e}")
-            delivered = False
+            error, delivered = f'{type(e).__name__}: {e}', False
         if delivered:
             self.save(new_state)
+            # 剛剛那則已經把這些事件的現況講過了，積壓裡同樣的舊版本就不要再送一次。
+            # 傳事件而不是 key：resolved（「已恢復」）不含故障細節，不算講過——那條
+            # 規則擋在 resolve_covered 裡面，這裡傳裸 key 會直接 TypeError。
+            self.pending.resolve_covered(events, now=now)
+            self.pending.flush(send, now=now)
         else:
             print(f"  告警未送達（{self.namespace}），保留舊狀態、下輪重試")
+            # 「不落地狀態、下輪重新產生事件」只在**問題還在**時有效；問題在下一輪
+            # 之前消失的話事件會變成 resolved，這一則就永遠沒送到人手上。所以通知
+            # 本身要入列（Zhe 2026-10-19：不能只等 DNS、逾時後就丟掉訊息）。
+            self.pending.add(title, body, needs_attention, now=now, error=error,
+                             keys=[e.key for e in events])
         return events, delivered
