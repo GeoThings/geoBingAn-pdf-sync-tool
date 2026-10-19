@@ -110,6 +110,10 @@ class SyncStatus:
                 json.dump(self.data, f, ensure_ascii=False, indent=2)
         _retry_on_edeadlk(_write)
 
+    def weekday_summary(self, weekdays=None):
+        """只看排程日的輪次結果（預設週一至週五）。"""
+        return weekday_summary(self.data.get('history'), weekdays=weekdays)
+
     def start_run(self):
         """標記執行開始（會保存到檔案以支援跨 process）"""
         self._start_time = datetime.now()
@@ -304,3 +308,29 @@ if __name__ == '__main__':
     print("\n最近歷史:")
     for entry in status.get_recent_history(5):
         print(f"  {entry['date']} - {entry['status']} - 同步:{entry['synced']} 上傳:{entry['uploaded']}")
+
+
+def weekday_summary(history, weekdays=None):
+    """只看排程日（預設週一至週五）的輪次結果，回 {'runs','success','other'}。
+
+    為什麼要分開算：2026-10-19 之前週末也排程，而週末那幾輪多半是在機器睡著的
+    狀態下跑的——10/17、10/18 各跑 539／587 分鐘卻只同步到 9／10 份，兩輪都以
+    失敗收尾。混在一起算會讓排程日的成功率看起來比實際差。
+
+    **既有紀錄一個都不改寫**：這裡只是換一個切法重新計算，history 原封不動。
+    日期讀不出來的那幾筆直接跳過（不猜、也不算進分母）。
+    """
+    from geobingan_sync import schedule
+    wd = schedule.SYNC_WEEKDAYS if weekdays is None else weekdays
+    runs = success = 0
+    for item in history or []:
+        try:
+            day = datetime.strptime(str((item or {}).get('date')), '%Y-%m-%d').date()
+        except (TypeError, ValueError):
+            continue
+        if day.isoweekday() not in wd:
+            continue
+        runs += 1
+        if (item or {}).get('status') == 'success':
+            success += 1
+    return {'runs': runs, 'success': success, 'other': runs - success}

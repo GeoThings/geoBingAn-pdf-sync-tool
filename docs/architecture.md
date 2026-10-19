@@ -37,12 +37,20 @@
 |------|-------------|------|
 | 每日 08:00 | `com.geothings.geobingan.healthcheck` | 10 項巡檢：Token／磁碟／同步狀態／API／launchd job（PR #53）／上傳暫停（#57）／解析積壓／解析預算（PR #80）／清單新鮮度／來源資料夾失效（PR #82）；異常經 alert_state 去重後貼 ClickUp，error 級 @（PR #79） |
 | 每日 08:20 | `com.geothings.geobingan.drainstuck` | 放行我方近 7 天卡住的 pending/failed（**先看 `.pause_upload`**、再探解析引擎健康、走 retry_parse 預留、上限 20；PR #91／#96） |
-| 每日 10:00 | `com.geothings.geobingan.weeklysync` | 完整流程（步驟 1-4）+ 週一加步驟 5 產 PDF |
+| **週一至週五** 10:00 | `com.geothings.geobingan.weeklysync` | 完整流程（步驟 1-4）+ 週一加步驟 5 產 PDF |
 | 週五 17:00 | `com.geothings.geobingan.fridayreport` | 總結週報 PDF → ClickUp |
 
 安裝：`./setup/setup_launchd.sh` · 卸載：`./setup/uninstall_launchd.sh` · plist 位於 `launchd/`
 
 > ✅ **2026-06-09 ROOT CAUSE 確認 + RESOLVED**：18 天 launchd 自動觸發系統性 fail 的 root cause = repo 位於 `~/Documents/` 被 iCloud Drive `FileProvider` 接管。fix = 把 repo 搬到 `~/Developer/`（FileProvider 域外）。搬完後第一次 launchd kickstart healthcheck = exit 0、echo 寫入。詳見下方「Auto-trigger 失敗 root cause」段。
+
+**2026-10-19 起週末不排程**（plist 的 `StartCalendarInterval` 從單一 dict 改成 Weekday 1–5 的陣列）。依據是 10/17、10/18 兩輪各跑了 539.1／586.6 分鐘卻只同步到 9／10 份——機器在那個執行窗裡多半是睡著的，耗電池又把失敗率推高。`pmset repeat wakepoweron MTWRFSU 07:55:00` **不變**，因為 08:00 的健檢每天都要跑。
+
+#### 不變量 1.6：告警的「漏跑」要按排程日算，不是小時數
+
+健檢有兩處「容忍漏跑一輪」的判斷（未支援來源名單的 `generated_at`、同步錯誤結算的 `at`），原本都寫成 48 小時。那是**每日排程下的代理**：週末停排程後，週五 10:00 跑完到週一 08:00 的健檢是 70 小時，兩處都會在**每個週一**誤報；而把門檻放寬到 96 小時又會讓週二的故障要到週六才超過門檻。永遠亮的告警與看不見的故障是同一個後果。
+
+改由 `geobingan_sync/schedule.py` 直接數「這段時間內應該跑過幾輪」（`is_overdue`），週間語意與舊的 48 小時完全相同。`SYNC_WEEKDAYS` 與 plist 的 `Weekday` 由 `tests/test_schedule.py` 釘住相等——兩邊漂走就是「告警以為今天該跑、排程其實沒排」。另外 `sync_status.weekday_summary()` 只看排程日重算成功率（**不改寫 history**），避免睡著跑完的週末輪次把排程日的數字拖低。
 
 #### Wake-from-sleep 排程行為（2026-05 incident RCA）
 

@@ -13,7 +13,7 @@
 | 時間 | LaunchAgent | 內容 |
 |------|-------------|------|
 | 每日 08:00 | `com.geothings.geobingan.healthcheck` | 10 項檢查：Token／磁碟／同步狀態／API／launchd／上傳暫停／解析積壓／解析預算／清單新鮮度／來源資料夾；異常去重後貼 ClickUp，error 級 @ |
-| 每日 10:00 | `com.geothings.geobingan.weeklysync` | 完整同步流程；週一加產 sync 週報 PDF → ClickUp |
+| **週一至週五** 10:00 | `com.geothings.geobingan.weeklysync` | 完整同步流程；週一加產 sync 週報 PDF → ClickUp |
 | 週五 17:00 | `com.geothings.geobingan.fridayreport` | 總結週報 PDF → ClickUp |
 
 **預計耗時：** ~15–25 分鐘（全量翻頁掃描後的正常水位；納入大量新案後首次可達 ~60 分鐘）

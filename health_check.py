@@ -109,7 +109,10 @@ def check_last_sync(path=None, now=None):
             return 'warning', f'距離上次同步已 {days_ago} 天（{last_run[:10]}）'
         elif last_status == 'failure':
             return 'warning', f'上次同步失敗（{last_run[:10]}）'
-        return 'ok', f'上次同步: {last_run[:10]}（{last_status}）'
+        from geobingan_sync.sync_status import weekday_summary
+        wd = weekday_summary(data.get('history'))
+        return 'ok', (f'上次同步: {last_run[:10]}（{last_status}）；'
+                      f'排程日 {wd["runs"]} 輪、成功 {wd["success"]}')
     except Exception as e:
         return 'warning', f'讀取狀態失敗: {e}'
 
@@ -287,7 +290,23 @@ def check_folder_deaths(path=None, now=None, window_days=DEATH_WINDOW_DAYS):
         return 'warning', f'失效資料夾檢查失敗: {e}'
 
 
-UNSUPPORTED_STALE_HOURS = 48      # 每日排程，容忍漏跑一次；再久就是名單本身停更了
+# 名單停更的判準改由 geobingan_sync.schedule 依排程日計算（2026-10-19 週末停排程）。
+# 原本是 UNSUPPORTED_STALE_HOURS = 48（「每日排程、容忍漏跑一次」的小時代理）：
+# 週末不排程後，週五跑完到週一 08:00 是 70 小時，那個門檻會每週一誤報一次。
+
+
+from geobingan_sync import schedule as _schedule
+
+
+def _overdue(last_update, now, tolerate=None):
+    """漏跑是否超過容忍值。判準是「中間應該跑過幾輪」，不是小時數。
+
+    排程為週一至週五（見 geobingan_sync/schedule.py）。用小時數當代理的話，
+    週五跑完到週一早上的 70 小時會讓告警每週一亮一次——而那是預期的休息日。
+    """
+    if tolerate is None:
+        tolerate = _schedule.DEFAULT_TOLERATE_MISSED
+    return _schedule.is_overdue(last_update, now, tolerate=tolerate)
 
 
 def _last_sync_time(path=None):
@@ -303,7 +322,7 @@ def _last_sync_time(path=None):
 
 def check_unsupported_sources(path=None, now=None, new_window_days=14,
                               sync_status_path=None,
-                              stale_hours=UNSUPPORTED_STALE_HOURS):
+                              tolerate_missed_runs=None):
     """清單上有、但我們接不到的來源。
 
     這個檢查不是「系統壞了」的燈號，是**缺口的可見度**——被剔除的建案原本在系統
@@ -343,10 +362,10 @@ def check_unsupported_sources(path=None, now=None, new_window_days=14,
             gen = _dt.fromisoformat(gen_raw)
         except (TypeError, ValueError):
             return 'warning', f'未支援來源名單缺少可判讀的 generated_at（{gen_raw!r}）——無法確認是否仍在更新'
-        age = now - gen
-        if age > timedelta(hours=stale_hours):
-            hrs = int(age.total_seconds() // 3600)
-            return 'warning', (f'未支援來源名單已 {hrs} 小時未更新（最後 {gen:%Y-%m-%d %H:%M}）'
+        if _overdue(gen, now, tolerate_missed_runs):
+            missed, hrs = _schedule.describe_gap(gen, now)
+            return 'warning', (f'未支援來源名單已漏 {missed} 輪未更新'
+                               f'（最後 {gen:%Y-%m-%d %H:%M}，約 {hrs} 小時前）'
                                f'——寫入可能持續失敗，名單內容已不可信')
         sources = data.get('sources') or {}
         if not sources:
@@ -379,12 +398,11 @@ def check_unsupported_sources(path=None, now=None, new_window_days=14,
 #: google-api 整套拉進健康檢查。兩邊各寫一份有漂走的風險，所以用測試釘住相等。
 SYNC_PROGRESS_FILE = './state/sync_permits_progress.json'
 
-#: 每日排程，容忍漏跑一次；再久就代表結算本身沒在跑了
-SYNC_ERROR_STALE_HOURS = 48
+# 同上，改用排程日計算；原本是 SYNC_ERROR_STALE_HOURS = 48。
 
 
 def check_sync_errors(path=None, now=None, sync_status_path=None,
-                      stale_hours=SYNC_ERROR_STALE_HOURS):
+                      tolerate_missed_runs=None):
     """同步時逐案失敗的可見度。
 
     為什麼需要：2026-10-05 一輪出現 10 筆 Connection reset／讀取逾時，exit code
@@ -427,13 +445,14 @@ def check_sync_errors(path=None, now=None, sync_status_path=None,
             at = _dt.fromisoformat(str(res['at']))
         except (TypeError, ValueError):
             return 'warning', f"同步錯誤結算缺少可判讀的時間（{res['at']!r}）——無法確認是否仍在更新"
-        age = now - at
-        if age > timedelta(hours=stale_hours):
-            hrs = int(age.total_seconds() // 3600)
+        if _overdue(at, now, tolerate_missed_runs):
+            missed, hrs = _schedule.describe_gap(at, now)
             sync_level, sync_msg = check_last_sync(path=sync_status_path, now=now)
             if sync_level != 'ok':
-                return 'ok', f'同步錯誤結算已 {hrs} 小時未更新（同步狀態已另行告警：{sync_msg}）'
-            return 'warning', (f'同步錯誤結算已 {hrs} 小時未更新（最後 {at:%Y-%m-%d %H:%M}）'
+                return 'ok', (f'同步錯誤結算已漏 {missed} 輪未更新'
+                              f'（同步狀態已另行告警：{sync_msg}）')
+            return 'warning', (f'同步錯誤結算已漏 {missed} 輪未更新'
+                               f'（最後 {at:%Y-%m-%d %H:%M}，約 {hrs} 小時前）'
                                f'——結算可能持續失敗，錯誤數已不可信')
 
         base = f"最近一輪 {res['errored']} / {res['visited']} 案出錯（{res['rate']:.1%}）"

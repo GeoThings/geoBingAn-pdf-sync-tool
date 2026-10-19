@@ -369,12 +369,30 @@ def test_check_unfinalized_defers_when_sync_already_alerts(tmp_path):
 
 
 def test_check_stale_finalization_warns(tmp_path):
-    state = {'last_run': {'at': (NOW - timedelta(hours=72)).isoformat(),
+    """結算漏掉兩輪排程就告警。
+
+    NOW 是週一（2026-10-05 11:00），往前 4 天是上週四；中間的週五與當天週一
+    各有一輪，共漏兩輪。判準從「小時數」改成「漏跑輪數」之後，這裡必須用
+    真的跨兩輪的間隔——原本寫 72 小時（上週五），在週末不排程下只漏一輪、
+    屬於容忍範圍，測資就不再觸發被測的判斷了。
+    """
+    state = {'last_run': {'at': (NOW - timedelta(days=4)).isoformat(),
                           'visited': 400, 'errored': 0}}
     level, msg = health_check.check_sync_errors(
         path=_write(tmp_path, state), now=NOW,
         sync_status_path=_sync_status(tmp_path, NOW - timedelta(hours=1)))
-    assert level == 'warning' and '未更新' in msg
+    assert level == 'warning' and '漏 2 輪未更新' in msg, msg
+
+
+def test_a_friday_settlement_is_not_stale_on_monday_morning(tmp_path):
+    """週末是預期的休息日：週一早上看到上週五的結算不算異常（舊門檻會報 70 小時）。"""
+    friday = datetime(2026, 10, 2, 10, 7)
+    monday_check = datetime(2026, 10, 5, 8, 0)
+    state = {'last_run': {'at': friday.isoformat(), 'visited': 400, 'errored': 0}}
+    level, msg = health_check.check_sync_errors(
+        path=_write(tmp_path, state), now=monday_check,
+        sync_status_path=_sync_status(tmp_path, friday))
+    assert '未更新' not in msg and '漏' not in msg, msg
 
 
 def test_check_reports_transient_as_ok(tmp_path):
