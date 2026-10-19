@@ -29,6 +29,8 @@ DEFAULT_MAX_ITEMS = 50
 DEFAULT_MAX_ATTEMPTS = 10
 #: 摘要裡最多列幾行原標題（再多就截，並寫明省略了幾行；則數不受影響）。
 DEFAULT_MAX_COALESCED_TITLES = 40
+#: 這些事件**不算**講過故障內容：「已恢復」裡沒有故障細節，不可以用它清掉積壓。
+NON_COVERING_KINDS = frozenset({'resolved'})
 
 SendFn = Callable[[str, str, bool], bool]
 
@@ -137,18 +139,35 @@ class PendingAlerts:
 
     # ---------- 已被新通知涵蓋就不要再送一次 ----------
 
-    def resolve_covered(self, sent_keys, now: Optional[datetime] = None) -> int:
+    def resolve_covered(self, sent_events, now: Optional[datetime] = None) -> int:
         """丟掉那些「內容已經被剛剛成功送出的通知講過」的積壓，避免重複通知。
 
         為什麼需要：送達失敗時狀態不落地，所以**問題還在**的話下一輪會重新產生
         同樣的事件、把當前狀況講一次。這時積壓那一則是同一件事的舊版本，再補送
         就是同一件事通知兩次。
 
+        **只有「重述了故障內容」的事件才算講過**（#122 review P1）。`resolved`
+        是「✅ 已恢復」，裡面沒有故障細節——拿它當涵蓋，人就只會收到「已恢復」、
+        永遠不知道發生過什麼，而那正是這個佇列要防的事。實際可重現的順序：
+        warning 送出成功 → 升級 error 但送不出去、入列 → 問題恢復、恢復通知送出
+        成功 → error 的細節被清掉。
+
         只有 key 完全被涵蓋才丟：若積壓那則講了 A、B 而新通知只講了 A，B 的資訊
         還沒送到，整則留著（寧可重複一點點，也不要漏掉 B）。沒記 key 的（舊格式）
         一律保留——判斷不了就不丟。
+
+        參數是**事件**不是 key：規則擋在這裡，呼叫點就不可能忘記過濾 resolved
+        （同 #119 的 ListMembership，裸集合一進來就 TypeError）。
         """
-        sent = set(sent_keys or ())
+        sent = set()
+        for event in sent_events or ():
+            kind, key = getattr(event, 'kind', None), getattr(event, 'key', None)
+            if kind is None or key is None:
+                raise TypeError(
+                    'resolve_covered 要的是告警事件（有 .kind 與 .key），不是裸 key：'
+                    f'{event!r}。傳 key 會讓「resolved 不算講過」這條規則被繞過。')
+            if kind not in NON_COVERING_KINDS:
+                sent.add(key)
         if not sent:
             return 0
         items, kept, dropped = self.load(), [], 0
@@ -179,9 +198,15 @@ class PendingAlerts:
         stopped = False
         for item in items:
             attempts = item.get('attempts') or 0
-            if stopped or attempts >= self.max_attempts:
+            if attempts >= self.max_attempts:
                 # 超過次數就不再自動重打，但**留著**並標記，讓它繼續被報出來
                 item['stalled'] = True
+                remaining.append(item)
+                continue
+            if stopped:
+                # 本輪通道不通、這一則連試都沒試到：原狀留著，**不可以標 stalled**
+                # （#122 review P2）。那會讓 attempts=0 的項目被健檢報成「已達重試
+                # 上限」的 error——假的告警，而假告警正是這套機制要消滅的東西。
                 remaining.append(item)
                 continue
             title, body = self._as_backlog(item, now)

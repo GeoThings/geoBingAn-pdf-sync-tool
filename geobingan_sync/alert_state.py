@@ -189,8 +189,10 @@ class AlertState:
             error, delivered = f'{type(e).__name__}: {e}', False
         if delivered:
             self.save(new_state)
-            # 剛剛那則已經把這些 key 的現況講過了，積壓裡同樣的舊版本就不要再送一次
-            self.pending.resolve_covered([e.key for e in events], now=now)
+            # 剛剛那則已經把這些事件的現況講過了，積壓裡同樣的舊版本就不要再送一次。
+            # 傳事件而不是 key：resolved（「已恢復」）不含故障細節，不算講過——那條
+            # 規則擋在 resolve_covered 裡面，這裡傳裸 key 會直接 TypeError。
+            self.pending.resolve_covered(events, now=now)
             self.pending.flush(send, now=now)
         else:
             print(f"  告警未送達（{self.namespace}），保留舊狀態、下輪重試")

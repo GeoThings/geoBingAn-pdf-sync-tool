@@ -26,6 +26,13 @@ def _q(tmp_path, **kw):
     return PendingAlerts(path=tmp_path / 'pending.json', namespace='test', **kw)
 
 
+class _Ev:
+    """最小的告警事件：resolve_covered 只看 .kind 與 .key。"""
+
+    def __init__(self, kind, key):
+        self.kind, self.key = kind, key
+
+
 class _Send:
     """可控的發送器：記下每次呼叫，依 ok 決定成功或失敗。"""
 
@@ -282,9 +289,73 @@ def test_a_partially_covered_backlog_item_is_kept(tmp_path):
 def test_an_item_without_keys_is_never_dropped_as_covered(tmp_path):
     """舊格式沒記 key：判斷不了就不丟。"""
     q = _q(tmp_path)
-    item = q.add('舊格式', 'x', False, now=T0)
+    q.add('舊格式', 'x', False, now=T0)
     items = q.load()
     items[0].pop('keys')
     q.save(items)
-    assert q.resolve_covered(['任何 key'], now=T0) == 0
+    assert q.resolve_covered([_Ev('new', '任何 key')], now=T0) == 0
     assert len(q.load()) == 1
+
+
+def test_a_resolved_event_on_its_own_covers_nothing(tmp_path):
+    """「已恢復」沒有故障細節，所以它不算講過那件事（#122 review P1）。"""
+    q = _q(tmp_path)
+    q.add('❌ API 連線: NameResolutionError', '細節', True, now=T0, keys=['API 連線'])
+    assert q.resolve_covered([_Ev('resolved', 'API 連線')], now=T0) == 0
+    assert len(q.load()) == 1
+
+
+def test_a_fresh_failure_event_does_cover_the_old_copy(tmp_path):
+    """反方向：重述了故障的事件（new／escalated／reminder）確實算講過，要消掉。"""
+    q = _q(tmp_path)
+    q.add('❌ API 連線: 舊版本', '細節', True, now=T0, keys=['API 連線'])
+    assert q.resolve_covered([_Ev('new', 'API 連線')], now=T0) == 1
+    assert q.load() == []
+
+
+def test_bare_keys_are_refused_at_the_boundary(tmp_path):
+    """傳 key 會讓「resolved 不算講過」被繞過，所以一進來就 TypeError。"""
+    q = _q(tmp_path)
+    q.add('標題', 'x', False, now=T0, keys=['A'])
+    with pytest.raises(TypeError):
+        q.resolve_covered(['A'], now=T0)
+    assert len(q.load()) == 1, '被拒絕時不可以順手改動佇列'
+
+
+# ---------- review #122 抓到的兩個情境 ----------
+
+def test_a_recovery_notice_does_not_delete_the_unsent_failure_detail(tmp_path):
+    """恢復通知不可以把還沒送出去的故障細節一起清掉。
+
+    「已恢復」裡沒有故障內容，所以它**不算講過**那件事。只看 key 的話，resolved
+    事件會把同一個 key 的積壓消掉，人就只收到「已恢復」、永遠不知道發生過什麼。
+    """
+    st = _state(tmp_path)
+    st.process({'API 連線': ('warning', '偶發逾時')}, send=_Send(ok=True), now=T0)
+    st.process({'API 連線': ('error', '完全連不上：NameResolutionError')},
+               send=_Send(ok=False), now=T0 + timedelta(hours=1))
+    assert len(st.pending.load()) == 1, '升級後送不出去，應該入列'
+
+    good = _Send(ok=True)
+    st.process({}, send=good, now=T0 + timedelta(hours=2))
+    bodies = ' '.join(c[1] for c in good.calls)
+    assert 'NameResolutionError' in bodies, '故障細節被恢復通知清掉了'
+    assert st.pending.load() == [], '補送成功後才可以清空'
+
+
+def test_items_skipped_because_the_channel_is_down_are_not_marked_stalled(tmp_path):
+    """本輪「沒試到」與「已達重試上限」是兩件事，不可以共用同一個標記。
+
+    通道不通時 flush 只試第一則就停手（刻意的），其餘則數 attempts 還是 0；
+    把它們標成 stalled 會讓健檢報成「已達重試上限」的 error——假的。
+    """
+    q = _q(tmp_path, max_attempts=3)
+    for i in range(3):
+        q.add(f'第 {i} 則', 'x', False, now=T0 + timedelta(minutes=i))
+    q.flush(_Send(ok=False), now=T0 + timedelta(hours=1))
+    items = q.load()
+    assert items[0]['attempts'] == 1 and items[0].get('stalled') is False
+    assert [i.get('stalled') for i in items[1:]] == [None, None], '本輪沒試到的不該被標記'
+    assert [i['attempts'] for i in items[1:]] == [0, 0]
+    level, msg = health_check.check_pending_alerts(pending=q, now=T0 + timedelta(hours=2))
+    assert level == 'warning' and '停止自動重打' not in msg, msg
