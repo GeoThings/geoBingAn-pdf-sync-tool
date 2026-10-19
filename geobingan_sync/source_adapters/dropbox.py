@@ -35,7 +35,7 @@ _HOSTS = frozenset({'www.dropbox.com', 'dropbox.com'})
 #: 取檔主機後綴：Dropbox 用隨機子網域發檔，無法事先列舉。
 DOWNLOAD_HOST_SUFFIXES = frozenset({'dl.dropboxusercontent.com'})
 
-#: 整包取用間隔。監測報告是週報節奏，每天抓整包只是浪費頻寬。
+#: 整包取用間隔，單位是**日曆日**。監測報告是週報節奏，每天抓整包只是浪費頻寬。
 FETCH_INTERVAL_DAYS = 7
 STATE_FILE = './state/bundle_fetches.json'
 
@@ -99,18 +99,24 @@ def is_due(key: str, now: datetime = None, state_path: str = None,
 
     時間戳解析失敗也抓：fail-open 倒向「抓」這一側，髒資料不可以讓某一包永遠不更新
     （同 #100 失效資料夾重驗的紀律）。
+
+    判準是**日曆日**，不是「滿 168 小時」：`mark_fetched` 是抓完才寫時間戳，下一輪
+    走到這一包的時刻每週飄動幾十秒。2026-10-19 實測三包只抓到一包，另兩包差約 10
+    秒與 47 秒沒到期。規則與已標 404 的重驗共用同一個函式（見 schedule.py）。
     """
+    from geobingan_sync import schedule
     now = now or datetime.now()
     raw = (_load_state(state_path).get(key) or {}).get('fetched_at')
-    if not raw:
-        return True
-    try:
-        last = datetime.fromisoformat(str(raw))
-    except (TypeError, ValueError):
-        return True
-    if last.tzinfo is not None:
-        last = last.astimezone().replace(tzinfo=None)
-    return (now - last) >= timedelta(days=interval_days)
+    last = None
+    if raw:
+        try:
+            last = datetime.fromisoformat(str(raw))
+        except (TypeError, ValueError):
+            last = None
+        else:
+            if last.tzinfo is not None:
+                last = last.astimezone().replace(tzinfo=None)
+    return schedule.is_due_by_calendar_days(last, now, interval_days)
 
 
 def mark_fetched(key: str, pdf_count: int, now: datetime = None,

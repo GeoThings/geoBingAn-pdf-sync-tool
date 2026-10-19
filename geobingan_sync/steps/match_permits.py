@@ -252,21 +252,29 @@ def apply_url_probe(entry: dict, outcome: str, checked_at: str = None,
         entry['gov_pdf_url_revived_at'] = checked_at or now
 
 
-RECHECK_DEAD_AFTER_DAYS = 7      # 已標 404 的資料夾多久重驗一次
+RECHECK_DEAD_AFTER_DAYS = 7      # 已標 404 的資料夾每幾個**日曆日**重驗一次
 
 
 def _due_for_recheck(prior: dict, now: datetime) -> bool:
-    """已標 404 的是否該重驗。沒有時間戳（舊資料）一律重驗一次，先把基準補上。"""
+    """已標 404 的是否該重驗。沒有時間戳（舊資料）一律重驗一次，先把基準補上。
+
+    判準是**日曆日**，不是「滿 168 小時」：時間戳是探測完才寫的，下一輪走到這裡
+    的時刻每週飄動幾十秒，用小時數比較會變成每週擲一次硬幣——2026-10-15 就差
+    38 秒沒到期、14 案整批被跳過一輪。規則與 dropbox 整包取用共用同一個函式，
+    不各自寫一份（見 geobingan_sync/schedule.py）。
+    """
+    from geobingan_sync import schedule
     ts = prior.get('gov_pdf_url_checked_at')
-    if not ts:
-        return True
-    try:
-        t = datetime.fromisoformat(str(ts))
-    except (TypeError, ValueError):
-        return True
-    if t.tzinfo is not None:
-        t = t.replace(tzinfo=None)
-    return (now - t) >= timedelta(days=RECHECK_DEAD_AFTER_DAYS)
+    t = None
+    if ts:
+        try:
+            t = datetime.fromisoformat(str(ts))
+        except (TypeError, ValueError):
+            t = None
+        else:
+            if t.tzinfo is not None:
+                t = t.replace(tzinfo=None)
+    return schedule.is_due_by_calendar_days(t, now, RECHECK_DEAD_AFTER_DAYS)
 
 
 def fetch_source_folder_names(gov_data: dict, drive_service, prior_registry: dict = None,

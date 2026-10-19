@@ -9,7 +9,7 @@
 日期全部寫死且標出星期，避免「今天剛好是週幾」決定測試會不會過。
 """
 import plistlib
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -158,3 +158,97 @@ def test_the_run_that_wrote_the_timestamp_is_not_counted_as_missed():
     """
     assert schedule.scheduled_runs_between(
         datetime(2026, 10, 19, 10, 0), datetime(2026, 10, 19, 23, 0)) == 0
+
+
+# ========== 「每 N 個日曆日」：兩個消費端共用同一條規則 ==========
+#
+# 需求是「每七個日曆日檢查一次」（Zhe 2026-10-19，pdf-sync/Z-1019-4）。用「滿
+# 168 小時」的話，時間戳是做完才寫、下一輪走到它的時刻每週飄動幾十秒，於是變成
+# 每週擲一次硬幣。下面兩條用的是真實觀測到的數字。
+
+def test_the_404_recheck_no_longer_misses_by_38_seconds():
+    """2026-10-15 實際發生：差 38 秒不到 7 天，14 案整批被跳過一輪。"""
+    from geobingan_sync.steps.match_permits import _due_for_recheck
+    prior = {'gov_pdf_url_checked_at': '2026-10-08T10:06:37'}
+    now = datetime(2026, 10, 15, 10, 6, 0)          # 本輪走到探測的時刻
+    assert (now - datetime(2026, 10, 8, 10, 6, 37)).total_seconds() < 7 * 86400, \
+        '前提：用小時數比較的話這一輪不到期'
+    assert _due_for_recheck(prior, now) is True, '按日曆日就該重驗'
+
+
+def test_a_bundle_no_longer_misses_by_ten_seconds(tmp_path):
+    """2026-10-19 實際發生：三包只抓到一包，另兩包差約 10 秒與 47 秒沒到期。"""
+    import json
+    from geobingan_sync.source_adapters.dropbox import is_due
+    state = tmp_path / 'bundle_fetches.json'
+    state.write_text(json.dumps({'k': {'fetched_at': '2026-10-12T10:02:52', 'pdf_count': 34}}),
+                     encoding='utf-8')
+    now = datetime(2026, 10, 19, 10, 2, 42)
+    assert (now - datetime(2026, 10, 12, 10, 2, 52)).total_seconds() < 7 * 86400
+    assert is_due('k', now=now, state_path=str(state)) is True
+
+
+def test_the_hour_no_longer_decides_the_cadence():
+    """同一天的什麼時刻都算同一天：節奏不再被幾十秒的飄動左右。"""
+    last = datetime(2026, 10, 16, 23, 59)
+    assert schedule.is_due_by_calendar_days(last, datetime(2026, 10, 23, 0, 1), 7) is True
+    assert schedule.is_due_by_calendar_days(last, datetime(2026, 10, 22, 23, 59), 7) is False
+
+
+def test_six_calendar_days_is_not_due():
+    """反方向：不可以變成「每次都到期」——那等於把間隔拿掉。"""
+    last = datetime(2026, 10, 19, 10, 0)
+    assert schedule.is_due_by_calendar_days(last, datetime(2026, 10, 25, 23, 59), 7) is False
+    assert schedule.calendar_days_since(last, datetime(2026, 10, 25, 23, 59)) == 6
+
+
+def test_the_cadence_stays_on_the_same_weekday():
+    """7 個日曆日之後是同一個星期幾——週末不排程下，到期日永遠落在排程日。"""
+    monday = datetime(2026, 10, 19, 10, 0)
+    due = monday + timedelta(days=7)
+    assert due.isoweekday() == monday.isoweekday() == 1
+    assert due.isoweekday() in schedule.SYNC_WEEKDAYS
+
+
+def test_no_timestamp_is_due_fail_open():
+    """沒有時間戳＝倒向「做」那一側：髒資料不可以讓某一項永遠不更新。"""
+    assert schedule.is_due_by_calendar_days(None, datetime(2026, 10, 19), 7) is True
+    assert schedule.calendar_days_since(None, datetime(2026, 10, 19)) is None
+
+
+def test_an_unreadable_timestamp_is_due_in_both_consumers(tmp_path):
+    import json
+    from geobingan_sync.steps.match_permits import _due_for_recheck
+    from geobingan_sync.source_adapters.dropbox import is_due
+    now = datetime(2026, 10, 19, 10, 0)
+    assert _due_for_recheck({'gov_pdf_url_checked_at': '壞掉的時間'}, now) is True
+    state = tmp_path / 'b.json'
+    state.write_text(json.dumps({'k': {'fetched_at': 'n/a'}}), encoding='utf-8')
+    assert is_due('k', now=now, state_path=str(state)) is True
+
+
+def test_both_consumers_go_through_the_one_rule(tmp_path, monkeypatch):
+    """結構不變式：兩個消費端都必須走同一個函式，不可以各自寫一份比較式。
+
+    「差幾秒」原本就是在兩個地方各自長出來的；只修一邊、或兩邊各自減掉幾十秒，
+    下一個消費端還是會再長一次。
+    """
+    import json
+    from geobingan_sync.steps.match_permits import _due_for_recheck
+    from geobingan_sync.source_adapters.dropbox import is_due
+
+    seen = []
+    real = schedule.is_due_by_calendar_days
+
+    def spy(last, now, days):
+        seen.append((last, days))
+        return real(last, now, days)
+
+    monkeypatch.setattr(schedule, 'is_due_by_calendar_days', spy)
+    _due_for_recheck({'gov_pdf_url_checked_at': '2026-10-08T10:06:37'},
+                     datetime(2026, 10, 19, 10, 0))
+    state = tmp_path / 'b.json'
+    state.write_text(json.dumps({'k': {'fetched_at': '2026-10-12T10:02:52'}}), encoding='utf-8')
+    is_due('k', now=datetime(2026, 10, 19, 10, 0), state_path=str(state))
+    assert len(seen) == 2, f'兩個消費端都要走同一條規則，實際只走了 {len(seen)} 次'
+    assert [d for _, d in seen] == [7, 7]
