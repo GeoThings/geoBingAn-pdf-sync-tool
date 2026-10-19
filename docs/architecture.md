@@ -46,6 +46,21 @@
 
 **2026-10-19 起週末不排程**（plist 的 `StartCalendarInterval` 從單一 dict 改成 Weekday 1–5 的陣列）。依據是 10/17、10/18 兩輪各跑了 539.1／586.6 分鐘卻只同步到 9／10 份——機器在那個執行窗裡多半是睡著的，耗電池又把失敗率推高。`pmset repeat wakepoweron MTWRFSU 07:55:00` **不變**，因為 08:00 的健檢每天都要跑。
 
+#### 不變量 1.8：週期性檢查用「日曆日」判斷，兩個消費端共用同一條規則
+
+「每 7 天一次」原本在兩個地方各自寫成 `(now - last) >= timedelta(days=7)`：已標 404 的重驗（`match_permits._due_for_recheck`）與 dropbox 整包取用（`source_adapters/dropbox.is_due`）。兩邊的時間戳都是**做完才寫**，而下一輪走到它的時刻每週飄動幾十秒（看前面的步驟跑多久），於是「滿 168 小時」變成每週擲一次硬幣：
+
+| 日期 | 現象 | 差多少 |
+|---|---|---|
+| 2026-10-15 | 已標 404 的 14 案整批被跳過一輪 | 38 秒 |
+| 2026-10-19 | dropbox 三包只抓到一包 | 約 10 秒、47 秒 |
+
+2026-10-19 起週末不排程之後，跳過一輪的代價從 +1 天變成可能 **+3 天**（週五到期 → 週六不跑 → 下週一），7 天的節奏會變成 10 天。
+
+所以改成按**日期**比較（`schedule.is_due_by_calendar_days`）：同一個星期幾固定重來，不受幾十秒飄動影響；而且週末不排程下，到期日永遠落在排程日。**兩個消費端走同一個函式**，由 `tests/test_schedule.py::test_both_consumers_go_through_the_one_rule` 釘住——「差幾秒」本來就是在兩個地方各自長出來的，只修一邊、或兩邊各自減掉幾十秒，下一個消費端還是會再長一次。
+
+沒有時間戳或讀不出來一律視為到期（fail-open 倒向「做」那一側，同 #100 的紀律）。
+
 #### 不變量 1.7：送不出去的告警要留著、補送，而且不重複
 
 2026-10-19 08:00:35 的健檢（post-sleep）`riskmap.today` 與 `api.clickup.com` 全都解不到 DNS，**9 個要關注的問題一個都沒送出**（Email 失敗、ClickUp 失敗）。原有的 plan→send→commit 只做對一半：送不出去就不落地狀態，所以下一輪會重新產生同樣的事件——**但那只在問題還在的時候有效**。問題若在下一輪之前消失，事件會變成 `resolved`，原本那則「新問題」就永遠沒送到人手上，當天發生過什麼事會從帳上消失。
@@ -631,7 +646,7 @@ adapter 連的是外部文件指定的網址，與 link_resolver 同屬不可信
 - `SourceFile` 帶 `allowed_hosts`（精確比對）與 `allowed_host_suffixes`（網域或子網域）**兩個獨立欄位**。後者要求至少兩段標籤，否則白名單可以被寫成 `.com`。
 - `_open_guarded()` **手動逐跳**跟隨轉址：每次請求**之前**驗 scheme／無 port／主機白名單／跳數。交給 requests 自動跟隨等於把主機邊界還給對方；跳數在事後才數只是統計，不是防線。
 - 單檔 64 MB；bundle（Dropbox zip）另有解壓後總量、成員數、zip-slip 路徑檢查與逐成員 magic bytes 檢查。
-- bundle 每 7 天抓一次，`state/bundle_fetches.json` 記錄。`mark_fetched` 只在**真的完成**時寫入（原本放在 `finally`，失敗也會被記成成功）。read-modify-write 由模組級 `threading.Lock` 保護、暫存檔名唯一——adapter 跑在 sync 的 ThreadPoolExecutor（5 並行）裡，無鎖時 24 筆更新曾只存活 4 筆，且只用 PID 命名暫存檔會讓並行寫入互相覆蓋並拋 FileNotFoundError。**這是 process 內的保護，不是 flock**；跨 process 併發（兩輪 sync 重疊）不在此防護範圍，目前靠排程每日一次與看門狗時間上限避免。
+- bundle 每 7 個**日曆日**抓一次（見不變量 1.8），`state/bundle_fetches.json` 記錄。`mark_fetched` 只在**真的完成**時寫入（原本放在 `finally`，失敗也會被記成成功）。read-modify-write 由模組級 `threading.Lock` 保護、暫存檔名唯一——adapter 跑在 sync 的 ThreadPoolExecutor（5 並行）裡，無鎖時 24 筆更新曾只存活 4 筆，且只用 PID 命名暫存檔會讓並行寫入互相覆蓋並拋 FileNotFoundError。**這是 process 內的保護，不是 flock**；跨 process 併發（兩輪 sync 重疊）不在此防護範圍，目前靠排程每日一次與看門狗時間上限避免。
 
 ## State 管理
 

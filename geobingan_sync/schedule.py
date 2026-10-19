@@ -73,3 +73,38 @@ def describe_gap(last_update, now, **kw):
     missed = missed_scheduled_runs(last_update, now, **kw)
     hours = None if last_update is None else int((now - last_update).total_seconds() // 3600)
     return missed, hours
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 「每 N 個日曆日一次」——兩個消費端共用同一條規則
+#
+# 為什麼不用「滿 N×24 小時」（`(now - last) >= timedelta(days=N)`）：兩個消費端的
+# 時間戳都是**做完才寫**，而下一輪走到它的時刻每週會飄動幾十秒（取決於前面的步驟
+# 跑多久）。於是「滿 168 小時」會變成每週擲一次硬幣：
+#
+#   · 2026-10-15：已標 404 的重驗差 **38 秒**沒到期，整批 14 案被跳過。
+#   · 2026-10-19：dropbox 三包只抓到一包，另兩包差約 **10 秒**與 **47 秒**沒到期。
+#
+# 而且 2026-10-19 起週末不排程，跳過一輪的代價從 +1 天變成可能 +3 天（週五到期 →
+# 週六不跑 → 下週一），7 天的節奏會變成 10 天。
+#
+# 需求是「每七個日曆日檢查一次」（Zhe 2026-10-19，`pdf-sync/Z-1019-4`），所以按
+# **日期**比較：同一個星期幾固定重來，不受幾十秒飄動影響。各自減掉幾十秒只是把
+# 硬幣換成一枚比較不容易翻的硬幣，不是修掉它。
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def calendar_days_since(last, now):
+    """從 `last` 到 `now` 經過幾個**日曆日**。任一為 None 回 None（無從判斷）。"""
+    if last is None or now is None:
+        return None
+    return (now.date() - last.date()).days
+
+
+def is_due_by_calendar_days(last, now, days: int) -> bool:
+    """每 `days` 個日曆日一次。
+
+    `last` 是 None（沒有時間戳、或讀不出來）一律回 True——fail-open 倒向「做」這
+    一側：髒資料不可以讓某一項永遠不更新（同 #100 失效資料夾重驗的紀律）。
+    """
+    elapsed = calendar_days_since(last, now)
+    return True if elapsed is None else elapsed >= days
