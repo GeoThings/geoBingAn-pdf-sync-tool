@@ -9,6 +9,7 @@ import socket
 import ssl
 import time
 
+import httplib2
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
@@ -24,12 +25,20 @@ _RETRYABLE_STATUS = {429, 500, 502, 503, 504}
 # 這些**不是** HttpError，所以原本以 HttpError 為鍵的三道防線（本函式的重試、
 # 步驟 3 批次掃描的 fallback 觸發、fallback 自己的逐案 catch）同時沒接到，
 # 一次網路抖動就讓整輪沒有產出報告。
+#
+# 型別要對準**實際函式庫會丟出來的那一個**。原本只列 socket.gaierror 是想像中的
+# DNS 例外：httplib2 會把它轉成 httplib2.ServerNotFoundError，而後者的 MRO 只到
+# HttpLib2Error → Exception，不是 gaierror／OSError／HTTPException 的子類，所以
+# 那條規則對真正的呼叫路徑完全沒作用（PR #124 review 指出，經真實 HttpRequest
+# 路徑實測：只呼叫一次、沒有退避）。交叉對照 googleapiclient 自己的
+# _retry_request，它也把 ServerNotFoundError 列為傳輸錯誤。
 _TRANSIENT_NETWORK_ERRORS = (
-    TimeoutError,               # 含 socket.timeout（Python 3.10 起是同一個型別）
-    ConnectionError,            # ConnectionReset／Aborted／Refused、BrokenPipe
-    socket.gaierror,            # DNS 暫時解不到（這台機器醒來後常見）
-    ssl.SSLError,               # 握手或讀取中斷（憑證驗證失敗除外，見下）
-    http.client.HTTPException,  # IncompleteRead、RemoteDisconnected、BadStatusLine
+    TimeoutError,                   # 含 socket.timeout（3.10 起同一個型別）
+    ConnectionError,                # Reset／Aborted／Refused、BrokenPipe
+    socket.gaierror,                # 直接走 socket 時的 DNS 失敗
+    httplib2.ServerNotFoundError,   # Drive 走 httplib2，DNS 失敗長這個樣子
+    ssl.SSLError,                   # 握手或讀取中斷（憑證驗證失敗除外，見下）
+    http.client.HTTPException,      # IncompleteRead、RemoteDisconnected、BadStatusLine
 )
 
 

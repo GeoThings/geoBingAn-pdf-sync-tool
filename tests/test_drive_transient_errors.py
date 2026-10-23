@@ -16,14 +16,18 @@
 `HttpError` 是「Drive 呼叫失敗了」的**代理變數**——它只涵蓋 HTTP 狀態碼，
 不涵蓋傳輸中斷。本檔把那個不變量寫成測試。
 """
+import errno
 import http.client
 import os
 import socket
 import ssl
 import sys
 
+import httplib2
 import pytest
 from googleapiclient.errors import HttpError
+from googleapiclient.http import HttpRequest
+from googleapiclient.model import JsonModel
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from geobingan_sync import drive_utils
@@ -377,3 +381,187 @@ class TestStep3SurvivesTransportFailures:
         assert pdf_queries, "批次 PDF 掃描沒有走共用翻頁器"
         assert all("trashed=false" in q for q in pdf_queries), (
             "批次 PDF 查詢沒有排除垃圾桶——已刪除的 PDF 會被算進份數")
+
+
+# ------------------------------------------------- PR #124 review 的三項發現
+
+class TestLibraryBoundaryExceptions:
+    """分類要對準**實際函式庫會丟出來的型別**，不是我們想像中的型別。
+
+    review 指出 socket.gaierror 是想像中的那個：httplib2 把 DNS 失敗轉成
+    httplib2.ServerNotFoundError，它不是 gaierror／OSError／HTTPException 的
+    子類（MRO 只到 HttpLib2Error → Exception），所以原本整條 DNS 規則對真正的
+    呼叫路徑完全沒作用。
+
+    交叉對照：googleapiclient 自己的 _retry_request 就把 ServerNotFoundError
+    列為傳輸錯誤，另外還處理「某些函式庫改用 OSError 帶 ECONNRESET 這類 errno
+    丟出來」的情況（見 http.py 的註解），那一類我們原本也漏了。
+    """
+
+    def test_httplib2_dns_failure_is_transient(self):
+        assert drive_utils.is_transient_drive_error(
+            httplib2.ServerNotFoundError('Unable to find the server at x')) is True
+
+    @pytest.mark.parametrize('code', ['ECONNRESET', 'ETIMEDOUT', 'EPIPE',
+                                      'ECONNABORTED', 'ECONNREFUSED'])
+    def test_a_bare_oserror_with_a_transport_errno_is_transient(self, code):
+        """ConnectionError 的 errno 版本：函式庫不保證丟哪一種。"""
+        exc = OSError(getattr(errno, code), code)
+        assert drive_utils.is_transient_drive_error(exc) is True
+
+    def test_an_unrelated_oserror_is_not_transient(self):
+        """ENOENT 不是網路問題，重試沒有意義。"""
+        assert drive_utils.is_transient_drive_error(
+            OSError(errno.ENOENT, 'no such file')) is False
+
+    def test_httplib2_non_transport_errors_are_not_transient(self):
+        """不要把整個 HttpLib2Error 當暫時性——URI 寫錯重試一百次還是錯。"""
+        assert drive_utils.is_transient_drive_error(
+            httplib2.RelativeURIError('relative uri')) is False
+
+
+class _FakeHttpResp(dict):
+    def __init__(self, status=200):
+        super().__init__(status=status)
+        self.status = status
+        self.reason = 'OK'
+
+
+class _DnsFlakyHttp:
+    """真實 HttpRequest 會用到的 http 物件：前幾次 DNS 失敗，之後成功。"""
+
+    def __init__(self, fail_times):
+        self.left = fail_times
+        self.calls = 0
+
+    def request(self, *args, **kwargs):
+        self.calls += 1
+        if self.left > 0:
+            self.left -= 1
+            raise httplib2.ServerNotFoundError(
+                'Unable to find the server at www.googleapis.com')
+        return _FakeHttpResp(200), b'{"files": [{"id": "a"}]}'
+
+
+class _RealHttpRequestFiles:
+    """files().list 回傳**真的** googleapiclient.HttpRequest，不是手刻的假物件。
+
+    這樣才會走到 HttpRequest.execute → _retry_request → http.request，
+    也才測得到「函式庫把例外轉成什麼型別」這一層。
+    """
+
+    def __init__(self, http):
+        self._http = http
+
+    def list(self, **kwargs):
+        return HttpRequest(
+            self._http, JsonModel().response,
+            'https://www.googleapis.com/drive/v3/files',
+            method='GET', headers={})
+
+
+class _RealHttpRequestService:
+    def __init__(self, http):
+        self._files = _RealHttpRequestFiles(http)
+
+    def files(self):
+        return self._files
+
+
+class TestThroughTheRealRequestPath:
+
+    def test_a_dns_blip_on_the_real_request_path_is_retried(self):
+        """經真實 HttpRequest 路徑：DNS 抖一次要退避重試，不是只呼叫一次。"""
+        http = _DnsFlakyHttp(fail_times=1)
+        slept = []
+        items = paginate_files_list(_RealHttpRequestService(http),
+                                    q='x', fields='files(id)',
+                                    sleep=slept.append)
+        assert [i['id'] for i in items] == ['a']
+        assert http.calls == 2, '沒有重試（只呼叫一次就放棄）'
+        assert len(slept) == 1, '沒有退避'
+
+    def test_a_persistent_dns_failure_on_the_real_path_still_fails_closed(self):
+        http = _DnsFlakyHttp(fail_times=99)
+        with pytest.raises(httplib2.ServerNotFoundError):
+            paginate_files_list(_RealHttpRequestService(http),
+                                q='x', fields='files(id)', sleep=lambda _s: None)
+        assert http.calls == 4
+
+
+class TestFallbackMatchesTheBatchPath:
+    """fallback 的統計範圍與篩選條件必須和正常路徑一致。
+
+    review 指出兩個缺口（base 也有，但 base 在 reset 情境會中止；放寬捕捉之後
+    那個情境會「成功發布錯誤資料」，所以變成這個 PR 要負責的事）：
+      P1 只查建案根資料夾，漏掉正常路徑會統計的子資料夾
+      P2 查詢少了 trashed=false，把垃圾桶裡的 PDF 算進份數
+    """
+
+    def test_the_fallback_counts_pdfs_in_subfolders(self, step3, monkeypatch):
+        """唯一的 PDF 在子資料夾裡：正常路徑算 1 份，fallback 也必須算 1 份。
+
+        正常路徑是用 folder_id_to_permit（含遞迴解出的子資料夾）去對
+        parents[0]，所以子資料夾的 PDF 算得到；fallback 只查
+        「'根資料夾' in parents」就漏了——報告上會變成「無資料」。
+        """
+        monkeypatch.setattr(drive_utils.time, 'sleep', lambda _s: None)
+        monkeypatch.setattr(drive_utils, 'list_all_subfolders',
+                            lambda *a, **k: {'sub1': 'fid1'})
+        svc = _RoutedService(
+            batch=[RESET_1018],
+            per_folder={
+                'fid1': [{'files': []}],                        # 根資料夾沒東西
+                'sub1': [{'files': [_pdf('a.pdf', 'sub1')]}],    # PDF 在子資料夾
+                'fid2': [{'files': []}],
+            })
+        result = step3.scan_google_drive(svc)
+        assert result['110建字第0001號']['pdf_count'] == 1, \
+            'fallback 漏掃子資料夾，會把有報告的建案寫成「無資料」'
+
+    def test_the_fallback_excludes_trashed_pdfs(self, step3, monkeypatch):
+        monkeypatch.setattr(drive_utils.time, 'sleep', lambda _s: None)
+        svc = _RoutedService(
+            batch=[RESET_1018],
+            per_folder={'fid1': [{'files': [_pdf('a.pdf', 'fid1')]}],
+                        'fid2': [{'files': []}]})
+        step3.scan_google_drive(svc)
+        pdf_queries = [c['q'] for c in svc._files.calls if 'in parents' in c['q']]
+        assert pdf_queries, '沒有發出逐資料夾查詢'
+        assert all('trashed=false' in q for q in pdf_queries), \
+            'fallback 查詢沒排除垃圾桶——已刪除的 PDF 會被算進份數'
+
+    def test_the_fallback_attributes_a_subfolder_pdf_to_the_right_permit(
+            self, step3, monkeypatch):
+        """兩個建案各有子資料夾時，份數不可以互相串到。"""
+        monkeypatch.setattr(drive_utils.time, 'sleep', lambda _s: None)
+        monkeypatch.setattr(drive_utils, 'list_all_subfolders',
+                            lambda *a, **k: {'sub1': 'fid1', 'sub2': 'fid2'})
+        svc = _RoutedService(
+            batch=[RESET_1018],
+            per_folder={
+                'fid1': [{'files': [_pdf('root1.pdf', 'fid1')]}],
+                'sub1': [{'files': [_pdf('deep1.pdf', 'sub1')]}],
+                'fid2': [{'files': []}],
+                'sub2': [{'files': [_pdf('deep2.pdf', 'sub2')]}],
+            })
+        result = step3.scan_google_drive(svc)
+        assert result['110建字第0001號']['pdf_count'] == 2
+        assert result['110建字第0002號']['pdf_count'] == 1
+
+    def test_one_unmeasurable_subfolder_makes_its_permit_unmeasured(
+            self, step3, monkeypatch):
+        """子資料夾量不到，整個建案就算沒量到——不可以只用根資料夾的數字充數。"""
+        monkeypatch.setattr(drive_utils.time, 'sleep', lambda _s: None)
+        monkeypatch.setattr(drive_utils, 'list_all_subfolders',
+                            lambda *a, **k: {'sub1': 'fid1'})
+        svc = _RoutedService(
+            batch=[RESET_1018],
+            per_folder={
+                'fid1': [{'files': [_pdf('root1.pdf', 'fid1')]}],
+                'sub1': [TIMEOUT_1017],
+                'fid2': [{'files': []}],
+            })
+        with pytest.raises(RuntimeError) as err:
+            step3.scan_google_drive(svc)
+        assert '110建字第0001號' in str(err.value)

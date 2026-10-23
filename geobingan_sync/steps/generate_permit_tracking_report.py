@@ -177,12 +177,24 @@ def scan_google_drive(service) -> Dict[str, dict]:
         # 全部丟棄改用逐資料夾查詢確保完整性
         folder_names.clear()
         folder_latest.clear()
-        unmeasured = []
-        for permit, info in permit_folders.items():
+        # 逐資料夾重掃。**範圍與篩選條件都要和正常路徑一致**：正常路徑是拿
+        # folder_id_to_permit（含遞迴解出的子資料夾）去對 parents[0]，所以子資料夾
+        # 裡的 PDF 算得到。只查建案根資料夾會把「報告放在子資料夾」的建案寫成
+        # 0 份 → status='no_reports' → 報告上宣稱它沒有監測報告（PR #124 review
+        # 的 P1）。查詢也要帶 trashed=false，否則垃圾桶裡的 PDF 會被算進份數（P2）。
+        # 代價要說清楚：這一趟的查詢次數是「根資料夾 + 子資料夾」。正式環境
+        # 2026-10-23 那輪是 579 + 1,546 = 2,125 次，原本只打 579 次。這條路只在
+        # 批次掃描**重試後仍持續失敗**時才走，本身已是退化狀態；若 2,125 次打不完
+        # 清醒計時 3600s 的看門狗上限，這一輪就會失敗——那和今天一樣（今天是例外
+        # 直接帶走整輪），不是退步，但也不保證救得回來。要更省就得把多個 parents
+        # 合進一次查詢並改回用 parents 歸屬，那是另一個設計，不在這個 PR。
+        unmeasured = set()
+        for folder_id, permit in folder_id_to_permit.items():
             try:
                 files = paginate_files_list(
                     service,
-                    q=f"'{info['folder_id']}' in parents and mimeType='application/pdf'",
+                    q=(f"'{folder_id}' in parents and "
+                       "mimeType='application/pdf' and trashed=false"),
                     corpora='drive',
                     driveId=SHARED_DRIVE_ID,
                     includeItemsFromAllDrives=True,
@@ -193,16 +205,22 @@ def scan_google_drive(service) -> Dict[str, dict]:
                 # 沒量到 ≠ 0 份。下游把 pdf_count == 0 當成 status='no_reports'，
                 # 在報告上就是「這個建案沒有監測報告」——對監測工具來說那是
                 # 對承造人的錯誤指控。所以不填 0，讓這一步失敗。
-                print(f"    ⚠️ {permit} 本輪量不到（{type(folder_err).__name__}），不記為 0 份")
-                unmeasured.append(permit)
+                print(f"    ⚠️ {permit} 的資料夾 {folder_id} 本輪量不到"
+                      f"（{type(folder_err).__name__}），不記為 0 份")
+                unmeasured.add(permit)
                 continue
-            folder_names[permit] = set(f.get('name', '') for f in files)
-            folder_latest[permit] = (
-                max(f.get('modifiedTime', '') for f in files) if files else '')
+            for f in files:
+                _record(permit, f.get('name', ''), f.get('modifiedTime', ''))
+        # 量不到的建案連半套數字都不留：根資料夾數到、子資料夾沒數到，加起來是個
+        # 「看起來對」的錯數字。下面會 raise，但這一步讓它就算被降級成警告也安全。
+        for permit in unmeasured:
+            folder_names.pop(permit, None)
+            folder_latest.pop(permit, None)
         if unmeasured:
-            shown = '、'.join(unmeasured[:5]) + ('…' if len(unmeasured) > 5 else '')
+            names = sorted(unmeasured)
+            shown = '、'.join(names[:5]) + ('…' if len(names) > 5 else '')
             raise RuntimeError(
-                f"逐資料夾掃描有 {len(unmeasured)} 個資料夾本輪未量到（不記為 0 份）："
+                f"逐資料夾掃描有 {len(names)} 個建案本輪未量到（不記為 0 份）："
                 f"{shown}。本輪不產生報告——pdf_count 填 0 會讓下游把這些建案"
                 f"標成「無資料」，那是錯的資料而不是缺的資料。")
 
