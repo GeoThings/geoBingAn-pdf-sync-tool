@@ -543,6 +543,65 @@ registry 連 `pdf_count` 欄位都沒有，而下游把「沒有欄位」讀成 
 └── 水平捲動（手機不隱藏欄位）
 ```
 
+#### 不變量 1.9：Drive 呼叫的「暫時性故障」只有一條規則，連線中斷也算在內
+
+2026-10-17、10-18 兩輪各栽在一次傳輸中斷，整輪沒有產出報告：10/17 是
+`TimeoutError: The read operation timed out`（`list_all_subfolders` →
+`paginate_files_list`），10/18 是 `ConnectionResetError: [Errno 54]`（當時手寫的
+PDF 批次掃描）。兩次不是同一個例外型別，但同一個步驟、同一支 API、同一類故障。
+
+真因不是 Drive 不穩，是**步驟 3 的三道錯誤處理都以 `HttpError` 為鍵**：翻頁器的
+重試、批次掃描的 fallback 觸發條件、fallback 自己的逐案 catch。`HttpError` 只涵蓋
+HTTP 狀態碼，不涵蓋傳輸層——它是「這通呼叫失敗了」的**代理變數**，而代理變數漏掉
+的那一塊，三個地方同時漏掉。
+
+所以規則寫成兩個有名字的判準，都放在 `drive_utils`，各自只有一份：
+
+- `is_transient_drive_error(exc)` 回答**值不值得重試**：429/5xx、讀取逾時、連線
+  重設、DNS 暫時失敗、SSL 讀取中斷、`IncompleteRead`。憑證驗證失敗**不算**——
+  重試不會讓憑證變對，立刻失敗比退避三輪有用。
+- `DRIVE_CALL_ERRORS` 回答**這通呼叫失敗了**（HTTP 層或傳輸層都算），供呼叫端
+  決定 fail-safe（例如退回逐資料夾掃描）。
+
+兩者回答的是不同問題，所以刻意不共用一條規則。連帶三條：
+
+- 重試預算**每頁一份**。一趟掃描要翻幾十頁，整趟共用一份會讓長掃描比單次呼叫更
+  容易失敗，而長掃描正是要保住的那一個；同一頁內不同型別則共用同一份，不會變成
+  「逾時三次再加五百三次」。
+- 批次掃描與逐資料夾 fallback **都走 `paginate_files_list`**，不手寫翻頁（#65／#67
+  就是手寫翻頁造成的靜默截斷）。fallback 的用途是「確保完整性」，所以它自己更不能
+  在第 1000 筆截斷。
+- fallback 量不到的資料夾**不記成 0 份**，而是讓這一步失敗。下游把 `pdf_count == 0`
+  當成 `status='no_reports'`，在報告上就是「這個建案沒有監測報告」——對一個監測工具
+  來說那是對承造人的錯誤指控。**錯的資料比缺的資料糟**（同步驟 1 `apply_pdf_count`
+  那一條的理由）。
+- **fallback 的統計範圍與篩選條件必須和正常路徑逐項對齊**（PR #124 review 的 P1／P2）。
+  正常路徑是拿 `folder_id_to_permit`（含遞迴解出的子資料夾）去對 `parents[0]`，所以
+  子資料夾裡的 PDF 算得到。fallback 原本只查「`'根資料夾' in parents`」，在 2026-10-23
+  那輪的規模下是 **579 個建案資料夾 vs 1,546 個子資料夾**——漏掉的是絕大多數，而且
+  漏掉的結果不是「失敗」而是「0 份」，也就是一份看起來正常、內容錯誤的報告。查詢也
+  必須帶 `trashed=false`，否則垃圾桶裡的 PDF 會被算進份數。
+  這兩個缺口在放寬捕捉之前就存在，只是當時傳輸錯誤會讓整步驟中止、走不到；
+  **把中止換成 fail-safe，就必須先確認那條 fail-safe 本身是對的**，否則等於把
+  「不發布」換成「發布錯的」。代價是 fallback 的查詢次數從 579 變成 2,125。
+- **暫時性故障要照「函式庫實際丟出來的型別」分類，並在那一層測試**（P3）。
+  `httplib2` 把 DNS 失敗轉成 `httplib2.ServerNotFoundError`，它的 MRO 只到
+  `HttpLib2Error → Exception`，**不是** `socket.gaierror`／`OSError`／`HTTPException`
+  的子類；原本只列 `socket.gaierror` 是「我們想像中的 DNS 例外」，對真正的呼叫路徑
+  完全沒作用。測試要走真實的 `HttpRequest.execute()` 路徑（`HttpRequest` + `JsonModel`
+  + 假 http），只用自家的假 service 測不到這一層。
+  交叉對照：`googleapiclient` 的 `_retry_request` 自己也把 `ServerNotFoundError`
+  列為傳輸錯誤。另外 `OSError(errno.ECONNRESET, ...)` 在 Python 會自動建成
+  `ConnectionResetError`，所以 errno 那一類本來就涵蓋到——這一點有測試記錄，
+  免得以後有人再補一次。
+
+**同類缺口，本次刻意沒改**（2026-10-23 盤點）：另有 5 處 `files().list` 沒走共用
+翻頁器——3 處自己手寫 `nextPageToken` 迴圈（`match_permits.py:459`、
+`sync_permits.py:696`、`upload_pdfs.py:360`）、2 處是單頁呼叫
+（`sync_permits.py:733`、`:763`），而且全部都是 `except HttpError`。它們位在
+步驟 1／2／2.5，那幾步有逐案的錯誤隔離（一案失敗不會帶走整輪），風險等級不同；
+要不要一起收斂見待確認清單。
+
 **待開發：** 後端 API `report_category_name` 欄位 — AI 解析出的 `projectMetadata.projectName` 存在後端 DB（ConstructionSite.name），但 construction-reports API 未回傳此欄位。已建立 ClickUp task（[#86ex8c82c](https://app.clickup.com/t/86ex8c82c)），待後端在 `ConstructionReportListSerializer` 加入 `report_category_name`，即可實現 100% 自動化名稱覆蓋。
 
 ## 非 Drive 來源：adapter、未支援名單與定期重測
