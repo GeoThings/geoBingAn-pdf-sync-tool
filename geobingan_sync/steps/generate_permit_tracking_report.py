@@ -24,7 +24,6 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
 import pypdf
 from geobingan_sync.jwt_auth import get_valid_token as _jwt_get_valid_token
 from geobingan_sync.permit_utils import extract_name_from_filename
@@ -137,71 +136,75 @@ def scan_google_drive(service) -> Dict[str, dict]:
     # 用單一查詢掃描所有 PDF，再按資料夾分組統計（取代逐資料夾查詢）
     print("  掃描所有 PDF 並統計...")
 
+    from geobingan_sync.drive_utils import paginate_files_list, DRIVE_CALL_ERRORS
+
     # 收集每個資料夾的 unique 檔名和最新修改時間
     folder_names = {}   # permit → set of unique filenames
     folder_latest = {}  # permit → latest modifiedTime
 
-    page_token = None
-    page_count = 0
-    while True:
-        try:
-            results = service.files().list(
-                q="mimeType='application/pdf' and trashed=false",
-                corpora='drive',
-                driveId=SHARED_DRIVE_ID,
-                includeItemsFromAllDrives=True,
-                supportsAllDrives=True,
-                fields='nextPageToken, files(name, modifiedTime, parents)',
-                pageSize=1000,
-                pageToken=page_token
-            ).execute()
+    def _record(permit, name, mod_time):
+        if permit not in folder_names:
+            folder_names[permit] = set()
+            folder_latest[permit] = ''
+        folder_names[permit].add(name)
+        if mod_time > folder_latest[permit]:
+            folder_latest[permit] = mod_time
 
-            page_count += 1
-            for f in results.get('files', []):
-                parents = f.get('parents', [])
-                if not parents:
-                    continue
-                permit = folder_id_to_permit.get(parents[0])
-                if permit:
-                    if permit not in folder_names:
-                        folder_names[permit] = set()
-                        folder_latest[permit] = ''
-                    folder_names[permit].add(f.get('name', ''))
-                    mod_time = f.get('modifiedTime', '')
-                    if mod_time > folder_latest[permit]:
-                        folder_latest[permit] = mod_time
-
-            page_token = results.get('nextPageToken')
-            if not page_token:
-                break
-        except HttpError as e:
-            print(f"    ❌ PDF 掃描第 {page_count + 1} 頁失敗: {e}")
-            print(f"    ❌ 丟棄部分結果，改為逐資料夾完整掃描...")
-            # 批次掃描中斷，無法確定哪些資料夾完整掃到，
-            # 全部丟棄改用逐資料夾查詢確保完整性
-            folder_names.clear()
-            folder_latest.clear()
-            for permit, info in permit_folders.items():
-                try:
-                    fallback = service.files().list(
-                        q=f"'{info['folder_id']}' in parents and mimeType='application/pdf'",
-                        corpora='drive',
-                        driveId=SHARED_DRIVE_ID,
-                        includeItemsFromAllDrives=True,
-                        supportsAllDrives=True,
-                        fields='files(name, modifiedTime)',
-                        pageSize=1000
-                    ).execute()
-                    files = fallback.get('files', [])
-                    folder_names[permit] = set(f.get('name', '') for f in files)
-                    if files:
-                        folder_latest[permit] = max(f.get('modifiedTime', '') for f in files)
-                    else:
-                        folder_latest[permit] = ''
-                except HttpError:
-                    folder_names[permit] = set()
-                    folder_latest[permit] = ''
-            break
+    try:
+        # 走共用翻頁器，不要自己手寫翻頁迴圈：它會對暫時性故障（429/5xx、讀取
+        # 逾時、連線重設）有限重試。2026-10-17、10-18 兩輪就是在這一帶被一次
+        # 傳輸中斷帶走整輪——當時手寫翻頁、而 except 只接 HttpError，接不到
+        # TimeoutError／ConnectionResetError。
+        for f in paginate_files_list(
+            service,
+            q="mimeType='application/pdf' and trashed=false",
+            corpora='drive',
+            driveId=SHARED_DRIVE_ID,
+            includeItemsFromAllDrives=True,
+            supportsAllDrives=True,
+            fields='files(name, modifiedTime, parents)',
+        ):
+            parents = f.get('parents', [])
+            if not parents:
+                continue
+            permit = folder_id_to_permit.get(parents[0])
+            if permit:
+                _record(permit, f.get('name', ''), f.get('modifiedTime', ''))
+    except DRIVE_CALL_ERRORS as e:
+        print(f"    ❌ PDF 批次掃描失敗（{type(e).__name__}）: {e}")
+        print("    ❌ 丟棄部分結果，改為逐資料夾完整掃描...")
+        # 批次掃描中斷，無法確定哪些資料夾完整掃到，
+        # 全部丟棄改用逐資料夾查詢確保完整性
+        folder_names.clear()
+        folder_latest.clear()
+        unmeasured = []
+        for permit, info in permit_folders.items():
+            try:
+                files = paginate_files_list(
+                    service,
+                    q=f"'{info['folder_id']}' in parents and mimeType='application/pdf'",
+                    corpora='drive',
+                    driveId=SHARED_DRIVE_ID,
+                    includeItemsFromAllDrives=True,
+                    supportsAllDrives=True,
+                    fields='files(name, modifiedTime)',
+                )
+            except DRIVE_CALL_ERRORS as folder_err:
+                # 沒量到 ≠ 0 份。下游把 pdf_count == 0 當成 status='no_reports'，
+                # 在報告上就是「這個建案沒有監測報告」——對監測工具來說那是
+                # 對承造人的錯誤指控。所以不填 0，讓這一步失敗。
+                print(f"    ⚠️ {permit} 本輪量不到（{type(folder_err).__name__}），不記為 0 份")
+                unmeasured.append(permit)
+                continue
+            folder_names[permit] = set(f.get('name', '') for f in files)
+            folder_latest[permit] = (
+                max(f.get('modifiedTime', '') for f in files) if files else '')
+        if unmeasured:
+            shown = '、'.join(unmeasured[:5]) + ('…' if len(unmeasured) > 5 else '')
+            raise RuntimeError(
+                f"逐資料夾掃描有 {len(unmeasured)} 個資料夾本輪未量到（不記為 0 份）："
+                f"{shown}。本輪不產生報告——pdf_count 填 0 會讓下游把這些建案"
+                f"標成「無資料」，那是錯的資料而不是缺的資料。")
 
     # 寫回 permit_folders
     total_unique = 0

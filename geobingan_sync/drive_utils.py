@@ -4,6 +4,9 @@
 提供 Shared Drive 資料夾掃描、子資料夾層級解析等共用操作，
 避免在 sync_permits / match_permits / generate_permit_tracking_report 中重複實作。
 """
+import http.client
+import socket
+import ssl
 import time
 
 from google.oauth2 import service_account
@@ -15,15 +18,58 @@ from googleapiclient.errors import HttpError
 # 新的 files().list 呼叫一律走 paginate_files_list，不要手寫翻頁迴圈。
 _RETRYABLE_STATUS = {429, 500, 502, 503, 504}
 
+# 傳輸層的暫時性故障。2026-10-17、10-18 兩輪正式環境各栽在一次：
+#   TimeoutError: The read operation timed out      （10/17，list_all_subfolders）
+#   ConnectionResetError: [Errno 54] ...            （10/18，手寫的 PDF 批次掃描）
+# 這些**不是** HttpError，所以原本以 HttpError 為鍵的三道防線（本函式的重試、
+# 步驟 3 批次掃描的 fallback 觸發、fallback 自己的逐案 catch）同時沒接到，
+# 一次網路抖動就讓整輪沒有產出報告。
+_TRANSIENT_NETWORK_ERRORS = (
+    TimeoutError,               # 含 socket.timeout（Python 3.10 起是同一個型別）
+    ConnectionError,            # ConnectionReset／Aborted／Refused、BrokenPipe
+    socket.gaierror,            # DNS 暫時解不到（這台機器醒來後常見）
+    ssl.SSLError,               # 握手或讀取中斷（憑證驗證失敗除外，見下）
+    http.client.HTTPException,  # IncompleteRead、RemoteDisconnected、BadStatusLine
+)
+
+
+# 「這通 Drive 呼叫失敗了」——HTTP 層或傳輸層都算。呼叫端要決定 fail-safe
+# （例如退回逐資料夾掃描）時用這一個；要決定「值不值得重試」用
+# is_transient_drive_error。兩者是不同的問題，所以分成兩條規則各有名字。
+DRIVE_CALL_ERRORS = (HttpError,) + _TRANSIENT_NETWORK_ERRORS
+
+
+def is_transient_drive_error(exc: BaseException) -> bool:
+    """這個例外值不值得重試：區分「對方暫時不行」與「我們問錯了」。
+
+    只有這一條規則，呼叫點不要各自判斷——先前 `except HttpError` 被複製到
+    三個地方，於是漏接也漏接了三次。
+    """
+    if isinstance(exc, HttpError):
+        status = getattr(getattr(exc, 'resp', None), 'status', None)
+        return status in _RETRYABLE_STATUS
+    if isinstance(exc, ssl.SSLCertVerificationError):
+        return False            # 重試不會讓憑證變對，立刻失敗比退避三輪有用
+    return isinstance(exc, _TRANSIENT_NETWORK_ERRORS)
+
 
 def paginate_files_list(service, *, retries: int = 3, retry_base_delay: float = 2.0,
-                        sleep=time.sleep, **list_kwargs) -> list:
+                        sleep=None, **list_kwargs) -> list:
     """完整翻頁的 files().list：跟隨 nextPageToken 到底，回傳所有 files。
 
     - `fields` 若未包含 nextPageToken 會自動補上（否則翻頁靜默失效）。
-    - 每頁對 429/5xx 指數退避重試（retries 次）；其他錯誤或重試耗盡直接 raise，
-      由呼叫端決定 fail-closed 行為——寧可炸也不回傳靜默截斷的部分結果。
+    - 每頁對「暫時性故障」指數退避重試（retries 次）：429/5xx，以及讀取逾時、
+      連線被重設一類的傳輸中斷（判準見 is_transient_drive_error）。
+    - 其他錯誤或重試耗盡直接 raise，由呼叫端決定 fail-closed 行為——
+      寧可炸也不回傳靜默截斷的部分結果。
+    - 重試預算**每頁一份**（維持原本語意）：一趟掃描要翻幾十頁，整趟共用一份
+      預算會讓長掃描比短呼叫更容易失敗。同一頁內不同型別的暫時性失敗則共用
+      同一份預算，不會「逾時三次再加五百三次」。
     """
+    # 預設值在呼叫時才解析：寫成 `sleep=time.sleep` 會在 def 時綁定，
+    # 測試就注入不進去，於是沒有傳 sleep 的呼叫端一測就真的睡 14 秒。
+    wait = sleep if sleep is not None else time.sleep
+
     fields = list_kwargs.get('fields', '')
     if fields and 'nextPageToken' not in fields:
         list_kwargs['fields'] = f'nextPageToken, {fields}'
@@ -38,16 +84,16 @@ def paginate_files_list(service, *, retries: int = 3, retry_base_delay: float = 
                     pageSize=1000, pageToken=page_token, **list_kwargs
                 ).execute()
                 break
-            except HttpError as e:
+            except Exception as e:
+                if not (is_transient_drive_error(e) and attempt < retries):
+                    raise
+                delay = retry_base_delay * (2 ** attempt)
+                attempt += 1
                 status = getattr(getattr(e, 'resp', None), 'status', None)
-                if status in _RETRYABLE_STATUS and attempt < retries:
-                    delay = retry_base_delay * (2 ** attempt)
-                    attempt += 1
-                    print(f"  ⚠️ files().list {status}，第 {attempt}/{retries} 次重試"
-                          f"（等待 {delay:.0f} 秒）...")
-                    sleep(delay)
-                    continue
-                raise
+                what = status if status is not None else type(e).__name__
+                print(f"  ⚠️ files().list {what}，第 {attempt}/{retries} 次重試"
+                      f"（等待 {delay:.0f} 秒）...")
+                wait(delay)
         items.extend(results.get('files', []))
         page_token = results.get('nextPageToken')
         if not page_token:
