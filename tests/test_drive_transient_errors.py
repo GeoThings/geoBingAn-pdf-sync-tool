@@ -177,15 +177,19 @@ class TestPaginateRetriesTransport:
         步驟 3 一趟要翻幾十頁；若整趟共用一份，長掃描會比單次呼叫更容易失敗，
         而長掃描正是我們要保住的那一個。這一條釘住「修 A 不要順手改掉 B」。
         """
+        # 四頁、每頁各抖一次＝共 4 次失敗，比 retries=3 多。
+        # 若預算整趟共用，第四頁就會失敗——這是分得出兩種語意的最小測資
+        # （第一版只排三次失敗，剛好在共用預算內，注入因此沒被抓到）。
         svc = _ScriptedService([
             TIMEOUT_1017, {'files': [{'id': 'a'}], 'nextPageToken': 't2'},
             RESET_1018, {'files': [{'id': 'b'}], 'nextPageToken': 't3'},
-            TIMEOUT_1017, {'files': [{'id': 'c'}]},
+            TIMEOUT_1017, {'files': [{'id': 'c'}], 'nextPageToken': 't4'},
+            RESET_1018, {'files': [{'id': 'd'}]},
         ])
         items = paginate_files_list(svc, q='x', fields='files(id)',
                                     sleep=lambda _s: None)
-        assert [i['id'] for i in items] == ['a', 'b', 'c']
-        assert len(svc._files.calls) == 6
+        assert [i['id'] for i in items] == ['a', 'b', 'c', 'd']
+        assert len(svc._files.calls) == 8
 
 
 # -------------------------------------------- 步驟 3 的 PDF 掃描與 fallback
@@ -343,18 +347,33 @@ class TestStep3SurvivesTransportFailures:
 
     def test_the_batch_scan_goes_through_the_one_shared_paginator(
             self, step3, monkeypatch):
-        """結構性：步驟 3 不准自己手寫翻頁迴圈。
+        """結構性：步驟 3 不准自己手寫 files().list。
 
         drive_utils 的模組註解本來就寫「一律走 paginate_files_list」，但步驟 3
-        手寫了一份——於是 #65／#67 修過的截斷風險、以及這次的重試，都繞過了。
+        手寫了一份——於是 #65／#67 修過的截斷風險、以及這次的重試，全都繞過了。
+        這裡給一個「被直接呼叫就爆」的 service，所以繞過翻頁器會立刻紅；
+        第一版只比對查詢字串，太鬆，注入沒抓到。
         """
         seen = []
 
         def _spy(service, **kwargs):
-            seen.append(kwargs.get('q', ''))
-            return [_pdf('a.pdf', 'fid1')]
+            seen.append(kwargs.get("q", ""))
+            return [_pdf("a.pdf", "fid1")]
 
-        monkeypatch.setattr(drive_utils, 'paginate_files_list', _spy)
-        step3.scan_google_drive(_RoutedService(batch=[{'files': []}]))
-        assert any("mimeType='application/pdf'" in q for q in seen), \
-            '批次 PDF 掃描沒有走共用翻頁器'
+        class _ExplodingFiles:
+            def list(self, **kwargs):
+                raise AssertionError(
+                    "步驟 3 直接呼叫了 files().list，沒走共用翻頁器："
+                    + kwargs.get("q", ""))
+
+        class _ExplodingService:
+            def files(self):
+                return _ExplodingFiles()
+
+        monkeypatch.setattr(drive_utils, "paginate_files_list", _spy)
+        step3.scan_google_drive(_ExplodingService())
+
+        pdf_queries = [q for q in seen if "application/pdf" in q]
+        assert pdf_queries, "批次 PDF 掃描沒有走共用翻頁器"
+        assert all("trashed=false" in q for q in pdf_queries), (
+            "批次 PDF 查詢沒有排除垃圾桶——已刪除的 PDF 會被算進份數")
