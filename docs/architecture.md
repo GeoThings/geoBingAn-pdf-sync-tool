@@ -575,6 +575,25 @@ HTTP 狀態碼，不涵蓋傳輸層——它是「這通呼叫失敗了」的**�
   當成 `status='no_reports'`，在報告上就是「這個建案沒有監測報告」——對一個監測工具
   來說那是對承造人的錯誤指控。**錯的資料比缺的資料糟**（同步驟 1 `apply_pdf_count`
   那一條的理由）。
+- **fallback 的統計範圍與篩選條件必須和正常路徑逐項對齊**（PR #124 review 的 P1／P2）。
+  正常路徑是拿 `folder_id_to_permit`（含遞迴解出的子資料夾）去對 `parents[0]`，所以
+  子資料夾裡的 PDF 算得到。fallback 原本只查「`'根資料夾' in parents`」，在 2026-10-23
+  那輪的規模下是 **579 個建案資料夾 vs 1,546 個子資料夾**——漏掉的是絕大多數，而且
+  漏掉的結果不是「失敗」而是「0 份」，也就是一份看起來正常、內容錯誤的報告。查詢也
+  必須帶 `trashed=false`，否則垃圾桶裡的 PDF 會被算進份數。
+  這兩個缺口在放寬捕捉之前就存在，只是當時傳輸錯誤會讓整步驟中止、走不到；
+  **把中止換成 fail-safe，就必須先確認那條 fail-safe 本身是對的**，否則等於把
+  「不發布」換成「發布錯的」。代價是 fallback 的查詢次數從 579 變成 2,125。
+- **暫時性故障要照「函式庫實際丟出來的型別」分類，並在那一層測試**（P3）。
+  `httplib2` 把 DNS 失敗轉成 `httplib2.ServerNotFoundError`，它的 MRO 只到
+  `HttpLib2Error → Exception`，**不是** `socket.gaierror`／`OSError`／`HTTPException`
+  的子類；原本只列 `socket.gaierror` 是「我們想像中的 DNS 例外」，對真正的呼叫路徑
+  完全沒作用。測試要走真實的 `HttpRequest.execute()` 路徑（`HttpRequest` + `JsonModel`
+  + 假 http），只用自家的假 service 測不到這一層。
+  交叉對照：`googleapiclient` 的 `_retry_request` 自己也把 `ServerNotFoundError`
+  列為傳輸錯誤。另外 `OSError(errno.ECONNRESET, ...)` 在 Python 會自動建成
+  `ConnectionResetError`，所以 errno 那一類本來就涵蓋到——這一點有測試記錄，
+  免得以後有人再補一次。
 
 **同類缺口，本次刻意沒改**（2026-10-23 盤點）：另有 5 處 `files().list` 沒走共用
 翻頁器——3 處自己手寫 `nextPageToken` 迴圈（`match_permits.py:459`、
