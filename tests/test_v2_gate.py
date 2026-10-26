@@ -128,16 +128,21 @@ class TestTheScriptUsesTheOneRule:
         assert not re.search(r'^\s*exit\s+\d', block, re.M), \
             'token 過期那段還有 exit——步驟 1 會被擋掉'
 
-    def test_all_three_v2_dependent_steps_are_gated(self, src):
-        """上傳、名稱比對、追蹤報告三步都要被同一個旗標守住。
+    GATED = ('步驟 2 上傳', '步驟 2.5 名稱比對', '步驟 3 追蹤報告',
+             '快照', '步驟 5 週一週報')
 
-        只斷言「旗標出現過」太鬆——拿掉其中一道閘門也會過（第一版就是這樣，
-        注入測試抓到的）。這裡數閘門的數目。
+    def test_every_v2_dependent_step_is_gated(self, src):
+        """五道閘門都要在。
+
+        只斷言「旗標出現過」太鬆——拿掉其中一道也會過（第一版就是這樣，注入
+        測試抓到的）。後來閘門從三道變五道，而舊的 `>= 3` 就變得比現實還寬，
+        於是「拿掉步驟 3 的閘門」又只被另一條抓到。兩條重疊、弱的那條沒有意義，
+        所以合併成這一條，並把數目寫成和 GATED 一樣長。
         """
-        gates = re.findall(r'\[\s*\$V2_SKIPPED\s+-ne\s+0\s*\]', src)
-        assert len(gates) >= 3, (
-            f'只找到 {len(gates)} 道 V2_SKIPPED 閘門，應該有三道'
-            '（步驟 2 上傳、步驟 2.5 名稱比對、步驟 3 追蹤報告）')
+        gates = re.findall(r'\[\s*\$V2_SKIPPED\s+-ne\s+0\s*\]', code_only(src))
+        assert len(gates) >= len(self.GATED), (
+            f'只找到 {len(gates)} 道 V2_SKIPPED 閘門，應該有 {len(self.GATED)} 道：'
+            f'{"、".join(self.GATED)}')
         for marker in ('步驟 2/4', '步驟 2.5', '步驟 3'):
             assert marker in src
 
@@ -289,11 +294,6 @@ class TestNoStaleDataIsDressedUpAsThisWeek:
     def test_the_monday_weekly_report_is_gated(self, src):
         assert re.search(r'if \[ "\$WEEKDAY" = "1" \] && \[ \$V2_SKIPPED -ne 0 \]', src), \
             '步驟 5（週一週報，會自動上傳 ClickUp）沒有被 V2_SKIPPED 閘門守住'
-
-    def test_five_gates_now(self, src):
-        """步驟 2、2.5、3、快照、步驟 5。"""
-        gates = re.findall(r'\[\s*\$V2_SKIPPED\s+-ne\s+0\s*\]', src)
-        assert len(gates) >= 5, f'只找到 {len(gates)} 道閘門，應該有五道'
 
 
 class TestTheTokenCheckIsTestableAndHasItsOwnFailureState:
