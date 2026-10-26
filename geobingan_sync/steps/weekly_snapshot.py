@@ -16,7 +16,7 @@ import os
 import sys
 import argparse
 
-from geobingan_sync.v2_guard import refuse_if_v2_unusable
+from geobingan_sync.v2_guard import cli_exit_code, refuse_if_v2_unusable
 from datetime import datetime
 from pathlib import Path
 
@@ -319,8 +319,11 @@ def main():
     check_monthly_activity_trend(notify=args.notify)
 
     # 回傳 diff 供週報使用
-    return diff
+    # 回結束碼，不回資料：這是 CLI 入口，而 sys.exit() 拿到 dict 會把它
+    # 印出來並以 exit 1 結束。沒有任何呼叫端在用這個 diff；要 diff 的人
+    # 直接用 compute_diff()。
+    return 0
 
 
 if __name__ == '__main__':
-    sys.exit(main() or 0)
+    sys.exit(cli_exit_code(main()))

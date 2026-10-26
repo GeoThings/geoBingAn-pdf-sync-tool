@@ -44,6 +44,27 @@ def v2_unusable_reason(token: Optional[str] = None, now: Optional[float] = None)
     return None
 
 
+def cli_exit_code(result) -> int:
+    """把 main() 的回傳值對映成 CLI 的結束碼。
+
+    **CLI 的結束碼只能是結束碼。** 這條規則是我在 PR #125 裡違反過的：為了讓
+    「刻意跳過」傳得出去，我把入口寫成 `sys.exit(main() or 0)`，但
+    `weekly_snapshot.main()` 最後是 `return diff`——有前次快照時那是一個非空的
+    dict，`sys.exit(dict)` 會把它印到 stderr 並以 exit 1 結束。快照其實寫成功了，
+    結束碼卻說失敗（排程那行的 `|| true` 遮住了，但 dict 會被寫進日誌，
+    而直接呼叫或用 `&&` 串接的人會誤判）。
+
+    所以對映寫在這裡、所有入口共用：int 原樣傳遞（那是刻意給的結束碼），
+    其他任何東西（None、dict、list…）都是**資料**，一律 0。
+    `bool` 要先擋——它是 int 的子類，`True` 會變成 exit 1＝假的失敗。
+    """
+    if isinstance(result, bool):
+        return 0
+    if isinstance(result, int):
+        return result
+    return 0
+
+
 def refuse_if_v2_unusable(what: str, reason=_COMPUTE, out=None) -> Optional[int]:
     """產物的邊界守門。
 

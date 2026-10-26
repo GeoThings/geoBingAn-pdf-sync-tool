@@ -19,7 +19,7 @@ from pathlib import Path
 
 # ClickUp
 from geobingan_sync.config import CLICKUP_TOKEN
-from geobingan_sync.v2_guard import refuse_if_v2_unusable
+from geobingan_sync.v2_guard import cli_exit_code, refuse_if_v2_unusable
 WEEKLY_REPORT_TASK_ID = '86ex8u782'
 
 STATE_DIR = './state'
@@ -429,4 +429,4 @@ def main():
 
 
 if __name__ == '__main__':
-    sys.exit(main() or 0)
+    sys.exit(cli_exit_code(main()))

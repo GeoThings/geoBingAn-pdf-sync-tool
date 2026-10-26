@@ -458,3 +458,95 @@ class TestEveryEntryPointHonoursTheSkip:
         branch = code[m.start():].split('else')[0]
         assert '已產生並上傳' not in branch, '跳過時還是說「已產生並上傳」'
         assert '失敗' not in branch, '跳過時還是說「失敗」——會讓人去查錯的方向'
+
+
+# -------------------------- review r3：資料回傳值不是 CLI 結束碼
+
+class TestDataIsNotAnExitCode:
+    """我在這個 PR 裡造成的回歸。
+
+    為了讓「刻意跳過」傳得出去，我把 `__main__` 從 `main()` 改成
+    `sys.exit(main() or 0)`。但 `weekly_snapshot.main()` 最後是 `return diff`
+    ——有前次快照時那是一個非空的 dict，`sys.exit(dict)` 會把它印到 stderr
+    並以 **exit 1** 結束。快照其實寫成功了，結束碼卻說失敗。
+
+    排程那行有 `|| true` 遮住，所以不會弄壞整輪；但那個 dict 會被
+    `2>&1 | tee` 寫進日誌，而直接呼叫或用 `&&` 串接的人會誤判失敗。
+
+    規則：**CLI 的結束碼只能是結束碼。** 資料從函式回傳，結束碼由一條明寫的
+    對映決定，兩者不要共用同一個回傳值。
+    """
+
+    def test_exit_code_of_data_is_zero(self):
+        from geobingan_sync.v2_guard import cli_exit_code
+        assert cli_exit_code({'new_permits': ['110建字第0001號']}) == 0
+        assert cli_exit_code({}) == 0
+        assert cli_exit_code(None) == 0
+        assert cli_exit_code(['anything']) == 0
+
+    def test_exit_code_of_an_int_passes_through(self):
+        from geobingan_sync.v2_guard import cli_exit_code, SKIP_EXIT_CODE
+        assert cli_exit_code(0) == 0
+        assert cli_exit_code(SKIP_EXIT_CODE) == SKIP_EXIT_CODE
+        assert cli_exit_code(3) == 3
+
+    def test_a_bool_is_not_treated_as_an_exit_code(self):
+        """bool 是 int 的子類；True 當成 exit 1 會變成「假的失敗」。"""
+        from geobingan_sync.v2_guard import cli_exit_code
+        assert cli_exit_code(True) == 0
+        assert cli_exit_code(False) == 0
+
+    def test_the_snapshot_main_returns_an_int(self, monkeypatch):
+        from geobingan_sync.steps import weekly_snapshot as w
+        monkeypatch.setattr('geobingan_sync.v2_guard.v2_unusable_reason', lambda *a, **k: None)
+        monkeypatch.setattr(w, 'save_snapshot', lambda: {'date': '2026-11-02'})
+        monkeypatch.setattr(w, 'get_previous_snapshot', lambda: {'date': '2026-10-26'})
+        monkeypatch.setattr(w, 'compute_diff',
+                            lambda a, b: {'total_change': 1, 'ai_change': 0,
+                                          'new_permits': ['110建字第0001號']})
+        monkeypatch.setattr(w, 'format_diff', lambda d: 'diff')
+        monkeypatch.setattr(w, 'notify_new_permits', lambda d: None)
+        monkeypatch.setattr(w, 'check_monthly_activity_trend', lambda **k: None)
+        monkeypatch.setattr(sys, 'argv', ['x', '--notify'])
+        rc = w.main()
+        assert isinstance(rc, int) and not isinstance(rc, bool), \
+            f'main() 回了 {type(rc).__name__}；sys.exit() 拿到非 int 會印出它並 exit 1'
+        assert rc == 0
+
+    def test_no_entry_point_pipes_main_straight_into_sys_exit(self):
+        """`sys.exit(main() or 0)` 就是這個 bug 的形狀。
+
+        用 `ast` 而不是 regex：這個斷言的第一版是字串比對，結果命中我寫在
+        v2_guard 的 **docstring** 裡解釋這個 bug 的那一句——「註解騙過原始碼
+        斷言」在這個 PR 裡已經是第三次了，而 `code_only()` 只濾 `#` 開頭的行、
+        濾不掉 docstring。Python 檔就該用語法樹。
+        """
+        import ast
+        import glob
+
+        def offenders(path):
+            with open(path, encoding='utf-8') as f:
+                tree = ast.parse(f.read(), filename=path)
+            found = []
+            for node in ast.walk(tree):
+                if not (isinstance(node, ast.Call)
+                        and isinstance(node.func, ast.Attribute)
+                        and node.func.attr == 'exit'
+                        and node.args):
+                    continue
+                arg = node.args[0]
+                if not (isinstance(arg, ast.BoolOp) and isinstance(arg.op, ast.Or)):
+                    continue
+                first = arg.values[0]
+                if isinstance(first, ast.Call) and getattr(first.func, 'id', None) == 'main':
+                    found.append(node.lineno)
+            return found
+
+        bad = {}
+        for path in glob.glob(os.path.join(ROOT, 'geobingan_sync', '**', '*.py'),
+                              recursive=True):
+            hits = offenders(path)
+            if hits:
+                bad[os.path.relpath(path, ROOT)] = hits
+        assert not bad, (
+            f'這些入口把 main() 的回傳值直接當結束碼，資料會被當成失敗：{bad}')
