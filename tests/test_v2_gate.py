@@ -235,3 +235,97 @@ class TestHealthCheckSeesPartial:
             path=self._status_file(tmp_path, 'success'),
             now=datetime(2026, 11, 2, 11, 0))
         assert level == 'ok'
+
+
+# ------------------------------------------- PR #125 第一輪 review 的三項
+
+class TestNoStaleDataIsDressedUpAsThisWeek:
+    """review P1：跳過追蹤報告卻讓快照與週報照跑，等於把舊資料包裝成本週結果。
+
+    快照讀的 `permit_system_mapping.json` 與 `permit_registry.json` **只由步驟
+    2.5 與步驟 3 更新**，而 v2 不可用時那兩步都被跳過。照寫下去會產生一份日期是
+    今天、內容卻沒量到的快照；趨勢是前後兩份快照相減，於是輸出「建案 +0、AI +0」
+    ——而「+0」和「沒量到」在那個輸出裡分不出來。未取得 ≠ 0。
+
+    週報更嚴重：它會**自動上傳 ClickUp**，收到的人看不出資料其實停在關站前。
+    """
+
+    @pytest.fixture(scope='class')
+    def src(self):
+        with open(SCRIPT, encoding='utf-8') as f:
+            return f.read()
+
+    def test_the_snapshot_is_gated(self, src):
+        m = re.search(r'if \[ \$V2_SKIPPED -ne 0 \]; then(.{0,900}?)weekly_snapshot', src, re.S)
+        assert m, '快照（weekly_snapshot）沒有被 V2_SKIPPED 閘門守住'
+
+    def test_the_monday_weekly_report_is_gated(self, src):
+        assert re.search(r'if \[ "\$WEEKDAY" = "1" \] && \[ \$V2_SKIPPED -ne 0 \]', src), \
+            '步驟 5（週一週報，會自動上傳 ClickUp）沒有被 V2_SKIPPED 閘門守住'
+
+    def test_five_gates_now(self, src):
+        """步驟 2、2.5、3、快照、步驟 5。"""
+        gates = re.findall(r'\[\s*\$V2_SKIPPED\s+-ne\s+0\s*\]', src)
+        assert len(gates) >= 5, f'只找到 {len(gates)} 道閘門，應該有五道'
+
+
+class TestTheTokenCheckIsTestableAndHasItsOwnFailureState:
+    """review P2：inline python 的例外以 exit 1 結束，被當成「快過期」放行 v2。"""
+
+    @pytest.fixture(scope='class')
+    def src(self):
+        with open(SCRIPT, encoding='utf-8') as f:
+            return f.read()
+
+    def test_the_script_calls_the_module(self, src):
+        assert 'geobingan_sync.steps.check_refresh_token' in src, \
+            '腳本沒有走可測試的判讀模組'
+
+    def test_the_inline_decode_is_gone(self, src):
+        assert 'decode_jwt_payload' not in src, \
+            '腳本裡還有 inline 的 JWT 判讀——那一段測不到，問題就是躲在那裡'
+
+    def test_the_script_handles_the_unreadable_code(self, src):
+        assert re.search(r'\$TOKEN_EXIT -eq 3', src), \
+            '腳本沒有處理「讀不出來」（exit 3）這個狀態'
+
+    def test_an_unreadable_token_makes_v2_unusable(self):
+        """exit 3 → unknown → v2 不可用，但步驟 1 照跑。"""
+        out = _run(TOKEN_EXIT=3, HAS_ERROR=0)
+        assert out['TOKEN_STATE'] == 'unknown'
+        assert out['V2_USABLE'] == '0'
+        assert out['FINAL'] == 'partial'
+
+
+class TestTheExpiredBranchDoesNotBypassTheAlertStateMachine:
+    """review P3：過期分支每輪直接 @，抵銷「warning、不 @、七天提醒」的政策。"""
+
+    @pytest.fixture(scope='class')
+    def src(self):
+        with open(SCRIPT, encoding='utf-8') as f:
+            return f.read()
+
+    @staticmethod
+    def _code_only(block: str) -> str:
+        """只留可執行的行。
+
+        第一版沒有濾註解，結果抓到我自己寫在註解裡的
+        「原本這段直接呼叫 send_notification(mention=True)」——測試紅了但程式是對的。
+        原始碼斷言要分清楚程式與註解，否則兩個方向都會判錯。
+        """
+        return '\n'.join(l for l in block.splitlines()
+                         if not l.lstrip().startswith('#'))
+
+    def test_the_expired_branch_sends_no_direct_mention(self, src):
+        m = re.search(r'if \[ \$TOKEN_EXIT -eq 2 \]; then(.*?)\nelif \[ \$TOKEN_EXIT', src, re.S)
+        assert m, '找不到 token 過期那段'
+        code = self._code_only(m.group(1))
+        assert 'mention=True' not in code, \
+            '過期分支還在直接 @——v2 關站後會變成每輪 @ 一次'
+        assert 'send_notification' not in code, \
+            '過期分支還在繞過告警狀態機直接發通知'
+
+    def test_the_expired_branch_still_says_where_the_alert_goes(self, src):
+        m = re.search(r'if \[ \$TOKEN_EXIT -eq 2 \]; then(.*?)\nelif \[ \$TOKEN_EXIT', src, re.S)
+        block = m.group(1)
+        assert 'partial' in block, '沒說清楚告警改走哪裡，下次有人會以為漏掉了'
