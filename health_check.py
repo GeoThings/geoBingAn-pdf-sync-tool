@@ -109,6 +109,13 @@ def check_last_sync(path=None, now=None):
             return 'warning', f'距離上次同步已 {days_ago} 天（{last_run[:10]}）'
         elif last_status == 'failure':
             return 'warning', f'上次同步失敗（{last_run[:10]}）'
+        elif last_status == 'partial':
+            # partial 不等於沒事。v2（riskmap.today）關站後每輪都會是 partial
+            # （步驟 1 成功、需要 v2 的步驟跳過）；回 ok 會讓「追蹤報告已經停止
+            # 更新」完全看不見——永遠不亮的燈等於沒有燈。
+            hist = data.get('history') or []
+            why = (hist[-1].get('error') if hist else '') or '原因未記錄'
+            return 'warning', f'上次同步只完成一部分（{last_run[:10]}）：{why}'
         from geobingan_sync.sync_status import weekday_summary
         wd = weekday_summary(data.get('history'))
         return 'ok', (f'上次同步: {last_run[:10]}（{last_status}）；'

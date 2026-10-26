@@ -58,6 +58,16 @@ def read_counts(run_started: str = '', upload_skipped: str = '', base: str = Non
     return synced, up.get('uploaded'), up.get('failed')
 
 
+def error_message_for(status: str, error_message: str):
+    """failure 與 partial 都要留下原因。
+
+    原本只有 failure 會留，partial 的原因被丟掉——10/19 那輪「中斷後補跑」的
+    說明是人工補寫進去的。v2（riskmap.today）關站後每輪都會是 partial，原因
+    若不落檔，健檢就只能說「partial」卻講不出為什麼。
+    """
+    return error_message if status in ('failure', 'partial') else None
+
+
 def main():
     # 從環境變數讀取（安全，不會有注入問題）
     status = os.environ.get('SYNC_STATUS', 'success')
@@ -74,7 +84,7 @@ def main():
         synced_pdfs=synced_count,
         uploaded_pdfs=uploaded_count,
         failed_uploads=failed_count,
-        error_message=error_message if status == 'failure' else None,
+        error_message=error_message_for(status, error_message),
         duration_seconds=duration_seconds
     )
 
@@ -102,7 +112,15 @@ def notify_sync_outcome(status: str, error_message: str, alert_state=None, now=N
     """
     alert_state = alert_state or AlertState(namespace='sync')
     now = now or datetime.now()
-    current = {} if status == 'success' else {SYNC_ALERT_KEY: ('error', error_message or '執行失敗')}
+    # partial 是「步驟 1 成功、需要 v2 的步驟被跳過」這種**已知**狀態，不是失敗。
+    # 走 warning 級：仍然進 ClickUp 與告警狀態（看得見、7 天提醒一次），但不 @人
+    # 也不寄 email——needs_attention 只看 error 級。真正的失敗照舊走 error。
+    if status == 'success':
+        current = {}
+    elif status == 'partial':
+        current = {SYNC_ALERT_KEY: ('warning', error_message or '部分完成（需要 v2 的步驟被跳過）')}
+    else:
+        current = {SYNC_ALERT_KEY: ('error', error_message or '執行失敗')}
     if send is None:
         send = _clickup_send
     events, _delivered = alert_state.process(current, send=send, now=now)

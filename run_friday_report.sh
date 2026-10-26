@@ -30,12 +30,20 @@ fi
 source "$SCRIPT_DIR/venv/bin/activate"
 
 # 產生總結週報並上傳
-if python3 -m geobingan_sync.steps.generate_weekly_report --type summary --upload 2>&1 | tee -a "$LOG_FILE"; then
-    echo "" | tee -a "$LOG_FILE"
+# exit 4 = v2_guard 刻意跳過（v2 不可用，見 ClickUp z956jf7zrd）。那不是失敗，
+# 寫成「週報產生失敗」會讓人去查錯的方向。守門在 geobingan_sync/v2_guard.py，
+# 不在這裡——這支入口先前就是因為守門放在呼叫點而被漏掉的。
+set +e
+python3 -m geobingan_sync.steps.generate_weekly_report --type summary --upload 2>&1 | tee -a "$LOG_FILE"
+REPORT_RC=${PIPESTATUS[0]}
+set -e
+echo "" | tee -a "$LOG_FILE"
+if [ "$REPORT_RC" -eq 0 ]; then
     echo "✅ 總結週報已產生並上傳到 ClickUp" | tee -a "$LOG_FILE"
+elif [ "$REPORT_RC" -eq 4 ]; then
+    echo "⏭️  總結週報本週刻意跳過（理由見上方），沒有產生也沒有上傳" | tee -a "$LOG_FILE"
 else
-    echo "" | tee -a "$LOG_FILE"
-    echo "❌ 週報產生失敗" | tee -a "$LOG_FILE"
+    echo "❌ 週報產生失敗（exit ${REPORT_RC}）" | tee -a "$LOG_FILE"
 fi
 
 echo "========================================" | tee -a "$LOG_FILE"

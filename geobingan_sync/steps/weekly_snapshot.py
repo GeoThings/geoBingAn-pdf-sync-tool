@@ -15,6 +15,8 @@ import json
 import os
 import sys
 import argparse
+
+from geobingan_sync.v2_guard import cli_exit_code, refuse_if_v2_unusable
 from datetime import datetime
 from pathlib import Path
 
@@ -286,6 +288,12 @@ def check_monthly_activity_trend(notify: bool = False):
 
 
 def main():
+    # 邊界守門，理由同週報：快照讀的 mapping／registry 這輪沒更新，
+    # 寫下去會變成「今天的」快照卻是舊資料，趨勢會假報 +0。
+    skip = refuse_if_v2_unusable('週報快照')
+    if skip is not None:
+        return skip
+
     parser = argparse.ArgumentParser(description='週報快照管理')
     parser.add_argument('--notify', action='store_true', help='新建案時發送通知')
     parser.add_argument('--diff', action='store_true', help='顯示與上次快照的差異')
@@ -311,8 +319,11 @@ def main():
     check_monthly_activity_trend(notify=args.notify)
 
     # 回傳 diff 供週報使用
-    return diff
+    # 回結束碼，不回資料：這是 CLI 入口，而 sys.exit() 拿到 dict 會把它
+    # 印出來並以 exit 1 結束。沒有任何呼叫端在用這個 diff；要 diff 的人
+    # 直接用 compute_diff()。
+    return 0
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(cli_exit_code(main()))

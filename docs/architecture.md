@@ -46,6 +46,119 @@
 
 **2026-10-19 起週末不排程**（plist 的 `StartCalendarInterval` 從單一 dict 改成 Weekday 1–5 的陣列）。依據是 10/17、10/18 兩輪各跑了 539.1／586.6 分鐘卻只同步到 9／10 份——機器在那個執行窗裡多半是睡著的，耗電池又把失敗率推高。`pmset repeat wakepoweron MTWRFSU 07:55:00` **不變**，因為 08:00 的健檢每天都要跑。
 
+#### 不變量 1.10：步驟 1 不可以被 v2（riskmap.today）的狀態擋住
+
+背景（ClickUp `z956jf7zrd`，slayer 2026-10-25）：`geoBingAn_v2_backend`——
+riskmap.today 的 API 與 riskmap.tw 前端——要關閉，日期未定。
+
+**步驟 1（台北市網站 → Google 雲端硬碟）用 Google 服務帳號憑證，完全不需要
+riskmap 的 token**；而新版 riskmap.taipei 的資料源就是那個雲端硬碟，所以它是
+整條流程裡唯一不能停的一步。
+
+原本的寫法讓它停得掉：`run_weekly_sync.sh` 在 refresh token **過期**時 `exit 1`，
+而那一段在步驟 1 之前。等於讓一個步驟 1 用不到的憑證，擋掉最重要的那一步。
+這有硬期限——token 2026-10-30 18:03 到期，關站後拿不到新的。
+
+〔已更正〕slayer 卡上寫「`set -e` 會讓步驟 2 失敗連帶停掉步驟 3、4」，**機制不是
+這樣**：每一步都用 `if ! cmd; then` 包著（errexit 對這種條件式不生效），
+`handle_error` 只設旗標不 exit，步驟 3 被跳過是 `run_weekly_sync.sh` 裡一道明寫的
+`STEP2_FAILED` 閘門（註解寫「報告會使用不完整的資料」）。而且 `.pause_upload`
+在的時候步驟 2 是**被跳過**、`STEP2_FAILED` 維持 0，那條路根本沒啟用。
+10/17 的實測可以對照：步驟 3 失敗、步驟 4 照跑。
+
+判斷集中在 `lib/v2_gate.sh`，只放判斷不做副作用（同 `lib/watchdog.sh`，測試
+source 同一份跑真邏輯，不在測試裡抄一份）：
+
+- `v2_token_state(exit_code)`：把 token 檢查的 exit code 翻成有名字的狀態
+  （`ok`／`warning`／`expired`／`unknown`），呼叫端不要散落 magic number。
+- `v2_usable(state)`：需要 v2 的三步（2 上傳、2.5 名稱比對、3 追蹤報告）能不能跑，
+  理由寫進 `V2_SKIP_REASON`。`expired` 與 `unknown` 都當不可用——對 v2 fail-closed，
+  但**步驟 1 照跑**。`warning`（剩不到兩天）只是提醒，不是停工理由。
+- `sync_final_status(has_error, v2_skipped)`：本輪狀態。
+
+**狀態要能分辨三件事，不能只有 success／failure 兩格**：步驟 1 成功、v2 步驟被
+跳過 ⇒ `partial`。記 `success` 會把「追蹤報告已經停止更新」藏起來；記 `failure`
+不對，因為步驟 1 成功了，而那是現在最重要的一步。真錯誤優先於 v2 skip。
+
+連帶三條，缺一條就會長出新的盲區：
+
+- **partial 的原因要落檔。** `record_sync_result` 原本只為 `failure` 保留
+  `error_message`，partial 的被丟掉（10/19 那輪「中斷後補跑」的說明是人工補寫的）。
+- **partial 走 `warning` 級告警**：仍進 ClickUp 與告警狀態（看得見、7 天提醒一次），
+  但不 @人、不寄 email——`needs_attention` 只看 `error` 級。已知且已決定的狀態
+  每天 @人就是「永遠亮的告警」。
+- **健檢要看得見 partial。** `check_last_sync` 原本對 `partial` 回 `ok`，等於每輪都
+  partial 時燈永遠不亮——那是同一個問題的另一面：**看不見的故障**。改成 `warning`
+  並顯示原因。順帶注意 `end_run` 把 partial 計入 `failure_count`，所以
+  `weekday_summary` 的成功率也會反映出來。
+
+**停更要停乾淨：所有吃同一份資料的產物都要一起停**（#125 review P1）。我第一版只擋了
+追蹤報告，卻讓快照與週一週報照跑。`weekly_snapshot.save_snapshot()` 讀的
+`permit_system_mapping.json` 與 `permit_registry.json` **只由步驟 2.5 與步驟 3 更新**，
+而那兩步正是被跳過的——寫下去會產生一份日期是今天、內容卻沒量到的快照；趨勢是前後
+兩份快照相減，於是輸出「建案 +0、AI +0」，而「+0」和「沒量到」在那個輸出裡**分不出來**。
+週報更嚴重：它會自動上傳 ClickUp，收到的人看不出資料其實停在關站前。兩者都要跳過，
+而不是「標註資料截止日」——標註也行，但在沒有「未量測」狀態的資料模型裡（見待確認
+清單）那個標註到不了 JSON／CSV／HTML，所以先停。
+
+**判讀失敗要有自己的狀態，而且判讀不能寫在 shell 裡**（#125 review P2）。原本的
+token 判讀是 `run_weekly_sync.sh` 裡一段 inline python：`exp` 不是數字時
+`(exp - time.time())` 拋 `TypeError`、python 以 **exit 1** 結束，而腳本把 1 解讀成
+「快過期」→ 照樣放行三個需要 v2 的步驟。也就是「讀不出來」被偽裝成「還能用」。
+這和 #124 的 `socket.gaierror` 是同一種錯：**拿我們想像中的失敗模式當代理**。
+現在判讀在 `geobingan_sync/steps/check_refresh_token.py`（可測試），
+`exit code` 本身就是介面：`0=ok 1=快過期 2=已過期 3=讀不出來`，
+而 `3` 經 `v2_token_state` 對映成 `unknown` → v2 不可用、步驟 1 照跑。
+連帶兩條：`bool` 要先擋（它是 `int` 子類，`True` 會被算成 1970 年）；
+`unreadable` 時 `days_left` 回 `None`，**不給編造的數字**（舊寫法
+`.get('exp', 0)` 會報「已過期 20000 天」）。
+
+**守門放在產物的邊界，不是放在呼叫點**（#125 review r2 的 P1）。我先把閘門加在
+`run_weekly_sync.sh`，結果漏了 `run_friday_report.sh`——那支週五 17:00 的 launchd job
+自己呼叫 `generate_weekly_report --type summary --upload`，於是照樣用停在關站前的
+mapping 產出一份標著本週日期的週報並**自動上傳 ClickUp**。漏掉的原因不是粗心，
+是結構：守門放在呼叫點就得靠每個呼叫點自律，而呼叫點會長出新的。
+現在規則在 `geobingan_sync/v2_guard.py`，由兩個 CLI 入口
+（`generate_weekly_report`、`weekly_snapshot`）在**做任何事之前**呼叫，任何 shell
+入口進來都會被同一條規則擋住；判準沿用 `check_refresh_token.classify`，不另寫一份。
+「刻意跳過」用獨立的 `exit 4`，和失敗分開——否則週五的日誌會寫成「週報產生失敗」，
+讓人去查錯的方向。
+
+**「是數字」不等於「能用的數字」**（#125 review r2 的 P2）。`exp: 1e309` 經 json 解析是
+`inf`，型別檢查過得去，於是判成「ok、剩 inf 天」——一張永不過期的 token。
+`exp: 10**400` 是任意精度整數，`float()` 拋 `OverflowError`。所以要捕捉轉換失敗、
+並要求 `math.isfinite`。
+
+**而且整個類別要一起關掉。** 「例外 → `exit 1` → 被當成快過期 → 放行 v2」已經發生
+三次：inline python 的 `TypeError`、#124 的 `socket.gaierror`、這次的 `OverflowError`。
+單獨修每個案例只會等下一個，所以 `check_refresh_token.main()` 外面包一層：**任何**
+沒預料到的例外都回「讀不出來」的 code。這一層不是裝飾，它是這個不變量唯一不依賴
+「有沒有想到這個失敗模式」的部分。
+
+**CLI 的結束碼只能是結束碼**（#125 review r3，這是我在同一個 PR 裡造成的回歸）。
+為了讓「刻意跳過」傳得出去，我把入口寫成 `sys.exit(main() or 0)`；但
+`weekly_snapshot.main()` 最後是 `return diff`，有前次快照時那是一個非空的 dict，
+`sys.exit(dict)` 會把它印到 stderr 並以 **exit 1** 結束——快照其實寫成功了，結束碼
+卻說失敗。排程那行的 `|| true` 遮住了它，但 dict 會被 `2>&1 | tee` 寫進日誌，而直接
+呼叫或用 `&&` 串接的人會誤判。對映集中在 `v2_guard.cli_exit_code()`：`int` 原樣傳遞
+（那是刻意給的結束碼），其他任何東西都是**資料**、一律 0；`bool` 先擋，它是 `int`
+的子類，`True` 會變成 exit 1＝假的失敗。
+
+**原始碼斷言要用語法樹，不要用字串比對。** 這個 PR 裡「註解騙過原始碼斷言」發生了
+三次：兩次是 `#` 註解（測試誤判紅、以及注入沒被抓到），第三次是我寫在 docstring 裡
+解釋 bug 的那一句——而只濾 `#` 的 `code_only()` 濾不掉 docstring。Shell 檔先過
+`code_only()`，Python 檔改用 `ast` 找真正的呼叫節點。
+
+**不要繞過告警狀態機**（#125 review P3）。token 過期那段原本直接呼叫
+`send_notification(..., mention=True)`。v2 關站後每一輪都會走到那裡，等於每天 @ 一次，
+正好抵銷上面「partial 走 warning、七天提醒一次」的政策。改成交給狀態機：本輪記
+`partial` 並帶原因，健檢的「JWT Token」項另有一條，兩邊都有去重。
+
+**還沒決定的事**（不在這一版）：追蹤報告／週報要改用什麼資料源，還是先暫停；
+pdf-sync 之後怎麼跟 `pdf-transfer-tool` 的 data foundry 銜接（卡 MANG-849）。
+另外 v2 真的關站而 token 還沒過期的那段期間，步驟 3 會每天失敗一次——這一版沒有
+加「v2 可達性探測」，見待確認清單。
+
 #### 不變量 1.8：週期性檢查用「日曆日」判斷，兩個消費端共用同一條規則
 
 「每 7 天一次」原本在兩個地方各自寫成 `(now - last) >= timedelta(days=7)`：已標 404 的重驗（`match_permits._due_for_recheck`）與 dropbox 整包取用（`source_adapters/dropbox.is_due`）。兩邊的時間戳都是**做完才寫**，而下一輪走到它的時刻每週飄動幾十秒（看前面的步驟跑多久），於是「滿 168 小時」變成每週擲一次硬幣：

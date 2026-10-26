@@ -78,6 +78,11 @@ WAS_TIMEOUT=0
 # shellcheck source=lib/watchdog.sh
 source "$SCRIPT_DIR/lib/watchdog.sh"
 
+# v2（riskmap.today）可用性的判斷。只放判斷、不做副作用，測試會 source 同一份。
+# shellcheck source=lib/v2_gate.sh
+. "$SCRIPT_DIR/lib/v2_gate.sh"
+V2_SKIPPED=0
+
 # 狀態變數
 # 計數不再從日誌 grep（2026-09-30：三個樣式都靜默失準，見 geobingan_sync/step_results.py）。
 # 各步驟把數字寫進 state/step_result_*.json，record_sync_result 讀資料。
@@ -130,10 +135,12 @@ cleanup() {
         ERROR_MESSAGE="未預期的錯誤 (exit code: $exit_code)"
     fi
 
-    # 決定狀態
-    local STATUS="success"
-    if [ $HAS_ERROR -ne 0 ]; then
-        STATUS="failure"
+    # 決定狀態（走 lib/v2_gate.sh 的 sync_final_status，不在這裡自己再寫一份）
+    local STATUS
+    STATUS="$(sync_final_status "$HAS_ERROR" "${V2_SKIPPED:-0}")"
+    # partial 也要說得出原因，否則健檢只能顯示「partial」卻講不出為什麼
+    if [ "$STATUS" = "partial" ] && [ -z "$ERROR_MESSAGE" ]; then
+        ERROR_MESSAGE="${V2_SKIP_REASON:-需要 v2 的步驟被跳過}"
     fi
 
     # 使用環境變數傳遞給 Python，避免字串注入問題
@@ -221,35 +228,39 @@ echo "" | tee -a "$LOG_FILE"
 echo "🔑 檢查 Token 有效期..." | tee -a "$LOG_FILE"
 # 暫時關閉 errexit 以取得 Python exit code（非零不代表腳本錯誤）
 set +e
-TOKEN_CHECK=$(python3 -c "
-from geobingan_sync.jwt_auth import decode_jwt_payload
-from geobingan_sync.config import REFRESH_TOKEN
-import time, sys
-payload = decode_jwt_payload(REFRESH_TOKEN)
-exp = payload.get('exp', 0)
-days_left = (exp - time.time()) / 86400
-if days_left < 0:
-    print(f'EXPIRED:{-days_left:.1f}')
-    sys.exit(2)
-elif days_left < 2:
-    print(f'WARNING:{days_left:.1f}')
-    sys.exit(1)
-else:
-    print(f'OK:{days_left:.1f}')
-    sys.exit(0)
-" 2>&1)
+# 判讀在 geobingan_sync/steps/check_refresh_token.py，不寫在這裡：
+# inline python 測不到，而原本那段在 exp 不是數字時會拋 TypeError、以 exit 1
+# 結束，於是「讀不出來」被下面的 elif 當成「快過期」放行 v2（#125 review P2）。
+# exit code：0=ok 1=快過期 2=已過期 3=讀不出來。
+TOKEN_CHECK=$(python3 -m geobingan_sync.steps.check_refresh_token 2>&1)
 TOKEN_EXIT=$?
 set -e
+
+TOKEN_STATE="$(v2_token_state "$TOKEN_EXIT")"
+if ! v2_usable "$TOKEN_STATE"; then
+    V2_SKIPPED=1
+    V2_USABLE=0
+else
+    V2_USABLE=1
+fi
 
 if [ $TOKEN_EXIT -eq 2 ]; then
     DAYS=$(echo "$TOKEN_CHECK" | grep -o '[0-9.]*')
     echo "❌ Refresh Token 已過期 ${DAYS} 天，請登入 riskmap.today 更新" | tee -a "$LOG_FILE"
-    python3 -c "
-from geobingan_sync.notify import send_notification
-send_notification('❌ geoBingAn Token 已過期', 'Refresh Token 已過期，請登入 riskmap.today 取得新 Token 並更新 .env', use_clickup=True, mention=True)
-" 2>&1 | tee -a "$LOG_FILE" || true
-    handle_error "Token 檢查" "Refresh Token 已過期"
-    exit 1
+    # **不在這裡直接發通知。** 原本這段直接呼叫 send_notification(mention=True)，
+    # 繞過告警狀態機——v2 關站後每一輪都會走到這裡，等於每天 @ 一次，正好抵銷
+    # 「partial 走 warning、不 @、七天提醒一次」的政策（#125 review P3）。
+    # 這件事有兩個地方會報，都有去重：本輪會記成 partial 並帶原因（走 sync 的
+    # 告警狀態機），健檢的「JWT Token」項也會報。
+    echo "   🔔 告警交給狀態機：本輪記 partial 並帶原因；健檢的 JWT Token 項另有一條" \
+        | tee -a "$LOG_FILE"
+    # **不 exit。** 步驟 1（台北市網站 → Google 雲端硬碟）用 Google 服務帳號憑證，
+    # 不需要 riskmap 的 token；而新版 riskmap.taipei 的資料源就是那個雲端硬碟，
+    # 所以它是唯一不能停的一步。原本這裡 exit 1 等於讓一個步驟 1 用不到的憑證，
+    # 擋掉最重要的那一步（ClickUp z956jf7zrd）。
+    echo "   ⏭️  跳過需要 v2 的步驟（2 上傳、2.5 名稱比對、3 追蹤報告）：${V2_SKIP_REASON}" \
+        | tee -a "$LOG_FILE"
+    echo "   ➡️  步驟 1（台北市 → 雲端硬碟）照常執行；本輪會記成 partial" | tee -a "$LOG_FILE"
 elif [ $TOKEN_EXIT -eq 1 ]; then
     DAYS=$(echo "$TOKEN_CHECK" | grep -o '[0-9.]*')
     echo "⚠️  Refresh Token 將在 ${DAYS} 天後過期，請儘快更新" | tee -a "$LOG_FILE"
@@ -258,6 +269,10 @@ from geobingan_sync.notify import send_notification
 send_notification('⚠️ geoBingAn Token 即將過期', 'Refresh Token 將在 ${DAYS} 天後過期，請登入 riskmap.today 更新 .env 中的 Token', use_clickup=True)
 " 2>&1 | tee -a "$LOG_FILE" || true
     echo "   繼續執行同步流程..." | tee -a "$LOG_FILE"
+elif [ $TOKEN_EXIT -eq 3 ]; then
+    # 讀不出來不等於還能用，也不等於已過期。對 v2 fail-closed，步驟 1 照跑。
+    echo "❌ Refresh Token 判讀失敗：${TOKEN_CHECK}" | tee -a "$LOG_FILE"
+    echo "   ⏭️  跳過需要 v2 的步驟；步驟 1 照常執行，本輪記 partial" | tee -a "$LOG_FILE"
 else
     DAYS=$(echo "$TOKEN_CHECK" | grep -o '[0-9.]*')
     echo "✅ Refresh Token 有效期剩餘 ${DAYS} 天" | tee -a "$LOG_FILE"
@@ -292,7 +307,11 @@ else
 # 可用 .pause_upload 旗標檔暫停上傳（例如後端 AI 停用期間，避免堆積 parse 失敗的報告）。
 # 恢復方式：rm .pause_upload。同步其餘步驟（1 / 2.5 / 3 / 4 / 5）照常執行。
 STEP2_FAILED=0
-if [ -f "$SCRIPT_DIR/.pause_upload" ]; then
+if [ $V2_SKIPPED -ne 0 ]; then
+    UPLOAD_SKIPPED="v2_unusable"
+    echo "" | tee -a "$LOG_FILE"
+    echo "⏭️  步驟 2/4: 跳過上傳（${V2_SKIP_REASON}）" | tee -a "$LOG_FILE"
+elif [ -f "$SCRIPT_DIR/.pause_upload" ]; then
     echo "" | tee -a "$LOG_FILE"
     echo "⏸️  步驟 2/4: 上傳已暫停（偵測到 .pause_upload 旗標，恢復：rm .pause_upload）" | tee -a "$LOG_FILE"
     sed 's/^/   /' "$SCRIPT_DIR/.pause_upload" 2>/dev/null | tee -a "$LOG_FILE" || true
@@ -320,20 +339,43 @@ fi
 
 # 步驟 2.5: 建案名稱交叉比對
 echo "" | tee -a "$LOG_FILE"
+if [ $V2_SKIPPED -ne 0 ]; then
+    echo "⏭️  步驟 2.5: 跳過名稱交叉比對（${V2_SKIP_REASON}），沿用現有 registry" \
+        | tee -a "$LOG_FILE"
+else
 echo "🔍 步驟 2.5: 建案名稱交叉比對..." | tee -a "$LOG_FILE"
 echo "----------------------------------------" | tee -a "$LOG_FILE"
 if ! python3 -m geobingan_sync.steps.match_permits 2>&1 | tee -a "$LOG_FILE"; then
     echo "⚠️  名稱比對失敗，使用現有 registry 繼續" | tee -a "$LOG_FILE"
 fi
+fi  # end V2_SKIPPED check (步驟 2.5)
 
 # 儲存快照 + 偵測新建案
 echo "" | tee -a "$LOG_FILE"
 echo "📸 儲存快照 + 偵測新建案..." | tee -a "$LOG_FILE"
-python3 -m geobingan_sync.steps.weekly_snapshot --notify 2>&1 | tee -a "$LOG_FILE" || true
+if [ $V2_SKIPPED -ne 0 ]; then
+    # 快照讀的 permit_system_mapping.json 與 permit_registry.json **只由步驟 2.5
+    # 與步驟 3 更新**，而這一輪它們都被跳過了。照寫下去會產生一份日期是今天、
+    # 內容卻沒量到的快照，而趨勢是拿前後兩份快照相減——結果會顯示「建案 +0、
+    # AI +0」，而「+0」和「沒量到」在那個輸出裡分不出來（#125 review P1）。
+    # 未取得 ≠ 0，所以這一輪不寫快照。
+    echo "⏭️  跳過快照（${V2_SKIP_REASON}）：mapping／registry 這輪沒更新，" \
+        | tee -a "$LOG_FILE"
+    echo "   寫下去會變成一份「今天的」快照卻是舊資料，趨勢會假報 +0" \
+        | tee -a "$LOG_FILE"
+else
+    python3 -m geobingan_sync.steps.weekly_snapshot --notify 2>&1 | tee -a "$LOG_FILE" || true
+fi
 
 # 步驟 3: 生成建照監測追蹤報告
 # 如果步驟 2 失敗，跳過報告生成（會使用不完整的資料）
-if [ $STEP2_FAILED -ne 0 ]; then
+if [ $V2_SKIPPED -ne 0 ]; then
+    echo "" | tee -a "$LOG_FILE"
+    echo "⏭️  步驟 3: 跳過追蹤報告（${V2_SKIP_REASON}）" | tee -a "$LOG_FILE"
+    echo "   這一步要帶 token 去分頁抓 v2 的 reports API，沒有 v2 就產不出報告。" \
+        | tee -a "$LOG_FILE"
+    echo "   既有的線上報告保留不動——舊報告比錯報告好。" | tee -a "$LOG_FILE"
+elif [ $STEP2_FAILED -ne 0 ]; then
     echo "" | tee -a "$LOG_FILE"
     echo "⚠️  步驟 2 失敗，跳過步驟 3（報告會使用不完整的資料）" | tee -a "$LOG_FILE"
 else
@@ -405,7 +447,15 @@ fi
 # 週二-週日：跳過 PDF 步驟、避免 ClickUp 每天都有重複附件
 # 週五另有 fridayreport launchd job 產 summary 週報 (--type summary)
 echo "" | tee -a "$LOG_FILE"
-if [ "$WEEKDAY" = "1" ]; then
+if [ "$WEEKDAY" = "1" ] && [ $V2_SKIPPED -ne 0 ]; then
+    # 週報的數字同樣來自 mapping／registry，而且會**自動上傳 ClickUp**。
+    # 用沒更新的資料產一份「10/26–11/02」的週報送出去，比不送更糟
+    # ——收到的人沒有辦法看出那份報告的資料其實停在關站前（#125 review P1）。
+    echo "⏭️  步驟 5/5: 跳過 sync 週報 PDF（${V2_SKIP_REASON}）" | tee -a "$LOG_FILE"
+    echo "   數字來源（mapping／registry）這輪沒更新，產出來會是標著本週日期的舊資料。" \
+        | tee -a "$LOG_FILE"
+    echo "   要恢復週報得先決定新的資料來源（見 ClickUp z956jf7zrd）。" | tee -a "$LOG_FILE"
+elif [ "$WEEKDAY" = "1" ]; then
     echo "📄 步驟 5/5: 產生 sync 週報 PDF（週一例行）..." | tee -a "$LOG_FILE"
     echo "----------------------------------------" | tee -a "$LOG_FILE"
     if python3 -m geobingan_sync.steps.generate_weekly_report --type sync --upload 2>&1 | tee -a "$LOG_FILE"; then
