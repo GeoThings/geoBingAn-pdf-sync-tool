@@ -58,16 +58,25 @@ def check_token():
 def check_pause():
     """偵測 .pause_upload 旗標並提醒暫停時長（stale-pause guard，呼應 #57 silent lock）。
 
-    ≥30 天升級 error：python3 -m geobingan_sync.steps.upload_pdfs 用 30 天檔名日期窗，暫停超過此窗、恢復時
-    落窗外的報告會被靜默漏掉，須 `python3 -m geobingan_sync.steps.upload_pdfs --catchup-days N` 補掃。
+    超過檔名日期窗就升級 error：`upload_pdfs` 只挑窗內的報告，暫停超過此窗、
+    恢復時落窗外的那些會被**靜默漏掉**（去重靠上傳歷史，不會自己補回來），
+    須 `--catchup-days N` 補掃。
+
+    門檻**從 `upload_pdfs.FILENAME_DATE_CUTOFF_DAYS` 讀**，不在這裡抄一份數字：
+    這支檢查存在的唯一目的就是「暫停超過那個窗要警告」，抄一份的話，窗改了之後
+    它會在錯的時間點亮或不亮，而它是唯一會提醒「恢復時要補掃」的地方
+    （2026-10-27：同一個 30 原本硬寫在兩個檔案共四處）。
     """
+    from geobingan_sync.steps.upload_pdfs import FILENAME_DATE_CUTOFF_DAYS as cutoff
     flag = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.pause_upload')
     if not os.path.exists(flag):
         return 'ok', '上傳未暫停'
     days = (time.time() - os.path.getmtime(flag)) / 86400
     base = f'上傳已暫停 {days:.1f} 天（.pause_upload；恢復：rm .pause_upload）'
-    if days >= 30:
-        return 'error', base + '；⚠️ 已超過 30 天檔名窗，恢復時須 python3 -m geobingan_sync.steps.upload_pdfs --catchup-days N 補掃避免漏報告'
+    if days >= cutoff:
+        return 'error', (
+            f'{base}；⚠️ 已超過 {cutoff} 天檔名窗，恢復時須 '
+            f'python3 -m geobingan_sync.steps.upload_pdfs --catchup-days N 補掃避免漏報告')
     return 'warning', base
 
 
