@@ -78,6 +78,12 @@ PDF_INVENTORY_FILE = './state/pdf_inventory.json'
 
 # DAYS_AGO, MAX_UPLOADS, DELAY_BETWEEN_UPLOADS 從 config.py (.env) 載入
 
+# 檔名日期的 rolling 窗：比這個更舊的報告不會被挑進本輪上傳。
+# 這是**暫停後恢復時會不會漏掉舊報告**的那一個窗，所以 health_check.check_pause
+# 要跟著它走，不是另外抄一份數字——2026-10-27 查到同一個 30 被硬寫在兩個檔案
+# 共四處，而 `.pause_upload` 的註記甚至寫成 21 天（那是 DAYS_AGO，是另一個窗）。
+FILENAME_DATE_CUTOFF_DAYS = 30
+
 # 並行上傳設定
 
 # 自動確認（測試模式）
@@ -919,7 +925,7 @@ def main(city: dict = None, catchup_days: int = None, yes: bool = False,
     # 原因：modifiedTime 會被「批次回填舊報告」誤導 — 有人 5 月把 2024 年資料一口氣丟進 Drive，
     # modifiedTime 看起來很新但實際是舊報告。檔名日期才是「實際監測日期」的權威來源。
     # 解析不到的（月報 YYYYMM、民國年月、設計圖等）暫時跳過，等後續 PR 強化 parser 再涵蓋。
-    cutoff_days = catchup_days if catchup_days else 30
+    cutoff_days = catchup_days if catchup_days else FILENAME_DATE_CUTOFF_DAYS
     cutoff = datetime.now() - timedelta(days=cutoff_days)
     if catchup_days:
         print(f"🔄 Catch-up 模式：檔名日期掃描窗放大到 {cutoff_days} 天"
@@ -1068,7 +1074,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--city', default=None, help='City ID or "all"')
     parser.add_argument('--catchup-days', type=int, default=None,
-                        help='暫停後補掃：用 N 天檔名日期窗取代預設 30 天'
+                        help=f'暫停後補掃：用 N 天檔名日期窗取代預設 {FILENAME_DATE_CUTOFF_DAYS} 天'
                              '（history 去重、不會重傳；恢復 .pause_upload 後用一次）')
     parser.add_argument('--yes', action='store_true',
                         help='估算解析成本超過 BUDGET_CONFIRM_USD 時仍執行（請先與後端確認預算餘裕）；'
