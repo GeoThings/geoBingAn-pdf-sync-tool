@@ -256,8 +256,23 @@ class TestNoStaleDataIsDressedUpAsThisWeek:
             return f.read()
 
     def test_the_snapshot_is_gated(self, src):
-        m = re.search(r'if \[ \$V2_SKIPPED -ne 0 \]; then(.{0,900}?)weekly_snapshot', src, re.S)
-        assert m, '快照（weekly_snapshot）沒有被 V2_SKIPPED 閘門守住'
+        """快照必須在 V2_SKIPPED 閘門的 else 分支裡。
+
+        第一版只檢查「weekly_snapshot 前面附近有 V2_SKIPPED」——那驗的是距離
+        不是結構，把 else 換成 `fi` ＋ `if true` 照樣會過（注入測試抓到的）。
+        這裡改成：跳過訊息與 weekly_snapshot 之間必須有 else、而且不能先出現
+        一行 `fi` 把閘門關掉。
+        """
+        assert 'if [ $V2_SKIPPED -ne 0 ]; then' in src
+        i = src.find('跳過快照')
+        assert i > 0, '找不到跳過快照的訊息'
+        j = src.find('geobingan_sync.steps.weekly_snapshot', i)
+        assert j > i, '跳過訊息之後找不到 weekly_snapshot 的呼叫'
+        between = src[i:j]
+        assert re.search(r'^\s*else\s*$', between, re.M), \
+            '快照不在閘門的 else 分支裡'
+        assert not re.search(r'^\s*fi\b', between, re.M), \
+            '閘門在 weekly_snapshot 之前就被關掉了——等於沒守住'
 
     def test_the_monday_weekly_report_is_gated(self, src):
         assert re.search(r'if \[ "\$WEEKDAY" = "1" \] && \[ \$V2_SKIPPED -ne 0 \]', src), \

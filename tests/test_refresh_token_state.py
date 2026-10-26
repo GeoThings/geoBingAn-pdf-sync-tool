@@ -64,8 +64,28 @@ class TestClassify:
 
     @pytest.mark.parametrize('tok', ['', 'garbage', 'a.b', 'a.b.c.d', 'eyJhbGciOiJIUzI1NiJ9..sig'])
     def test_an_undecodable_token_is_unreadable(self, tok):
-        state, _, _ = classify(tok, now=NOW)
+        state, days, detail = classify(tok, now=NOW)
         assert state == 'unreadable'
+        assert days is None, f'讀不出來卻給了 {days} 這個數字'
+        assert detail
+
+    @pytest.mark.parametrize('tok', [
+        '', 'garbage', 'a.b', 'eyJhbGciOiJIUzI1NiJ9..sig',
+        _token({'type': 'refresh'}),
+        _token({'exp': 'not-a-number'}),
+        _token({'exp': None}),
+        _token({'exp': True}),
+    ])
+    def test_unreadable_never_carries_a_number(self, tok):
+        """沒量到就不要給數字——給了就會被當成真的。
+
+        第一版只在「exp 不是數字」那條路斷言 days is None，「payload 解不出來」
+        那條沒斷言，於是注入「編一個 99.0 出來」沒被抓到。這一條把所有讀不出來
+        的輸入都蓋住。
+        """
+        state, days, _ = classify(tok, now=NOW)
+        assert state == 'unreadable'
+        assert days is None
 
     def test_exactly_at_expiry_is_expired_not_warning(self):
         state, _, _ = classify(_token({'exp': NOW}), now=NOW)
