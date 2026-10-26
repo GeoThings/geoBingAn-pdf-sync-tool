@@ -92,6 +92,32 @@ source 同一份跑真邏輯，不在測試裡抄一份）：
   並顯示原因。順帶注意 `end_run` 把 partial 計入 `failure_count`，所以
   `weekday_summary` 的成功率也會反映出來。
 
+**停更要停乾淨：所有吃同一份資料的產物都要一起停**（#125 review P1）。我第一版只擋了
+追蹤報告，卻讓快照與週一週報照跑。`weekly_snapshot.save_snapshot()` 讀的
+`permit_system_mapping.json` 與 `permit_registry.json` **只由步驟 2.5 與步驟 3 更新**，
+而那兩步正是被跳過的——寫下去會產生一份日期是今天、內容卻沒量到的快照；趨勢是前後
+兩份快照相減，於是輸出「建案 +0、AI +0」，而「+0」和「沒量到」在那個輸出裡**分不出來**。
+週報更嚴重：它會自動上傳 ClickUp，收到的人看不出資料其實停在關站前。兩者都要跳過，
+而不是「標註資料截止日」——標註也行，但在沒有「未量測」狀態的資料模型裡（見待確認
+清單）那個標註到不了 JSON／CSV／HTML，所以先停。
+
+**判讀失敗要有自己的狀態，而且判讀不能寫在 shell 裡**（#125 review P2）。原本的
+token 判讀是 `run_weekly_sync.sh` 裡一段 inline python：`exp` 不是數字時
+`(exp - time.time())` 拋 `TypeError`、python 以 **exit 1** 結束，而腳本把 1 解讀成
+「快過期」→ 照樣放行三個需要 v2 的步驟。也就是「讀不出來」被偽裝成「還能用」。
+這和 #124 的 `socket.gaierror` 是同一種錯：**拿我們想像中的失敗模式當代理**。
+現在判讀在 `geobingan_sync/steps/check_refresh_token.py`（可測試），
+`exit code` 本身就是介面：`0=ok 1=快過期 2=已過期 3=讀不出來`，
+而 `3` 經 `v2_token_state` 對映成 `unknown` → v2 不可用、步驟 1 照跑。
+連帶兩條：`bool` 要先擋（它是 `int` 子類，`True` 會被算成 1970 年）；
+`unreadable` 時 `days_left` 回 `None`，**不給編造的數字**（舊寫法
+`.get('exp', 0)` 會報「已過期 20000 天」）。
+
+**不要繞過告警狀態機**（#125 review P3）。token 過期那段原本直接呼叫
+`send_notification(..., mention=True)`。v2 關站後每一輪都會走到那裡，等於每天 @ 一次，
+正好抵銷上面「partial 走 warning、七天提醒一次」的政策。改成交給狀態機：本輪記
+`partial` 並帶原因，健檢的「JWT Token」項另有一條，兩邊都有去重。
+
 **還沒決定的事**（不在這一版）：追蹤報告／週報要改用什麼資料源，還是先暫停；
 pdf-sync 之後怎麼跟 `pdf-transfer-tool` 的 data foundry 銜接（卡 MANG-849）。
 另外 v2 真的關站而 token 還沒過期的那段期間，步驟 3 會每天失敗一次——這一版沒有
