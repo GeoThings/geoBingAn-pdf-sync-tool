@@ -113,6 +113,28 @@ token 判讀是 `run_weekly_sync.sh` 裡一段 inline python：`exp` 不是數�
 `unreadable` 時 `days_left` 回 `None`，**不給編造的數字**（舊寫法
 `.get('exp', 0)` 會報「已過期 20000 天」）。
 
+**守門放在產物的邊界，不是放在呼叫點**（#125 review r2 的 P1）。我先把閘門加在
+`run_weekly_sync.sh`，結果漏了 `run_friday_report.sh`——那支週五 17:00 的 launchd job
+自己呼叫 `generate_weekly_report --type summary --upload`，於是照樣用停在關站前的
+mapping 產出一份標著本週日期的週報並**自動上傳 ClickUp**。漏掉的原因不是粗心，
+是結構：守門放在呼叫點就得靠每個呼叫點自律，而呼叫點會長出新的。
+現在規則在 `geobingan_sync/v2_guard.py`，由兩個 CLI 入口
+（`generate_weekly_report`、`weekly_snapshot`）在**做任何事之前**呼叫，任何 shell
+入口進來都會被同一條規則擋住；判準沿用 `check_refresh_token.classify`，不另寫一份。
+「刻意跳過」用獨立的 `exit 4`，和失敗分開——否則週五的日誌會寫成「週報產生失敗」，
+讓人去查錯的方向。
+
+**「是數字」不等於「能用的數字」**（#125 review r2 的 P2）。`exp: 1e309` 經 json 解析是
+`inf`，型別檢查過得去，於是判成「ok、剩 inf 天」——一張永不過期的 token。
+`exp: 10**400` 是任意精度整數，`float()` 拋 `OverflowError`。所以要捕捉轉換失敗、
+並要求 `math.isfinite`。
+
+**而且整個類別要一起關掉。** 「例外 → `exit 1` → 被當成快過期 → 放行 v2」已經發生
+三次：inline python 的 `TypeError`、#124 的 `socket.gaierror`、這次的 `OverflowError`。
+單獨修每個案例只會等下一個，所以 `check_refresh_token.main()` 外面包一層：**任何**
+沒預料到的例外都回「讀不出來」的 code。這一層不是裝飾，它是這個不變量唯一不依賴
+「有沒有想到這個失敗模式」的部分。
+
 **不要繞過告警狀態機**（#125 review P3）。token 過期那段原本直接呼叫
 `send_notification(..., mention=True)`。v2 關站後每一輪都會走到那裡，等於每天 @ 一次，
 正好抵銷上面「partial 走 warning、七天提醒一次」的政策。改成交給狀態機：本輪記
