@@ -26,6 +26,17 @@ HARNESS = os.path.join(ROOT, 'tests', 'fixtures', 'v2_gate_harness.sh')
 SCRIPT = os.path.join(ROOT, 'run_weekly_sync.sh')
 
 
+def code_only(text: str) -> str:
+    """只留可執行的行。
+
+    原始碼斷言必須分清楚程式與註解，否則兩個方向都會判錯：第一次是我寫在註解
+    裡的「原本這段直接呼叫 send_notification(mention=True)」讓測試誤判紅；
+    第二次是註解裡的「exit 4 = …刻意跳過」讓「跳過分支被拿掉」的注入沒被抓到。
+    所以抽成共用的一個，所有 shell 原始碼斷言都先過它。
+    """
+    return '\n'.join(l for l in text.splitlines() if not l.lstrip().startswith('#'))
+
+
 def _run(**env):
     e = dict(os.environ)
     e.update({k: str(v) for k, v in env.items()})
@@ -321,16 +332,7 @@ class TestTheExpiredBranchDoesNotBypassTheAlertStateMachine:
         with open(SCRIPT, encoding='utf-8') as f:
             return f.read()
 
-    @staticmethod
-    def _code_only(block: str) -> str:
-        """只留可執行的行。
-
-        第一版沒有濾註解，結果抓到我自己寫在註解裡的
-        「原本這段直接呼叫 send_notification(mention=True)」——測試紅了但程式是對的。
-        原始碼斷言要分清楚程式與註解，否則兩個方向都會判錯。
-        """
-        return '\n'.join(l for l in block.splitlines()
-                         if not l.lstrip().startswith('#'))
+    _code_only = staticmethod(code_only)
 
     def test_the_expired_branch_sends_no_direct_mention(self, src):
         m = re.search(r'if \[ \$TOKEN_EXIT -eq 2 \]; then(.*?)\nelif \[ \$TOKEN_EXIT', src, re.S)
@@ -434,15 +436,25 @@ class TestEveryEntryPointHonoursTheSkip:
         with open(os.path.join(ROOT, 'run_friday_report.sh'), encoding='utf-8') as f:
             return f.read()
 
-    def test_the_friday_script_distinguishes_skip_from_failure(self, friday):
+    def test_the_friday_script_branches_on_the_skip_code(self, friday):
+        """要有一道**真的分支**判斷跳過的 exit code，不是註解裡提到它。"""
         from geobingan_sync.v2_guard import SKIP_EXIT_CODE
-        assert str(SKIP_EXIT_CODE) in friday, \
-            'run_friday_report.sh 沒有處理「刻意跳過」的 exit code'
-        assert '跳過' in friday, '跳過時的訊息沒有寫進週五入口'
+        code = code_only(friday)
+        assert re.search(rf'-eq\s+{SKIP_EXIT_CODE}\s*\]', code), \
+            'run_friday_report.sh 沒有一道判斷「刻意跳過」exit code 的分支'
+        assert '跳過' in code, '跳過時的訊息不在程式碼裡（只寫在註解不算）'
+
+    def test_the_friday_script_reads_the_real_exit_code(self, friday):
+        """`if cmd | tee` 讀到的是 tee 的 exit code，必須用 PIPESTATUS。"""
+        code = code_only(friday)
+        assert 'PIPESTATUS' in code, \
+            '沒用 PIPESTATUS，讀到的會是 tee 的結束碼而不是週報程式的'
 
     def test_the_friday_script_does_not_claim_success_when_skipped(self, friday):
-        m = re.search(r'-eq 4 \]', friday)
-        assert m, '找不到判斷 exit 4 的分支'
-        after = friday[m.start():m.start() + 400]
-        assert '已產生並上傳' not in after.split('else')[0], \
-            '跳過時還是說「已產生並上傳」'
+        from geobingan_sync.v2_guard import SKIP_EXIT_CODE
+        code = code_only(friday)
+        m = re.search(rf'-eq\s+{SKIP_EXIT_CODE}\s*\]', code)
+        assert m, '找不到判斷跳過的分支'
+        branch = code[m.start():].split('else')[0]
+        assert '已產生並上傳' not in branch, '跳過時還是說「已產生並上傳」'
+        assert '失敗' not in branch, '跳過時還是說「失敗」——會讓人去查錯的方向'
