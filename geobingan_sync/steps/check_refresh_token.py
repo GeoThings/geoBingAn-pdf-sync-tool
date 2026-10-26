@@ -19,6 +19,7 @@ shell 裡的 inline python——
 - 沒有 `exp` 不等於已過期。舊寫法 `.get('exp', 0)` 會把它算成 1970 年、報
   「已過期 20000 天」——那是編造出來的數字。
 """
+import math
 import os
 import sys
 import time
@@ -56,7 +57,19 @@ def classify(token: str, now: float = None, warning_days: float = WARNING_DAYS):
     if isinstance(exp, bool) or not isinstance(exp, (int, float)):
         return 'unreadable', None, f'exp 不是數字：{exp!r}'
 
-    days_left = (float(exp) - now) / 86400
+    # 「是數字」還不夠，數字本身也要能用（review r2 的 P2）：
+    #  - `1e309` 經 json 解析是 inf，而 inf 會讓它判成「ok、剩 inf 天」
+    #    ——一張永不過期的 token。
+    #  - `10**400` 是任意精度整數，float() 會拋 OverflowError；原本沒捕捉，
+    #    例外逃出去就變成 CLI exit 1，又被 shell 當成「快過期」。
+    try:
+        exp_seconds = float(exp)
+    except (OverflowError, ValueError) as e:
+        return 'unreadable', None, f'exp 轉不成浮點數（{type(e).__name__}）：{exp!r}'
+    if not math.isfinite(exp_seconds):
+        return 'unreadable', None, f'exp 不是有限值：{exp_seconds!r}'
+
+    days_left = (exp_seconds - now) / 86400
     if days_left <= 0:
         return 'expired', days_left, f'已過期 {-days_left:.1f} 天'
     if days_left < warning_days:
@@ -65,6 +78,18 @@ def classify(token: str, now: float = None, warning_days: float = WARNING_DAYS):
 
 
 def main() -> int:
+    # 兜底：任何沒預料到的失敗都回 unreadable 的 code。
+    # 這一層不是裝飾——「例外 → exit 1 → 被當成快過期 → 放行 v2」已經發生過
+    # 三次（inline python 的 TypeError、#124 的 socket.gaierror、這次的
+    # OverflowError）。單獨修每個案例只會等下一個；把**整個類別**關掉。
+    try:
+        return _main()
+    except Exception as e:
+        print(f'UNREADABLE:判讀時發生未預期的錯誤（{type(e).__name__}）：{e}')
+        return EXIT_CODES['unreadable']
+
+
+def _main() -> int:
     from geobingan_sync.config import REFRESH_TOKEN
     state, days_left, detail = classify(REFRESH_TOKEN)
     if state == 'unreadable':

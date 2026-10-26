@@ -116,3 +116,63 @@ class TestExitCodes:
                            cwd=root, env=env, capture_output=True, text=True, timeout=60)
         assert p.returncode == 3, (p.returncode, p.stdout, p.stderr)
         assert 'UNREADABLE' in p.stdout
+
+
+class TestNumericButNotUsable:
+    """review r2 的 P2：只驗型別不夠，數值本身也要是「能用的」。
+
+    - `exp: 1e309` 經 json 解析是 `inf`（JSON 沒有 Infinity 字面值，但 1e309
+      會溢位成 inf）。`isinstance(inf, float)` 是 True，於是判成「ok、剩 inf 天」
+      ——一張永不過期的 token。
+    - `exp: 10**400` 是任意精度整數，`float(exp)` 拋 `OverflowError`。原本沒有
+      捕捉，例外一路往上、CLI 以 exit 1 結束，**又被 shell 當成 warning**。
+
+    第二點是同一個失敗類別的第三次（前兩次：inline python 的 TypeError、
+    #124 的 socket.gaierror）。所以除了補這兩個案例，main() 也要兜底：
+    任何沒預料到的例外都回 unreadable 的 code，永遠不會再變成 warning。
+    """
+
+    @pytest.mark.parametrize('exp,why', [
+        (1e309, 'json 解析成 inf'),
+        (float('inf'), 'inf'),
+        (float('-inf'), '-inf'),
+        (10 ** 400, '任意精度整數，float() 會溢位'),
+        (-(10 ** 400), '負的任意精度整數'),
+    ])
+    def test_a_non_finite_or_overflowing_exp_is_unreadable(self, exp, why):
+        import json
+        try:
+            json.dumps({'exp': exp})
+        except ValueError:
+            pytest.skip(f'json 無法序列化（{why}）')
+        state, days, detail = classify(_token({'exp': exp}), now=NOW)
+        assert state == 'unreadable', f'{why} 被判成 {state}（days={days}）'
+        assert days is None
+        assert detail
+
+    def test_an_infinite_exp_does_not_become_a_token_that_never_expires(self):
+        state, days, _ = classify(_token({'exp': 1e309}), now=NOW)
+        assert state != 'ok', '無限大的 exp 變成「永不過期」'
+        assert days != float('inf')
+
+    def test_an_overflowing_exp_raises_nothing(self):
+        """不可以讓例外逃出 classify——逃出去就會變成 exit 1＝warning。"""
+        state, _, _ = classify(_token({'exp': 10 ** 400}), now=NOW)
+        assert state == 'unreadable'
+
+
+class TestMainNeverDegradesToWarning:
+    """兜底：任何沒預料到的失敗都要回 unreadable 的 exit code，不能是 1。"""
+
+    def test_an_unexpected_exception_exits_unreadable(self, monkeypatch):
+        from geobingan_sync.steps import check_refresh_token as m
+        monkeypatch.setattr(m, 'classify',
+                            lambda *a, **k: (_ for _ in ()).throw(RuntimeError('boom')))
+        rc = m.main()
+        assert rc == EXIT_CODES['unreadable'], \
+            f'沒預料到的例外回 {rc}；若是 1 就會被 shell 當成「快過期」放行 v2'
+
+    def test_a_healthy_token_still_exits_zero(self, monkeypatch):
+        from geobingan_sync.steps import check_refresh_token as m
+        monkeypatch.setattr(m, 'classify', lambda *a, **k: ('ok', 7.0, '剩 7.0 天'))
+        assert m.main() == 0

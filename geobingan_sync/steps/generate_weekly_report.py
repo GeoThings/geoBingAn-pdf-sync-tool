@@ -19,6 +19,7 @@ from pathlib import Path
 
 # ClickUp
 from geobingan_sync.config import CLICKUP_TOKEN
+from geobingan_sync.v2_guard import refuse_if_v2_unusable
 WEEKLY_REPORT_TASK_ID = '86ex8u782'
 
 STATE_DIR = './state'
@@ -361,6 +362,13 @@ def upload_to_clickup(pdf_path, summary_text):
 
 
 def main():
+    # 邊界守門：v2 不可用時不產出也不上傳。放在這裡而不是各個 shell 入口——
+    # 呼叫點會長出新的（run_friday_report.sh 就是這樣被漏掉的），
+    # 而產物只有這一個出口。
+    skip = refuse_if_v2_unusable('sync 週報／總結週報')
+    if skip is not None:
+        return skip
+
     parser = argparse.ArgumentParser(description='建案監測週報產生器')
     parser.add_argument('--type', choices=['sync', 'summary'], default='summary',
                         help='sync=週一同步報告, summary=週五總結週報')
@@ -421,4 +429,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main() or 0)

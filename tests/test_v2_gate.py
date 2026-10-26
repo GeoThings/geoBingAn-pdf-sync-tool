@@ -17,6 +17,7 @@ run_weekly_sync.sh 不准把這段邏輯自己再寫一份。
 import os
 import re
 import subprocess
+import sys
 
 import pytest
 
@@ -344,3 +345,104 @@ class TestTheExpiredBranchDoesNotBypassTheAlertStateMachine:
         m = re.search(r'if \[ \$TOKEN_EXIT -eq 2 \]; then(.*?)\nelif \[ \$TOKEN_EXIT', src, re.S)
         block = m.group(1)
         assert 'partial' in block, '沒說清楚告警改走哪裡，下次有人會以為漏掉了'
+
+
+# -------------------------------- review r2 的 P1：守門要放在產物的邊界
+
+class TestTheGuardIsAtTheArtifactBoundary:
+    """閘門放在呼叫點就得靠呼叫點自律，而呼叫點會長出新的。
+
+    我第一版只加在 run_weekly_sync.sh，漏了 run_friday_report.sh——那支週五
+    17:00 的 job 自己呼叫 `generate_weekly_report --type summary --upload`，
+    照樣用舊 mapping 產週報並自動上傳 ClickUp。
+    """
+
+    def test_an_unusable_v2_yields_a_reason(self):
+        from geobingan_sync.v2_guard import v2_unusable_reason
+        import base64, json
+        p = base64.urlsafe_b64encode(json.dumps({'exp': 1}).encode()).decode().rstrip('=')
+        reason = v2_unusable_reason(token='eyJhbGciOiJIUzI1NiJ9.' + p + '.sig')
+        assert reason and 'z956jf7zrd' in reason
+
+    def test_a_healthy_v2_yields_no_reason(self):
+        from geobingan_sync.v2_guard import v2_unusable_reason
+        import base64, json, time
+        p = base64.urlsafe_b64encode(
+            json.dumps({'exp': time.time() + 7 * 86400}).encode()).decode().rstrip('=')
+        assert v2_unusable_reason(token='eyJhbGciOiJIUzI1NiJ9.' + p + '.sig') is None
+
+    def test_a_nearly_expired_token_does_not_block_the_artifacts(self):
+        """剩不到兩天只是提醒——這時資料還是新的，照產。"""
+        from geobingan_sync.v2_guard import v2_unusable_reason
+        import base64, json, time
+        p = base64.urlsafe_b64encode(
+            json.dumps({'exp': time.time() + 3600}).encode()).decode().rstrip('=')
+        assert v2_unusable_reason(token='eyJhbGciOiJIUzI1NiJ9.' + p + '.sig') is None
+
+    def test_refuse_returns_a_skip_code_distinct_from_failure(self):
+        from geobingan_sync.v2_guard import refuse_if_v2_unusable, SKIP_EXIT_CODE
+        import io as _io
+        buf = _io.StringIO()
+        rc = refuse_if_v2_unusable('週報', reason='token 過期', out=buf)
+        assert rc == SKIP_EXIT_CODE
+        assert SKIP_EXIT_CODE not in (0, 1), '刻意跳過不可以和成功或一般失敗共用 code'
+        assert '跳過週報' in buf.getvalue()
+
+    def test_refuse_lets_a_healthy_round_through(self):
+        from geobingan_sync.v2_guard import refuse_if_v2_unusable
+        import io as _io
+        buf = _io.StringIO()
+        assert refuse_if_v2_unusable('週報', reason=None, out=buf) is None
+        assert buf.getvalue() == ''
+
+    def test_the_weekly_report_cli_refuses_before_doing_any_work(self, monkeypatch):
+        """邊界要擋在「做任何事之前」，不是產好了才不上傳。"""
+        from geobingan_sync.steps import generate_weekly_report as g
+        from geobingan_sync.v2_guard import SKIP_EXIT_CODE
+
+        def _boom(*a, **k):
+            raise AssertionError('v2 不可用時還是去讀資料／上傳了')
+
+        monkeypatch.setattr(g, 'load_data', _boom)
+        monkeypatch.setattr(g, 'upload_to_clickup', _boom)
+        # 要 patch 守門自己模組裡的那一個——refuse_if_v2_unusable 內部呼叫的是
+        # v2_guard.v2_unusable_reason，patch 到步驟模組上不會生效（第一版就錯在這）。
+        monkeypatch.setattr('geobingan_sync.v2_guard.v2_unusable_reason',
+                            lambda *a, **k: 'token 過期')
+        monkeypatch.setattr(sys, 'argv', ['x', '--type', 'summary', '--upload'])
+        assert g.main() == SKIP_EXIT_CODE
+
+    def test_the_snapshot_cli_refuses_before_doing_any_work(self, monkeypatch):
+        from geobingan_sync.steps import weekly_snapshot as w
+        from geobingan_sync.v2_guard import SKIP_EXIT_CODE
+
+        def _boom(*a, **k):
+            raise AssertionError('v2 不可用時還是寫了快照')
+
+        monkeypatch.setattr(w, 'save_snapshot', _boom)
+        monkeypatch.setattr('geobingan_sync.v2_guard.v2_unusable_reason',
+                            lambda *a, **k: 'token 過期')
+        monkeypatch.setattr(sys, 'argv', ['x', '--notify'])
+        assert w.main() == SKIP_EXIT_CODE
+
+
+class TestEveryEntryPointHonoursTheSkip:
+    """每個入口都要把「刻意跳過」和「失敗」分開寫，否則日誌會誤導。"""
+
+    @pytest.fixture(scope='class')
+    def friday(self):
+        with open(os.path.join(ROOT, 'run_friday_report.sh'), encoding='utf-8') as f:
+            return f.read()
+
+    def test_the_friday_script_distinguishes_skip_from_failure(self, friday):
+        from geobingan_sync.v2_guard import SKIP_EXIT_CODE
+        assert str(SKIP_EXIT_CODE) in friday, \
+            'run_friday_report.sh 沒有處理「刻意跳過」的 exit code'
+        assert '跳過' in friday, '跳過時的訊息沒有寫進週五入口'
+
+    def test_the_friday_script_does_not_claim_success_when_skipped(self, friday):
+        m = re.search(r'-eq 4 \]', friday)
+        assert m, '找不到判斷 exit 4 的分支'
+        after = friday[m.start():m.start() + 400]
+        assert '已產生並上傳' not in after.split('else')[0], \
+            '跳過時還是說「已產生並上傳」'
