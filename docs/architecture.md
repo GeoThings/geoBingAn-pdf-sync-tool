@@ -46,6 +46,57 @@
 
 **2026-10-19 起週末不排程**（plist 的 `StartCalendarInterval` 從單一 dict 改成 Weekday 1–5 的陣列）。依據是 10/17、10/18 兩輪各跑了 539.1／586.6 分鐘卻只同步到 9／10 份——機器在那個執行窗裡多半是睡著的，耗電池又把失敗率推高。`pmset repeat wakepoweron MTWRFSU 07:55:00` **不變**，因為 08:00 的健檢每天都要跑。
 
+#### 不變量 1.10：步驟 1 不可以被 v2（riskmap.today）的狀態擋住
+
+背景（ClickUp `z956jf7zrd`，slayer 2026-10-25）：`geoBingAn_v2_backend`——
+riskmap.today 的 API 與 riskmap.tw 前端——要關閉，日期未定。
+
+**步驟 1（台北市網站 → Google 雲端硬碟）用 Google 服務帳號憑證，完全不需要
+riskmap 的 token**；而新版 riskmap.taipei 的資料源就是那個雲端硬碟，所以它是
+整條流程裡唯一不能停的一步。
+
+原本的寫法讓它停得掉：`run_weekly_sync.sh` 在 refresh token **過期**時 `exit 1`，
+而那一段在步驟 1 之前。等於讓一個步驟 1 用不到的憑證，擋掉最重要的那一步。
+這有硬期限——token 2026-10-30 18:03 到期，關站後拿不到新的。
+
+〔已更正〕slayer 卡上寫「`set -e` 會讓步驟 2 失敗連帶停掉步驟 3、4」，**機制不是
+這樣**：每一步都用 `if ! cmd; then` 包著（errexit 對這種條件式不生效），
+`handle_error` 只設旗標不 exit，步驟 3 被跳過是 `run_weekly_sync.sh` 裡一道明寫的
+`STEP2_FAILED` 閘門（註解寫「報告會使用不完整的資料」）。而且 `.pause_upload`
+在的時候步驟 2 是**被跳過**、`STEP2_FAILED` 維持 0，那條路根本沒啟用。
+10/17 的實測可以對照：步驟 3 失敗、步驟 4 照跑。
+
+判斷集中在 `lib/v2_gate.sh`，只放判斷不做副作用（同 `lib/watchdog.sh`，測試
+source 同一份跑真邏輯，不在測試裡抄一份）：
+
+- `v2_token_state(exit_code)`：把 token 檢查的 exit code 翻成有名字的狀態
+  （`ok`／`warning`／`expired`／`unknown`），呼叫端不要散落 magic number。
+- `v2_usable(state)`：需要 v2 的三步（2 上傳、2.5 名稱比對、3 追蹤報告）能不能跑，
+  理由寫進 `V2_SKIP_REASON`。`expired` 與 `unknown` 都當不可用——對 v2 fail-closed，
+  但**步驟 1 照跑**。`warning`（剩不到兩天）只是提醒，不是停工理由。
+- `sync_final_status(has_error, v2_skipped)`：本輪狀態。
+
+**狀態要能分辨三件事，不能只有 success／failure 兩格**：步驟 1 成功、v2 步驟被
+跳過 ⇒ `partial`。記 `success` 會把「追蹤報告已經停止更新」藏起來；記 `failure`
+不對，因為步驟 1 成功了，而那是現在最重要的一步。真錯誤優先於 v2 skip。
+
+連帶三條，缺一條就會長出新的盲區：
+
+- **partial 的原因要落檔。** `record_sync_result` 原本只為 `failure` 保留
+  `error_message`，partial 的被丟掉（10/19 那輪「中斷後補跑」的說明是人工補寫的）。
+- **partial 走 `warning` 級告警**：仍進 ClickUp 與告警狀態（看得見、7 天提醒一次），
+  但不 @人、不寄 email——`needs_attention` 只看 `error` 級。已知且已決定的狀態
+  每天 @人就是「永遠亮的告警」。
+- **健檢要看得見 partial。** `check_last_sync` 原本對 `partial` 回 `ok`，等於每輪都
+  partial 時燈永遠不亮——那是同一個問題的另一面：**看不見的故障**。改成 `warning`
+  並顯示原因。順帶注意 `end_run` 把 partial 計入 `failure_count`，所以
+  `weekday_summary` 的成功率也會反映出來。
+
+**還沒決定的事**（不在這一版）：追蹤報告／週報要改用什麼資料源，還是先暫停；
+pdf-sync 之後怎麼跟 `pdf-transfer-tool` 的 data foundry 銜接（卡 MANG-849）。
+另外 v2 真的關站而 token 還沒過期的那段期間，步驟 3 會每天失敗一次——這一版沒有
+加「v2 可達性探測」，見待確認清單。
+
 #### 不變量 1.8：週期性檢查用「日曆日」判斷，兩個消費端共用同一條規則
 
 「每 7 天一次」原本在兩個地方各自寫成 `(now - last) >= timedelta(days=7)`：已標 404 的重驗（`match_permits._due_for_recheck`）與 dropbox 整包取用（`source_adapters/dropbox.is_due`）。兩邊的時間戳都是**做完才寫**，而下一輪走到它的時刻每週飄動幾十秒（看前面的步驟跑多久），於是「滿 168 小時」變成每週擲一次硬幣：
