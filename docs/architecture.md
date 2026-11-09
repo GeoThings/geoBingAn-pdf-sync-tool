@@ -35,7 +35,7 @@
 
 | 時間 | LaunchAgent | 內容 |
 |------|-------------|------|
-| 每日 08:00 | `com.geothings.geobingan.healthcheck` | 10 項巡檢：Token／磁碟／同步狀態／API／launchd job（PR #53）／上傳暫停（#57）／解析積壓／解析預算（PR #80）／清單新鮮度／來源資料夾失效（PR #82）；異常經 alert_state 去重後貼 ClickUp，error 級 @（PR #79） |
+| 每日 08:00 | `com.geothings.geobingan.healthcheck` | 巡檢（**項目以 `health_check.DEFAULT_CHECKS` 為準，不在這裡抄數量**）：JWT Token／磁碟空間／同步狀態／API 連線／排程 Job（PR #53）／上傳暫停（#57）／解析積壓／解析預算（PR #80）／清單新鮮度／來源資料夾（PR #82）／未支援來源（PR #103）／同步錯誤／待送告警（PR #122）；異常經 alert_state 去重後貼 ClickUp，error 級 @（PR #79）；v2 不可用時，需要它憑證的項目回 `skip`＝不查（PR #127，見不變量 1.11） |
 | 每日 08:20 | `com.geothings.geobingan.drainstuck` | 放行我方近 7 天卡住的 pending/failed（**先看 `.pause_upload`**、再探解析引擎健康、走 retry_parse 預留、上限 20；PR #91／#96） |
 | **週一至週五** 10:00 | `com.geothings.geobingan.weeklysync` | 完整流程（步驟 1-4）+ 週一加步驟 5 產 PDF |
 | 週五 17:00 | `com.geothings.geobingan.fridayreport` | 總結週報 PDF → ClickUp |
@@ -45,6 +45,43 @@
 > ✅ **2026-06-09 ROOT CAUSE 確認 + RESOLVED**：18 天 launchd 自動觸發系統性 fail 的 root cause = repo 位於 `~/Documents/` 被 iCloud Drive `FileProvider` 接管。fix = 把 repo 搬到 `~/Developer/`（FileProvider 域外）。搬完後第一次 launchd kickstart healthcheck = exit 0、echo 寫入。詳見下方「Auto-trigger 失敗 root cause」段。
 
 **2026-10-19 起週末不排程**（plist 的 `StartCalendarInterval` 從單一 dict 改成 Weekday 1–5 的陣列）。依據是 10/17、10/18 兩輪各跑了 539.1／586.6 分鐘卻只同步到 9／10 份——機器在那個執行窗裡多半是睡著的，耗電池又把失敗率推高。`pmset repeat wakepoweron MTWRFSU 07:55:00` **不變**，因為 08:00 的健檢每天都要跑。
+
+#### 不變量 1.12：「網路就緒」只由**送得出告警的通道**決定
+
+健檢開跑前會阻塞等 DNS（根治 launchd post-wake 的 DNS race）。原本那份 host 清單
+把**被檢查的對象**（riskmap.today）和**告警通道**（ClickUp、SMTP）混在一起，而
+「就緒」要求全部解析成功。
+
+v2 關站之後 riskmap.today 永遠解不到，於是每天都會印「檢查與告警可能失敗」——
+而事實是告警一直送得出去。**永遠亮的燈會蓋掉真的通道故障**，所以兩群分開：
+`alert_channel_hosts()` 決定就緒，`measured_hosts()` 只影響它自己那一項（API 連線），
+而且另給較短的預算（`MEASURED_DNS_TIMEOUT`），不必每天為一台關掉的主機等滿 90 秒。
+
+**我們決定不去查的主機，不可以把閘門擋住。**
+
+#### 不變量 1.11：沒查過不算通過——「不查」要有自己的狀態
+
+健檢的結果不是只有 ok／warning／error。v2 不可用時，需要它的憑證才量得到的項目
+（解析積壓）會回 **`skip`**：報告裡以 ⏭️ 印出理由，但不算問題、不進告警狀態、
+不通知。
+
+為什麼不能用現有的三種：`warning` 會變成**永遠亮著的燈**（10/31–11/09 連報 10 天
+「解析積壓檢查失敗: 401」，而真正的新訊號——未支援來源 42 案、4 案近 14 天新增
+——排在三盞永久紅燈後面）；`ok` 是**假綠燈**（未取得 ≠ 0）。
+
+兩個連帶規則：
+
+- **「不再檢查」不可以寫成「已恢復」。** 後者是一句斷言，它說問題解決了。所以
+  `AlertEvent` 帶一個 `note`、`plan_alerts` 收 `skipped`，通知寫「⏭️ 不再檢查：X
+  （理由）」。真的恢復照舊寫「已恢復」。
+- **摘要不可以宣稱「所有檢查通過」。** 有項目沒跑的時候那句話是假的，改印
+  「已執行的檢查都沒有異常」並點名沒查的是哪幾項。
+
+判準向 `v2_guard` 要，健檢不抄一份（#126 那個「30 天」抄成四處的同一條教訓）。
+刻意**不**閘門：`check_token`（閘門自己的輸入，關掉就沒人會去換 token）、
+`check_api`（不需要憑證，而且是唯一能分辨「關站」和「token 過期」的訊號——
+2026-11-09 就是靠它才知道 v2 還活著、報告停更 10 天是因為沒換 token）、
+`check_pause`／`check_budget`（量本機的檔）。每一項都有反例測試釘住。
 
 #### 不變量 1.10：步驟 1 不可以被 v2（riskmap.today）的狀態擋住
 

@@ -40,8 +40,8 @@
 - ✅ 告警確實送達：ClickUp 留言＋error 級 @ 人、去重/升級/每 7 天提醒/恢復通知（PR #79）
 - ✅ 解析預算守門：後端日上限 US$20（上傳＋重推共用、強制裁切）、單次門檻需 --yes、先預留後退還（PR #80／#85）
 - ✅ 解析引擎健康探測：上傳前先看近 24h 我方報告——帳戶無餘額或 worker 停擺就不上傳（exit 5＝EXIT_PARSER_HELD）並告警；**看不到資料時沿用先前狀態**（沒有證據 ≠ 健康），held 由每日 1 份 canary 探路解除；隔日 08:20 自動放行卡住的報告（`steps/drain_stuck.py`）
-- ✅ 健康檢查 10 項：Token／磁碟／同步狀態／API／launchd／上傳暫停／解析積壓／解析預算／清單新鮮度／來源資料夾
-- ✅ 自動化測試（pytest, 306 cases, GitHub Actions CI）
+- ✅ 健康檢查（項目以 `health_check.DEFAULT_CHECKS` 為準，文件不抄數量）：JWT Token／磁碟空間／同步狀態／API 連線／排程 Job／上傳暫停／解析積壓／解析預算／清單新鮮度／來源資料夾／未支援來源／同步錯誤／待送告警
+- ✅ 自動化測試（pytest ＋ GitHub Actions CI，兩個 Python 版本各跑整套；數量以 `pytest -q` 的輸出為準，不抄進文件）
 - ✅ 多城市支援（cities.json 配置，PDF 或 CSV 資料來源）
 - ✅ Refresh Token 自動輪替（API 回傳新 token 時自動寫回 .env）
 
@@ -60,7 +60,7 @@
 3. ✅ 建案名稱交叉比對（6 個資料來源）
 4. ✅ 產生追蹤報告（HTML/CSV）+ 週報 PDF 上傳 ClickUp
 5. ✅ 全自動排程（cron：每日健檢 / 週一同步 / 週五總結）
-6. ✅ CI 測試保護（GitHub Actions，63 個測試）
+6. ✅ CI 測試保護（GitHub Actions，`test (3.11)`／`test (3.12)` 兩個具名 check 各跑整套）
 
 **後端負責（不由此工具處理）**：
 - AI 分析（Gemini 2.5/3.0 Pro）
@@ -160,7 +160,7 @@ python3 health_check.py
 sudo pmset repeat wakepoweron MTWRFSU 07:55:00
 
 # 排程內容：
-# 每日 08:00 — 健康檢查 10 項（含清單新鮮度、來源資料夾失效）
+# 每日 08:00 — 健康檢查（項目以 health_check.DEFAULT_CHECKS 為準）
 # 每日 10:00 — 完整同步（核心 PDF 同步 + 上傳 + 報告 + Git push）
 #              週一額外產 sync 週報 PDF 上傳 ClickUp
 # 週五 17:00 — 總結週報（summary 週報 PDF）
@@ -385,14 +385,21 @@ python3 -c "from geobingan_sync.sync_status import SyncStatus; SyncStatus().prin
 
 每個告警只在**新出現 / warning→error 升級 / 每 7 天提醒一次 / 解除（發恢復通知）**時送出，其餘抑制。狀態檔 `state/alert_state_<producer>.json`：健康檢查與同步結果**各自一個 namespace**（共用會把對方的項目誤判成已恢復）。採 **plan → send → commit**：**真正會到人的通道**送達才寫入狀態，失敗或例外則保留舊狀態、下一輪重試。不帶 `--notify` 的乾跑為唯讀，不會悄悄把問題標成「已看過」。
 
+
+**除了 ok／warning／error，還有第四種結果：`skip`＝沒有檢查**（PR #127）。v2（riskmap.today）不可用時，需要它的憑證才量得到的項目（解析積壓）**不查也不猜**：報告裡以 ⏭️ 印出理由，但**不算問題、不進告警狀態、不通知**；原本亮著的燈會被關成「⏭️ 不再檢查：X（理由）」而**不是**「✅ 已恢復」——後者是斷言問題解決了。摘要同理：有項目沒查時不印「所有檢查通過」，改印「已執行的檢查都沒有異常」並點名沒查的是哪幾項。**沒查過不算通過。**
+
+判準向 `geobingan_sync/v2_guard.py` 要（與兩支週報、快照共用同一條規則），健檢不抄一份。刻意**不**閘門的是 `check_token`（它是閘門自己的輸入，關掉就沒人會去換 token）、`check_api`（不需要憑證，而且是唯一能分辨「關站了」和「只是 token 過期」的訊號）、`check_pause` 與 `check_budget`（量的是本機的檔）。
+
+**「網路就緒」只由告警通道決定**（PR #127）：開跑前等 DNS 的那道閘門把 host 依用途分成 `alert_channel_hosts()`（ClickUp、SMTP——**決定就緒**）與 `measured_hosts()`（被檢查的 v2——只影響它自己那一項，另給較短的預算）。原本兩群混在同一份清單、而就緒要求全部解析成功，於是 v2 關站後會每天誤報「檢查與告警可能失敗」，而告警其實一直送得出去——永遠亮的燈會蓋掉**真的**通道故障。
+
 ### 觸發時機
 
 | 事件 | 等級 | 內容 |
 |------|------|------|
-| 健康檢查異常（10 項） | warning / error | 一輪一則彙整；error 才 @ |
+| 健康檢查異常（項目見 `DEFAULT_CHECKS`） | warning / error／**skip＝沒查** | 一輪一則彙整；error 才 @；skip 不通知、但會在報告裡印出理由 |
 | 同步執行失敗／恢復 | error | 錯誤訊息；連日失敗每 7 天提醒；**恢復同樣寄 Email** |
 | Refresh Token 過期／即將過期 | error / warning | 請至 riskmap 重新登入更新 `.env` |
-| 解析積壓（近 7 天停滯 ≥6h） | warning / error（≥20 份或最舊 ≥24h） | 疑後端 worker 停擺或 OpenAI 預算上限 |
+| 解析積壓（近 7 天停滯 ≥6h） | warning / error（≥20 份或最舊 ≥24h）／**v2 不可用時 skip** | 疑後端 worker 停擺或 OpenAI 預算上限；沒有可用憑證就量不到，不猜（PR #127） |
 | 解析預算（今日估算 vs 日上限） | ≥70% warning／≥90% error | 今日額度將盡，上傳會被自動裁切，台北午夜重置 |
 | 清單新鮮度 | error（退回靜態備援）／warning（>60 天未更新） | 動態解析失效時會靜默同步過期清單，必須知道 |
 | 來源資料夾由活轉死 | error | 近 7 天新失效＝資料流失訊號（對應 111建字第0311號 253 份消失） |
@@ -405,7 +412,7 @@ python3 -c "from geobingan_sync.sync_status import SyncStatus; SyncStatus().prin
 geoBingAn-pdf-sync-tool/
 ├── run_weekly_sync.sh           # 進入點：每日自動同步（launchd 10:00）
 ├── run_friday_report.sh         # 進入點：週五總結週報
-├── health_check.py              # 進入點：每日健康檢查（8 項；異常去重後貼 ClickUp、error 級 @）
+├── health_check.py              # 進入點：每日健康檢查（項目見 DEFAULT_CHECKS；異常去重後貼 ClickUp、error 級 @）
 │
 ├── geobingan_sync/              # 共用模組 package
 │   ├── config.py                #   設定載入（REPO_ROOT/.env）
