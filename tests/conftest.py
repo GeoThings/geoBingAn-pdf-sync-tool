@@ -389,3 +389,49 @@ def _no_real_v2_token_state(monkeypatch):
     payload = base64.urlsafe_b64encode(
         _json.dumps({'exp': _time.time() + 7 * 86400}).encode()).decode().rstrip('=')
     monkeypatch.setattr(config, 'REFRESH_TOKEN', 'eyJhbGciOiJIUzI1NiJ9.' + payload + '.sig')
+
+
+@pytest.fixture(autouse=True)
+def _no_real_dns_wait_in_the_health_check(monkeypatch):
+    """健檢那道「等 DNS 就緒」的閘門，在測試裡不得真的去查 DNS。
+
+    🔴 2026-11-09：把告警通道的設定釘成固定假值之後（下一支 fixture），那些沒有
+    注入 `network_wait` 的測試開始對 `smtp.example.invalid` 跑**真的** DNS 等待，
+    每支卡滿 90 秒上限，整套跑不完。原本看不出來，是因為沒有 `.env` 時通道清單是
+    空的、那段程式碼整個被跳過——又一次「CI 沒走到正式環境會走的那條路」。
+
+    擋的是 `network_ready.wait_for_dns` 這個**模組屬性**，因為
+    `health_check.wait_for_alert_network` 是在函式內 import、呼叫時才查名字。
+    `tests/test_network_ready.py` 在 import 時就把名字綁好了，所以它驗 backoff 與
+    逾時的那些測試不受影響——那一層仍然是真的在測。
+    要驗「解不到」的測試自己注入 `wait=`／`network_wait=`。
+
+    先前試過換掉 `socket.getaddrinfo`，範圍太大：link_resolver 有 7 支測試靠
+    「這個 host 解不到」來短路，全部被弄紅。防線要剛好擋住那條路，不是擋住整個
+    socket 層。
+    """
+    from geobingan_sync.steps import network_ready
+    monkeypatch.setattr(network_ready, 'wait_for_dns',
+                        lambda hosts, timeout=0, **kw: (True, []))
+
+
+@pytest.fixture(autouse=True)
+def _pinned_alert_channel_config(monkeypatch):
+    """告警通道的設定要**固定**，不可以讓套件結果取決於本機 `.env`。
+
+    🔴 2026-11-09 真的踩到：PR #127 把健檢等 DNS 的 host 依用途分成兩群之後，
+    `test_the_health_check_waits_for_dns_before_checking` 在 CI 與 worktree 都是
+    綠的（那裡沒有 `.env`，`CLICKUP_TOKEN` 空 → 通道那群是空清單 → 只等一次），
+    **而正式目錄一跑就紅**（兩群都非空 → 等兩次）。
+
+    真正的問題不是那句斷言，是**CI 從來沒走到正式環境會走的那條路**：通道清單
+    空掉之後，那段程式碼的主要分支被整個跳過。所以這裡把三個設定釘成固定的假值，
+    讓每一台機器（含 CI）都走同一條路；要驗「沒有設定通道」那一面的測試自己改。
+
+    與 `_no_real_pause_flag`、`_no_real_v2_token_state` 同一類：擋在**預設來源**，
+    不是靠每支測試自己記得注入。
+    """
+    from geobingan_sync import config
+    monkeypatch.setattr(config, 'CLICKUP_TOKEN', 'test-clickup-token', raising=False)
+    monkeypatch.setattr(config, 'ALERT_EMAIL_TO', 'alerts@example.invalid', raising=False)
+    monkeypatch.setattr(config, 'ALERT_SMTP_HOST', 'smtp.example.invalid', raising=False)
