@@ -128,7 +128,28 @@ class TestAStoppedCheckIsNotARecovery:
             notify=False, alert_state=_state(tmp_path), now=T0)
         out = capsys.readouterr().out
         assert '⏭️' in out and REASON in out, '不算問題 ≠ 藏起來'
-        assert '1 項刻意沒有檢查' in out
+        assert '1 項沒有檢查' in out and '解析積壓' in out.split('=' * 50)[-1], \
+            '摘要也要數出來、點名是哪一項'
+
+    def test_the_summary_never_claims_everything_passed_when_something_was_skipped(
+            self, tmp_path, capsys):
+        """沒查過的不算通過。（PR #127 review 的 minor：只有 ok／SKIP 時仍印「所有檢查通過」）"""
+        health_check.run_health_check(
+            checks=[('磁碟空間', lambda: ('ok', '20 GB 可用')),
+                    ('解析積壓', lambda: (health_check.SKIP, REASON))],
+            notify=False, alert_state=_state(tmp_path), now=T0)
+        out = capsys.readouterr().out
+        assert '所有檢查通過' not in out, '有項目沒跑就不可以宣稱全部通過'
+        assert '已執行的檢查都沒有異常' in out
+        assert '解析積壓' in out.split('=' * 50)[-1], '摘要要點名是哪幾項沒查'
+
+    def test_the_summary_still_says_everything_passed_when_nothing_was_skipped(
+            self, tmp_path, capsys):
+        """反方向的對照：真的全部查過且沒事，那句話是真的，不可以被新寫法蓋掉。"""
+        health_check.run_health_check(
+            checks=[('磁碟空間', lambda: ('ok', '20 GB 可用'))],
+            notify=False, alert_state=_state(tmp_path), now=T0)
+        assert '所有檢查通過' in capsys.readouterr().out
 
     def test_a_light_that_was_on_is_closed_as_not_checked(self, tmp_path):
         st = _state(tmp_path)

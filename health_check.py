@@ -767,10 +767,14 @@ def run_health_check(checks=None, notify=False, alert_state=None, now=None, send
     print("=" * 50)
     if issues:
         print(f"⚠️  {len(issues)} 個問題需要關注")
+    elif skipped:
+        # 「所有檢查通過」在有項目沒跑的時候是**假的**：沒查過不算通過。
+        # 這正是這個 PR 要修的同一種錯（代理變數——把「沒有紅燈」當成「都查過了」）。
+        print("✅ 已執行的檢查都沒有異常")
     else:
         print("✅ 所有檢查通過")
     if skipped:
-        print(f"⏭️  {len(skipped)} 項刻意沒有檢查（理由見上）")
+        print(f"⏭️  {len(skipped)} 項沒有檢查（理由見上）：{'、'.join(skipped)}")
 
     if not notify:
         # 乾跑/手動檢查唯讀：只算不寫，免得悄悄把問題標成「已看過」
