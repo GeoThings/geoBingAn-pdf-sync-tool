@@ -189,8 +189,13 @@ class TestReadinessIsAboutTheAlertChannelsOnly:
         monkeypatch.setattr(health_check, 'alert_channel_hosts', lambda: ['api.clickup.com'])
         monkeypatch.setattr(health_check, 'measured_hosts', lambda: ['riskmap.today'])
 
+        # 逐 host 判斷，不是「清單裡有 clickup 就算就緒」——後者在「兩群合成一份
+        # 清單去等」的回歸下照樣會過（2026-11-09 注入⑥實測漏掉，就是這個毛病）。
+        dead = {'riskmap.today'}
+
         def fake_wait(hosts, timeout=0):
-            return (True, []) if 'api.clickup.com' in hosts else (False, list(hosts))
+            unresolved = [h for h in hosts if h in dead]
+            return (not unresolved), unresolved
 
         ready, unresolved = health_check.wait_for_alert_network(wait=fake_wait)
         out = capsys.readouterr().out
