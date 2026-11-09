@@ -88,9 +88,17 @@ def test_the_guard_itself_catches_a_hardcoded_count(tmp_path):
     而它看起來還在上班。
     """
     fake = tmp_path / 'FAKE.md'
+    # 這五行是**真的出現過**的五種寫法（見模組 docstring），不是隨手編的樣本：
+    # 半角空格、全形括號、倒裝的「N 項巡檢」、pytest cases、CI 個測試。
+    # 只放其中一種的話，regex 被改弱成只認那一種也照樣綠——2026-11-09 注入㉓
+    # 實測就是這樣漏掉的。
     fake.write_text('- ✅ 健康檢查 10 項：Token／磁碟\n'
+                    '- 進入點：每日健康檢查（8 項；異常去重後貼 ClickUp）\n'
+                    '| 每日 08:00 | healthcheck | 13 項巡檢：Token／磁碟 |\n'
                     '- ✅ 自動化測試（pytest, 306 cases）\n'
+                    '6. ✅ CI 測試保護（GitHub Actions，63 個測試）\n'
                     '- 〔歷史〕健康檢查 8 項（2026-09 當時）\n', encoding='utf-8')
     bad = _offending_lines([fake])
-    assert len(bad) == 2, f'應該抓到兩行、且不抓〔歷史〕那行，實際：{bad}'
+    assert len(bad) == 5, f'五種寫法都要抓到、且不抓〔歷史〕那行，實際：{bad}'
     assert all('FAKE.md' in b for b in bad)
+    assert not any('2026-09 當時' in b for b in bad)
