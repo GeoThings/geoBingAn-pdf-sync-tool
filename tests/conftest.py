@@ -366,3 +366,26 @@ def _no_real_step_results(monkeypatch, tmp_path_factory):
     """
     from geobingan_sync import step_results
     monkeypatch.setattr(step_results, '_BASE', str(tmp_path_factory.mktemp('nosteps')))
+
+
+@pytest.fixture(autouse=True)
+def _no_real_v2_token_state(monkeypatch):
+    """測試一律不得讓結果取決於本機 `.env` 裡那張 refresh token 的壽命。
+
+    🔴 2026-11-09 真的踩到：健檢的「解析積壓」接上 `v2_guard` 的閘門之後，
+    `check_parse_backlog(now=NOW)` 會去問 `v2_unusable_reason()`，而它預設讀
+    `config.REFRESH_TOKEN`——正式 `.env` 那張 10/30 就過期了。於是六支本來在量
+    「積壓算得對不對」的測試全部變成 `skip`，**而且是本機紅、別人機器可能綠**：
+    測試結果取決於操作者有沒有去換 token。
+
+    與 [[不可碰正式狀態]]、`_no_real_pause_flag` 同一類：防線擋在**預設來源**，
+    不是靠每支測試自己記得注入。這裡把預設換成一張健康的合成 token（＝v2 可用），
+    要驗「v2 不可用」那一面的測試自己傳 `reason=`／自己改 config。
+    """
+    import base64
+    import json as _json
+    import time as _time
+    from geobingan_sync import config
+    payload = base64.urlsafe_b64encode(
+        _json.dumps({'exp': _time.time() + 7 * 86400}).encode()).decode().rstrip('=')
+    monkeypatch.setattr(config, 'REFRESH_TOKEN', 'eyJhbGciOiJIUzI1NiJ9.' + payload + '.sig')

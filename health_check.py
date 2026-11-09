@@ -30,6 +30,27 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+#: 刻意沒有檢查。不是 `ok`（那是假綠燈），也不是問題（那會變成永遠亮著的紅燈）。
+SKIP = 'skip'
+
+#: reason 的預設值不能用 None——None 要留給「v2 可用」這個答案，否則測試注入不了
+#: 健康的那一面（`v2_guard` 第一版就是這樣寫壞的，見那支的註解）。
+_COMPUTE = object()
+
+
+def v2_reason(reason=_COMPUTE):
+    """v2（riskmap.today）的資料能不能信：None＝可以，字串＝不能、字串就是理由。
+
+    判準**不在這裡重寫一份**——直接問 `v2_guard`，那是 PR #125 放在產物邊界的
+    同一條規則。健檢自己抄一份的話，兩邊會在不同的時間點改變主意（這就是 #126
+    那個「30 天」抄成四份的毛病）。
+    """
+    if reason is _COMPUTE:
+        from geobingan_sync.v2_guard import v2_unusable_reason
+        return v2_unusable_reason()
+    return reason
+
+
 def check_token():
     """檢查 JWT Token 有效期"""
     from geobingan_sync.jwt_auth import decode_jwt_payload
@@ -194,13 +215,23 @@ def count_stale_reports(pages, now, stale_hours=STALE_HOURS, ancient_hours=ANCIE
     return out
 
 
-def check_parse_backlog(now=None):
+def check_parse_backlog(now=None, reason=_COMPUTE):
     """後端解析積壓：近 7 天內卡住 ≥6h 的報告 → 告警（對應 9/14 事故：預算爆掉後 116 份卡一整天沒人知）。
 
     燈號只看「近期停滯」：error＝≥20 份或最舊 ≥24h；warning＝1–19 份；ok＝0。
     陳年積壓（>7 天）只在訊息註記，避免舊帳讓告警永遠紅燈、蓋掉新事故。
     掃描上限 MAX_PAGES×200，達上限標「≥」。API/認證失敗只回 warning（token 到期另有 check_token）。
+
+    **v2 不可用時不查**（2026-11-09）：沒有可用的 refresh token 就換不到 JWT，這支
+    只會拿到 401，然後每天報一次「解析積壓檢查失敗: 401」——10/31 到 11/09 連報
+    10 天。那既不是「積壓正常」也不是「積壓出事」，是**量不到**，所以回 `SKIP`：
+    報告裡看得到、但不算問題、也不通知（未取得 ≠ 0）。
+    擋在**發請求之前**：對著一台沒有憑證可用、而且即將關掉的主機每天打兩輪 10 頁，
+    只會換來逾時。判準向 `v2_guard` 要，不在這裡抄一份。
     """
+    reason = v2_reason(reason)
+    if reason:
+        return SKIP, f'{reason}——沒有可用憑證就量不到積壓（未取得 ≠ 0）'
     import requests
     from datetime import timezone
     from geobingan_sync.config import GEOBINGAN_BASE_URL
@@ -552,8 +583,24 @@ def check_launchd_jobs():
     return 'ok', f'{len(jobs)} 個排程 job 正常'
 
 
-def alert_hosts():
-    """告警與 API 會用到的 host。從設定推導、不寫死——寫死會跟 .env 漂走。"""
+#: 被檢查對象的 DNS 只等這麼久。等它只是為了避開 post-wake 的 DNS race，
+#: 不值得每天拿整份預算去等一台可能已經關掉的主機。
+MEASURED_DNS_TIMEOUT = 20.0
+
+
+def alert_channel_hosts():
+    """**送得出告警的通道** host。只有這一群能決定「網路就緒」。"""
+    from geobingan_sync import config
+    hosts = []
+    if config.CLICKUP_TOKEN:
+        hosts.append('api.clickup.com')
+    if config.ALERT_EMAIL_TO and config.ALERT_SMTP_HOST and config.ALERT_SMTP_HOST not in hosts:
+        hosts.append(config.ALERT_SMTP_HOST)
+    return hosts
+
+
+def measured_hosts():
+    """**被檢查的對象**（v2）。它不是告警通道，解不到只影響它自己那一項。"""
     from urllib.parse import urlparse
     from geobingan_sync import config
     hosts = []
@@ -561,14 +608,24 @@ def alert_hosts():
         host = urlparse(url or '').hostname
         if host and host not in hosts:
             hosts.append(host)
-    if config.CLICKUP_TOKEN and 'api.clickup.com' not in hosts:
-        hosts.append('api.clickup.com')
-    if config.ALERT_EMAIL_TO and config.ALERT_SMTP_HOST and config.ALERT_SMTP_HOST not in hosts:
-        hosts.append(config.ALERT_SMTP_HOST)
     return hosts
 
 
-def wait_for_alert_network(timeout=90.0, hosts=None, wait=None):
+def alert_hosts():
+    """告警與 API 會用到的 host。從設定推導、不寫死——寫死會跟 .env 漂走。
+
+    順序沿用舊版（先被檢查對象、再告警通道）。要分別判斷時用
+    `measured_hosts()` / `alert_channel_hosts()`——「網路就緒」**只看後者**。
+    """
+    hosts = list(measured_hosts())
+    for h in alert_channel_hosts():
+        if h not in hosts:
+            hosts.append(h)
+    return hosts
+
+
+def wait_for_alert_network(timeout=90.0, hosts=None, wait=None,
+                           measured_timeout=MEASURED_DNS_TIMEOUT):
     """健檢開跑前先等 DNS 就緒，有上限。
 
     2026-10-19 08:00:35 那輪（post-sleep）`riskmap.today` 與 `api.clickup.com` 全
@@ -577,18 +634,36 @@ def wait_for_alert_network(timeout=90.0, hosts=None, wait=None):
     健檢沒有，所以這裡重用同一個等待函式，不另外寫一套門檻。
 
     逾時只回報、不中止：後面的檢查各自有錯誤處理，而送不出去的告警會進待送佇列。
+
+    **「就緒」只由告警通道決定**（2026-11-09）：舊版把被檢查對象（riskmap.today）
+    和通道（ClickUp、SMTP）放進同一份清單，而 `ready` 要求全部解析成功。v2 關站
+    之後那台主機永遠解不到，於是每天都會印「檢查與告警可能失敗」——而事實是告警
+    一直送得出去。一盞永遠亮的燈會蓋掉**真的**通道故障，所以兩群分開等、分開報：
+    通道決定 `ready`，被檢查對象只影響它自己那一項（API 連線），而且另給一份較短
+    的預算，不必每天為一台關掉的主機等滿 90 秒。
+
+    傳 `hosts` 進來時沿用舊語意（全部當成通道），呼叫端自己決定要等誰。
     """
     from geobingan_sync.steps.network_ready import wait_for_dns
-    hosts = alert_hosts() if hosts is None else hosts
-    if not hosts:
-        return True, []
     wait = wait or wait_for_dns
-    ready, unresolved = wait(hosts, timeout=timeout)
-    if ready:
-        print(f"  🌐 網路就緒（{len(hosts)} 個 host）")
-    else:
-        print(f"  ⚠️ 網路就緒等待逾時（{timeout:.0f}s），仍無法解析: {', '.join(unresolved)}"
-              f"——檢查與告警可能失敗，送不出去的會進待送佇列")
+    channels, measured = (list(hosts), []) if hosts is not None else \
+                         (alert_channel_hosts(), measured_hosts())
+    if not channels and not measured:
+        return True, []
+
+    ready, unresolved = wait(channels, timeout=timeout) if channels else (True, [])
+    if channels:
+        if ready:
+            print(f"  🌐 告警通道就緒（{len(channels)} 個 host）")
+        else:
+            print(f"  ⚠️ 告警通道等待逾時（{timeout:.0f}s），仍無法解析: {', '.join(unresolved)}"
+                  f"——送不出去的告警會進待送佇列")
+    if measured:
+        m_ready, m_unresolved = wait(measured, timeout=min(measured_timeout, timeout))
+        if not m_ready:
+            unresolved = list(unresolved) + [h for h in m_unresolved if h not in unresolved]
+            print(f"  ℹ️ 被檢查對象仍無法解析: {', '.join(m_unresolved)}"
+                  f"——那是「API 連線」那一項要回答的事，不影響告警送達")
     return ready, unresolved
 
 
@@ -664,9 +739,10 @@ def run_health_check(checks=None, notify=False, alert_state=None, now=None, send
     # 獨立 namespace：不與 record_sync_result 共用狀態，免得互相誤判恢復
     alert_state = alert_state or AlertState(namespace='healthcheck')
     now = now or _dt.now()
-    icons = {'ok': '✅', 'warning': '⚠️', 'error': '❌'}
+    icons = {'ok': '✅', 'warning': '⚠️', 'error': '❌', SKIP: '⏭️'}
     issues = []
     current = {}
+    skipped = {}
 
     print(f"🏥 系統健康檢查 — {now.strftime('%Y-%m-%d %H:%M')}")
     print("=" * 50)
@@ -680,7 +756,11 @@ def run_health_check(checks=None, notify=False, alert_state=None, now=None, send
             status, message = 'error', str(e)
         icon = icons.get(status, '❓')
         print(f"  {icon} {name}: {message}")
-        if status != 'ok':
+        if status == SKIP:
+            # 刻意沒查：報告裡看得到，但不算問題、也不通知。理由要帶進 alert_state，
+            # 原本亮著的燈才會被關成「不再檢查」而不是謊稱「已恢復」。
+            skipped[name] = message
+        elif status != 'ok':
             issues.append(f'{icon} {name}: {message}')
             current[name] = (status, message)
 
@@ -689,10 +769,12 @@ def run_health_check(checks=None, notify=False, alert_state=None, now=None, send
         print(f"⚠️  {len(issues)} 個問題需要關注")
     else:
         print("✅ 所有檢查通過")
+    if skipped:
+        print(f"⏭️  {len(skipped)} 項刻意沒有檢查（理由見上）")
 
     if not notify:
         # 乾跑/手動檢查唯讀：只算不寫，免得悄悄把問題標成「已看過」
-        events = alert_state.plan(current, now=now)
+        events = alert_state.plan(current, now=now, skipped=skipped)
         if events:
             print(f"  （乾跑）將通知事件：{[e.kind + ':' + e.key for e in events]}")
         elif issues:
@@ -702,7 +784,7 @@ def run_health_check(checks=None, notify=False, alert_state=None, now=None, send
     if send is None:
         send = clickup_send
     # plan → send → commit：ClickUp 真的送達才落狀態；失敗保留舊狀態、下輪重試
-    events, delivered = alert_state.process(current, send=send, now=now)
+    events, delivered = alert_state.process(current, send=send, now=now, skipped=skipped)
     if not events:
         if issues:
             print(f"  （{len(issues)} 個問題持續中，已抑制重複通知）")
