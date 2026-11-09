@@ -230,6 +230,19 @@ def test_the_queue_follows_the_state_file_into_tmp(tmp_path):
 # ---------- 先等 DNS，有上限 ----------
 
 def test_the_health_check_waits_for_dns_before_checking(tmp_path, monkeypatch):
+    """開跑前要等 DNS，而且每一群都要有上限。
+
+    🔴 2026-11-09：這支原本斷言「只呼叫一次」。PR #127 把 host 依用途分成告警通道
+    與被檢查對象之後，正式環境會呼叫**兩次**（兩群分開等）——而這支測試在 CI 與
+    worktree 都還是綠的，因為那裡沒有 `.env`：`CLICKUP_TOKEN` 是空的、通道那群是
+    空清單，於是只剩一次呼叫。**正式目錄一跑就紅**。
+
+    也就是說 CI 從來沒走到正式環境真正走的那條路。所以這支改成自己釘住兩群
+    （不依賴 config），而「不可以隨 .env 改變結果」擋在 conftest 的
+    `_pinned_alert_channel_config`。
+    """
+    monkeypatch.setattr(health_check, 'alert_channel_hosts', lambda: ['api.clickup.com'])
+    monkeypatch.setattr(health_check, 'measured_hosts', lambda: ['riskmap.today'])
     calls = []
 
     def fake_wait(hosts, timeout=0):
@@ -239,7 +252,11 @@ def test_the_health_check_waits_for_dns_before_checking(tmp_path, monkeypatch):
     health_check.run_health_check(checks=[('假檢查', lambda: ('ok', '好'))],
                                   notify=True, alert_state=_state(tmp_path),
                                   now=T0, send=_Send(ok=True), network_wait=fake_wait)
-    assert len(calls) == 1 and calls[0][1] > 0, '要等、而且要有上限'
+    assert [h for h, _ in calls] == [('api.clickup.com',), ('riskmap.today',)], \
+        '兩群都要等：通道決定就緒，被檢查對象避開 post-wake DNS race'
+    assert all(t > 0 for _, t in calls), '每一群都要有上限'
+    assert dict(calls)[('riskmap.today',)] <= health_check.MEASURED_DNS_TIMEOUT, \
+        '被檢查對象那群的預算要比較短'
 
 
 def test_a_dns_timeout_does_not_abort_the_health_check(tmp_path):
