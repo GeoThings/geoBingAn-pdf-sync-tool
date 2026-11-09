@@ -151,6 +151,43 @@ class TestAStoppedCheckIsNotARecovery:
             notify=False, alert_state=_state(tmp_path), now=T0)
         assert '所有檢查通過' in capsys.readouterr().out
 
+    def test_a_skipped_check_does_not_dilute_the_problems_beside_it(self, tmp_path, capsys):
+        """正式環境明天真正會走的那條路：**有問題、同時有一項被略過**。
+
+        11/09 的實際燈號是 JWT ❌、上傳暫停 ❌、同步狀態 ⚠️、未支援來源 ⚠️，
+        而解析積壓會被略過。這條路不走 `elif skipped` 那個分支，所以前面兩支
+        測試都釘不到它——而它才是排程每天走的那一條。
+
+        要釘住三件事：問題數不被略過的那項污染、略過的那項仍然看得見、
+        而且**不會**被當成問題送進通知。
+        """
+        send = _Send()
+        issues, _events = health_check.run_health_check(
+            checks=[('JWT Token', lambda: ('error', 'Refresh Token 已過期 9.6 天')),
+                    ('上傳暫停', lambda: ('error', '上傳已暫停 37.9 天')),
+                    ('同步狀態', lambda: ('warning', '上次同步只完成一部分')),
+                    ('未支援來源', lambda: ('warning', '42 案來源接不到')),
+                    ('解析積壓', lambda: (health_check.SKIP, REASON))],
+            notify=True, alert_state=_state(tmp_path), now=T0, send=send,
+            network_wait=False)
+        out = capsys.readouterr().out
+
+        assert len(issues) == 4, '略過的那一項不可以被算進問題數'
+        assert not any('解析積壓' in i for i in issues)
+        assert '4 個問題需要關注' in out
+        assert '所有檢查通過' not in out and '已執行的檢查都沒有異常' not in out, \
+            '有問題時不可以講成沒事'
+
+        tail = out.split('=' * 50)[-1]
+        assert '1 項沒有檢查' in tail and '解析積壓' in tail, '有問題時也要看得到略過了什麼'
+
+        assert len(send.calls) == 1
+        _title, body, needs_attention = send.calls[0]
+        assert needs_attention is True, '有 error 就要打擾人'
+        assert '解析積壓' not in body, '沒查過的不該出現在告警裡（它不是問題也不是恢復）'
+        for name in ('JWT Token', '上傳暫停', '同步狀態', '未支援來源'):
+            assert name in body
+
     def test_a_light_that_was_on_is_closed_as_not_checked(self, tmp_path):
         st = _state(tmp_path)
         st.process({'解析積壓': ('warning', '401 Unauthorized')}, send=_Send(), now=T0)
