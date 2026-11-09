@@ -17,20 +17,24 @@ DEFAULT_REMIND_DAYS = 7
 
 
 class AlertEvent:
-    __slots__ = ('kind', 'key', 'level', 'message')
+    __slots__ = ('kind', 'key', 'level', 'message', 'note')
 
-    def __init__(self, kind: str, key: str, level: str, message: str):
+    def __init__(self, kind: str, key: str, level: str, message: str, note: str = ''):
         self.kind = kind        # new | escalated | reminder | resolved
         self.key = key
         self.level = level
         self.message = message
+        # 只有 resolved 用得到：這個 key 不是「好了」而是「不再檢查」，note 就是理由。
+        # 空字串＝真的恢復了。兩者分開，因為「已恢復」是一句**斷言**——它說問題解決了。
+        self.note = note
 
     def __repr__(self):
         return f'AlertEvent({self.kind}, {self.key}, {self.level})'
 
 
 def plan_alerts(prev: Dict[str, dict], current: Dict[str, Tuple[str, str]], now: datetime,
-                remind_days: int = DEFAULT_REMIND_DAYS) -> Tuple[List[AlertEvent], Dict[str, dict]]:
+                remind_days: int = DEFAULT_REMIND_DAYS,
+                skipped: Optional[Dict[str, str]] = None) -> Tuple[List[AlertEvent], Dict[str, dict]]:
     """決定這一輪要發哪些事件，並回傳更新後的狀態。
 
     Args:
@@ -38,6 +42,8 @@ def plan_alerts(prev: Dict[str, dict], current: Dict[str, Tuple[str, str]], now:
         current: 本輪仍存在的問題 {key: (level, message)}（只含非 ok）
         now: 現在時間
         remind_days: 同一問題持續多久提醒一次
+        skipped: 本輪「刻意沒有檢查」的 {key: 理由}。這些 key **不在** current 裡，
+            所以會走解除那條路；理由帶出去，通知才不會把它說成「已恢復」。
 
     Returns:
         (events, new_state)
@@ -71,9 +77,11 @@ def plan_alerts(prev: Dict[str, dict], current: Dict[str, Tuple[str, str]], now:
             entry['last_sent'] = now_iso
         new_state[key] = entry
 
+    skipped = skipped or {}
     for key, old in prev.items():
         if key not in current:
-            events.append(AlertEvent('resolved', key, old.get('level', 'warning'), old.get('message', '')))
+            events.append(AlertEvent('resolved', key, old.get('level', 'warning'),
+                                     old.get('message', ''), note=skipped.get(key, '')))
 
     return events, new_state
 
@@ -95,7 +103,9 @@ def format_events(events: List[AlertEvent], now: datetime) -> Tuple[str, str, bo
     needs_attention = False
     for e in events:
         if e.kind == 'resolved':
-            lines.append(f'✅ 已恢復：{e.key}')
+            # 「不再檢查」不可以寫成「已恢復」——後者是斷言問題解決了。
+            lines.append(f'⏭️ 不再檢查：{e.key}（{e.note}）' if e.note
+                         else f'✅ 已恢復：{e.key}')
             if e.level == 'error':
                 needs_attention = True      # error 解除也要送到人
             continue
@@ -106,12 +116,17 @@ def format_events(events: List[AlertEvent], now: datetime) -> Tuple[str, str, bo
 
     active = [e for e in events if e.kind != 'resolved']
     resolved = [e for e in events if e.kind == 'resolved']
-    if active and resolved:
-        title = f'⚠️ geoBingAn 健康檢查：{len(active)} 個問題、{len(resolved)} 個已恢復'
+    recovered = [e for e in resolved if not e.note]
+    stopped = [e for e in resolved if e.note]
+    closed = ([f'{len(recovered)} 個已恢復'] if recovered else []) + \
+             ([f'{len(stopped)} 個不再檢查'] if stopped else [])
+    if active and closed:
+        title = f'⚠️ geoBingAn 健康檢查：{len(active)} 個問題、' + '、'.join(closed)
     elif active:
         title = f'{"❌" if needs_attention else "⚠️"} geoBingAn 健康檢查：{len(active)} 個問題'
     else:
-        title = f'✅ geoBingAn 健康檢查：{len(resolved)} 個問題已恢復'
+        # 全部都只是「不再檢查」時標題不可以掛 ✅——那會讀成「都好了」。
+        title = f'{"✅" if recovered else "⏭️"} geoBingAn 健康檢查：' + '、'.join(closed)
     return title, '\n'.join(lines), needs_attention
 
 
@@ -155,15 +170,17 @@ class AlertState:
         tmp.replace(self.path)
 
     def plan(self, current: Dict[str, Tuple[str, str]], now: Optional[datetime] = None,
-             remind_days: int = DEFAULT_REMIND_DAYS) -> List[AlertEvent]:
+             remind_days: int = DEFAULT_REMIND_DAYS,
+             skipped: Optional[Dict[str, str]] = None) -> List[AlertEvent]:
         """只算事件、不寫狀態（乾跑/手動檢查用，不會悄悄壓掉之後的告警）。"""
         now = now or datetime.now()
-        events, _ = plan_alerts(self.load(), current, now, remind_days)
+        events, _ = plan_alerts(self.load(), current, now, remind_days, skipped=skipped)
         return events
 
     def process(self, current: Dict[str, Tuple[str, str]], send: SendFn,
                 now: Optional[datetime] = None,
-                remind_days: int = DEFAULT_REMIND_DAYS) -> Tuple[List[AlertEvent], bool]:
+                remind_days: int = DEFAULT_REMIND_DAYS,
+                skipped: Optional[Dict[str, str]] = None) -> Tuple[List[AlertEvent], bool]:
         """plan → send → commit：只有 send 回報成功才寫入新狀態（含 last_sent）。
 
         發送失敗（回傳 falsy 或拋例外）時保留舊狀態，下一輪會再產生同樣的事件重試，
@@ -173,7 +190,7 @@ class AlertState:
             (events, delivered)
         """
         now = now or datetime.now()
-        events, new_state = plan_alerts(self.load(), current, now, remind_days)
+        events, new_state = plan_alerts(self.load(), current, now, remind_days, skipped=skipped)
         if not events:
             self.save(new_state)
             # 安靜的一天也要把積壓送出去，否則佇列只有「又出事」那天才會被清
